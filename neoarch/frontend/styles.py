@@ -147,8 +147,8 @@ QPushButton#sidebarBtn {{
     background-color: transparent;
     border: none;
     color: {_TEXT_SEC};
-    padding: 10px 14px;
-    text-align: left;
+    padding: 0;
+    text-align: center;
     font-size: 13px;
     font-weight: 500;
     border-radius: 8px;
@@ -166,7 +166,7 @@ QPushButton#sidebarBtn:checked {{
 
 QWidget#sidebarNavIcon {{
     background-color: transparent;
-    font-size: 16px;
+    font-size: 24px;
     color: {_TEXT_SEC};
 }}
 
@@ -191,25 +191,13 @@ QLabel#sidebarSection {{
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    padding: 12px 16px 4px 16px;
+    padding: 0;
+    max-height: 0;
 }}
 
 /* ── Sidebar brand header ───────────────────────────────────────── */
 QLabel#sidebarLogo {{
     font-size: 20px;
-}}
-
-QLabel#sidebarTitle {{
-    color: {_TEXT};
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-}}
-
-QLabel#sidebarSubtitle {{
-    color: {_TEXT_SEC};
-    font-size: 9px;
-    font-weight: 400;
 }}
 
 /* ── Nav badge (updates count) ──────────────────────────────────── */

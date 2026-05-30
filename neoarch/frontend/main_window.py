@@ -123,6 +123,7 @@ def _build_window_icon(icon_path: str) -> QIcon:
 def _get_brand_icon_path():
     base_dir = _BASE_DIR
     candidates = [
+        os.path.join(base_dir, "assets", "icons", "icon.png"),
         os.path.join(base_dir, "assets", "icons", "NeoarchLogo.svg"),
         os.path.join(base_dir, "assets", "icons", "brand", "neoarch.svg"),
         os.path.join(base_dir, "assets", "icons", "brand", "neoarch.png"),
@@ -536,81 +537,62 @@ class ArchPkgManagerUniGetUI(QMainWindow):
     
     def create_sidebar(self):
         sidebar = QWidget()
-        sidebar.setFixedWidth(200)
+        sidebar.setFixedWidth(72)
         sidebar.setMinimumHeight(650)
         sidebar.setObjectName("sidebar")
 
         layout = QVBoxLayout(sidebar)
-        layout.setContentsMargins(10, 18, 10, 14)
+        layout.setContentsMargins(8, 16, 8, 10)
         layout.setSpacing(2)
 
-        # ── Brand header ──
-        header = QHBoxLayout()
-        header.setContentsMargins(10, 0, 10, 12)
-        header.setSpacing(10)
-
+        # ── Brand header (logo only) ──
         logo_label = QLabel()
         logo_label.setObjectName("sidebarLogo")
-        logo_label.setFixedSize(28, 28)
-        logo_path = os.path.join(_BASE_DIR, "assets", "icons", "NeoarchLogo.svg")
-        try:
-            r = QSvgRenderer(logo_path)
-            if r.isValid():
-                pm = QPixmap(28, 28)
-                pm.fill(Qt.GlobalColor.transparent)
-                p = QPainter(pm)
-                p.setRenderHint(QPainter.RenderHint.Antialiasing)
-                r.render(p, QRectF(0, 0, 28, 28))
-                p.end()
-                logo_label.setPixmap(pm)
-            else:
-                logo_label.setText("⬡")
-        except Exception:
+        logo_label.setFixedSize(36, 36)
+        logo_path = os.path.join(_BASE_DIR, "assets", "icons", "logo.png")
+        pm = QPixmap(logo_path)
+        if not pm.isNull():
+            logo_label.setPixmap(pm.scaled(36, 36, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+        else:
             logo_label.setText("⬡")
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        header.addWidget(logo_label)
+        layout.addWidget(logo_label, 0, Qt.AlignmentFlag.AlignCenter)
 
-        brand = QVBoxLayout()
-        brand.setSpacing(1)
-        t = QLabel("NeoArch")
-        t.setObjectName("sidebarTitle")
-        brand.addWidget(t)
-        s = QLabel("Package Manager")
-        s.setObjectName("sidebarSubtitle")
-        brand.addWidget(s)
-        header.addLayout(brand)
-        header.addStretch()
-        layout.addLayout(header)
+        layout.addSpacing(12)
 
         # ── Section: Main ──
-        sec_main = QLabel("  MAIN")
+        sec_main = QLabel()
         sec_main.setObjectName("sidebarSection")
+        sec_main.setFixedHeight(0)
         layout.addWidget(sec_main)
 
+        _base = os.path.join(_BASE_DIR, "assets", "icons")
         nav_items = [
-            ("🏠", "Home", "discover"),
-            ("🔍", "Search", "search"),
-            ("📦", "Installed", "installed"),
-            ("⬆", "Updates", "updates"),
+            ("Home", "discover", os.path.join(_base, "discover.svg")),
+            ("Installed", "installed", os.path.join(_base, "installed.svg")),
+            ("Updates", "updates", os.path.join(_base, "updates.svg")),
         ]
 
         self.nav_buttons = {}
-        for emoji, text, view_id in nav_items:
-            btn = self._create_sidebar_btn(emoji, text, view_id)
+        self._nav_tooltips = {}
+        for text, view_id, icon in nav_items:
+            btn = self._create_sidebar_btn(icon, text, view_id)
             self.nav_buttons[view_id] = btn
             layout.addWidget(btn)
 
         # ── Section: System ──
-        sec_sys = QLabel("  SYSTEM")
+        sec_sys = QLabel()
         sec_sys.setObjectName("sidebarSection")
+        sec_sys.setFixedHeight(0)
         layout.addWidget(sec_sys)
 
         sys_items = [
-            ("📡", "Sources", "plugins"),
-            ("⚙", "Settings", "settings"),
+            ("Sources", "plugins", os.path.join(_base, "plugins.svg")),
+            ("Bundles", "bundles", os.path.join(_base, "local-builds.svg")),
+            ("Settings", "settings", os.path.join(_base, "settings.svg")),
         ]
-        for emoji, text, view_id in sys_items:
-            btn = self._create_sidebar_btn(emoji, text, view_id)
+        for text, view_id, icon in sys_items:
+            btn = self._create_sidebar_btn(icon, text, view_id)
             self.nav_buttons[view_id] = btn
             layout.addWidget(btn)
 
@@ -618,84 +600,75 @@ class ArchPkgManagerUniGetUI(QMainWindow):
 
         # ── Footer ──
         footer = QHBoxLayout()
-        footer.setContentsMargins(10, 0, 10, 0)
-        about_btn = QPushButton("About")
-        about_btn.setFlat(True)
+        footer.setContentsMargins(0, 0, 0, 0)
+        about_btn = QPushButton()
+        about_btn.setObjectName("sidebarBtn")
+        about_btn.setFixedHeight(48)
+        about_btn.setToolTip("About")
         about_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        about_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: transparent; border: none;
-                color: {_C['text_muted']}; font-size: 11px; font-weight: 400;
-                padding: 4px 0;
-            }}
-            QPushButton:hover {{ color: {_C['text_sec']}; }}
-        """)
+        icon_label = QLabel()
+        icon_label.setObjectName("sidebarNavIcon")
+        icon_label.setFixedSize(48, 48)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        about_icon_path = os.path.join(_BASE_DIR, "assets", "icons", "about.svg")
+        icon = self.get_svg_icon(about_icon_path, 24)
+        if not icon.isNull():
+            icon_label.setPixmap(icon.pixmap(24, 24))
+        about_btn_layout = QHBoxLayout(about_btn)
+        about_btn_layout.setContentsMargins(0, 0, 0, 0)
+        about_btn_layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignCenter)
         about_btn.clicked.connect(self.show_about)
         footer.addWidget(about_btn)
-        footer.addStretch()
-
-        ver = QLabel("v1.0")
-        ver.setStyleSheet(f"color: {_C['text_muted']}; font-size: 10px; background: transparent;")
-        footer.addWidget(ver)
         layout.addLayout(footer)
 
         return sidebar
     
-    def _create_sidebar_btn(self, emoji: str, text: str, view_id: str) -> QPushButton:
+    def _create_sidebar_btn(self, icon_path: str, text: str, view_id: str) -> QPushButton:
         btn = QPushButton()
         btn.setObjectName("sidebarBtn")
         btn.setCheckable(True)
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn.setFixedHeight(38)
+        btn.setFixedHeight(48)
+        btn.setToolTip(text)
 
         lay = QHBoxLayout(btn)
-        lay.setContentsMargins(12, 0, 12, 0)
-        lay.setSpacing(10)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
 
-        icon = QLabel(emoji)
-        icon.setObjectName("sidebarNavIcon")
-        icon.setFixedWidth(20)
-        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon.setStyleSheet("font-size: 14px; background: transparent;")
-        lay.addWidget(icon)
+        icon_label = QLabel()
+        icon_label.setObjectName("sidebarNavIcon")
+        icon_label.setFixedSize(48, 48)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon = self.get_svg_icon(icon_path, 24)
+        if not icon.isNull():
+            icon_label.setPixmap(icon.pixmap(24, 24))
+        lay.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignCenter)
 
-        label = QLabel(text)
-        label.setObjectName("sidebarLabel")
-        label.setStyleSheet("background: transparent;")
-        lay.addWidget(label, 1)
-
-        # Badge for Updates
+        # Badge for Updates (overlay, top-right)
         if view_id == "updates":
-            badge = QLabel()
+            badge = QLabel(btn)
             badge.setObjectName("navBadge")
-            badge.setFixedHeight(18)
+            badge.setFixedHeight(16)
             badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
             badge.setVisible(False)
             badge.setStyleSheet(f"""
                 QLabel#navBadge {{
                     background-color: {_C['accent']};
                     color: #0C0C0E;
-                    border-radius: 8px;
-                    font-size: 10px;
+                    border-radius: 7px;
+                    font-size: 9px;
                     font-weight: 700;
-                    padding: 0 6px;
-                    min-width: 16px;
+                    padding: 0 5px;
+                    min-width: 12px;
                 }}
             """)
-            lay.addWidget(badge)
-            self.nav_badges["updates"] = badge
+            badge.move(28, 2)
 
         btn.clicked.connect(lambda checked=False, v=view_id: self._handle_nav(v))
+        self._nav_tooltips[view_id] = text
         return btn
 
     def _handle_nav(self, view_id: str):
-        if view_id == "search":
-            self.switch_view("discover")
-            self.nav_buttons["search"].setChecked(True)
-            self.nav_buttons["discover"].setChecked(False)
-            self.search_input.setFocus()
-            self.search_input.selectAll()
-            return
         self.switch_view(view_id)
 
     def set_updates_count(self, count):
@@ -728,16 +701,14 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                     badge.setVisible(False)
             except Exception:
                 pass
-        # Optionally reflect in label text
+        # Reflect count in tooltip
         btn = self.nav_buttons.get("updates") if hasattr(self, 'nav_buttons') else None
         if btn:
-            label = btn.findChild(QLabel, "navText")
-            if label:
-                try:
-                    n = int(count) if count is not None else 0
-                    label.setText(f"Updates{f' ({n})' if n > 0 else ''}")
-                except Exception:
-                    label.setText("Updates")
+            try:
+                n = int(count) if count is not None else 0
+                btn.setToolTip(f"Updates ({n})" if n > 0 else "Updates")
+            except Exception:
+                pass
 
     def update_updates_header_counts(self):
         """Update the header info subtitle for Updates with real counts."""
@@ -1965,6 +1936,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             "installed": (os.path.join(_BASE_DIR, "assets", "icons", "discover", "installed.svg"), "Installed Packages", ""),
             "discover": (os.path.join(_BASE_DIR, "assets", "icons", "discover", "search.svg"), "Home", "Dashboard and package discovery"),
             "plugins": (os.path.join(_BASE_DIR, "assets", "icons", "plugins.svg"), "Sources & Plugins", "Manage package sources and extensions"),
+            "bundles": (os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"), "Bundles", "Create, import, export, and install bundles of packages"),
             "settings": (os.path.join(_BASE_DIR, "assets", "icons", "settings.svg"), "Settings", "Configure NeoArch settings"),
         }
         
