@@ -13,11 +13,9 @@ from PyQt6.QtWidgets import (
     QListWidget, QListWidgetItem, QDialog, QLineEdit, QMessageBox,
 )
 from PyQt6.QtCore import Qt, QObject, QTimer
-from PyQt6.QtGui import QPixmap, QPainter, QColor
-from PyQt6.QtSvg import QSvgRenderer
-from PyQt6.QtCore import QRectF
 
-from neoarch.resources.paths import ASSETS_DIR, ICONS_DIR
+from neoarch.resources.paths import ICONS_DIR
+from neoarch.frontend.components.feature_card import FeatureCard
 
 __all__ = ["GitManager"]
 
@@ -49,118 +47,64 @@ class GitManager(QObject):
             pass
 
         self.git_section = QWidget()
-        git_layout = QVBoxLayout(self.git_section)
-        git_layout.setContentsMargins(0, 8, 0, 0)
-        git_layout.setSpacing(10)
+        self.git_section.setObjectName("gitSectionWrapper")
+        wrapper_layout = QVBoxLayout(self.git_section)
+        wrapper_layout.setContentsMargins(0, 6, 0, 0)
+        wrapper_layout.setSpacing(4)
 
-        git_label = QLabel("Git Repositories")
-        git_label.setObjectName("sectionLabel")
-        git_label.setStyleSheet("font-size: 11px; margin-bottom: 4px;")
-        git_layout.addWidget(git_label)
+        card = FeatureCard()
+        git_icon = os.path.join(str(ICONS_DIR), "discover", "git.svg")
+        card.build_header(git_icon, "Git Repositories")
+        card.build_primary_action("Install from Git", self.install_from_git)
+        card.build_action_grid([
+            ("Clone", "clone", lambda: self.install_from_git()),
+            ("Open", "open", self.open_git_repos_dir),
+            ("Update", "update", self.update_all_git_repos),
+            ("Clean", "clean", self.clean_git_repos),
+        ])
+        wrapper_layout.addWidget(card)
 
-        install_git_container = QWidget()
-        install_git_layout = QHBoxLayout(install_git_container)
-        install_git_layout.setContentsMargins(0, 0, 0, 0)
-        install_git_layout.setSpacing(8)
-
-        git_icon_label = QLabel()
-        git_icon_path = ICONS_DIR / "discover" / "git.svg"
-        try:
-            svg_renderer = QSvgRenderer(str(git_icon_path))
-            if svg_renderer.isValid():
-                pixmap = QPixmap(20, 20)
-                if pixmap.isNull():
-                    git_icon_label.setText("\U0001f4e6")
-                    git_icon_label.setStyleSheet("font-size: 14px; color: white;")
-                else:
-                    pixmap.fill(Qt.GlobalColor.transparent)
-                    painter = QPainter(pixmap)
-                    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-                    svg_renderer.render(painter, QRectF(pixmap.rect()))
-                    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
-                    painter.fillRect(pixmap.rect(), QColor("white"))
-                    painter.end()
-                    git_icon_label.setPixmap(pixmap)
-            else:
-                git_icon_label.setText("\U0001f4e6")
-        except OSError:
-            git_icon_label.setText("\U0001f4e6")
-
-        install_git_layout.addWidget(git_icon_label)
-
-        install_git_btn = QPushButton("Install from Git")
-        install_git_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent; color: #F0F0F0;
-                border: 1px solid rgba(0, 191, 174, 0.3); border-radius: 6px;
-                padding: 6px 10px; font-size: 11px; font-weight: 500;
+        self.recent_repos_label = QLabel("Recent")
+        self.recent_repos_label.setObjectName("gitRecentLabel")
+        self.recent_repos_label.setStyleSheet("""
+            QLabel#gitRecentLabel {
+                color: #5C5E66;
+                font-size: 9px;
+                font-weight: 500;
+                padding: 2px 14px 0 14px;
+                background: transparent;
+                border: none;
             }
-            QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
-            QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
         """)
-        install_git_btn.clicked.connect(self.install_from_git)
-        install_git_layout.addWidget(install_git_btn)
-        git_layout.addWidget(install_git_container)
-
-        secondary_buttons_widget = QWidget()
-        secondary_layout = QHBoxLayout(secondary_buttons_widget)
-        secondary_layout.setContentsMargins(0, 0, 0, 0)
-        secondary_layout.setSpacing(4)
-
-        open_repos_btn = QPushButton("\U0001f4c1 Open")
-        open_repos_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent; color: #F0F0F0;
-                border: 1px solid rgba(0, 191, 174, 0.15); border-radius: 4px;
-                padding: 6px 10px; font-size: 10px; text-align: center;
-            }
-            QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.35); color: #00BFAE; }
-        """)
-        open_repos_btn.clicked.connect(self.open_git_repos_dir)
-        secondary_layout.addWidget(open_repos_btn)
-
-        update_repos_btn = QPushButton("\U0001f504 Update")
-        update_repos_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent; color: #F0F0F0;
-                border: 1px solid rgba(0, 191, 174, 0.15); border-radius: 4px;
-                padding: 6px 10px; font-size: 10px; text-align: center;
-            }
-            QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.35); color: #00BFAE; }
-        """)
-        update_repos_btn.clicked.connect(self.update_all_git_repos)
-        secondary_layout.addWidget(update_repos_btn)
-
-        clean_repos_btn = QPushButton("\U0001f5d1\ufe0f Clean")
-        clean_repos_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent; color: #F0F0F0;
-                border: 1px solid rgba(0, 191, 174, 0.15); border-radius: 4px;
-                padding: 6px 10px; font-size: 10px; text-align: center;
-            }
-            QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.35); color: #FF6B6B; }
-        """)
-        clean_repos_btn.clicked.connect(self.clean_git_repos)
-        secondary_layout.addWidget(clean_repos_btn)
-        git_layout.addWidget(secondary_buttons_widget)
-
-        self.recent_repos_label = QLabel("Recent:")
-        self.recent_repos_label.setStyleSheet("color: #C9C9C9; font-size: 10px; margin-top: 4px;")
-        git_layout.addWidget(self.recent_repos_label)
+        wrapper_layout.addWidget(self.recent_repos_label)
 
         self.recent_repos_list = QListWidget()
-        self.recent_repos_list.setStyleSheet("""
-            QListWidget {
-                background-color: rgba(42, 45, 51, 0.4);
-                border: 1px solid rgba(0, 191, 174, 0.15);
-                color: #F0F0F0; font-size: 10px; max-height: 85px;
-            }
-            QListWidget::item:hover { background-color: rgba(0, 191, 174, 0.15); }
-            QListWidget::item:selected { background-color: rgba(0, 191, 174, 0.25); }
-        """)
+        self.recent_repos_list.setObjectName("gitRecentList")
         self.recent_repos_list.itemDoubleClicked.connect(self.open_repo_directory)
         self.recent_repos_list.setVisible(False)
-        git_layout.addWidget(self.recent_repos_list)
+        self.recent_repos_list.setStyleSheet("""
+            QListWidget#gitRecentList {
+                background-color: transparent;
+                border: none;
+                color: #8B8D97;
+                font-size: 10px;
+                max-height: 72px;
+                padding: 0 14px 4px 14px;
+            }
+            QListWidget#gitRecentList::item {
+                padding: 3px 6px;
+                border-radius: 4px;
+            }
+            QListWidget#gitRecentList::item:hover {
+                background-color: rgba(255, 255, 255, 0.04);
+                color: #EDEDEF;
+            }
+            QListWidget#gitRecentList::item:selected {
+                background-color: rgba(0, 191, 174, 0.12);
+                color: #00BFAE;
+            }
+        """)
+        wrapper_layout.addWidget(self.recent_repos_list)
 
         try:
             insert_at = 2 if self.sources_layout.count() >= 2 else self.sources_layout.count()
@@ -173,52 +117,98 @@ class GitManager(QObject):
     def install_from_git(self):
         """Show dialog to input a Git repository URL for cloning and building."""
         dialog = QDialog()
-        dialog.setWindowTitle("Install from Git Repository")
+        dialog.setWindowTitle("Install from Git")
         dialog.setModal(True)
-        dialog.setStyleSheet("QDialog { background-color: #1E1E1E; color: #F0F0F0; border: 1px solid rgba(0, 191, 174, 0.2); }")
+        dialog.setMinimumWidth(420)
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: rgba(18, 19, 22, 0.98);
+                color: #EDEDEF;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 14px;
+            }
+        """)
 
         layout = QVBoxLayout(dialog)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(15)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(16)
 
-        title = QLabel("Install Application from Git Repository")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #00BFAE;")
+        title = QLabel("Clone & Install from Git")
+        title.setStyleSheet("""
+            font-size: 15px;
+            font-weight: 600;
+            color: #EDEDEF;
+            background: transparent;
+            border: none;
+        """)
         layout.addWidget(title)
 
-        desc = QLabel("Enter the Git repository URL to clone and install the application:")
+        desc = QLabel("Enter a Git repository URL to clone, build, and install the application:")
         desc.setWordWrap(True)
+        desc.setStyleSheet("color: #8B8D97; font-size: 12px; background: transparent; border: none;")
         layout.addWidget(desc)
 
         url_input = QLineEdit()
         url_input.setPlaceholderText("https://github.com/user/repo.git")
         url_input.setStyleSheet("""
             QLineEdit {
-                background-color: rgba(42, 45, 51, 0.8); color: #F0F0F0;
-                border: 2px solid rgba(0, 191, 174, 0.2); border-radius: 6px;
-                padding: 8px 12px; font-size: 14px;
+                background-color: rgba(28, 30, 36, 0.9);
+                color: #EDEDEF;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 10px;
+                padding: 10px 14px;
+                font-size: 13px;
+                selection-background-color: rgba(0, 191, 174, 0.3);
             }
-            QLineEdit:focus { border-color: #00BFAE; }
+            QLineEdit:focus {
+                border-color: rgba(0, 191, 174, 0.5);
+                background-color: rgba(28, 30, 36, 0.95);
+            }
         """)
         layout.addWidget(url_input)
 
         buttons_layout = QHBoxLayout()
         buttons_layout.addStretch()
         cancel_btn = QPushButton("Cancel")
+        cancel_btn.setFixedHeight(34)
         cancel_btn.clicked.connect(dialog.reject)
         cancel_btn.setStyleSheet("""
-            QPushButton { background-color: rgba(42, 45, 51, 0.6); color: #F0F0F0;
-                border: 1px solid rgba(0, 191, 174, 0.2); border-radius: 4px; padding: 8px 16px; }
-            QPushButton:hover { background-color: rgba(42, 45, 51, 0.8); }
+            QPushButton {
+                background-color: transparent;
+                color: #8B8D97;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 8px;
+                padding: 0 20px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.04);
+                color: #EDEDEF;
+            }
         """)
         buttons_layout.addWidget(cancel_btn)
 
         install_btn = QPushButton("Clone & Install")
         install_btn.setDefault(True)
+        install_btn.setFixedHeight(34)
         install_btn.clicked.connect(lambda: self.proceed_git_install(url_input.text().strip(), dialog))
         install_btn.setStyleSheet("""
-            QPushButton { background-color: #00BFAE; color: #1E1E1E; border: none;
-                border-radius: 4px; padding: 8px 16px; font-weight: 500; }
-            QPushButton:hover { background-color: #00C4B0; }
+            QPushButton {
+                background-color: #00BFAE;
+                color: #0C0C0E;
+                border: none;
+                border-radius: 8px;
+                padding: 0 20px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #00D4C1;
+            }
+            QPushButton:pressed {
+                background-color: #009688;
+            }
         """)
         buttons_layout.addWidget(install_btn)
         layout.addLayout(buttons_layout)

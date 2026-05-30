@@ -1370,7 +1370,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
 
         layout = QVBoxLayout(self.filters_panel)
         layout.setContentsMargins(10, 16, 10, 16)
-        layout.setSpacing(12)
+        layout.setSpacing(10)
 
         self.sources_section = QWidget()
         self.sources_layout = QVBoxLayout(self.sources_section)
@@ -1379,46 +1379,20 @@ class ArchPkgManagerUniGetUI(QMainWindow):
 
         self.sources_title_label = QLabel("Sources")
         self.sources_title_label.setObjectName("sectionLabel")
+        self.sources_title_label.setStyleSheet("""
+            QLabel#sectionLabel {
+                color: #8B8D97;
+                font-size: 10px;
+                font-weight: 500;
+                padding: 0 2px 2px 2px;
+                background: transparent;
+                border: none;
+            }
+        """)
         self.sources_layout.addWidget(self.sources_title_label)
-
-        self.sources_layout.addSpacing(4)
-
-        sources = ["pacman", "AUR", "Flatpak"]
-        self.source_checkboxes = {}
-        for source in sources:
-            checkbox = QCheckBox(source)
-            checkbox.setChecked(True)
-            self.source_checkboxes[source] = checkbox
-            checkbox.setStyleSheet(f"""
-                QCheckBox {{
-                    color: #EDEDEF;
-                    font-size: 12px;
-                    font-weight: 500;
-                    spacing: 8px;
-                    padding: 4px 0;
-                }}
-                QCheckBox::indicator {{
-                    width: 16px;
-                    height: 16px;
-                    border-radius: 4px;
-                    border: 1.5px solid #5C5E66;
-                    background-color: rgba(18, 19, 22, 0.8);
-                }}
-                QCheckBox::indicator:checked {{
-                    background-color: #00BFAE;
-                    border: 1.5px solid #00BFAE;
-                }}
-                QCheckBox::indicator:hover {{
-                    border-color: #00BFAE;
-                }}
-            """)
-            self.sources_layout.addWidget(checkbox)
 
         layout.addWidget(self.sources_section)
 
-        layout.addSpacing(8)
-
-        # Filters Section
         self.filters_section = QWidget()
         self.filters_layout = QVBoxLayout(self.filters_section)
         self.filters_layout.setContentsMargins(0, 0, 0, 0)
@@ -3732,14 +3706,6 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             model.select(self.package_table.model().index(row, 0), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
         else:
             model.select(self.package_table.model().index(row, 0), QItemSelectionModel.SelectionFlag.Deselect | QItemSelectionModel.SelectionFlag.Rows)
-    
-    def select_all_sources(self):
-        for checkbox in self.source_checkboxes.values():
-            checkbox.setChecked(True)
-    
-    def clear_sources(self):
-        for checkbox in self.source_checkboxes.values():
-            checkbox.setChecked(False)
     
     def load_settings(self):
         return settings_service.load_settings()

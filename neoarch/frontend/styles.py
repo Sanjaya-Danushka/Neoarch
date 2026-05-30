@@ -292,11 +292,11 @@ QLabel {{
 }}
 
 QLabel#sectionLabel {{
-    color: {_ACCENT};
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
+    color: {_TEXT_SEC};
+    font-size: 10px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
 }}
 
 /* ── Frame ──────────────────────────────────────────────────────── */
@@ -486,7 +486,7 @@ class Styles:
     def get_filters_panel_stylesheet():
         return f"""
             QFrame {{
-                background-color: rgba(14, 14, 16, 0.5);
+                background-color: rgba(12, 12, 14, 0.6);
                 border-right: 1px solid {_BORDER};
             }}
         """

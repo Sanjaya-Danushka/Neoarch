@@ -1,13 +1,70 @@
-"""SourceCard Component - Card-style container for source selection"""
+"""SourceCard Component - Premium card-style container for source selection"""
 
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QRadioButton, QButtonGroup, QGraphicsDropShadowEffect
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtGui import QColor as _QColor
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QGraphicsDropShadowEffect, QSizePolicy,
+)
+from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtGui import QColor
 from neoarch.frontend.components.source_item import SourceItem
 
 
+class _SegmentedButton(QPushButton):
+    """Individual segment for the search mode segmented control.
+
+    macOS Settings-style: floating pill for active state with glass background.
+    """
+
+    def __init__(self, text, parent=None):
+        super().__init__(text, parent)
+        self.setCheckable(True)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFixedHeight(28)
+        self.setObjectName("segmentBtn")
+        self.setGraphicsEffect(None)
+        self._shadow = None
+        self.update_style()
+
+    def update_style(self):
+        if self.isChecked():
+            self.setStyleSheet("""
+                QPushButton#segmentBtn {
+                    background: qlineargradient(
+                        x1: 0, y1: 0, x2: 0, y2: 1,
+                        stop: 0 rgba(255, 255, 255, 0.12),
+                        stop: 0.5 rgba(255, 255, 255, 0.08),
+                        stop: 1 rgba(255, 255, 255, 0.04)
+                    );
+                    color: #EDEDEF;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 7px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    padding: 0 14px;
+                }
+            """)
+        else:
+            self.setStyleSheet("""
+                QPushButton#segmentBtn {
+                    background-color: transparent;
+                    color: #8B8D97;
+                    border: 1px solid transparent;
+                    border-radius: 7px;
+                    font-size: 11px;
+                    font-weight: 500;
+                    padding: 0 14px;
+                }
+                QPushButton#segmentBtn:hover {
+                    color: #EDEDEF;
+                }
+            """)
+
+    def nextCheckState(self):
+        pass
+
+
 class SourceCard(QWidget):
-    """Card component for source selection with select/deselect functionality"""
+    """Premium card component for source selection with elegant controls."""
 
     source_changed = pyqtSignal(dict)
     search_mode_changed = pyqtSignal(str)
@@ -16,115 +73,190 @@ class SourceCard(QWidget):
         super().__init__(parent)
         self.sources = {}
         self.search_mode = 'both'
-        self.radio_group = None
+        self.segment_buttons = []
         self.init_ui()
 
     def init_ui(self):
+        self.setObjectName("SourceCard")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(8)
 
-        header_widget = QWidget()
-        header_layout = QHBoxLayout(header_widget)
-        header_layout.setContentsMargins(12, 8, 12, 8)
+        self._build_header(layout)
+        self._build_sources_container(layout)
+        self._build_search_mode(layout)
 
-        title_label = QLabel("Sources")
-        title_label.setObjectName("sourceCardTitle")
-        header_layout.addWidget(title_label)
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(20)
+        shadow.setOffset(0, 2)
+        shadow.setColor(QColor(0, 0, 0, 60))
+        self.setGraphicsEffect(shadow)
+
+        self.setStyleSheet(self._card_stylesheet())
+
+    def _card_stylesheet(self):
+        return """
+            QWidget#SourceCard {
+                background-color: rgba(22, 23, 26, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 12px;
+            }
+        """
+
+    def _build_header(self, layout):
+        header = QWidget()
+        header.setObjectName("sourceCardHeader")
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(12, 10, 12, 10)
+
+        title = QLabel("Sources")
+        title.setObjectName("sourceCardTitle")
+        title.setStyleSheet("""
+            QLabel#sourceCardTitle {
+                color: #EDEDEF;
+                font-size: 13px;
+                font-weight: 600;
+                background: transparent;
+                border: none;
+            }
+        """)
+        header_layout.addWidget(title)
 
         header_layout.addStretch()
 
-        self.select_all_btn = QPushButton("Select All")
-        self.select_all_btn.setObjectName("selectAllBtn")
+        self.select_all_btn = QPushButton()
+        self.select_all_btn.setObjectName("toggleAllBtn")
+        self.select_all_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.select_all_btn.setFixedHeight(22)
         self.select_all_btn.clicked.connect(self.toggle_select_all)
+        self.select_all_btn.setStyleSheet(self._toggle_all_style(True))
         header_layout.addWidget(self.select_all_btn)
 
-        layout.addWidget(header_widget)
+        layout.addWidget(header)
 
+    def _toggle_all_style(self, all_on):
+        text = "Pause All" if all_on else "Enable All"
+        self.select_all_btn.setText(text)
+        return f"""
+            QPushButton#toggleAllBtn {{
+                background-color: rgba(0, 191, 174, 0.08);
+                color: #00BFAE;
+                border: 1px solid rgba(0, 191, 174, 0.2);
+                border-radius: 5px;
+                padding: 0 10px;
+                font-size: 10px;
+                font-weight: 500;
+            }}
+            QPushButton#toggleAllBtn:hover {{
+                background-color: rgba(0, 191, 174, 0.15);
+            }}
+        """
+
+    def _build_sources_container(self, layout):
         self.sources_container = QWidget()
+        self.sources_container.setObjectName("sourcesContainer")
         self.sources_layout = QVBoxLayout(self.sources_container)
-        self.sources_layout.setContentsMargins(6, 4, 6, 4)
-        self.sources_layout.setSpacing(6)
-
+        self.sources_layout.setContentsMargins(8, 0, 8, 4)
+        self.sources_layout.setSpacing(3)
         layout.addWidget(self.sources_container)
 
-        search_mode_widget = QWidget()
-        search_layout = QVBoxLayout(search_mode_widget)
-        search_layout.setContentsMargins(12, 8, 12, 8)
+    def _build_search_mode(self, layout):
+        self.search_mode_widget = QWidget()
+        self.search_mode_widget.setObjectName("searchModeWidget")
+        search_layout = QVBoxLayout(self.search_mode_widget)
+        search_layout.setContentsMargins(12, 6, 12, 10)
         search_layout.setSpacing(6)
 
         search_title = QLabel("Search Mode")
         search_title.setObjectName("searchModeTitle")
         search_layout.addWidget(search_title)
 
-        radio_container = QWidget()
-        radio_layout = QHBoxLayout(radio_container)
-        radio_layout.setContentsMargins(0, 0, 0, 0)
-        radio_layout.setSpacing(12)
+        segment_container = QWidget()
+        segment_container.setObjectName("segmentContainer")
+        segment_layout = QHBoxLayout(segment_container)
+        segment_layout.setContentsMargins(0, 0, 0, 0)
+        segment_layout.setSpacing(2)
 
-        self.radio_group = QButtonGroup(self)
+        self.segment_buttons = []
+        for seg_id, seg_text in [("name", "Name"), ("id", "Package ID"), ("both", "Both")]:
+            btn = _SegmentedButton(seg_text)
+            btn.clicked.connect(lambda checked=False, s=seg_id: self._on_segment_clicked(s))
+            btn.setChecked(seg_id == "both")
+            segment_layout.addWidget(btn, 1)
+            self.segment_buttons.append(btn)
 
-        self.name_radio = QRadioButton("Name")
-        self.name_radio.setObjectName("searchModeRadio")
-        self.radio_group.addButton(self.name_radio, 0)
-        radio_layout.addWidget(self.name_radio)
+        search_layout.addWidget(segment_container)
+        layout.addWidget(self.search_mode_widget)
 
-        self.id_radio = QRadioButton("Package ID")
-        self.id_radio.setObjectName("searchModeRadio")
-        self.radio_group.addButton(self.id_radio, 1)
-        radio_layout.addWidget(self.id_radio)
+        shadow = QGraphicsDropShadowEffect(self.search_mode_widget)
+        shadow.setBlurRadius(16)
+        shadow.setOffset(0, 2)
+        shadow.setColor(QColor(0, 0, 0, 50))
+        self.search_mode_widget.setGraphicsEffect(shadow)
 
-        self.both_radio = QRadioButton("Both")
-        self.both_radio.setObjectName("searchModeRadio")
-        self.both_radio.setChecked(True)
-        self.radio_group.addButton(self.both_radio, 2)
-        radio_layout.addWidget(self.both_radio)
+        self.search_mode_widget.setStyleSheet("""
+            QWidget#searchModeWidget {
+                border-top: 1px solid rgba(255, 255, 255, 0.04);
+            }
+            QLabel#searchModeTitle {
+                color: #8B8D97;
+                font-size: 10px;
+                font-weight: 500;
+                background: transparent;
+                border: none;
+            }
+            QWidget#segmentContainer {
+                background: rgba(14, 14, 16, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 9px;
+                padding: 2px;
+            }
+        """)
 
-        radio_layout.addStretch()
-        search_layout.addWidget(radio_container)
+    def _on_segment_clicked(self, seg_id):
+        for btn in self.segment_buttons:
+            btn.blockSignals(True)
+        for btn in self.segment_buttons:
+            btn.setChecked(False)
+        for btn in self.segment_buttons:
+            btn.update_style()
+        target = None
+        for btn, sid in zip(self.segment_buttons, ["name", "id", "both"]):
+            if sid == seg_id:
+                btn.setChecked(True)
+                btn.update_style()
+                target = btn
+                break
+        for btn in self.segment_buttons:
+            btn.blockSignals(False)
 
-        layout.addWidget(search_mode_widget)
-
-        self.radio_group.buttonClicked.connect(self.on_search_mode_changed)
-
-        try:
-            shadow = QGraphicsDropShadowEffect(self)
-            shadow.setBlurRadius(18)
-            shadow.setOffset(0, 2)
-            shadow.setColor(_QColor(0, 0, 0, 80))
-            self.setGraphicsEffect(shadow)
-        except ImportError:
-            pass
-
-        self.setStyleSheet(self.get_stylesheet())
+        self.search_mode = seg_id
+        self.search_mode_changed.emit(seg_id)
 
     def add_source(self, source_name, icon_path):
         source_item = SourceItem(source_name, icon_path, self)
-        source_item.checkbox.stateChanged.connect(lambda: self.on_source_changed())
+        source_item.toggle.toggled.connect(lambda checked=False, s=source_name: self.on_source_changed())
         self.sources[source_name] = source_item
         self.sources_layout.addWidget(source_item)
+        self.update_toggle_all_button()
         self.on_source_changed()
 
     def on_source_changed(self):
-        states = {name: item.checkbox.isChecked() for name, item in self.sources.items()}
+        states = {name: item.is_checked() for name, item in self.sources.items()}
         self.source_changed.emit(states)
-        self.update_select_all_button()
+        self.update_toggle_all_button()
 
-    def update_select_all_button(self):
-        checked_count = sum(1 for item in self.sources.values() if item.checkbox.isChecked())
+    def update_toggle_all_button(self):
+        checked_count = sum(1 for item in self.sources.values() if item.is_checked())
         total_count = len(self.sources)
-        if checked_count == total_count:
-            self.select_all_btn.setText("Deselect All")
-        elif checked_count == 0:
-            self.select_all_btn.setText("Select All")
-        else:
-            self.select_all_btn.setText(f"Selected ({checked_count}/{total_count})")
+        all_on = checked_count > 0
+        self.select_all_btn.setStyleSheet(self._toggle_all_style(all_on))
 
     def toggle_select_all(self):
         checked_count = sum(1 for item in self.sources.values() if item.is_checked())
         total_count = len(self.sources)
         for item in self.sources.values():
-            item.checkbox.blockSignals(True)
+            item.toggle.blockSignals(True)
         if checked_count == total_count:
             for item in self.sources.values():
                 item.set_checked(False)
@@ -132,99 +264,21 @@ class SourceCard(QWidget):
             for item in self.sources.values():
                 item.set_checked(True)
         for item in self.sources.values():
-            item.checkbox.blockSignals(False)
-        states = {name: item.checkbox.isChecked() for name, item in self.sources.items()}
+            item.toggle.blockSignals(False)
+        states = {name: item.is_checked() for name, item in self.sources.items()}
         self.source_changed.emit(states)
-        self.update_select_all_button()
+        self.update_toggle_all_button()
 
     def get_selected_sources(self):
-        return {name: item.checkbox.isChecked() for name, item in self.sources.items()}
-
-    def on_search_mode_changed(self, button):
-        if button == self.name_radio:
-            self.search_mode = 'name'
-        elif button == self.id_radio:
-            self.search_mode = 'id'
-        elif button == self.both_radio:
-            self.search_mode = 'both'
-        self.search_mode_changed.emit(self.search_mode)
+        return {name: item.is_checked() for name, item in self.sources.items()}
 
     def get_search_mode(self):
         return self.search_mode
 
     def set_search_mode(self, mode):
         self.search_mode = mode
-        if mode == 'name':
-            self.name_radio.setChecked(True)
-        elif mode == 'id':
-            self.id_radio.setChecked(True)
-        elif mode == 'both':
-            self.both_radio.setChecked(True)
-
-    def get_stylesheet(self):
-        return """
-            SourceCard {
-                background-color: #0f0f0f;
-                border-radius: 12px;
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                margin: 4px 0px;
-            }
-            QLabel#sourceCardTitle {
-                color: #00BFAE;
-                font-size: 14px;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-            QLabel#searchModeTitle {
-                color: #00BFAE;
-                font-size: 13px;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                margin-bottom: 4px;
-            }
-            QPushButton#selectAllBtn {
-                background-color: transparent;
-                color: #00BFAE;
-                border: 1px solid rgba(0, 191, 174, 0.3);
-                border-radius: 6px;
-                padding: 4px 12px;
-                font-size: 11px;
-                font-weight: 500;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-            QPushButton#selectAllBtn:hover {
-                background-color: rgba(0, 191, 174, 0.1);
-                border-color: rgba(0, 191, 174, 0.5);
-            }
-            QPushButton#selectAllBtn:pressed {
-                background-color: rgba(0, 191, 174, 0.2);
-            }
-            QRadioButton#searchModeRadio {
-                color: #F0F0F0;
-                font-size: 12px;
-                font-weight: 500;
-                spacing: 8px;
-                padding: 6px 12px;
-                border-radius: 6px;
-                background-color: #0f0f0f;
-                border: 1px solid rgba(255, 255, 255, 0.08);
-            }
-            QRadioButton#searchModeRadio:hover {
-                background-color: #121212;
-                border-color: rgba(0, 191, 174, 0.4);
-            }
-            QRadioButton#searchModeRadio:checked {
-                background-color: #121212;
-                border-color: #00BFAE;
-                color: #00BFAE;
-                font-weight: 600;
-            }
-            QRadioButton#searchModeRadio::indicator {
-                width: 0px;
-                height: 0px;
-                margin: 0px;
-            }
-        """
+        for btn, sid in zip(self.segment_buttons, ["name", "id", "both"]):
+            btn.blockSignals(True)
+            btn.setChecked(sid == mode)
+            btn.update_style()
+            btn.blockSignals(False)

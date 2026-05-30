@@ -1,327 +1,256 @@
 """SourceItem Component - Individual source selection widget"""
 
 import os
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QCheckBox, QGraphicsDropShadowEffect
-from PyQt6.QtGui import QPixmap, QPainter, QColor
-from PyQt6.QtCore import Qt, QRectF
+from PyQt6.QtWidgets import QWidget, QHBoxLayout, QLabel
+from PyQt6.QtGui import QPixmap, QPainter, QColor, QPen
+from PyQt6.QtCore import Qt, QRectF, pyqtSignal, QPropertyAnimation, QEasingCurve, pyqtProperty
 from PyQt6.QtSvg import QSvgRenderer
 
 
+class ToggleSwitch(QWidget):
+    """macOS-style toggle switch with smooth animation."""
+
+    toggled = pyqtSignal(bool)
+
+    def __init__(self, accent_color="#00BFAE", parent=None):
+        super().__init__(parent)
+        self.setFixedSize(40, 22)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._checked = True
+        self._knob_pos = 1.0
+        self._on_color = QColor(accent_color)
+        self._off_color = QColor(72, 72, 77)
+        self._animation = QPropertyAnimation(self, b"knob_pos", self)
+        self._animation.setDuration(200)
+        self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+    def set_accent_color(self, color):
+        self._on_color = QColor(color)
+        self.update()
+
+    def get_knob_pos(self):
+        return self._knob_pos
+
+    def set_knob_pos(self, value):
+        self._knob_pos = value
+        self.update()
+
+    knob_pos = pyqtProperty(float, get_knob_pos, set_knob_pos)
+
+    def _animate_to(self, checked):
+        self._animation.stop()
+        target = 1.0 if checked else 0.0
+        self._animation.setStartValue(self._knob_pos)
+        self._animation.setEndValue(target)
+        self._animation.start()
+
+    def isChecked(self):
+        return self._checked
+
+    def setChecked(self, checked):
+        if self._checked != checked:
+            self._checked = checked
+            self._animate_to(checked)
+            self.toggled.emit(checked)
+
+    def toggle(self):
+        self.setChecked(not self._checked)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.toggle()
+        super().mouseReleaseEvent(event)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        w = self.width()
+        h = self.height()
+        track_h = 20
+        track_y = (h - track_h) / 2
+        radius = track_h / 2
+
+        knob_pos = self._knob_pos
+        knob_diam = h - 4
+        min_knob_x = 2
+        max_knob_x = w - knob_diam - 2
+
+        if self._checked:
+            t = knob_pos
+        else:
+            t = 1.0 - knob_pos
+
+        on_color = self._on_color
+        off_color = self._off_color
+        if knob_pos > 0.01:
+            r = int(off_color.red() + (on_color.red() - off_color.red()) * knob_pos)
+            g = int(off_color.green() + (on_color.green() - off_color.green()) * knob_pos)
+            b = int(off_color.blue() + (on_color.blue() - off_color.blue()) * knob_pos)
+            track_color = QColor(r, g, b)
+        else:
+            track_color = off_color
+
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(track_color)
+        painter.drawRoundedRect(QRectF(0, track_y, w, track_h), radius, radius)
+
+        knob_pos_x = min_knob_x + (max_knob_x - min_knob_x) * knob_pos
+        painter.setBrush(QColor(255, 255, 255))
+        painter.setPen(QPen(QColor(0, 0, 0, 30), 0.5))
+        painter.drawEllipse(QRectF(knob_pos_x, 1, knob_diam, knob_diam))
+
+        painter.end()
+
+
 class SourceItem(QWidget):
-    """Component for individual source selection with icon and checkbox"""
+    """Component for individual source selection with toggle and icon."""
 
     def __init__(self, source_name, icon_path, parent=None):
         super().__init__(parent)
         self.source_name = source_name
         self.icon_path = icon_path
-        self.checked = True
+        self._checked = True
+        self.accent_hex = self.get_accent_color(self.source_name)
+        self.accent_color = QColor(self.accent_hex)
         self.init_ui()
 
     def init_ui(self):
+        self.setFixedHeight(42)
+
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setContentsMargins(10, 0, 10, 0)
         layout.setSpacing(10)
-
-        self.icon_container = QWidget()
-        self.icon_container.setFixedSize(40, 40)
-        self.icon_container.setObjectName("sourceIconContainer")
-
-        icon_layout = QVBoxLayout(self.icon_container)
-        icon_layout.setContentsMargins(0, 0, 0, 0)
-        icon_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
         self.icon_label = QLabel()
-        self.icon_label.setFixedSize(24, 24)
+        self.icon_label.setFixedSize(22, 22)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.set_icon(self.icon_path)
-        icon_layout.addWidget(self.icon_label)
+        layout.addWidget(self.icon_label)
 
-        self.checkbox = QCheckBox(self.source_name)
-        self.checkbox.setChecked(self.checked)
-        self.checkbox.setObjectName("sourceCheckbox")
+        self.name_label = QLabel(self.source_name)
+        self.name_label.setObjectName("sourceItemName")
+        layout.addWidget(self.name_label, 1)
 
-        layout.addWidget(self.icon_container)
-        layout.addWidget(self.checkbox, 1)
+        self.toggle = ToggleSwitch(accent_color=self.accent_hex)
+        self.toggle.setChecked(self._checked)
+        self.toggle.toggled.connect(self.on_toggled)
+        layout.addWidget(self.toggle, alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
-        self.checkbox.stateChanged.connect(self.on_state_changed)
-
-        self.accent_hex = self.get_accent_color(self.source_name)
-        self.accent_color = QColor(self.accent_hex)
-        self.apply_accent_styles()
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.setToolTip(f"Search {self.source_name}")
+        self.setToolTip(f"Toggle {self.source_name}")
 
-        try:
-            shadow = QGraphicsDropShadowEffect(self.icon_container)
-            shadow.setBlurRadius(12)
-            shadow.setOffset(0, 2)
-            c = QColor(self.accent_color)
-            c.setAlpha(80)
-            shadow.setColor(c)
-            self.icon_container.setGraphicsEffect(shadow)
-        except ImportError:
-            pass
-
-        self.setStyleSheet(self.get_stylesheet())
         self.update_visual_state()
 
     def set_icon(self, icon_path):
-        icon_styles = {
-            "pacman": {"text": "●", "color": "#0073e1", "size": "16px", "bg_color": "rgba(0, 115, 225, 0.15)"},
-            "aur": {"text": "▲", "color": "#ff9955", "size": "14px", "bg_color": "rgba(255, 153, 85, 0.15)"},
-            "flatpak": {"text": "📦", "color": "#4CAF50", "size": "14px", "bg_color": "rgba(76, 175, 80, 0.15)"},
-            "npm": {"text": "◆", "color": "#cb3837", "size": "14px", "bg_color": "rgba(203, 56, 55, 0.15)"},
-            "local": {"text": "🏠", "color": "#00BFAE", "size": "14px", "bg_color": "rgba(0, 191, 174, 0.15)"}
-        }
-
         source_key = self.source_name.lower()
-        if source_key in icon_styles:
-            style = icon_styles[source_key]
-            self.icon_label.setText(style["text"])
-            self.icon_label.setStyleSheet(f"""
-                QLabel {{
-                    font-size: {style["size"]};
-                    color: {style["color"]};
-                    font-weight: bold;
-                    background-color: {style["bg_color"]};
-                    border-radius: 12px;
-                    padding: 4px;
-                    border: 1px solid {style["color"]};
-                    text-align: center;
-                }}
-            """)
-        else:
-            self._set_fallback_icon()
 
-        if self._try_load_svg_properly(icon_path):
+        if self._try_load_svg(icon_path):
             return
 
-    def _try_load_svg(self, icon_path):
-        try:
-            if not os.path.exists(icon_path):
-                return False
-            with open(icon_path, 'r', encoding='utf-8') as f:
-                svg_content = f.read()
-            import re
-            svg_content = re.sub(r'xmlns:inkscape="[^"]*"', '', svg_content)
-            svg_content = re.sub(r'xmlns:sodipodi="[^"]*"', '', svg_content)
-            svg_content = re.sub(r'<sodipodi:namedview[^>]*>.*?</sodipodi:namedview>', '', svg_content, flags=re.DOTALL)
-            svg_content = re.sub(r'<defs[^>]*>\s*</defs>', '', svg_content)
-            svg_content = re.sub(r'inkscape:[^=]*="[^"]*"', '', svg_content)
-            svg_content = re.sub(r'sodipodi:[^=]*="[^"]*"', '', svg_content)
-            svg_renderer = QSvgRenderer()
-            if not svg_renderer.load(svg_content.encode('utf-8')):
-                return False
-            if svg_renderer.isValid():
-                size = 32
-                pixmap = QPixmap(size, size)
-                pixmap.fill(QColor(255, 255, 255, 0))
-                painter = QPainter(pixmap)
-                painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-                painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
-                painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
-                painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
-                svg_renderer.render(painter, QRectF(0, 0, size, size))
-                painter.end()
-                final_pixmap = pixmap.scaled(24, 24, Qt.AspectRatioMode.KeepAspectRatio,
-                                           Qt.TransformationMode.SmoothTransformation)
-                if not final_pixmap.isNull():
-                    self.icon_label.setPixmap(final_pixmap)
-                    self.icon_label.setStyleSheet("""
-                        QLabel { background-color: transparent; border: none; }
-                    """)
-                    return True
-            return False
-        except Exception:
-            return False
+        icon_styles = {
+            "pacman": {"text": "", "color": "#4FC3F7"},
+            "aur": {"text": "", "color": "#FF8A65"},
+            "flatpak": {"text": "", "color": "#26A69A"},
+            "npm": {"text": "", "color": "#E53935"},
+            "local": {"text": "", "color": "#00BFAE"},
+        }
 
-    def _try_load_svg_properly(self, icon_path):
+        style = icon_styles.get(source_key, {"text": "●", "color": "#8B8D97"})
+        self.icon_label.setText(style["text"])
+        self.icon_label.setStyleSheet(f"""
+            QLabel {{
+                font-size: 14px;
+                color: {style["color"]};
+                background: transparent;
+                border: none;
+            }}
+        """)
+
+    def _try_load_svg(self, icon_path):
         try:
             if not os.path.exists(icon_path):
                 return False
             svg_renderer = QSvgRenderer(icon_path)
             if not svg_renderer.isValid():
                 return False
-            pixmap = QPixmap(32, 32)
+            size = 22
+            pixmap = QPixmap(size, size)
             pixmap.fill(Qt.GlobalColor.transparent)
             painter = QPainter(pixmap)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-            svg_renderer.render(painter)
+            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+            svg_renderer.render(painter, QRectF(0, 0, size, size))
             painter.end()
-            final_pixmap = pixmap.scaled(24, 24, Qt.AspectRatioMode.KeepAspectRatio,
-                                       Qt.TransformationMode.SmoothTransformation)
-            if not final_pixmap.isNull():
-                self.icon_label.setText("")
-                self.icon_label.setPixmap(final_pixmap)
-                self.icon_label.setStyleSheet("""
-                    QLabel {
-                        background-color: transparent;
-                        border: none;
-                        padding: 0px;
-                        margin: 0px;
-                    }
-                """)
+            if not pixmap.isNull():
+                self.icon_label.setPixmap(pixmap)
+                self.icon_label.setStyleSheet("background: transparent; border: none; padding: 0; margin: 0;")
                 return True
             return False
         except Exception:
             return False
-
-    def _set_fallback_icon(self):
-        emoji_map = {"pacman": "📦", "aur": "🧡", "flatpak": "📱", "npm": "💚", "node": "💚"}
-        fallback_emoji = emoji_map.get(self.source_name.lower(), "📦")
-        self.icon_label.setText(fallback_emoji)
-        self.icon_label.setStyleSheet("font-size: 16px; color: white;")
-
-    def _try_svg_fallback(self, icon_path):
-        try:
-            if not os.path.exists(icon_path):
-                return
-            pixmap = QPixmap(24, 24)
-            pixmap.fill(Qt.GlobalColor.transparent)
-            painter = QPainter(pixmap)
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-            color_map = {"pacman": QColor("#0073e1"), "aur": QColor("#ff9955"),
-                         "flatpak": QColor("#4A90E2"), "npm": QColor("#68A063")}
-            color = color_map.get(self.source_name.lower(), QColor("#ffffff"))
-            painter.setBrush(color)
-            painter.setPen(Qt.PenStyle.NoPen)
-            if self.source_name.lower() == "pacman":
-                painter.drawEllipse(2, 2, 20, 20)
-                painter.setBrush(QColor("#000000"))
-                painter.drawPie(2, 2, 20, 20, 0, 90 * 16)
-            elif self.source_name.lower() == "aur":
-                from PyQt6.QtGui import QPolygon
-                from PyQt6.QtCore import QPoint
-                triangle = QPolygon([QPoint(12, 2), QPoint(22, 20), QPoint(2, 20)])
-                painter.drawPolygon(triangle)
-            elif self.source_name.lower() == "npm":
-                painter.drawRoundedRect(2, 2, 20, 20, 4, 4)
-            else:
-                painter.drawRoundedRect(2, 2, 20, 20, 2, 2)
-            painter.end()
-        except Exception:
-            pass
-
-    def on_state_changed(self, state):
-        self.checked = state == Qt.CheckState.Checked
-        self.update_visual_state()
-
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            try:
-                pos = event.position().toPoint()
-            except AttributeError:
-                pos = event.pos()
-            if not self.checkbox.geometry().contains(pos):
-                self.checkbox.toggle()
-        super().mouseReleaseEvent(event)
-
-    def keyPressEvent(self, event):
-        if event.key() in (Qt.Key.Key_Space, Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            if not self.checkbox.hasFocus():
-                self.checkbox.toggle()
-                return
-        super().keyPressEvent(event)
 
     def get_accent_color(self, name):
         n = name.lower()
         mapping = {"pacman": "#4FC3F7", "aur": "#FF8A65", "flatpak": "#26A69A", "npm": "#E53935"}
         return mapping.get(n, "#00BFAE")
 
-    def apply_accent_styles(self):
-        r, g, b = self.accent_color.red(), self.accent_color.green(), self.accent_color.blue()
-        self.checkbox.setStyleSheet(
-            f"""
-            QCheckBox#sourceCheckbox {{
-                color: #F0F0F0;
-                font-size: 13px;
-                font-weight: 600;
-                spacing: 8px;
-            }}
-            QCheckBox#sourceCheckbox::indicator {{
-                width: 20px;
-                height: 20px;
-                border-radius: 10px;
-                border: 2px solid rgba({r}, {g}, {b}, 0.4);
-                background-color: rgba(42, 45, 51, 0.8);
-            }}
-            QCheckBox#sourceCheckbox::indicator:checked {{
-                background-color: {self.accent_hex};
-                border: 2px solid {self.accent_hex};
-            }}
-            QCheckBox#sourceCheckbox::indicator:hover {{
-                border-color: rgba({r}, {g}, {b}, 0.8);
-            }}
-            """
-        )
+    def on_toggled(self, state):
+        self._checked = state
+        self.update_visual_state()
 
     def update_visual_state(self):
-        if self.checked:
-            r, g, b = self.accent_color.red(), self.accent_color.green(), self.accent_color.blue()
-            self.icon_container.setStyleSheet(
-                f"""
-                QWidget#sourceIconContainer {{
-                    background-color: rgba({r}, {g}, {b}, 0.14);
-                    border: 1px solid rgba({r}, {g}, {b}, 0.4);
-                    border-radius: 12px;
+        if self._checked:
+            self.setStyleSheet(f"""
+                SourceItem {{
+                    background-color: rgba({self.accent_color.red()}, {self.accent_color.green()}, {self.accent_color.blue()}, 0.06);
+                    border-radius: 8px;
+                    border: 1px solid rgba({self.accent_color.red()}, {self.accent_color.green()}, {self.accent_color.blue()}, 0.15);
                 }}
-                """
-            )
+                QLabel#sourceItemName {{
+                    color: #5C5E66;
+                    font-size: 13px;
+                    font-weight: 500;
+                    background: transparent;
+                    border: none;
+                }}
+            """)
         else:
-            self.icon_container.setStyleSheet("""
-                QWidget#sourceIconContainer {
-                    background-color: rgba(42, 45, 51, 0.3);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 12px;
+            self.setStyleSheet("""
+                SourceItem {
+                    background-color: transparent;
+                    border-radius: 8px;
+                    border: 1px solid transparent;
+                }
+                QLabel#sourceItemName {
+                    color: #5C5E66;
+                    font-size: 13px;
+                    font-weight: 500;
+                    background: transparent;
+                    border: none;
                 }
             """)
 
-    def get_stylesheet(self):
-        return """
-            SourceItem {
-                background-color: transparent;
-                border-radius: 12px;
-                margin: 2px 0px;
-            }
-            SourceItem:hover {
-                background-color: rgba(0, 191, 174, 0.05);
-                border-radius: 12px;
-            }
-            QCheckBox#sourceCheckbox {
-                color: #F0F0F0;
-                font-size: 13px;
-                font-weight: 500;
-                spacing: 8px;
-            }
-            QCheckBox#sourceCheckbox::indicator {
-                width: 20px;
-                height: 20px;
-                border-radius: 10px;
-                border: 2px solid rgba(0, 191, 174, 0.4);
-                background-color: rgba(42, 45, 51, 0.8);
-            }
-            QCheckBox#sourceCheckbox::indicator:checked {
-                background-color: #00BFAE;
-                border: 2px solid #00BFAE;
-            }
-            QCheckBox#sourceCheckbox::indicator:unchecked {
-                background-color: rgba(42, 45, 51, 0.8);
-            }
-            QCheckBox#sourceCheckbox::indicator:hover {
-                border-color: rgba(0, 191, 174, 0.8);
-            }
-            QWidget#sourceIconContainer {
-                background-color: rgba(0, 191, 174, 0.1);
-                border: 1px solid rgba(0, 191, 174, 0.3);
-                border-radius: 12px;
-            }
-        """
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            pos = event.position().toPoint() if hasattr(event, 'position') else event.pos()
+            child = self.childAt(pos)
+            if child is not self.toggle:
+                self.toggle.toggle()
+        super().mouseReleaseEvent(event)
+
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key.Key_Space, Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            self.toggle.toggle()
+            return
+        super().keyPressEvent(event)
 
     def is_checked(self):
-        return self.checked
+        return self._checked
 
     def set_checked(self, checked):
-        self.checked = checked
-        self.checkbox.setChecked(checked)
+        self._checked = checked
+        self.toggle.setChecked(checked)
         self.update_visual_state()

@@ -14,11 +14,10 @@ from PyQt6.QtWidgets import (
     QPlainTextEdit, QComboBox, QCheckBox, QMenu, QAbstractItemView,
 )
 from PyQt6.QtCore import Qt, QObject, QTimer, QPoint
-from PyQt6.QtGui import QPixmap, QPainter, QColor
-from PyQt6.QtSvg import QSvgRenderer
-from PyQt6.QtCore import QRectF
+from PyQt6.QtGui import QCursor
 
 from neoarch.resources.paths import ICONS_DIR
+from neoarch.frontend.components.feature_card import FeatureCard
 
 __all__ = ["DockerManager"]
 
@@ -35,120 +34,46 @@ class DockerManager(QObject):
         self.docker_section = None
         self.recent_containers_label = None
         self.recent_containers_list = None
+        self._container_count = 0
         self.create_docker_section()
 
     def create_docker_section(self):
         """Create and add the Docker section UI to the sources layout."""
         self.docker_section = QWidget()
-        docker_layout = QVBoxLayout(self.docker_section)
-        docker_layout.setContentsMargins(0, 8, 0, 0)
-        docker_layout.setSpacing(10)
+        self.docker_section.setObjectName("dockerSectionWrapper")
+        wrapper_layout = QVBoxLayout(self.docker_section)
+        wrapper_layout.setContentsMargins(0, 6, 0, 0)
+        wrapper_layout.setSpacing(4)
 
-        docker_label = QLabel("Docker Containers")
-        docker_label.setObjectName("sectionLabel")
-        docker_label.setStyleSheet("font-size: 11px; margin-bottom: 4px;")
-        docker_layout.addWidget(docker_label)
+        self._card = FeatureCard()
+        docker_icon = os.path.join(str(ICONS_DIR), "discover", "docker.svg")
+        self._update_badge()
+        self._card.build_header(docker_icon, "Docker Containers", self._container_count or None)
+        self._card.build_primary_action("Run Container", self.install_from_docker)
+        self._card.build_action_grid([
+            ("List", "list", self.list_docker_containers),
+            ("Stop", "stop", self.show_stop_menu),
+            ("Shell", "shell", self.show_shell_menu),
+            ("Clean", "clean", self.clean_docker_containers),
+        ])
+        wrapper_layout.addWidget(self._card)
 
-        install_docker_container = QWidget()
-        install_docker_layout = QHBoxLayout(install_docker_container)
-        install_docker_layout.setContentsMargins(0, 0, 0, 0)
-        install_docker_layout.setSpacing(8)
-
-        docker_icon_label = QLabel()
-        docker_icon_path = ICONS_DIR / "discover" / "docker.svg"
-        try:
-            svg_renderer = QSvgRenderer(str(docker_icon_path))
-            if svg_renderer.isValid():
-                pixmap = QPixmap(20, 20)
-                if pixmap.isNull():
-                    docker_icon_label.setText("\U0001f433")
-                    docker_icon_label.setStyleSheet("font-size: 14px; color: white;")
-                else:
-                    pixmap.fill(Qt.GlobalColor.transparent)
-                    painter = QPainter(pixmap)
-                    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-                    svg_renderer.render(painter, QRectF(pixmap.rect()))
-                    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
-                    painter.fillRect(pixmap.rect(), QColor("white"))
-                    painter.end()
-                    docker_icon_label.setPixmap(pixmap)
-            else:
-                docker_icon_label.setText("\U0001f433")
-        except OSError:
-            docker_icon_label.setText("\U0001f433")
-
-        install_docker_layout.addWidget(docker_icon_label)
-
-        install_docker_btn = QPushButton("Run from Docker")
-        install_docker_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent; color: #F0F0F0;
-                border: 1px solid rgba(0, 191, 174, 0.3); border-radius: 6px;
-                padding: 6px 10px; font-size: 11px; font-weight: 500;
+        self.recent_containers_label = QLabel("Containers")
+        self.recent_containers_label.setObjectName("dockerRecentLabel")
+        self.recent_containers_label.setStyleSheet("""
+            QLabel#dockerRecentLabel {
+                color: #5C5E66;
+                font-size: 9px;
+                font-weight: 500;
+                padding: 2px 14px 0 14px;
+                background: transparent;
+                border: none;
             }
-            QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
-            QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
         """)
-        install_docker_btn.clicked.connect(self.install_from_docker)
-        install_docker_layout.addWidget(install_docker_btn)
-        docker_layout.addWidget(install_docker_container)
-
-        secondary_buttons_widget = QWidget()
-        secondary_layout = QHBoxLayout(secondary_buttons_widget)
-        secondary_layout.setContentsMargins(0, 0, 0, 0)
-        secondary_layout.setSpacing(4)
-
-        list_btn = QPushButton("\U0001f4cb List")
-        list_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent; color: #F0F0F0;
-                border: 1px solid rgba(0, 191, 174, 0.15); border-radius: 4px;
-                padding: 6px 10px; font-size: 10px; text-align: center;
-            }
-            QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.35); color: #00BFAE; }
-        """)
-        list_btn.clicked.connect(self.list_docker_containers)
-        secondary_layout.addWidget(list_btn)
-
-        stop_btn = QPushButton("\u23f9\ufe0f Stop")
-        stop_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent; color: #F0F0F0;
-                border: 1px solid rgba(0, 191, 174, 0.15); border-radius: 4px;
-                padding: 6px 10px; font-size: 10px; text-align: center;
-            }
-            QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.35); color: #FF6B6B; }
-        """)
-        stop_btn.clicked.connect(self.show_stop_menu)
-        secondary_layout.addWidget(stop_btn)
-
-        clean_btn = QPushButton("\U0001f5d1\ufe0f Clean")
-        clean_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent; color: #F0F0F0;
-                border: 1px solid rgba(0, 191, 174, 0.15); border-radius: 4px;
-                padding: 6px 10px; font-size: 10px; text-align: center;
-            }
-            QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.35); color: #FF6B6B; }
-        """)
-        clean_btn.clicked.connect(self.clean_docker_containers)
-        secondary_layout.addWidget(clean_btn)
-        docker_layout.addWidget(secondary_buttons_widget)
-
-        self.recent_containers_label = QLabel("Containers:")
-        self.recent_containers_label.setStyleSheet("color: #C9C9C9; font-size: 10px; margin-top: 4px;")
-        docker_layout.addWidget(self.recent_containers_label)
+        wrapper_layout.addWidget(self.recent_containers_label)
 
         self.recent_containers_list = QListWidget()
-        self.recent_containers_list.setStyleSheet("""
-            QListWidget {
-                background-color: rgba(42, 45, 51, 0.4);
-                border: 1px solid rgba(0, 191, 174, 0.15);
-                color: #F0F0F0; font-size: 10px; max-height: 85px;
-            }
-            QListWidget::item:hover { background-color: rgba(0, 191, 174, 0.15); }
-            QListWidget::item:selected { background-color: rgba(0, 191, 174, 0.25); }
-        """)
+        self.recent_containers_list.setObjectName("dockerRecentList")
         self.recent_containers_list.itemDoubleClicked.connect(self.open_container_logs)
         self.recent_containers_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.recent_containers_list.customContextMenuRequested.connect(self.show_container_menu)
@@ -157,10 +82,69 @@ class DockerManager(QObject):
         except Exception:
             pass
         self.recent_containers_list.setVisible(False)
-        docker_layout.addWidget(self.recent_containers_list)
+        self.recent_containers_list.setStyleSheet("""
+            QListWidget#dockerRecentList {
+                background-color: transparent;
+                border: none;
+                color: #8B8D97;
+                font-size: 10px;
+                max-height: 72px;
+                padding: 0 14px 4px 14px;
+            }
+            QListWidget#dockerRecentList::item {
+                padding: 3px 6px;
+                border-radius: 4px;
+            }
+            QListWidget#dockerRecentList::item:hover {
+                background-color: rgba(255, 255, 255, 0.04);
+                color: #EDEDEF;
+            }
+            QListWidget#dockerRecentList::item:selected {
+                background-color: rgba(0, 191, 174, 0.12);
+                color: #00BFAE;
+            }
+        """)
+        wrapper_layout.addWidget(self.recent_containers_list)
 
         self.sources_layout.addWidget(self.docker_section)
         self.load_containers(include_all=True)
+
+    def _update_badge(self):
+        """Count active containers for the header badge."""
+        try:
+            result = subprocess.run(
+                ["docker", "ps", "-q"],
+                capture_output=True, text=True, timeout=10,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                self._container_count = len(result.stdout.strip().split('\n'))
+            else:
+                self._container_count = 0
+        except Exception:
+            self._container_count = 0
+
+    def show_shell_menu(self):
+        """Show a menu to select a container and open a shell."""
+        menu = QMenu()
+        menu.setStyleSheet("""
+            QMenu { background-color: #2A2D33; color: #F0F0F0; border: 1px solid rgba(0,191,174,0.3); }
+            QMenu::item:selected { background-color: rgba(0,191,174,0.2); }
+        """)
+        try:
+            result = subprocess.run(
+                ["docker", "ps", "--format", "{{.Names}}"],
+                capture_output=True, text=True, timeout=10,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                names = result.stdout.strip().split('\n')
+                for name in names:
+                    action = menu.addAction(name)
+                    action.triggered.connect(lambda checked=False, n=name: self.open_container_shell(n))
+            else:
+                menu.addAction("No running containers").setEnabled(False)
+        except Exception:
+            menu.addAction("No running containers").setEnabled(False)
+        menu.exec(QCursor.pos())
 
     def install_from_docker(self):
         """Open the advanced Docker run dialog."""
@@ -172,56 +156,174 @@ class DockerManager(QObject):
         dialog = QDialog()
         dialog.setWindowTitle("Run Container from Docker Image")
         dialog.setModal(True)
-        dialog.setStyleSheet("QDialog { background-color: #1E1E1E; color: #F0F0F0; border: 1px solid rgba(0, 191, 174, 0.2); }")
+        dialog.setMinimumWidth(480)
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: rgba(18, 19, 22, 0.98);
+                color: #EDEDEF;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 14px;
+            }
+        """)
         layout = QVBoxLayout(dialog)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(12)
 
-        title = QLabel("Run Application from Docker Image")
-        title.setStyleSheet("font-size: 16px; font-weight: bold; color: #00BFAE;")
+        title = QLabel("Run Container from Docker Image")
+        title.setStyleSheet("""
+            font-size: 15px;
+            font-weight: 600;
+            color: #EDEDEF;
+            background: transparent;
+            border: none;
+        """)
         layout.addWidget(title)
 
         image_input = QLineEdit()
         image_input.setPlaceholderText("nginx:latest or user/app:v1.0")
-        image_input.setStyleSheet("QLineEdit { background-color: rgba(42,45,51,0.8); color:#F0F0F0; border:2px solid rgba(0,191,174,0.2); border-radius:6px; padding:8px 12px; font-size:14px; } QLineEdit:focus { border-color:#00BFAE; }")
-        layout.addWidget(QLabel("Image"))
+        image_input.setStyleSheet("""
+            QLineEdit {
+                background-color: rgba(28, 30, 36, 0.9);
+                color: #EDEDEF;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 10px;
+                padding: 10px 14px;
+                font-size: 13px;
+                selection-background-color: rgba(0, 191, 174, 0.3);
+            }
+            QLineEdit:focus {
+                border-color: rgba(0, 191, 174, 0.5);
+            }
+        """)
+        def _input_style():
+            return """
+                QLineEdit {
+                    background-color: rgba(28, 30, 36, 0.9);
+                    color: #EDEDEF;
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 8px;
+                    padding: 8px 12px;
+                    font-size: 12px;
+                    selection-background-color: rgba(0, 191, 174, 0.3);
+                }
+                QLineEdit:focus {
+                    border-color: rgba(0, 191, 174, 0.4);
+                }
+            """
+
+        def _plain_style():
+            return """
+                QPlainTextEdit {
+                    background-color: rgba(28, 30, 36, 0.9);
+                    color: #EDEDEF;
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 8px;
+                    padding: 6px 8px;
+                    font-size: 12px;
+                    selection-background-color: rgba(0, 191, 174, 0.3);
+                }
+                QPlainTextEdit:focus {
+                    border-color: rgba(0, 191, 174, 0.4);
+                }
+            """
+
+        def _field_label(text):
+            lbl = QLabel(text)
+            lbl.setStyleSheet("color: #8B8D97; font-size: 11px; font-weight: 500; background: transparent; border: none; margin-top: 4px;")
+            return lbl
+
+        layout.addWidget(_field_label("Image"))
         layout.addWidget(image_input)
 
         name_input = QLineEdit()
         name_input.setPlaceholderText("optional container name")
-        name_input.setStyleSheet("QLineEdit { background-color: rgba(42,45,51,0.8); color:#F0F0F0; border:2px solid rgba(0,191,174,0.2); border-radius:6px; padding:6px 10px; font-size:12px; } QLineEdit:focus { border-color:#00BFAE; }")
-        layout.addWidget(QLabel("Name"))
+        name_input.setStyleSheet(_input_style())
+        layout.addWidget(_field_label("Name"))
         layout.addWidget(name_input)
 
         ports_edit = QPlainTextEdit()
         ports_edit.setPlaceholderText("8080:80\n127.0.0.1:2222:22/tcp")
-        ports_edit.setFixedHeight(70)
-        ports_edit.setStyleSheet("QPlainTextEdit { background-color: rgba(42,45,51,0.8); color:#F0F0F0; border:2px solid rgba(0,191,174,0.2); border-radius:6px; }")
-        layout.addWidget(QLabel("Ports (one per line: host:container[/proto])"))
+        ports_edit.setFixedHeight(60)
+        ports_edit.setStyleSheet(_plain_style())
+        layout.addWidget(_field_label("Ports (host:container[/proto])"))
         layout.addWidget(ports_edit)
 
         vols_edit = QPlainTextEdit()
         vols_edit.setPlaceholderText("/host/path:/container/path:ro\n~/data:/var/lib/data:rw")
-        vols_edit.setFixedHeight(80)
-        vols_edit.setStyleSheet("QPlainTextEdit { background-color: rgba(42,45,51,0.8); color:#F0F0F0; border:2px solid rgba(0,191,174,0.2); border-radius:6px; }")
-        layout.addWidget(QLabel("Volumes (one per line: host:container[:ro|rw])"))
+        vols_edit.setFixedHeight(60)
+        vols_edit.setStyleSheet(_plain_style())
+        layout.addWidget(_field_label("Volumes (host:container[:ro|rw])"))
         layout.addWidget(vols_edit)
 
         env_edit = QPlainTextEdit()
         env_edit.setPlaceholderText("KEY=value\nMODE=prod")
-        env_edit.setFixedHeight(80)
-        env_edit.setStyleSheet("QPlainTextEdit { background-color: rgba(42,45,51,0.8); color:#F0F0F0; border:2px solid rgba(0,191,174,0.2); border-radius:6px; }")
-        layout.addWidget(QLabel("Environment (one per line: KEY=VALUE)"))
+        env_edit.setFixedHeight(60)
+        env_edit.setStyleSheet(_plain_style())
+        layout.addWidget(_field_label("Environment (KEY=VALUE)"))
         layout.addWidget(env_edit)
 
         opt_row = QHBoxLayout()
+        opt_row.setSpacing(8)
         restart_combo = QComboBox()
         restart_combo.addItems(["no", "always", "unless-stopped", "on-failure"])
+        restart_combo.setStyleSheet("""
+            QComboBox {
+                background-color: rgba(28, 30, 36, 0.9);
+                color: #EDEDEF;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 8px;
+                padding: 6px 10px;
+                font-size: 11px;
+                min-width: 100px;
+            }
+            QComboBox:focus {
+                border-color: rgba(0, 191, 174, 0.4);
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border: none;
+            }
+            QComboBox QAbstractItemView {
+                background-color: rgba(22, 23, 26, 0.98);
+                color: #EDEDEF;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 6px;
+                selection-background-color: rgba(0, 191, 174, 0.15);
+                outline: none;
+            }
+        """)
         detach_chk = QCheckBox("Detach")
         detach_chk.setChecked(True)
+        detach_chk.setStyleSheet("""
+            QCheckBox {
+                color: #C9C9CD;
+                font-size: 11px;
+                spacing: 6px;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border-radius: 4px;
+                border: 1.5px solid #5C5E66;
+                background-color: rgba(28, 30, 36, 0.9);
+            }
+            QCheckBox::indicator:checked {
+                background-color: #00BFAE;
+                border-color: #00BFAE;
+            }
+            QCheckBox::indicator:hover {
+                border-color: #00BFAE;
+            }
+        """)
         priv_chk = QCheckBox("Privileged")
+        priv_chk.setStyleSheet(detach_chk.styleSheet())
         gpu_chk = QCheckBox("GPU")
-        opt_row.addWidget(QLabel("Restart"))
+        gpu_chk.setStyleSheet(detach_chk.styleSheet())
+        opt_row.addWidget(_field_label("Restart"))
         opt_row.addWidget(restart_combo)
         opt_row.addStretch()
         opt_row.addWidget(detach_chk)
@@ -231,15 +333,25 @@ class DockerManager(QObject):
 
         cmd_input = QLineEdit()
         cmd_input.setPlaceholderText("optional command and args")
-        cmd_input.setStyleSheet("QLineEdit { background-color: rgba(42,45,51,0.8); color:#F0F0F0; border:2px solid rgba(0,191,174,0.2); border-radius:6px; padding:6px 10px; font-size:12px; } QLineEdit:focus { border-color:#00BFAE; }")
-        layout.addWidget(QLabel("Command"))
+        cmd_input.setStyleSheet(_input_style())
+        layout.addWidget(_field_label("Command"))
         layout.addWidget(cmd_input)
 
         preview = QPlainTextEdit()
         preview.setReadOnly(True)
-        preview.setFixedHeight(80)
-        preview.setStyleSheet("QPlainTextEdit { background-color: rgba(42,45,51,0.6); color:#CFCFCF; border:1px solid rgba(0,191,174,0.15); border-radius:6px; }")
-        layout.addWidget(QLabel("Preview"))
+        preview.setFixedHeight(64)
+        preview.setStyleSheet("""
+            QPlainTextEdit {
+                background-color: rgba(14, 14, 16, 0.8);
+                color: #5C5E66;
+                border: 1px solid rgba(255, 255, 255, 0.04);
+                border-radius: 8px;
+                padding: 6px 8px;
+                font-size: 11px;
+                font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+            }
+        """)
+        layout.addWidget(_field_label("Preview"))
         layout.addWidget(preview)
 
         def build_preview():
@@ -293,10 +405,27 @@ class DockerManager(QObject):
         btn_row = QHBoxLayout()
         btn_row.addStretch()
         cancel_btn = QPushButton("Cancel")
+        cancel_btn.setFixedHeight(34)
         cancel_btn.clicked.connect(dialog.reject)
+        cancel_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #8B8D97;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 8px;
+                padding: 0 20px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.04);
+                color: #EDEDEF;
+            }
+        """)
         btn_row.addWidget(cancel_btn)
         run_btn = QPushButton("Run Container")
         run_btn.setDefault(True)
+        run_btn.setFixedHeight(34)
 
         def on_run():
             self.proceed_advanced_run(
@@ -308,6 +437,23 @@ class DockerManager(QObject):
                 priv_chk.isChecked(), gpu_chk.isChecked(), cmd_input.text().strip(), dialog
             )
         run_btn.clicked.connect(on_run)
+        run_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #00BFAE;
+                color: #0C0C0E;
+                border: none;
+                border-radius: 8px;
+                padding: 0 20px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #00D4C1;
+            }
+            QPushButton:pressed {
+                background-color: #009688;
+            }
+        """)
         btn_row.addWidget(run_btn)
         layout.addLayout(btn_row)
         dialog.exec()
@@ -554,6 +700,9 @@ class DockerManager(QObject):
                     self.recent_containers_list.setVisible(False)
         except Exception as e:
             self.log_signal.emit(f"Error loading containers: {e}")
+        self._update_badge()
+        if hasattr(self, '_card') and self._card is not None:
+            self._card.set_badge(self._container_count or None)
 
     def stop_docker_containers(self, only_running=True):
         """Stop Docker containers."""
