@@ -135,6 +135,14 @@ def _get_brand_icon_path():
     return candidates[-1]
 
 
+# ── Sidebar color constants ──
+_C = {
+    "text_sec": "#8B8D97",
+    "text_muted": "#5C5E66",
+    "accent": "#00BFAE",
+}
+
+
 class ArchPkgManagerUniGetUI(QMainWindow):
     packages_ready = pyqtSignal(list)
     discover_results_ready = pyqtSignal(list)
@@ -232,6 +240,22 @@ class ArchPkgManagerUniGetUI(QMainWindow):
 
     def on_large_search_requested(self, query):
         """Handle search request from large search box"""
+        # Handle special dashboard actions
+        if query == "__UPDATE_ALL__":
+            self.log("Update All triggered from dashboard")
+            if self.current_view != "updates":
+                self.switch_view("updates")
+            self.perform_update_all()
+            return
+        if query == "__REFRESH_DB__":
+            self.log("Refreshing databases…")
+            self.refresh_packages()
+            return
+        if query == "__CLEAN_CACHE__":
+            self.log("Cleaning package cache…")
+            self.clean_cache()
+            return
+
         try:
             self.search_input.blockSignals(True)
             self.search_input.setText(query)
@@ -240,7 +264,6 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 self.search_input.blockSignals(False)
             except Exception:
                 pass
-        # Ensure user can continue typing seamlessly in the top search field
         try:
             self.search_input.setFocus()
             self.search_input.setCursorPosition(len(query))
@@ -384,212 +407,177 @@ class ArchPkgManagerUniGetUI(QMainWindow):
     
     def create_sidebar(self):
         sidebar = QWidget()
-        sidebar.setFixedWidth(180)  # Increased to accommodate larger logo and text
+        sidebar.setFixedWidth(200)
         sidebar.setMinimumHeight(650)
         sidebar.setObjectName("sidebar")
-        
+
         layout = QVBoxLayout(sidebar)
-        layout.setContentsMargins(12, 16, 12, 0)
-        layout.setSpacing(16)  # Increased spacing between cards
-        
-        # Header
-        header_widget = QWidget()
-        header_layout = QVBoxLayout(header_widget)
-        header_layout.setContentsMargins(8, 8, 8, 8)  # Add padding for better spacing
-        header_layout.setSpacing(8)  # Spacing between logo and text
-        
-        # Logo on the left - larger and more prominent
+        layout.setContentsMargins(10, 18, 10, 14)
+        layout.setSpacing(2)
+
+        # ── Brand header ──
+        header = QHBoxLayout()
+        header.setContentsMargins(10, 0, 10, 12)
+        header.setSpacing(10)
+
         logo_label = QLabel()
+        logo_label.setObjectName("sidebarLogo")
+        logo_label.setFixedSize(28, 28)
         logo_path = os.path.join(_BASE_DIR, "assets", "icons", "NeoarchLogo.svg")
         try:
-            if logo_path.endswith('.svg'):
-                # Handle SVG files
-                renderer = QSvgRenderer(logo_path)
-                if renderer.isValid():
-                    pixmap = QPixmap(40, 40)
-                    pixmap.fill(Qt.GlobalColor.transparent)
-                    painter = QPainter(pixmap)
-                    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-                    renderer.render(painter, QRectF(0, 0, 40, 40))
-                    painter.end()
-                    logo_label.setPixmap(pixmap)
-                else:
-                    logo_label.setText("🖥️")
-                    logo_label.setStyleSheet("font-size: 24px; color: white;")
+            r = QSvgRenderer(logo_path)
+            if r.isValid():
+                pm = QPixmap(28, 28)
+                pm.fill(Qt.GlobalColor.transparent)
+                p = QPainter(pm)
+                p.setRenderHint(QPainter.RenderHint.Antialiasing)
+                r.render(p, QRectF(0, 0, 28, 28))
+                p.end()
+                logo_label.setPixmap(pm)
             else:
-                # Handle raster images
-                pixmap = QPixmap(logo_path)
-                if not pixmap.isNull():
-                    # Scale logo to 40px for better balance with text
-                    scaled_pixmap = pixmap.scaledToWidth(40, Qt.TransformationMode.SmoothTransformation)
-                    logo_label.setPixmap(scaled_pixmap)
-                else:
-                    logo_label.setText("🖥️")
-                    logo_label.setStyleSheet("font-size: 24px; color: white;")
-        except OSError:
-            # Handle file loading or parsing errors
-            self.log("Error loading logo")
-            logo_label.setText("🖥️")
-            logo_label.setStyleSheet("font-size: 24px; color: white;")
-        
+                logo_label.setText("⬡")
+        except Exception:
+            logo_label.setText("⬡")
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        logo_label.setFixedWidth(40)
-        header_layout.addWidget(logo_label)
-        
-        # Text container on the right - expanded to take remaining space
-        text_widget = QWidget()
-        text_layout = QVBoxLayout(text_widget)
-        text_layout.setContentsMargins(0, 0, 0, 0)  # Minimal left padding
-        text_layout.setSpacing(2)  # Minimal spacing between title and subtitle
-        
-        # Title - larger and more prominent
-        title_label = QLabel("NeoArch")
-        title_label.setStyleSheet("""
-            font-size: 16px; 
-            font-weight: 700; 
-            color: #FFFFFF; 
-            background: transparent;
-            letter-spacing: 0.2px;
-        """)
-        title_label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
-        text_layout.addWidget(title_label)
-        
-        # Subtitle - improved visibility and size
-        subtitle_label = QLabel("Elevate Your Arch Experience")
-        subtitle_label.setStyleSheet("""
-            font-size: 9px; 
-            color: #D5D5D5; 
-            background: transparent; 
-            line-height: 1.2;
-            font-weight: 400;
-        """)
-        subtitle_label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
-        subtitle_label.setWordWrap(True)  # Allow wrapping for multi-line text
-        text_layout.addWidget(subtitle_label)
-        
-        header_layout.addWidget(text_widget)  # Give it stretch factor of 1 to take remaining space
-        
-        layout.addWidget(header_widget)
-        
-        # Spacer
-        layout.addSpacing(8)  # Adjusted spacing for horizontal header
-        
-        # Navigation buttons with icons
+        header.addWidget(logo_label)
+
+        brand = QVBoxLayout()
+        brand.setSpacing(1)
+        t = QLabel("NeoArch")
+        t.setObjectName("sidebarTitle")
+        brand.addWidget(t)
+        s = QLabel("Package Manager")
+        s.setObjectName("sidebarSubtitle")
+        brand.addWidget(s)
+        header.addLayout(brand)
+        header.addStretch()
+        layout.addLayout(header)
+
+        # ── Section: Main ──
+        sec_main = QLabel("  MAIN")
+        sec_main.setObjectName("sidebarSection")
+        layout.addWidget(sec_main)
+
         nav_items = [
-            (os.path.join(_BASE_DIR, "assets", "icons", "discover.svg"), "Discover", "discover"),
-            (os.path.join(_BASE_DIR, "assets", "icons", "updates.svg"), "Updates", "updates"), 
-            (os.path.join(_BASE_DIR, "assets", "icons", "installed.svg"), "Installed", "installed"),
-            (os.path.join(_BASE_DIR, "assets", "icons", "plugins.svg"), "Plugins", "plugins"),
-            (os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"), "Bundles", "bundles")
+            ("🏠", "Home", "discover"),
+            ("🔍", "Search", "search"),
+            ("📦", "Installed", "installed"),
+            ("⬆", "Updates", "updates"),
         ]
-        
+
         self.nav_buttons = {}
-        
-        for icon_path, text, view_id in nav_items:
-            btn = self.create_nav_button(icon_path, text, view_id)
+        for emoji, text, view_id in nav_items:
+            btn = self._create_sidebar_btn(emoji, text, view_id)
             self.nav_buttons[view_id] = btn
             layout.addWidget(btn)
-        
+
+        # ── Section: System ──
+        sec_sys = QLabel("  SYSTEM")
+        sec_sys.setObjectName("sidebarSection")
+        layout.addWidget(sec_sys)
+
+        sys_items = [
+            ("📡", "Sources", "plugins"),
+            ("⚙", "Settings", "settings"),
+        ]
+        for emoji, text, view_id in sys_items:
+            btn = self._create_sidebar_btn(emoji, text, view_id)
+            self.nav_buttons[view_id] = btn
+            layout.addWidget(btn)
+
         layout.addStretch()
-        
-        # Bottom section with card-style buttons
-        bottom_layout = QVBoxLayout()
-        bottom_layout.setContentsMargins(0, 0, 0, 20)
-        bottom_layout.setSpacing(12)  # Consistent spacing
-        
-        # Settings button - card style
-        settings_btn = self.create_bottom_card_button(os.path.join(_BASE_DIR, "assets", "icons", "settings.svg"), "Settings", self.show_settings)
-        bottom_layout.addWidget(settings_btn)
-        
-        # About button - card style
-        about_btn = self.create_bottom_card_button(os.path.join(_BASE_DIR, "assets", "icons", "about.svg"), "About", self.show_about)
-        bottom_layout.addWidget(about_btn)
-        
-        layout.addLayout(bottom_layout)
-        
+
+        # ── Footer ──
+        footer = QHBoxLayout()
+        footer.setContentsMargins(10, 0, 10, 0)
+        about_btn = QPushButton("About")
+        about_btn.setFlat(True)
+        about_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        about_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: transparent; border: none;
+                color: {_C['text_muted']}; font-size: 11px; font-weight: 400;
+                padding: 4px 0;
+            }}
+            QPushButton:hover {{ color: {_C['text_sec']}; }}
+        """)
+        about_btn.clicked.connect(self.show_about)
+        footer.addWidget(about_btn)
+        footer.addStretch()
+
+        ver = QLabel("v1.0")
+        ver.setStyleSheet(f"color: {_C['text_muted']}; font-size: 10px; background: transparent;")
+        footer.addWidget(ver)
+        layout.addLayout(footer)
+
         return sidebar
     
-    def create_nav_button(self, icon_path, text, view_id):
+    def _create_sidebar_btn(self, emoji: str, text: str, view_id: str) -> QPushButton:
         btn = QPushButton()
-        btn.setObjectName("navBtn")
-        btn.setProperty("view_id", view_id)
+        btn.setObjectName("sidebarBtn")
         btn.setCheckable(True)
-        
-        # Create vertical layout for icon + text
-        layout = QVBoxLayout(btn)
-        layout.setContentsMargins(12, 16, 12, 16)  # Balanced padding
-        layout.setSpacing(6)  # Space between icon and text
-        
-        # Icon container to support badge overlay
-        icon_container = QWidget()
-        icon_container.setFixedSize(50, 50)
-        icon_container.setObjectName("navIconContainer")
-        try:
-            icon_container.setStyleSheet("background-color: transparent;")
-        except Exception:
-            pass
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.setFixedHeight(38)
 
+        lay = QHBoxLayout(btn)
+        lay.setContentsMargins(12, 0, 12, 0)
+        lay.setSpacing(10)
 
-        # Absolute children in container
-        icon_label = QLabel(icon_container)
-        icon_label.setObjectName("navIcon")
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon_label.setGeometry(0, 0, 50, 50)
+        icon = QLabel(emoji)
+        icon.setObjectName("sidebarNavIcon")
+        icon.setFixedWidth(20)
+        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon.setStyleSheet("font-size: 14px; background: transparent;")
+        lay.addWidget(icon)
 
-        # Try to load and render SVG in white
-        pixmap = self.get_svg_icon(icon_path, 50).pixmap(50, 50)
-        if pixmap and not pixmap.isNull():
-            icon_label.setPixmap(pixmap)
-        else:
-            # Fallback to black icon or emoji
-            icon = QIcon(icon_path)
-            if not icon.isNull():
-                icon_label.setPixmap(icon.pixmap(50, 50))
-            else:
-                emoji = self.get_fallback_icon(icon_path)
-                icon_label.setText(emoji)
+        label = QLabel(text)
+        label.setObjectName("sidebarLabel")
+        label.setStyleSheet("background: transparent;")
+        lay.addWidget(label, 1)
 
-        # Small badge for Updates
+        # Badge for Updates
         if view_id == "updates":
-            try:
-                badge = QLabel("", icon_container)
-                badge.setObjectName("navBadge")
-                badge.setFixedSize(18, 18)
-                badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                badge.setStyleSheet(
-                    """
-                    QLabel#navBadge {
-                        background-color: #E53935;
-                        color: white;
-                        border-radius: 9px;
-                        font-size: 10px;
-                        font-weight: 700;
-                    }
-                    """
-                )
-                # Position top-right over the icon (container is 50x50, badge 18x18)
-                badge.move(32, 0)
-                badge.setVisible(False)
-                self.nav_badges[view_id] = badge
-            except Exception:
-                pass
+            badge = QLabel()
+            badge.setObjectName("navBadge")
+            badge.setFixedHeight(18)
+            badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            badge.setVisible(False)
+            badge.setStyleSheet(f"""
+                QLabel#navBadge {{
+                    background-color: {_C['accent']};
+                    color: #0C0C0E;
+                    border-radius: 8px;
+                    font-size: 10px;
+                    font-weight: 700;
+                    padding: 0 6px;
+                    min-width: 16px;
+                }}
+            """)
+            lay.addWidget(badge)
+            self.nav_badges["updates"] = badge
 
-        layout.addWidget(icon_container, alignment=Qt.AlignmentFlag.AlignCenter)
-        
-        # Text label - below icon
-        text_label = QLabel(text)
-        text_label.setObjectName("navText")
-        text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Center align text
-        layout.addWidget(text_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        
-        layout.addStretch()
-        
-        btn.clicked.connect(lambda checked, v=view_id: self.switch_view(v))
-        
+        btn.clicked.connect(lambda checked=False, v=view_id: self._handle_nav(v))
         return btn
+
+    def _handle_nav(self, view_id: str):
+        if view_id == "search":
+            self.switch_view("discover")
+            self.nav_buttons["search"].setChecked(True)
+            self.nav_buttons["discover"].setChecked(False)
+            self.search_input.setFocus()
+            self.search_input.selectAll()
+            return
+        self.switch_view(view_id)
 
     def set_updates_count(self, count):
         """Update the updates count in nav and header."""
+        # Update dashboard counter if visible
+        try:
+            if hasattr(self, 'large_search_box'):
+                n = int(count) if count is not None else 0
+                self.large_search_box.refresh_counts(updates=n)
+        except Exception:
+            pass
         # Update badge on nav button
         badge = self.nav_badges.get("updates")
         if badge is not None:
@@ -1030,7 +1018,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         
         splitter.setCollapsible(0, True)
         splitter.setCollapsible(1, False)
-        splitter.setSizes([200, 950])
+        splitter.setSizes([180, 1000])
         
         layout.addWidget(splitter, 1)
         
@@ -1038,47 +1026,55 @@ class ArchPkgManagerUniGetUI(QMainWindow):
     
     def create_header(self):
         header = QFrame()
-        header.setStyleSheet(Styles.get_header_stylesheet())
-        header.setFixedHeight(70)
-        
+        header.setObjectName("appHeader")
+        header.setFixedHeight(60)
+
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(20, 0, 20, 0)
-        
-        # Icon label (hidden by default)
+        layout.setContentsMargins(24, 0, 24, 0)
+        layout.setSpacing(12)
+
         self.header_icon = QLabel()
-        try:
-            self.header_icon.setFixedSize(32, 32)
-        except Exception:
-            pass
+        self.header_icon.setFixedSize(24, 24)
         self.header_icon.setVisible(False)
         layout.addWidget(self.header_icon)
-        
-        self.header_label = QLabel("🔄 Software Updates")
+
+        self.header_label = QLabel("Home")
         self.header_label.setObjectName("headerLabel")
         layout.addWidget(self.header_label)
-        
-        self.header_info = QLabel("24 packages were found, 24 of which match the specified filters")
-        self.header_info.setStyleSheet("color: #a0a0a0; font-size: 12px;")
+
+        self.header_info = QLabel("Dashboard and package discovery")
+        self.header_info.setObjectName("headerInfo")
         layout.addWidget(self.header_info)
-        
+
         layout.addStretch()
-        
+
         search_input = QLineEdit()
-        search_input.setPlaceholderText("Search for packages")
-        search_input.setFixedWidth(250)
+        search_input.setPlaceholderText("Quick search…")
+        search_input.setFixedWidth(220)
         search_input.setFixedHeight(36)
         self.search_input = search_input
         layout.addWidget(search_input)
-        
+
         refresh_btn = QPushButton()
         refresh_btn.setFixedSize(36, 36)
+        refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
-        
-        refresh_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "refresh.svg"), 20))
+        refresh_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "refresh.svg"), 18))
         refresh_btn.setToolTip("Refresh")
         refresh_btn.clicked.connect(self.refresh_packages)
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(28, 30, 36, 0.75);
+                border: 1px solid rgba(255,255,255,0.06);
+                border-radius: 10px;
+            }
+            QPushButton:hover {
+                background-color: rgba(34, 36, 42, 0.85);
+                border-color: rgba(255,255,255,0.12);
+            }
+        """)
         layout.addWidget(refresh_btn)
-        
+
         return header
     
     def show_docker_install_dialog(self):
@@ -1242,41 +1238,66 @@ class ArchPkgManagerUniGetUI(QMainWindow):
     def create_filters_panel(self):
         self.filters_panel = QFrame()
         self.filters_panel.setStyleSheet(Styles.get_filters_panel_stylesheet())
-        
+
         layout = QVBoxLayout(self.filters_panel)
-        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setContentsMargins(10, 16, 10, 16)
         layout.setSpacing(12)
-        
+
         self.sources_section = QWidget()
         self.sources_layout = QVBoxLayout(self.sources_section)
         self.sources_layout.setContentsMargins(0, 0, 0, 0)
-        self.sources_layout.setSpacing(8)
-        
+        self.sources_layout.setSpacing(6)
+
         self.sources_title_label = QLabel("Sources")
         self.sources_title_label.setObjectName("sectionLabel")
         self.sources_layout.addWidget(self.sources_title_label)
-        
+
+        self.sources_layout.addSpacing(4)
+
         sources = ["pacman", "AUR", "Flatpak"]
         self.source_checkboxes = {}
         for source in sources:
             checkbox = QCheckBox(source)
             checkbox.setChecked(True)
             self.source_checkboxes[source] = checkbox
+            checkbox.setStyleSheet(f"""
+                QCheckBox {{
+                    color: #EDEDEF;
+                    font-size: 12px;
+                    font-weight: 500;
+                    spacing: 8px;
+                    padding: 4px 0;
+                }}
+                QCheckBox::indicator {{
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 4px;
+                    border: 1.5px solid #5C5E66;
+                    background-color: rgba(18, 19, 22, 0.8);
+                }}
+                QCheckBox::indicator:checked {{
+                    background-color: #00BFAE;
+                    border: 1.5px solid #00BFAE;
+                }}
+                QCheckBox::indicator:hover {{
+                    border-color: #00BFAE;
+                }}
+            """)
             self.sources_layout.addWidget(checkbox)
-        
+
         layout.addWidget(self.sources_section)
-        
-        layout.addSpacing(12)
-        
+
+        layout.addSpacing(8)
+
         # Filters Section
         self.filters_section = QWidget()
         self.filters_layout = QVBoxLayout(self.filters_section)
         self.filters_layout.setContentsMargins(0, 0, 0, 0)
-        self.filters_layout.setSpacing(8)
-        
+        self.filters_layout.setSpacing(6)
+
         layout.addWidget(self.filters_section)
         layout.addStretch()
-        
+
         return self.filters_panel
     
     def create_packages_panel(self):
@@ -1313,7 +1334,22 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         # Cancel button for installation
         self.cancel_install_btn = QPushButton("Cancel Installation")
         self.cancel_install_btn.setMinimumHeight(36)
-        self.cancel_install_btn.setVisible(False)  # Hidden by default
+        self.cancel_install_btn.setVisible(False)
+        self.cancel_install_btn.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(220, 50, 50, 0.15);
+                color: #FF6B6B;
+                border: 1px solid rgba(220, 50, 50, 0.3);
+                border-radius: 10px;
+                padding: 8px 18px;
+                font-size: 13px;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background-color: rgba(220, 50, 50, 0.25);
+                border-color: rgba(220, 50, 50, 0.5);
+            }
+        """)
         self.cancel_install_btn.clicked.connect(self.cancel_installation)
         
         # Container for loading widget and cancel button (centered both axes)
@@ -1335,10 +1371,10 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         nr_layout.setSpacing(8)
         self.no_results_title = QLabel("No results found")
         self.no_results_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.no_results_title.setStyleSheet("color: #c0c0c0; font-size: 18px; font-weight: 600;")
+        self.no_results_title.setStyleSheet("color: #8B8D97; font-size: 18px; font-weight: 600; background: transparent;")
         self.no_results_desc = QLabel("")
         self.no_results_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.no_results_desc.setStyleSheet("color: #9aa0a6; font-size: 13px;")
+        self.no_results_desc.setStyleSheet("color: #5C5E66; font-size: 13px; background: transparent;")
         nr_layout.addWidget(self.no_results_title)
         nr_layout.addWidget(self.no_results_desc)
         self.no_results_widget.setVisible(False)
@@ -1448,63 +1484,40 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             layout = QHBoxLayout()
             layout.setSpacing(12)
             
+            btn_style = f"""
+                QPushButton {{
+                    background-color: rgba(28, 30, 36, 0.75);
+                    color: #EDEDEF;
+                    border: 1px solid rgba(255,255,255,0.06);
+                    border-radius: 10px;
+                    padding: 8px 18px;
+                    font-size: 13px;
+                    font-weight: 500;
+                }}
+                QPushButton:hover {{
+                    background-color: rgba(34, 36, 42, 0.85);
+                    border-color: rgba(255,255,255,0.12);
+                }}
+                QPushButton:pressed {{
+                    background-color: rgba(38, 40, 48, 0.9);
+                }}
+            """
+
             update_btn = QPushButton("Update Selected")
             update_btn.setMinimumHeight(36)
-            update_btn.setStyleSheet(
-                """
-                QPushButton {
-                    background-color: transparent;
-                    color: #F0F0F0;
-                    border: 1px solid rgba(0, 191, 174, 0.3);
-                    border-radius: 6px;
-                    padding: 6px 12px;
-                    font-size: 12px;
-                    font-weight: 500;
-                }
-                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
-                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
-                """
-            )
+            update_btn.setStyleSheet(btn_style)
             update_btn.clicked.connect(self.update_selected)
             layout.addWidget(update_btn)
-            
+
             ignore_btn = QPushButton("Ignore Selected")
             ignore_btn.setMinimumHeight(36)
-            ignore_btn.setStyleSheet(
-                """
-                QPushButton {
-                    background-color: transparent;
-                    color: #F0F0F0;
-                    border: 1px solid rgba(0, 191, 174, 0.3);
-                    border-radius: 6px;
-                    padding: 6px 12px;
-                    font-size: 12px;
-                    font-weight: 500;
-                }
-                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
-                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
-                """
-            )
+            ignore_btn.setStyleSheet(btn_style)
             ignore_btn.clicked.connect(self.ignore_selected)
             layout.addWidget(ignore_btn)
-            
+
             manage_btn = QPushButton("Manage Ignored")
             manage_btn.setMinimumHeight(36)
-            manage_btn.setStyleSheet(
-                """
-                QPushButton {
-                    background-color: transparent;
-                    color: #F0F0F0;
-                    border: 1px solid rgba(0, 191, 174, 0.3);
-                    border-radius: 6px;
-                    padding: 6px 12px;
-                    font-size: 12px;
-                    font-weight: 500;
-                }
-                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
-                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
-                """
-            )
+            manage_btn.setStyleSheet(btn_style)
             manage_btn.clicked.connect(self.manage_ignored)
             layout.addWidget(manage_btn)
             
@@ -1847,10 +1860,9 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         headers = {
             "updates": (os.path.join(_BASE_DIR, "assets", "icons", "discover", "update12.svg"), "Software Updates", ""),
             "installed": (os.path.join(_BASE_DIR, "assets", "icons", "discover", "installed.svg"), "Installed Packages", ""),
-            "discover": (os.path.join(_BASE_DIR, "assets", "icons", "discover", "search.svg"), "Discover Packages", "Search and discover new packages to install"),
-            "bundles": (os.path.join(_BASE_DIR, "assets", "icons", "discover", "bundle.svg"), "Package Bundles", "Manage package bundles"),
-            "plugins": (os.path.join(_BASE_DIR, "assets", "icons", "plugins.svg"), "Plugins", "Extensions and system tools"),
-            "settings": (os.path.join(_BASE_DIR, "assets", "icons", "settings.svg"), "Settings", "Configure NeoArch settings and plugins"),
+            "discover": (os.path.join(_BASE_DIR, "assets", "icons", "discover", "search.svg"), "Home", "Dashboard and package discovery"),
+            "plugins": (os.path.join(_BASE_DIR, "assets", "icons", "plugins.svg"), "Sources & Plugins", "Manage package sources and extensions"),
+            "settings": (os.path.join(_BASE_DIR, "assets", "icons", "settings.svg"), "Settings", "Configure NeoArch settings"),
         }
         
         header_data = headers.get(view_id, ("NeoArch", ""))
@@ -3209,8 +3221,37 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 self.search_discover_packages(query)
             else:
                 self.package_table.setRowCount(0)
-                # Removed verbose log: self.log("Type a package name to search in AUR and official repositories")
-    
+
+    def perform_update_all(self):
+        """Update all available packages."""
+        self.log("Updating all packages…")
+        if self.current_view != "updates":
+            self.switch_view("updates")
+        QTimer.singleShot(500, lambda: self._do_update_all())
+
+    def _do_update_all(self):
+        """Check all update checkboxes and trigger update."""
+        for row in range(self.package_table.rowCount()):
+            checkbox = self.get_row_checkbox(row)
+            if checkbox is not None:
+                checkbox.setChecked(True)
+        self.update_selected()
+
+    def clean_cache(self):
+        """Clean pacman package cache."""
+        self.log("Cleaning package cache…")
+        try:
+            result = subprocess.run(
+                ["sudo", "pacman", "-Sc", "--noconfirm"],
+                capture_output=True, text=True, timeout=60
+            )
+            if result.returncode == 0:
+                self.log("Cache cleaned successfully.")
+            else:
+                self.log(f"Cache clean: {result.stderr.strip()}")
+        except Exception as e:
+            self.log(f"Cache clean failed: {e}")
+
     def update_selected(self):
         packages_by_source = {}
         for row in range(self.package_table.rowCount()):
@@ -4317,11 +4358,7 @@ def on_tick(app):
             self.console_label.setVisible(new_state)
         except Exception:
             pass
-        try:
-            if getattr(self, 'current_view', None) == "discover" and hasattr(self, 'large_search_box'):
-                self.large_search_box.set_compact_mode(new_state)
-        except Exception:
-            pass
+
         try:
             if hasattr(self, 'console_toggle_btn'):
                 self.console_toggle_btn.setToolTip("Hide Console" if new_state else "Show Console")
