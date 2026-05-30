@@ -21,8 +21,77 @@ _TEXT_MUTED = "#5C5E66"
 
 DARK_STYLESHEET = f"""
 QMainWindow {{
-    background-color: {_BG};
+    background-color: transparent;
     color: {_TEXT};
+}}
+
+QWidget#appOuter {{
+    background-color: transparent;
+}}
+
+QFrame#appWindow {{
+    background-color: rgba(12, 12, 14, 0.75);
+    border: 1px solid rgba(0, 191, 174, 0.2);
+    border-radius: 14px;
+}}
+
+/* ── Title Bar ─────────────────────────────────────────────────── */
+QWidget#appTitleBar {{
+    background-color: transparent;
+    border-bottom: 1px solid {_BORDER};
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+}}
+
+QLabel#titleBarLabel {{
+    color: {_TEXT_SEC};
+    font-size: 13px;
+    font-weight: 500;
+}}
+
+/* ── Traffic Light Controls (macOS style) ──────────────────────── */
+QPushButton#titleBarCloseBtn,
+QPushButton#titleBarMinBtn,
+QPushButton#titleBarMaxBtn {{
+    border: none;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 0;
+}}
+
+/* Close – red */
+QPushButton#titleBarCloseBtn {{
+    background-color: #FF5F57;
+    color: transparent;
+}}
+QPushButton#titleBarCloseBtn:hover {{
+    background-color: #FF5F57;
+    color: rgba(80, 20, 20, 0.7);
+}}
+
+/* Minimize – yellow */
+QPushButton#titleBarMinBtn {{
+    background-color: #FEBC2E;
+    color: transparent;
+}}
+QPushButton#titleBarMinBtn:hover {{
+    background-color: #FEBC2E;
+    color: rgba(120, 80, 10, 0.7);
+}}
+
+/* Maximize – green */
+QPushButton#titleBarMaxBtn {{
+    background-color: #29C840;
+    color: transparent;
+}}
+QPushButton#titleBarMaxBtn:hover {{
+    background-color: #29C840;
+    color: rgba(10, 70, 20, 0.7);
+}}
+
+QWidget#appBody {{
+    background-color: transparent;
 }}
 
 QWidget {{

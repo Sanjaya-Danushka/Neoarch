@@ -19,12 +19,13 @@ from PyQt6.QtWidgets import (
     QLabel, QPushButton, QLineEdit, QTextEdit, QTableWidget,
     QTableWidgetItem, QHeaderView, QCheckBox, QFrame, QSplitter,
     QScrollArea, QMessageBox, QFileDialog, QGroupBox, QGridLayout,
-    QSpinBox, QSizePolicy, QTabWidget,
+    QSpinBox, QSizePolicy, QTabWidget, QGraphicsDropShadowEffect,
+    QMenu,
 )
 from PyQt6.QtCore import Qt, QTimer, QSize, QRectF, QObject, pyqtSignal, QItemSelectionModel
 from PyQt6.QtGui import (
     QFont, QColor, QPixmap, QPainter, QIcon, QFontMetrics,
-    QImage, QAction,
+    QImage, QAction, QActionGroup, QKeySequence,
 )
 
 from PyQt6.QtSvg import QSvgRenderer
@@ -143,6 +144,86 @@ _C = {
 }
 
 
+class _TitleBar(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("appTitleBar")
+        self.setFixedHeight(40)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(14, 0, 14, 0)
+        layout.setSpacing(6)
+
+        # App icon + name
+        icon_label = QLabel()
+        icon_label.setFixedSize(18, 18)
+        icon_path = _get_brand_icon_path()
+        if os.path.exists(icon_path):
+            pm = QPixmap(icon_path).scaled(18, 18, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            icon_label.setPixmap(pm)
+        icon_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        layout.addWidget(icon_label)
+
+        title = QLabel("NeoArch")
+        title.setObjectName("titleBarLabel")
+        title.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        layout.addWidget(title)
+
+        layout.addStretch()
+
+        # macOS-style traffic light buttons on the right
+        self.min_btn = self._create_traffic_light("─", "titleBarMinBtn")
+        self.max_btn = self._create_traffic_light("□", "titleBarMaxBtn")
+        self.close_btn = self._create_traffic_light("✕", "titleBarCloseBtn")
+
+        self.min_btn.clicked.connect(self._minimize)
+        self.max_btn.clicked.connect(self._maximize)
+        self.close_btn.clicked.connect(self._close)
+
+        layout.addWidget(self.min_btn)
+        layout.addWidget(self.max_btn)
+        layout.addWidget(self.close_btn)
+
+    def _create_traffic_light(self, symbol, obj_name):
+        btn = QPushButton(symbol)
+        btn.setObjectName(obj_name)
+        btn.setFixedSize(14, 14)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        return btn
+
+    def _minimize(self):
+        self.window().showMinimized()
+
+    def _maximize(self):
+        w = self.window()
+        if w.isMaximized():
+            w.showNormal()
+        else:
+            w.showMaximized()
+
+    def _close(self):
+        self.window().close()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            w = self.window().windowHandle()
+            if w:
+                w.startSystemMove()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            w = self.window()
+            if w.isMaximized():
+                w.showNormal()
+            else:
+                w.showMaximized()
+            event.accept()
+        else:
+            super().mouseDoubleClickEvent(event)
+
 class ArchPkgManagerUniGetUI(QMainWindow):
     packages_ready = pyqtSignal(list)
     discover_results_ready = pyqtSignal(list)
@@ -159,6 +240,8 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         self.setGeometry(100, 100, 1600, 900)  # Increased width to accommodate sidebar
         self.setMinimumSize(1200, 800)  # Set minimum size
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setStyleSheet(Styles.get_dark_stylesheet())
         icon_path = _get_brand_icon_path()
         if os.path.exists(icon_path):
@@ -237,6 +320,24 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         except Exception:
             pass
         QTimer.singleShot(1500, self.run_first_run_checks)
+
+    def contextMenuEvent(self, event):
+        menu = QMenu(self)
+        restore_act = menu.addAction("Restore")
+        min_act = menu.addAction("Minimize")
+        max_act = menu.addAction("Maximize")
+        menu.addSeparator()
+        close_act = menu.addAction("Close")
+        action = menu.exec(event.globalPos())
+        if action == restore_act:
+            self.showNormal()
+        elif action == min_act:
+            self.showMinimized()
+        elif action == max_act:
+            self.showMaximized() if not self.isMaximized() else self.showNormal()
+        elif action == close_act:
+            self.close()
+        event.accept()
 
     def on_large_search_requested(self, query):
         """Handle search request from large search box"""
@@ -387,20 +488,48 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         self.move(x, y)
     
     def setup_ui(self):
-        central_widget = QWidget()
-        central_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.setCentralWidget(central_widget)
-        main_layout = QHBoxLayout(central_widget)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
-        
-        # Left Sidebar
+        # Outer container with margins for glow visibility
+        outer = QWidget()
+        outer.setObjectName("appOuter")
+        self.setCentralWidget(outer)
+        outer_layout = QVBoxLayout(outer)
+        outer_layout.setContentsMargins(12, 12, 12, 12)
+        outer_layout.setSpacing(0)
+
+        # Content wrapper with glow border effect
+        wrapper = QFrame()
+        wrapper.setObjectName("appWindow")
+
+        glow = QGraphicsDropShadowEffect(wrapper)
+        glow.setBlurRadius(28)
+        glow.setOffset(0, 0)
+        glow.setColor(QColor(0, 191, 174, 60))
+        wrapper.setGraphicsEffect(glow)
+
+        outer_layout.addWidget(wrapper)
+
+        wrapper_layout = QVBoxLayout(wrapper)
+        wrapper_layout.setContentsMargins(0, 0, 0, 0)
+        wrapper_layout.setSpacing(0)
+
+        # Custom title bar
+        title_bar = _TitleBar()
+        wrapper_layout.addWidget(title_bar)
+
+        # Body: sidebar + content
+        body = QWidget()
+        body.setObjectName("appBody")
+        body_layout = QHBoxLayout(body)
+        body_layout.setContentsMargins(0, 0, 0, 0)
+        body_layout.setSpacing(0)
+
         sidebar = self.create_sidebar()
-        main_layout.addWidget(sidebar)
-        
-        # Main Content Area
+        body_layout.addWidget(sidebar)
+
         content = self.create_content_area()
-        main_layout.addWidget(content, 1)
+        body_layout.addWidget(content, 1)
+
+        wrapper_layout.addWidget(body, 1)
         
         # Ensure proper sizing
         self.adjustSize()
