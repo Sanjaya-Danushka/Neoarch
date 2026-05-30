@@ -5,7 +5,7 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/opt/neoarch/Aurora/scheduled_update.py
+ExecStart=/opt/neoarch/Neoarch/scheduled_update.py
 User=%U
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=/home/%U/.Xauthority

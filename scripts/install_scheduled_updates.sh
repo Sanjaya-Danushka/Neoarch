@@ -13,8 +13,8 @@ fi
 # Copy service and timer files to systemd directory
 echo "Installing systemd service and timer..."
 
-sudo cp neoarch-update.service /etc/systemd/system/
-sudo cp neoarch-update.timer /etc/systemd/system/
+sudo cp packaging/neoarch-update.service /etc/systemd/system/
+sudo cp packaging/neoarch-update.timer /etc/systemd/system/
 
 # Reload systemd daemon
 sudo systemctl daemon-reload

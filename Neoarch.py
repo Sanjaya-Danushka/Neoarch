@@ -3532,7 +3532,7 @@ def install_packages(app, packages_by_source: dict):
                                 error_text = f"Error: {error_output}"
                                 if "Cannot change ownership" in error_output and "Value too large for defined data type" in error_output:
                                     error_text += "\n\nThis error occurs when tar tries to set file ownership to UIDs/GIDs that don't exist in the current environment.\n"
-                                    error_text += "To fix this, you can modify the PKGBUILD to add '--no-same-owner' to the tar command.\n"
+                                    error_text += "To fix this, you can modify packaging/PKGBUILD to add '--no-same-owner' to the tar command.\n"
                                     error_text += "For example, change 'tar -xzf file.tar.gz' to 'tar -xzf file.tar.gz --no-same-owner'"
                                 worker.error.emit(error_text)
                 finally:
