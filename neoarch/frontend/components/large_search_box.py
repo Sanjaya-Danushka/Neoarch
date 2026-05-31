@@ -3,41 +3,41 @@
 from __future__ import annotations
 
 import os
-import re
 import subprocess
-import datetime
-
-import psutil
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit,
-    QLabel, QFrame, QProgressBar, QGraphicsDropShadowEffect,
-    QGridLayout,
+    QLabel, QFrame, QGraphicsDropShadowEffect,
 )
-from PyQt6.QtCore import pyqtSignal, Qt, QTimer, QRectF, QSize
-from PyQt6.QtGui import QColor, QPixmap, QPainter, QResizeEvent
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QRectF
+from PyQt6.QtGui import QColor, QIcon, QPixmap, QPainter
 from PyQt6.QtSvg import QSvgRenderer
 
 from neoarch.resources.paths import PROJECT_ROOT
 
-# ── Theme helpers (mirrored from styles.py for inline cleanliness) ─
 _C = {
     "bg": "#0C0C0E",
-    "surface": "rgba(22, 23, 26, 0.85)",
-    "card": "rgba(28, 30, 36, 0.75)",
-    "card_hover": "rgba(34, 36, 42, 0.85)",
+    "surface": "rgba(255, 255, 255, 0.03)",
+    "card": "rgba(255, 255, 255, 0.04)",
+    "card_hover": "rgba(255, 255, 255, 0.07)",
     "border": "rgba(255, 255, 255, 0.06)",
     "border_hover": "rgba(255, 255, 255, 0.12)",
     "accent": "#00BFAE",
-    "accent_soft": "rgba(0, 191, 174, 0.12)",
+    "accent_soft": "rgba(0, 191, 174, 0.10)",
     "text": "#EDEDEF",
     "text_sec": "#8B8D97",
     "text_muted": "#5C5E66",
 }
 
 
+def _hex_to_rgba(hex_color: str, alpha: float) -> str:
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r}, {g}, {b}, {alpha})"
+
+
 class LargeSearchBox(QWidget):
-    """Premium dashboard home for NeoArch with search, cards, and system status."""
+    """Premium dashboard home for NeoArch with search, stat cards, and actions."""
 
     search_requested = pyqtSignal(str)
     search_submitted = pyqtSignal(str)
@@ -49,29 +49,16 @@ class LargeSearchBox(QWidget):
         self.search_timer.setSingleShot(True)
         self.search_timer.timeout.connect(self.on_auto_search)
 
-        # System data
-        self.cpu_value: QLabel | None = None
-        self.cpu_bar: QProgressBar | None = None
-        self.mem_value: QLabel | None = None
-        self.mem_bar: QProgressBar | None = None
-        self.disk_value: QLabel | None = None
-        self.disk_bar: QProgressBar | None = None
-
-        # Dashboard counters
         self.installed_count_label: QLabel | None = None
         self.updates_count_label: QLabel | None = None
         self.sources_count_label: QLabel | None = None
 
-        self.system_timer = QTimer()
-        self.system_timer.setInterval(3000)
-        self.system_timer.timeout.connect(self.update_health)
-
-        self._cache: dict = {}
-        self._cache_ts: float = 0
+        self.dashboard_timer = QTimer()
+        self.dashboard_timer.setInterval(30000)
+        self.dashboard_timer.timeout.connect(self._load_system_counts)
 
         self._build()
 
-    # ── Public API ──────────────────────────────────────────────────
     def refresh_counts(self, installed: int | None = None,
                        updates: int | None = None,
                        sources: int | None = None):
@@ -82,29 +69,16 @@ class LargeSearchBox(QWidget):
         if sources is not None and self.sources_count_label:
             self.sources_count_label.setText(str(sources))
 
-    # ── Build ───────────────────────────────────────────────────────
     def _build(self):
         root = QVBoxLayout(self)
         root.setContentsMargins(48, 40, 48, 40)
         root.setSpacing(28)
 
-        # ── Hero Search ──
         root.addLayout(self._hero_search())
-
-        # ── Dashboard Cards ──
         root.addLayout(self._dashboard_cards())
-
-        # ── Quick Actions ──
-        root.addLayout(self._quick_actions())
-
-        # ── Source Indicators ──
-        root.addLayout(self._source_indicators())
-
-        # ── System Health ──
-        root.addLayout(self._system_health())
+        root.addLayout(self._actions_row())
 
         root.addStretch()
-
         self.setStyleSheet(self._qss())
 
     # ── Hero Search ────────────────────────────────────────────────
@@ -117,24 +91,23 @@ class LargeSearchBox(QWidget):
         container.setFixedHeight(72)
         container.setStyleSheet(f"""
             QFrame#heroSearchCard {{
-                background-color: rgba(18, 19, 22, 0.9);
+                background-color: rgba(255, 255, 255, 0.03);
                 border: 1px solid {_C['border']};
                 border-radius: 20px;
             }}
             QFrame#heroSearchCard:hover {{
-                border-color: rgba(0, 191, 174, 0.3);
+                border-color: rgba(0, 191, 174, 0.25);
             }}
         """)
-
-        self._shadow(container, 24, QColor(0, 0, 0, 60))
+        self._shadow(container, 28, QColor(0, 0, 0, 80))
 
         lay = QHBoxLayout(container)
-        lay.setContentsMargins(20, 0, 20, 0)
-        lay.setSpacing(12)
+        lay.setContentsMargins(22, 0, 16, 0)
+        lay.setSpacing(14)
 
         icon = QLabel()
-        icon.setFixedSize(28, 28)
-        self._set_svg_icon(icon, "discover/search.svg", 28, "#5C5E66")
+        icon.setFixedSize(24, 24)
+        self._set_svg_icon(icon, "discover/search.svg", 24, "#5C5E66")
         lay.addWidget(icon)
 
         self.input = QLineEdit()
@@ -147,13 +120,13 @@ class LargeSearchBox(QWidget):
                 background: transparent;
                 border: none;
                 color: {_C['text']};
-                font-size: 16px;
+                font-size: 15px;
                 font-weight: 400;
                 padding: 0;
             }}
             QLineEdit::placeholder {{
                 color: {_C['text_muted']};
-                font-size: 15px;
+                font-size: 14px;
             }}
             QLineEdit:focus {{ outline: none; }}
         """)
@@ -162,19 +135,26 @@ class LargeSearchBox(QWidget):
         btn = QPushButton("Search")
         btn.setFixedHeight(40)
         btn.setMinimumWidth(100)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {_C['accent']};
-                color: #0C0C0E;
-                border: none;
+                background-color: rgba(28, 30, 36, 0.85);
+                color: {_C['accent']};
+                border: 1px solid {_C['border']};
                 border-radius: 12px;
-                font-size: 14px;
+                font-size: 13px;
                 font-weight: 600;
-                padding: 0 20px;
+                padding: 0 22px;
             }}
-            QPushButton:hover {{ background-color: #00D4C1; }}
-            QPushButton:pressed {{ background-color: #009688; }}
+            QPushButton:hover {{
+                background-color: rgba(34, 36, 42, 0.85);
+                border-color: rgba(0, 191, 174, 0.4);
+            }}
+            QPushButton:pressed {{
+                background-color: rgba(38, 40, 48, 0.9);
+            }}
         """)
+        self._shadow(btn, 16, QColor(0, 0, 0, 80))
         btn.clicked.connect(self._on_submit)
         lay.addWidget(btn)
 
@@ -185,332 +165,179 @@ class LargeSearchBox(QWidget):
     def _dashboard_cards(self) -> QHBoxLayout:
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(16)
-
-        cards = [
-            ("📦", "Installed Packages", "—", "rgba(0, 191, 174, 0.12)", _C["accent"]),
-            ("🔄", "Available Updates", "—", "rgba(255, 159, 67, 0.12)", "#FF9F43"),
-            ("📡", "Active Sources", "—", "rgba(88, 101, 242, 0.12)", "#5865F2"),
-        ]
-
-        for emoji, title, _, bg, accent in cards:
-            card = self._stat_card(emoji, title, bg, accent)
-            row.addWidget(card, 1)
-
+        row.setSpacing(14)
+        row.addWidget(self._make_card(
+            "Installed Packages", _C["accent"], "installed_count_label"), 1)
+        row.addWidget(self._make_card(
+            "Available Updates", "#FF9F43", "updates_count_label"), 1)
+        row.addWidget(self._make_card(
+            "System Status", "#A29BFE", "sources_count_label"), 1)
         return row
 
-    def _stat_card(self, emoji: str, title: str,
-                   bg: str, accent: str) -> QFrame:
+    def _make_card(self, title: str, accent: str,
+                   label_attr: str) -> QFrame:
         card = QFrame()
-        card.setFixedHeight(130)
+        card.setObjectName("dashCard")
+        card.setFixedHeight(124)
         card.setStyleSheet(f"""
-            background-color: {_C['card']};
-            border: 1px solid {_C['border']};
-            border-radius: 20px;
+            QFrame#dashCard {{
+                background-color: {_C['card']};
+                border: 1px solid {_C['border']};
+                border-radius: 18px;
+            }}
+            QFrame#dashCard:hover {{
+                background-color: {_C['card_hover']};
+                border-color: {_hex_to_rgba(accent, 0.33)};
+            }}
         """)
-        self._shadow(card, 20, QColor(0, 0, 0, 50))
+        self._shadow(card, 28, QColor(0, 0, 0, 80))
 
         lay = QVBoxLayout(card)
-        lay.setContentsMargins(24, 20, 24, 20)
+        lay.setContentsMargins(22, 18, 22, 18)
         lay.setSpacing(6)
 
-        top = QHBoxLayout()
-        top.setSpacing(12)
+        hdr = QHBoxLayout()
+        hdr.setSpacing(0)
 
-        icon_frame = QFrame()
-        icon_frame.setFixedSize(42, 42)
-        icon_frame.setStyleSheet(f"""
-            background-color: {bg};
-            border-radius: 14px;
-            border: 1px solid {accent}33;
+        indicator = QFrame()
+        indicator.setFixedSize(8, 8)
+        indicator.setStyleSheet(f"""
+            QFrame {{
+                background-color: {accent};
+                border-radius: 4px;
+            }}
         """)
-        il = QHBoxLayout(icon_frame)
-        il.setContentsMargins(0, 0, 0, 0)
-        lbl = QLabel(emoji)
-        lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        lbl.setStyleSheet("font-size: 20px; background: transparent;")
-        il.addWidget(lbl)
-        top.addWidget(icon_frame)
+        hdr.addWidget(indicator)
+        hdr.addSpacing(10)
 
-        top.addStretch()
-        lay.addLayout(top)
+        label = QLabel(title)
+        label.setStyleSheet(
+            f"font-size: 12px; font-weight: 500; color: {_C['text_sec']}; background: transparent; letter-spacing: 0.3px;")
+        hdr.addWidget(label)
+
+        hdr.addStretch()
+        lay.addLayout(hdr)
 
         val = QLabel("—")
-        val.setStyleSheet(f"font-size: 32px; font-weight: 700; color: {accent}; background: transparent;")
+        val.setStyleSheet(
+            f"font-size: 36px; font-weight: 700; color: {accent}; background: transparent; "
+            f"letter-spacing: -1px;")
         lay.addWidget(val)
 
-        lbl_title = QLabel(title)
-        lbl_title.setStyleSheet(f"font-size: 13px; font-weight: 500; color: {_C['text_sec']}; background: transparent;")
-        lay.addWidget(lbl_title)
+        lay.addStretch()
 
-        # Store reference
-        if "Installed" in title:
-            self.installed_count_label = val
-        elif "Updates" in title:
-            self.updates_count_label = val
-        elif "Sources" in title:
-            self.sources_count_label = val
-
+        setattr(self, label_attr, val)
         return card
 
-    # ── Quick Actions ───────────────────────────────────────────────
-    def _quick_actions(self) -> QHBoxLayout:
+    # ── Action Buttons ──────────────────────────────────────────────
+    def _actions_row(self) -> QHBoxLayout:
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(12)
+        row.setSpacing(10)
 
         actions = [
-            ("⬆", "Update All", self._on_update_all),
-            ("🔄", "Refresh Databases", self._on_refresh),
-            ("🧹", "Clean Cache", self._on_clean),
+            ("discover/updateall.svg", "Update All", self._on_update_all, True),
+            ("discover/refreshdb.svg", "Refresh Databases", self._on_refresh, False),
+            ("discover/clean.svg", "Clean Cache", self._on_clean, False),
         ]
 
-        for icon, text, cb in actions:
-            btn = QPushButton(f"  {icon}  {text}")
-            btn.setFixedHeight(42)
+        for svg_rel, text, cb, primary in actions:
+            path = os.path.join(PROJECT_ROOT, "assets", "icons", svg_rel)
+            btn = QPushButton(QIcon(path), f"  {text}")
+            btn.setIconSize(QSize(17, 17))
+            btn.setFixedHeight(44)
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {_C['card']};
-                    color: {_C['text']};
-                    border: 1px solid {_C['border']};
-                    border-radius: 12px;
-                    font-size: 13px;
-                    font-weight: 500;
-                    padding: 0 20px;
-                }}
-                QPushButton:hover {{
-                    background-color: {_C['card_hover']};
-                    border-color: {_C['border_hover']};
-                }}
-            """)
+
+            if primary:
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: rgba(28, 30, 36, 0.85);
+                        color: {_C['text']};
+                        border: 1px solid rgba(0, 191, 174, 0.3);
+                        border-radius: 14px;
+                        font-size: 13px;
+                        font-weight: 600;
+                        padding: 0 28px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: rgba(34, 36, 42, 0.85);
+                        border-color: {_C['accent']};
+                    }}
+                    QPushButton:pressed {{
+                        background-color: rgba(38, 40, 48, 0.9);
+                    }}
+                """)
+                self._shadow(btn, 18, QColor(0, 0, 0, 80))
+            else:
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: rgba(255, 255, 255, 0.03);
+                        color: {_C['text_sec']};
+                        border: 1px solid {_C['border']};
+                        border-radius: 14px;
+                        font-size: 13px;
+                        font-weight: 500;
+                        padding: 0 24px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: rgba(255, 255, 255, 0.07);
+                        color: {_C['text']};
+                        border-color: {_C['border_hover']};
+                    }}
+                    QPushButton:pressed {{
+                        background-color: rgba(255, 255, 255, 0.04);
+                    }}
+                """)
+
             btn.clicked.connect(cb)
             row.addWidget(btn)
 
         row.addStretch()
         return row
 
-    # ── Source Indicators ───────────────────────────────────────────
-    def _source_indicators(self) -> QVBoxLayout:
-        col = QVBoxLayout()
-        col.setContentsMargins(0, 0, 0, 0)
-        col.setSpacing(12)
-
-        label = QLabel("Source Status")
-        label.setStyleSheet(f"font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: {_C['text_muted']}; background: transparent;")
-        col.addWidget(label)
-
-        chips_row = QHBoxLayout()
-        chips_row.setSpacing(10)
-        chips_row.setContentsMargins(0, 0, 0, 0)
-
-        sources = [
-            ("pacman", "#4FC3F7"),
-            ("AUR", "#FF8A65"),
-            ("Flatpak", "#26A69A"),
-            ("npm", "#E53935"),
-            ("Docker", "#2496ED"),
-        ]
-
-        for name, color in sources:
-            chip = self._source_chip(name, color)
-            chips_row.addWidget(chip)
-
-        chips_row.addStretch()
-        col.addLayout(chips_row)
-        return col
-
-    def _source_chip(self, name: str, color: str) -> QFrame:
-        chip = QFrame()
-        chip.setFixedHeight(32)
-        chip.setStyleSheet(f"""
-            background-color: {color}11;
-            border: 1px solid {color}44;
-            border-radius: 8px;
-        """)
-
-        lay = QHBoxLayout(chip)
-        lay.setContentsMargins(12, 0, 14, 0)
-        lay.setSpacing(8)
-
-        dot = QLabel("●")
-        dot.setStyleSheet(f"font-size: 8px; color: {color}; background: transparent;")
-        lay.addWidget(dot)
-
-        lbl = QLabel(name)
-        lbl.setStyleSheet(f"font-size: 12px; font-weight: 500; color: {_C['text_sec']}; background: transparent;")
-        lay.addWidget(lbl)
-
-        return chip
-
-    # ── System Health ───────────────────────────────────────────────
-    def _system_health(self) -> QHBoxLayout:
-        row = QHBoxLayout()
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(16)
-
-        metrics = [
-            ("🖥", "CPU", self._cpu_card),
-            ("💾", "Memory", self._mem_card),
-            ("💿", "Disk", self._disk_card),
-        ]
-
-        for emoji, name, builder in metrics:
-            card = builder(emoji, name)
-            row.addWidget(card, 1)
-
-        return row
-
-    def _metric_card(self, emoji: str, name: str,
-                     color: str) -> tuple[QFrame, QLabel, QProgressBar]:
-        card = QFrame()
-        card.setFixedHeight(90)
-        card.setStyleSheet(f"""
-            background-color: {_C['card']};
-            border: 1px solid {_C['border']};
-            border-radius: 16px;
-        """)
-        self._shadow(card, 16, QColor(0, 0, 0, 40))
-
-        lay = QVBoxLayout(card)
-        lay.setContentsMargins(18, 14, 18, 14)
-        lay.setSpacing(8)
-
-        top = QHBoxLayout()
-        top.setSpacing(10)
-
-        icon_lbl = QLabel(emoji)
-        icon_lbl.setStyleSheet("font-size: 18px; background: transparent;")
-        top.addWidget(icon_lbl)
-
-        name_lbl = QLabel(name)
-        name_lbl.setStyleSheet(f"font-size: 13px; font-weight: 600; color: {_C['text_sec']}; background: transparent;")
-        top.addWidget(name_lbl, 1)
-
-        val = QLabel("—")
-        val.setStyleSheet(f"font-size: 15px; font-weight: 700; color: {color}; background: transparent;")
-        top.addWidget(val)
-
-        lay.addLayout(top)
-
-        bar = QProgressBar()
-        bar.setValue(0)
-        bar.setTextVisible(False)
-        bar.setFixedHeight(5)
-        bar.setStyleSheet(f"""
-            QProgressBar {{
-                background-color: rgba(18, 19, 22, 0.8);
-                border: none;
-                border-radius: 3px;
-            }}
-            QProgressBar::chunk {{
-                background-color: {color};
-                border-radius: 3px;
-            }}
-        """)
-        lay.addWidget(bar)
-
-        return card, val, bar
-
-    def _cpu_card(self, emoji: str, name: str) -> QFrame:
-        card, val, bar = self._metric_card(emoji, name, "#FF9F43")
-        self.cpu_value = val
-        self.cpu_bar = bar
-        return card
-
-    def _mem_card(self, emoji: str, name: str) -> QFrame:
-        card, val, bar = self._metric_card(emoji, name, _C["accent"])
-        self.mem_value = val
-        self.mem_bar = bar
-        return card
-
-    def _disk_card(self, emoji: str, name: str) -> QFrame:
-        card, val, bar = self._metric_card(emoji, name, "#A29BFE")
-        self.disk_value = val
-        self.disk_bar = bar
-        return card
-
-    # ── System health data ──────────────────────────────────────────
-    def update_health(self):
-        try:
-            cpu = psutil.cpu_percent(interval=0)
-            mem = psutil.virtual_memory()
-            disk = psutil.disk_usage('/')
-
-            if self.cpu_value and self.cpu_bar:
-                self.cpu_value.setText(f"{cpu:.0f}%")
-                self.cpu_bar.setValue(int(cpu))
-            if self.mem_value and self.mem_bar:
-                self.mem_value.setText(f"{mem.percent:.0f}%")
-                self.mem_bar.setValue(int(mem.percent))
-            if self.disk_value and self.disk_bar:
-                pct = (disk.used / disk.total) * 100
-                self.disk_value.setText(f"{pct:.0f}%")
-                self.disk_bar.setValue(int(pct))
-        except Exception:
-            pass
-
+    # ── Data ────────────────────────────────────────────────────────
     def showEvent(self, event):
         super().showEvent(event)
-        if not self.system_timer.isActive():
-            self.system_timer.start()
-        QTimer.singleShot(200, self.update_health)
+        if not self.dashboard_timer.isActive():
+            self.dashboard_timer.start()
         QTimer.singleShot(300, self._load_system_counts)
 
     def hideEvent(self, event):
         super().hideEvent(event)
-        self.system_timer.stop()
+        self.dashboard_timer.stop()
 
     def _load_system_counts(self):
+        installed_count = 0
         try:
             r = subprocess.run(["pacman", "-Q"], capture_output=True, text=True, timeout=3)
             if r.returncode == 0:
-                count = len(r.stdout.strip().split("\n"))
-                self.refresh_counts(installed=count)
+                installed_count = len([l for l in r.stdout.strip().split("\n") if l.strip()])
         except Exception:
             pass
 
+        updates_count = 0
         try:
             r = subprocess.run(["checkupdates"], capture_output=True, text=True, timeout=5)
             if r.returncode == 0 and r.stdout.strip():
-                count = len(r.stdout.strip().split("\n"))
-                self.refresh_counts(updates=count)
-            else:
-                self.refresh_counts(updates=0)
+                updates_count = len(r.stdout.strip().split("\n"))
         except Exception:
             pass
 
-        sources = self._count_sources()
-        self.refresh_counts(sources=sources)
+        sources_count = 1
+        for cmd in (["which", "yay", "paru"], ["flatpak", "list"],
+                    ["which", "npm"], ["which", "docker"]):
+            try:
+                r = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
+                if r.returncode == 0 and r.stdout.strip():
+                    sources_count += 1
+            except Exception:
+                pass
 
-    @staticmethod
-    def _count_sources() -> int:
-        count = 1  # pacman always
-        try:
-            r = subprocess.run(["which", "yay", "paru"], capture_output=True, text=True, timeout=2)
-            if r.stdout.strip():
-                count += 1
-        except Exception:
-            pass
-        try:
-            r = subprocess.run(["flatpak", "list"], capture_output=True, text=True, timeout=3)
-            if r.returncode == 0:
-                count += 1
-        except Exception:
-            pass
-        try:
-            r = subprocess.run(["which", "npm"], capture_output=True, text=True, timeout=2)
-            if r.stdout.strip():
-                count += 1
-        except Exception:
-            pass
-        try:
-            r = subprocess.run(["which", "docker"], capture_output=True, text=True, timeout=2)
-            if r.stdout.strip():
-                count += 1
-        except Exception:
-            pass
-        return count
+        self.refresh_counts(
+            installed=installed_count,
+            updates=updates_count,
+            sources=sources_count,
+        )
 
     # ── Actions ─────────────────────────────────────────────────────
     def _on_update_all(self):

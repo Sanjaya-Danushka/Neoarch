@@ -1,2 +1,18 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="512" height="512"><g id="_01_align_center" data-name="01 align center"><path d="M12,24A12,12,0,1,1,24,12,12.013,12.013,0,0,1,12,24ZM12,2A10,10,0,1,0,22,12,10.011,10.011,0,0,0,12,2Z"/><path d="M14,19H12V12H10V10h2a2,2,0,0,1,2,2Z"/><circle cx="12" cy="6.5" r="1.5"/></g></svg>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg version="1.1" id="Uploaded to svgrepo.com" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
+	 width="800px" height="800px" viewBox="0 0 32 32" xml:space="preserve">
+<style type="text/css">
+	.hatch_een{fill:#265AA5;}
+	.hatch_twee{fill:#FFC5BB;}
+</style>
+<g>
+	<path class="hatch_twee" d="M14.707,31h-1.414l2-2h1.414L14.707,31z M16.293,28h1.414L19,26.707v-1.414L16.293,28z M18,30.293
+		L17.293,31H18V30.293z M12,25.707L12.707,25H12V25.707z M12.293,28h1.414l3-3h-1.414L12.293,28z"/>
+	<path class="hatch_een" d="M15.182,0.005c-5.464,0-9.929,4.563-10.171,10.019C4.878,13,6.02,15.901,8.144,17.984
+		C10.253,20.053,11,21.627,11,24v4c0,0.552,0.448,1,1,1v2c0,0.552,0.448,1,1,1h5c0.552,0,1-0.448,1-1v-2c0.552,0,1-0.448,1-1v-4
+		c0-2.62,1.047-4.179,2.981-6.139C24.928,15.886,26,13.272,26,10.5C26,4.71,21.281,0.005,15.182,0.005z M18,31h-5v-2h5V31z M19,28
+		h-7v-3h7V28z M22.268,17.158C20.2,19.256,19,21.055,19,24h-7c0-2.891-1.093-4.705-3.156-6.73c-1.85-1.814-2.96-4.378-2.834-7.203
+		c0.217-4.889,4.308-9.063,9.202-9.063C20.75,1.004,25,5.254,25,10.5C25,13.096,23.957,15.446,22.268,17.158z"/>
+</g>
+</svg>

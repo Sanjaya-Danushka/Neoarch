@@ -246,6 +246,11 @@ QTableWidget::item {{
     border-bottom: 1px solid {_BORDER};
 }}
 
+QTableWidget::item:hover {{
+    background-color: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(0, 191, 174, 0.2);
+}}
+
 QTableWidget::item:selected {{
     background-color: {_ACCENT_SOFT};
     color: {_TEXT};

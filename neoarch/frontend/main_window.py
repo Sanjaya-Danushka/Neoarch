@@ -792,6 +792,13 @@ class ArchPkgManagerUniGetUI(QMainWindow):
     
     def get_source_icon(self, source, size=18):
         icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
+        source_colors = {
+            "pacman": "#4FC3F7",
+            "AUR": "#FF8A65",
+            "Flatpak": "#26A69A",
+            "npm": "#E53935",
+            "Docker": "#2496ED",
+        }
         mapping = {
             "pacman": "pacman.svg",
             "AUR": "aur.svg",
@@ -817,22 +824,29 @@ class ArchPkgManagerUniGetUI(QMainWindow):
 
             pixmap.fill(Qt.GlobalColor.transparent)
 
-            painter = QPainter(pixmap)
-            if not painter.isActive():
-                return QIcon()
-
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-
             renderer = QSvgRenderer(icon_path)
             if renderer.isValid():
+                painter = QPainter(pixmap)
+                if not painter.isActive():
+                    return QIcon()
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
                 renderer.render(painter, QRectF(pixmap.rect()))
                 painter.end()
                 icon = QIcon(pixmap)
             else:
-                # Fallback: try to load as regular icon
-                painter.end()
-                icon = QIcon(icon_path)
+                # Fallback: generate a colored dot icon
+                color = source_colors.get(source, "#8B8D97")
+                pm = QPixmap(size, size)
+                pm.fill(Qt.GlobalColor.transparent)
+                p = QPainter(pm)
+                p.setRenderHint(QPainter.RenderHint.Antialiasing)
+                p.setPen(Qt.PenStyle.NoPen)
+                p.setBrush(QColor(color))
+                margin = size // 4
+                p.drawEllipse(margin, margin, size - 2 * margin, size - 2 * margin)
+                p.end()
+                icon = QIcon(pm)
 
             try:
                 if isinstance(getattr(self, "_source_icon_cache", None), dict):
