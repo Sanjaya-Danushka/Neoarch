@@ -1060,25 +1060,32 @@ class ArchPkgManagerUniGetUI(QMainWindow):
     def create_toolbar_button(self, icon_path, tooltip, callback, icon_size=24):
         """Create a reusable toolbar button with icon and tooltip"""
         btn = QPushButton()
-        btn.setFixedSize(40, 40)  # Slightly smaller for better fit
+        btn.setFixedSize(40, 40)
         btn.setToolTip(tooltip)
         btn.clicked.connect(callback)
         btn.setStyleSheet("""
             QPushButton {
                 padding: 6px;
                 margin: 2px;
-                border: none;
-                border-radius: 6px;
-                background-color: transparent;
+                border-radius: 14px;
+                background-color: rgba(28, 30, 36, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.03);
             }
             QPushButton:hover {
-                background-color: rgba(0, 191, 174, 0.15);
-                border-radius: 6px;
+                background-color: rgba(34, 36, 42, 0.7);
+                border: 1px solid rgba(0, 191, 174, 0.15);
             }
             QPushButton:pressed {
-                background-color: rgba(0, 191, 174, 0.25);
+                background-color: rgba(0, 191, 174, 0.12);
+                border: 1px solid rgba(0, 191, 174, 0.25);
             }
         """)
+        
+        glow = QGraphicsDropShadowEffect(btn)
+        glow.setBlurRadius(18)
+        glow.setColor(QColor(0, 0, 0, 60))
+        glow.setOffset(0, 2)
+        btn.setGraphicsEffect(glow)
         
         # Try to load SVG icon, fallback to emoji
         icon = self.get_svg_icon(icon_path, icon_size)
@@ -1095,6 +1102,57 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             btn.setText(emoji)
         
         return btn
+    
+    def _add_right_toolbar_icons(self, layout, show_install_file=False, show_sudo=False, show_bundle=True):
+        """Add common right-side navbar icons to any toolbar layout."""
+        navbar_dir = os.path.join(_BASE_DIR, "assets", "icons", "navbar")
+        
+        grid_btn = self.create_toolbar_button(
+            os.path.join(navbar_dir, "view.svg"),
+            "Grid View",
+            self.toggle_view_mode
+        )
+        layout.addWidget(grid_btn)
+        
+        filter_btn = self.create_toolbar_button(
+            os.path.join(navbar_dir, "Filter.svg"),
+            "Filter Packages",
+            self.show_category_filter
+        )
+        layout.addWidget(filter_btn)
+        
+        if show_install_file:
+            file_btn = self.create_toolbar_button(
+                os.path.join(navbar_dir, "install_from_file.svg"),
+                "Install from File",
+                self.install_from_local_file
+            )
+            layout.addWidget(file_btn)
+        
+        if show_bundle:
+            bundle_btn = self.create_toolbar_button(
+                os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"),
+                "Add selected to Bundle",
+                self.add_selected_to_bundle
+            )
+            layout.addWidget(bundle_btn)
+        
+        if show_sudo:
+            sudo_btn = self.create_toolbar_button(
+                os.path.join(navbar_dir, "insatllwithsudo.svg"),
+                "Install with Sudo Privileges",
+                self.sudo_install_selected
+            )
+            layout.addWidget(sudo_btn)
+    
+    def toggle_view_mode(self):
+        self.log("Toggle view mode")
+    
+    def install_from_local_file(self):
+        self.log("Install from local file")
+    
+    def show_category_filter(self):
+        self.log("Category filter")
     
     def get_row_checkbox(self, row):
         cell = self.package_table.cellWidget(row, 0)
@@ -1610,34 +1668,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             layout.addWidget(manage_btn)
             
             layout.addStretch()
-            # Right-side action icons similar to Discover
-            icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
-            bundles_btn = self.create_toolbar_button(
-                os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"),
-                "Add selected to Bundle",
-                self.add_selected_to_bundle
-            )
-            layout.addWidget(bundles_btn)
-
-            sudo_btn = self.create_toolbar_button(
-                os.path.join(_BASE_DIR, "assets", "icons", "sudo.svg"),
-                "Run Updates (sudo where needed)",
-                lambda: self.update_selected()
-            )
-            layout.addWidget(sudo_btn)
-
-            tools_btn = self.create_toolbar_button(
-                os.path.join(icon_dir, "download.svg"),
-                "Update Tools",
-                self.update_core_tools
-            )
-            help_btn = self.create_toolbar_button(
-                os.path.join(_BASE_DIR, "assets", "icons", "about.svg"),
-                "Help & Documentation",
-                self.show_help
-            )
-            layout.addWidget(tools_btn)
-            layout.addWidget(help_btn)
+            self._add_right_toolbar_icons(layout, show_sudo=True)
 
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "installed":
@@ -1684,25 +1715,8 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             layout.addWidget(uninstall_btn)
 
             layout.addStretch()
-            icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
-            bundles_btn = self.create_toolbar_button(
-                os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"),
-                "Add selected to Bundle",
-                self.add_selected_to_bundle
-            )
-            layout.addWidget(bundles_btn)
-            tools_btn = self.create_toolbar_button(
-                os.path.join(icon_dir, "download.svg"),
-                "Onclick Update",
-                self.update_core_tools
-            )
-            help_btn = self.create_toolbar_button(
-                os.path.join(_BASE_DIR, "assets", "icons", "about.svg"),
-                "Help & Documentation",
-                self.show_help
-            )
-            layout.addWidget(tools_btn)
-            layout.addWidget(help_btn)
+            self._add_right_toolbar_icons(layout, show_install_file=True, show_sudo=True)
+
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "discover":
             layout = QHBoxLayout()
@@ -1717,80 +1731,19 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             
             layout.addWidget(install_btn)
 
-            # Git button on the left side
-            git_btn = self.create_toolbar_button(
-                os.path.join(icon_dir, "git.svg"),
-                "Install via GitHub",
-                self.show_git_install_dialog
-            )
-            layout.addWidget(git_btn)
-            
-            # Docker button next to Git
-            docker_btn = self.create_toolbar_button(
-                os.path.join(icon_dir, "docker.svg"),
-                "Install via Docker",
-                self.show_docker_install_dialog
-            )
-            layout.addWidget(docker_btn)
-            
             layout.addStretch()  # Push remaining buttons to the right
             
-            # Action buttons on the right side
-            bundles_btn = self.create_toolbar_button(
-                os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"),
-                "Add selected to Bundle",
-                self.add_selected_to_bundle
-            )
-            layout.addWidget(bundles_btn)
-            
-            sudo_btn = self.create_toolbar_button(
-                os.path.join(_BASE_DIR, "assets", "icons", "sudo.svg"),
-                "Install with Sudo Privileges",
-                self.sudo_install_selected
-            )
-            layout.addWidget(sudo_btn)
-            
-            # Help button on the far right
-            help_btn = self.create_toolbar_button(
-                os.path.join(_BASE_DIR, "assets", "icons", "about.svg"),
-                "Help & Documentation",
-                self.show_help
-            )
-            tools_btn = self.create_toolbar_button(
-                os.path.join(icon_dir, "download.svg"),
-                "Onclick Update",
-                self.update_core_tools
-            )
-            layout.addWidget(tools_btn)
-            layout.addWidget(help_btn)
+            self._add_right_toolbar_icons(layout, show_install_file=True, show_sudo=True)
             
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "plugins":
             layout = QHBoxLayout()
             layout.setSpacing(12)
             
-            # Add stretch to push icon buttons to the right
             layout.addStretch()
             
-            icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
-            bundles_btn = self.create_toolbar_button(
-                os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"),
-                "Add selected to Bundle",
-                lambda: None  # Empty handler for now
-            )
-            layout.addWidget(bundles_btn)
-            tools_btn = self.create_toolbar_button(
-                os.path.join(icon_dir, "download.svg"),
-                "Onclick Update",
-                lambda: None  # Empty handler for now
-            )
-            help_btn = self.create_toolbar_button(
-                os.path.join(_BASE_DIR, "assets", "icons", "about.svg"),
-                "Help & Documentation",
-                self.show_help
-            )
-            layout.addWidget(tools_btn)
-            layout.addWidget(help_btn)
+            self._add_right_toolbar_icons(layout, show_bundle=False)
+            
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "bundles":
             layout = QHBoxLayout()
@@ -1866,23 +1819,13 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             layout.addWidget(clear_btn)
 
             layout.addStretch()
-            help_btn = self.create_toolbar_button(
-                os.path.join(_BASE_DIR, "assets", "icons", "about.svg"),
-                "Help & Documentation",
-                self.show_help
-            )
-            layout.addWidget(help_btn)
+            self._add_right_toolbar_icons(layout, show_bundle=False)
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "settings":
             layout = QHBoxLayout()
             layout.setSpacing(12)
             layout.addStretch()
-            help_btn = self.create_toolbar_button(
-                os.path.join(_BASE_DIR, "assets", "icons", "about.svg"),
-                "Help & Documentation",
-                self.show_help
-            )
-            layout.addWidget(help_btn)
+            self._add_right_toolbar_icons(layout, show_bundle=False)
             self.toolbar_layout.addLayout(layout)
     
     def show_welcome_animation(self):

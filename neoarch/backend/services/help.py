@@ -191,7 +191,42 @@ def show_about(parent):
 
     layout.addStretch()
 
+    help_btn = QPushButton("Help & Documentation")
+    help_btn.setStyleSheet("""
+        QPushButton {
+            background-color: rgba(0, 191, 174, 0.1);
+            color: #00BFAE;
+            border: 1px solid rgba(0, 191, 174, 0.3);
+            border-radius: 10px;
+            padding: 10px 24px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        QPushButton:hover {
+            background-color: rgba(0, 191, 174, 0.2);
+            border-color: #00BFAE;
+        }
+    """)
+    help_btn.clicked.connect(lambda: show_help(parent, ""))
+    layout.addWidget(help_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    layout.addSpacing(8)
+
     close_btn = QPushButton("Close")
+    close_btn.setStyleSheet("""
+        QPushButton {
+            background-color: transparent;
+            color: #8B8D97;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 8px 20px;
+            font-size: 13px;
+        }
+        QPushButton:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #EDEDEF;
+        }
+    """)
     close_btn.clicked.connect(dlg.accept)
     layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignCenter)
     dlg.exec()
