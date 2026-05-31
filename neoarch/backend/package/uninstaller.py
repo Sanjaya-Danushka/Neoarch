@@ -23,10 +23,25 @@ def uninstall_packages(app, packages_by_source: dict):
     """
     def uninstall():
         app.log("Uninstallation thread started")
+        total = sum(len(pkgs) for pkgs in packages_by_source.values())
+        done = 0
+
+        def emit_progress(msg, inc=None):
+            nonlocal done
+            if inc:
+                done += inc
+            pct = int((done / total) * 100) if total > 0 else -1
+            try:
+                app.progress_update.emit(msg, pct)
+            except Exception:
+                pass
+
         try:
             for source, pkgs in packages_by_source.items():
                 if not pkgs:
                     continue
+                emit_progress(f"Uninstalling from {source}...", 0)
+                cnt = len(pkgs)
                 if source in ('pacman', 'AUR'):
                     cmd = ["pacman", "-R", "--noconfirm"] + pkgs
                     app.log(f"Running: {' '.join(cmd)}")
@@ -34,6 +49,7 @@ def uninstall_packages(app, packages_by_source: dict):
                     worker.output.connect(app.log)
                     worker.error.connect(app.log)
                     worker.run()
+                    emit_progress(f"Completed {source} uninstall", cnt)
                 elif source == 'Flatpak':
                     cmd = ["flatpak", "uninstall", "-y", "--noninteractive"] + pkgs
                     app.log(f"Running: {' '.join(cmd)}")
@@ -41,6 +57,7 @@ def uninstall_packages(app, packages_by_source: dict):
                     worker.output.connect(app.log)
                     worker.error.connect(app.log)
                     worker.run()
+                    emit_progress(f"Completed {source} uninstall", cnt)
                 elif source == 'npm':
                     def _build_user_env():
                         e = os.environ.copy()
@@ -95,8 +112,17 @@ def uninstall_packages(app, packages_by_source: dict):
                         worker.output.connect(app.log)
                         worker.error.connect(app.log)
                         worker.run()
-            app.show_message.emit("Uninstallation Complete", f"Successfully processed {sum(len(v) for v in packages_by_source.values())} package(s).")
+                    emit_progress(f"Completed {source} uninstall", cnt)
+            try:
+                app.progress_update.emit("Uninstall complete!", 100)
+            except Exception:
+                pass
+            app.show_message.emit("Uninstallation Complete", f"Successfully processed {total} package(s).")
             QTimer.singleShot(0, app.load_installed_packages)
+            try:
+                app.ui_call.emit(lambda: QTimer.singleShot(1500, app.finish_installation_progress))
+            except Exception:
+                pass
         except Exception as e:
             app.log(f"Error in uninstallation thread: {str(e)}")
     Thread(target=uninstall, daemon=True).start()

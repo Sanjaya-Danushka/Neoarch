@@ -9,10 +9,11 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit,
     QLabel, QFrame, QGraphicsDropShadowEffect,
 )
-from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QRectF
+from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QRectF, QEvent
 from PyQt6.QtGui import QColor, QIcon, QPixmap, QPainter
 from PyQt6.QtSvg import QSvgRenderer
 
+from neoarch.frontend.components.recent_activity import RecentActivity
 from neoarch.resources.paths import PROJECT_ROOT
 
 _C = {
@@ -57,6 +58,9 @@ class LargeSearchBox(QWidget):
         self.dashboard_timer.setInterval(30000)
         self.dashboard_timer.timeout.connect(self._load_system_counts)
 
+        self.hero_container: QFrame | None = None
+        self._focused = False
+        self._hovered = False
         self._build()
 
     def refresh_counts(self, installed: int | None = None,
@@ -78,6 +82,9 @@ class LargeSearchBox(QWidget):
         root.addLayout(self._dashboard_cards())
         root.addLayout(self._actions_row())
 
+        self.recent_activity = RecentActivity()
+        root.addWidget(self.recent_activity)
+
         root.addStretch()
         self.setStyleSheet(self._qss())
 
@@ -86,22 +93,19 @@ class LargeSearchBox(QWidget):
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
 
-        container = QFrame()
-        container.setObjectName("heroSearchCard")
-        container.setFixedHeight(72)
-        container.setStyleSheet(f"""
+        self.hero_container = QFrame()
+        self.hero_container.setObjectName("heroSearchCard")
+        self.hero_container.setFixedHeight(72)
+        self.hero_container.setStyleSheet(f"""
             QFrame#heroSearchCard {{
                 background-color: rgba(255, 255, 255, 0.03);
                 border: 1px solid {_C['border']};
                 border-radius: 20px;
             }}
-            QFrame#heroSearchCard:hover {{
-                border-color: rgba(0, 191, 174, 0.25);
-            }}
         """)
-        self._shadow(container, 28, QColor(0, 0, 0, 80))
+        self._shadow(self.hero_container, 28, QColor(0, 0, 0, 80))
 
-        lay = QHBoxLayout(container)
+        lay = QHBoxLayout(self.hero_container)
         lay.setContentsMargins(22, 0, 16, 0)
         lay.setSpacing(14)
 
@@ -115,6 +119,7 @@ class LargeSearchBox(QWidget):
         self.input.setFixedHeight(48)
         self.input.returnPressed.connect(self._on_submit)
         self.input.textChanged.connect(self._on_text)
+        self.input.installEventFilter(self)
         self.input.setStyleSheet(f"""
             QLineEdit {{
                 background: transparent;
@@ -128,7 +133,6 @@ class LargeSearchBox(QWidget):
                 color: {_C['text_muted']};
                 font-size: 14px;
             }}
-            QLineEdit:focus {{ outline: none; }}
         """)
         lay.addWidget(self.input, 1)
 
@@ -158,7 +162,7 @@ class LargeSearchBox(QWidget):
         btn.clicked.connect(self._on_submit)
         lay.addWidget(btn)
 
-        row.addWidget(container)
+        row.addWidget(self.hero_container)
         return row
 
     # ── Dashboard Cards ─────────────────────────────────────────────
@@ -181,16 +185,20 @@ class LargeSearchBox(QWidget):
         card.setFixedHeight(124)
         card.setStyleSheet(f"""
             QFrame#dashCard {{
-                background-color: {_C['card']};
-                border: 1px solid {_C['border']};
+                background-color: rgba(28, 30, 36, 0.85);
+                border-top: 1px solid rgba(255, 255, 255, 0.06);
+                border-left: 1px solid rgba(255, 255, 255, 0.06);
+                border-right: 1px solid rgba(0, 0, 0, 0.25);
+                border-bottom: 2px solid rgba(0, 0, 0, 0.35);
                 border-radius: 18px;
             }}
             QFrame#dashCard:hover {{
-                background-color: {_C['card_hover']};
-                border-color: {_hex_to_rgba(accent, 0.33)};
+                background-color: rgba(34, 36, 42, 0.85);
+                border-top: 1px solid rgba(255, 255, 255, 0.09);
+                border-left: 1px solid rgba(255, 255, 255, 0.09);
             }}
         """)
-        self._shadow(card, 28, QColor(0, 0, 0, 80))
+        self._neumorphic_shadow(card)
 
         lay = QVBoxLayout(card)
         lay.setContentsMargins(22, 18, 22, 18)
@@ -253,7 +261,10 @@ class LargeSearchBox(QWidget):
                     QPushButton {{
                         background-color: rgba(28, 30, 36, 0.85);
                         color: {_C['text']};
-                        border: 1px solid rgba(0, 191, 174, 0.3);
+                        border-top: 1px solid rgba(0, 191, 174, 0.2);
+                        border-left: 1px solid rgba(0, 191, 174, 0.2);
+                        border-right: 1px solid rgba(0, 0, 0, 0.25);
+                        border-bottom: 2px solid rgba(0, 0, 0, 0.35);
                         border-radius: 14px;
                         font-size: 13px;
                         font-weight: 600;
@@ -261,31 +272,44 @@ class LargeSearchBox(QWidget):
                     }}
                     QPushButton:hover {{
                         background-color: rgba(34, 36, 42, 0.85);
-                        border-color: {_C['accent']};
+                        border-top: 1px solid rgba(0, 191, 174, 0.35);
+                        border-left: 1px solid rgba(0, 191, 174, 0.35);
                     }}
                     QPushButton:pressed {{
-                        background-color: rgba(38, 40, 48, 0.9);
+                        background-color: rgba(24, 26, 32, 0.9);
+                        border-top: 1px solid rgba(0, 0, 0, 0.35);
+                        border-left: 1px solid rgba(0, 0, 0, 0.35);
+                        border-right: 1px solid rgba(255, 255, 255, 0.04);
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
                     }}
                 """)
-                self._shadow(btn, 18, QColor(0, 0, 0, 80))
+                self._neumorphic_shadow(btn)
             else:
                 btn.setStyleSheet(f"""
                     QPushButton {{
-                        background-color: rgba(255, 255, 255, 0.03);
+                        background-color: rgba(28, 30, 36, 0.85);
                         color: {_C['text_sec']};
-                        border: 1px solid {_C['border']};
+                        border-top: 1px solid rgba(255, 255, 255, 0.06);
+                        border-left: 1px solid rgba(255, 255, 255, 0.06);
+                        border-right: 1px solid rgba(0, 0, 0, 0.25);
+                        border-bottom: 2px solid rgba(0, 0, 0, 0.35);
                         border-radius: 14px;
                         font-size: 13px;
                         font-weight: 500;
                         padding: 0 24px;
                     }}
                     QPushButton:hover {{
-                        background-color: rgba(255, 255, 255, 0.07);
+                        background-color: rgba(34, 36, 42, 0.85);
                         color: {_C['text']};
-                        border-color: {_C['border_hover']};
+                        border-top: 1px solid rgba(255, 255, 255, 0.09);
+                        border-left: 1px solid rgba(255, 255, 255, 0.09);
                     }}
                     QPushButton:pressed {{
-                        background-color: rgba(255, 255, 255, 0.04);
+                        background-color: rgba(24, 26, 32, 0.9);
+                        border-top: 1px solid rgba(0, 0, 0, 0.35);
+                        border-left: 1px solid rgba(0, 0, 0, 0.35);
+                        border-right: 1px solid rgba(255, 255, 255, 0.04);
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
                     }}
                 """)
 
@@ -305,6 +329,37 @@ class LargeSearchBox(QWidget):
     def hideEvent(self, event):
         super().hideEvent(event)
         self.dashboard_timer.stop()
+
+    def eventFilter(self, obj, event):
+        if obj is self.input:
+            if event.type() == QEvent.Type.FocusIn:
+                self._focused = True
+                self._update_hero_style()
+            elif event.type() == QEvent.Type.FocusOut:
+                self._focused = False
+                self._update_hero_style()
+            elif event.type() == QEvent.Type.Enter:
+                self._hovered = True
+                self._update_hero_style()
+            elif event.type() == QEvent.Type.Leave:
+                self._hovered = False
+                self._update_hero_style()
+        return super().eventFilter(obj, event)
+
+    def _update_hero_style(self):
+        if self._focused:
+            border = "rgba(0, 191, 174, 0.5)"
+        elif self._hovered:
+            border = "rgba(0, 191, 174, 0.25)"
+        else:
+            border = _C['border']
+        self.hero_container.setStyleSheet(f"""
+            QFrame#heroSearchCard {{
+                background-color: rgba(255, 255, 255, 0.03);
+                border: 1px solid {border};
+                border-radius: 20px;
+            }}
+        """)
 
     def _load_system_counts(self):
         installed_count = 0
@@ -358,6 +413,9 @@ class LargeSearchBox(QWidget):
     def _on_text(self):
         self.search_timer.start()
 
+    def clear(self):
+        self.input.clear()
+
     def on_auto_search(self):
         q = self.input.text().strip()
         if len(q) >= 3:
@@ -370,6 +428,14 @@ class LargeSearchBox(QWidget):
         s.setBlurRadius(radius)
         s.setColor(color)
         s.setOffset(0, radius // 4)
+        widget.setGraphicsEffect(s)
+
+    @staticmethod
+    def _neumorphic_shadow(widget: QWidget):
+        s = QGraphicsDropShadowEffect()
+        s.setBlurRadius(22)
+        s.setColor(QColor(0, 0, 0, 130))
+        s.setOffset(4, 5)
         widget.setGraphicsEffect(s)
 
     @staticmethod

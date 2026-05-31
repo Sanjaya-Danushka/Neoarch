@@ -42,17 +42,23 @@ def install_packages(app, packages_by_source: dict):
         completed_sources = 0
         force_sudo = bool(getattr(app, 'force_sudo_install', False))
 
+        def get_progress_percent():
+            if total_packages == 0:
+                return -1
+            base = int((completed_packages / total_packages) * 100)
+            return min(99, base)
+
         def update_progress_message(msg: str = ""):
             base_msg = f"Installing: {completed_packages}/{total_packages} packages"
+            percent = get_progress_percent()
             try:
-                if current_download_info and msg:
-                    app.ui_call.emit(lambda: app.loading_widget.set_message(f"{base_msg}\n{current_download_info}"))
-                elif current_download_info:
-                    app.ui_call.emit(lambda: app.loading_widget.set_message(f"{base_msg}\n{current_download_info}"))
-                elif msg:
-                    app.ui_call.emit(lambda: app.loading_widget.set_message(f"{base_msg}\n{msg}"))
-                else:
-                    app.ui_call.emit(lambda: app.loading_widget.set_message(base_msg))
+                parts = [base_msg]
+                if current_download_info:
+                    parts.append(current_download_info)
+                if msg and msg != current_download_info:
+                    parts.append(msg)
+                full = " • ".join(parts)
+                app.progress_update.emit(full, percent)
             except Exception:
                 pass
 
@@ -278,7 +284,10 @@ def install_packages(app, packages_by_source: dict):
                             pass
 
             if success and not app.install_cancel_event.is_set():
-                update_progress_message("Installation complete!")
+                try:
+                    app.progress_update.emit("Installation complete!", 100)
+                except Exception:
+                    pass
                 app.log_signal.emit("Install completed")
                 app.show_message.emit("Installation Complete", f"Successfully installed {total_packages} package(s).")
                 app.installation_progress.emit("success", False)

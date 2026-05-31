@@ -31,7 +31,22 @@ def update_packages(app, packages_by_source: dict):
             overall_success = True
             lock_detected = False
             lock_details = ""
+            total_pkgs = sum(len(pkgs) for pkgs in packages_by_source.values())
+            updated_pkgs = 0
+
+            def emit_progress(msg, inc=None):
+                nonlocal updated_pkgs
+                if inc:
+                    updated_pkgs += inc
+                pct = int((updated_pkgs / total_pkgs) * 100) if total_pkgs > 0 else -1
+                try:
+                    app.progress_update.emit(msg, pct)
+                except Exception:
+                    pass
+
             for source, pkgs in packages_by_source.items():
+                emit_progress(f"Updating {source} packages...")
+                source_count = len(pkgs)
                 if source == 'pacman':
                     cmd = ["pacman", "-S", "--noconfirm"] + pkgs
                     worker = CommandWorker(cmd, sudo=True)
@@ -46,6 +61,7 @@ def update_packages(app, packages_by_source: dict):
                         overall_success = False
                     worker.error.connect(_on_err)
                     worker.run()
+                    emit_progress(f"Completed {source} packages", source_count)
                 elif source == 'AUR':
                     preferred = app.settings.get('aur_helper', 'auto')
                     aur_helper = sys_utils.get_aur_helper(None if preferred == 'auto' else preferred)
@@ -63,6 +79,7 @@ def update_packages(app, packages_by_source: dict):
                         overall_success = False
                     worker.error.connect(_on_err_aur)
                     worker.run()
+                    emit_progress(f"Completed {source} packages", source_count)
                 elif source == 'Flatpak':
                     cmd = ["flatpak", "update", "-y", "--noninteractive"] + pkgs
                     worker = CommandWorker(cmd, sudo=False)
@@ -73,6 +90,7 @@ def update_packages(app, packages_by_source: dict):
                         overall_success = False
                     worker.error.connect(_on_err_fp)
                     worker.run()
+                    emit_progress(f"Completed {source} packages", source_count)
                 elif source == 'npm':
                     env_user = os.environ.copy()
                     try:
@@ -139,6 +157,7 @@ def update_packages(app, packages_by_source: dict):
                             overall_success = False
                         w_s.error.connect(_on_err_np_s)
                         w_s.run()
+                    emit_progress(f"Completed {source} packages", source_count)
                 elif source == 'Local':
                     entries = { (e.get('id') or e.get('name')): e for e in app.load_local_update_entries() }
                     for token in pkgs:
@@ -162,15 +181,28 @@ def update_packages(app, packages_by_source: dict):
                                 overall_success = False
                         except Exception as ex:
                             app.log(str(ex))
+                    emit_progress(f"Completed {source} packages", source_count)
             if lock_detected:
                 try:
                     app.ui_call.emit(lambda: app.show_busy_pm_warning(lock_details, retry_action=lambda: update_packages(app, packages_by_source)))
                 except Exception:
                     pass
             if overall_success:
+                try:
+                    app.progress_update.emit("Update complete!", 100)
+                except Exception:
+                    pass
                 app.show_message.emit("Update Complete", f"Successfully updated {sum(len(v) for v in packages_by_source.values())} package(s).")
             else:
+                try:
+                    app.progress_update.emit("Update failed", -1)
+                except Exception:
+                    pass
                 app.show_message.emit("Update Failed", "Some updates failed. See console for details.")
+            try:
+                app.ui_call.emit(lambda: QTimer.singleShot(1500, app.finish_installation_progress))
+            except Exception:
+                pass
             try:
                 app.ui_call.emit(app.refresh_packages)
             except Exception:
@@ -188,12 +220,21 @@ def update_core_tools(app):
 
     def do_update():
         try:
+            app.progress_update.emit("Updating system packages...", 0)
             _update_system_packages(app)
+            app.progress_update.emit("Updating Flatpak packages...", 25)
             _update_flatpak(app)
+            app.progress_update.emit("Updating npm packages...", 50)
             _update_npm(app)
+            app.progress_update.emit("Updating AUR packages...", 75)
             _update_aur(app)
+            app.progress_update.emit("Tools updated!", 100)
             app.show_message.emit("Environment", "Tools updated")
         except Exception as e:
+            try:
+                app.progress_update.emit(f"Update failed: {str(e)}", -1)
+            except Exception:
+                pass
             app.show_message.emit("Environment", f"Update failed: {str(e)}")
         finally:
             try:

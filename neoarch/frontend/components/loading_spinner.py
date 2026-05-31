@@ -1,99 +1,139 @@
 """LoadingSpinner Component - Reusable loading spinner widget"""
 
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
-from PyQt6.QtCore import QTimer, Qt, QRectF
-from PyQt6.QtGui import QPixmap, QPainter, QColor, QPen
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QProgressBar
+from PyQt6.QtCore import Qt, QPropertyAnimation, pyqtProperty
+from PyQt6.QtGui import QPainter, QColor, QPen
+
+
+_SIZE = 48
+_CYCLE_MS = 2000
+
+
+class _SpinnerCanvas(QLabel):
+    """Draws the pulse animation directly via paintEvent — no QPixmap."""
+
+    def __init__(self):
+        super().__init__()
+        self._progress = 0.0
+        self.setFixedSize(_SIZE, _SIZE)
+
+    @pyqtProperty(float)
+    def progress(self):
+        return self._progress
+
+    @progress.setter
+    def progress(self, val):
+        self._progress = val
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        cx = cy = _SIZE / 2
+        t = self._progress
+
+        for color, delay in [("#FF6B6B", 0.0), ("#E53E3E", 0.5)]:
+            ft = (t - delay) % 1.0
+            s = max(0.01, ft)
+            half = s * _SIZE / 2
+
+            pen = QPen(QColor(color), 2, Qt.PenStyle.SolidLine)
+            painter.setPen(pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRect(
+                int(cx - half), int(cy - half),
+                int(s * _SIZE), int(s * _SIZE),
+            )
 
 
 class LoadingSpinner(QWidget):
-    """Reusable loading spinner component"""
+    """Modern loading spinner with expanding-ring pulse animation.
+
+    Uses QPropertyAnimation + direct paintEvent — zero runtime allocations,
+    no QTimer, no QPixmap overhead.
+    """
 
     def __init__(self, parent=None, message="Loading..."):
         super().__init__(parent)
         self.message = message
-        self.spinner_angle = 0
-        self.init_ui()
 
-    def init_ui(self):
+        self._canvas = _SpinnerCanvas()
+        self._anim = QPropertyAnimation(self._canvas, b"progress")
+        self._anim.setLoopCount(-1)
+        self._anim.setDuration(_CYCLE_MS)
+        self._anim.setStartValue(0.0)
+        self._anim.setEndValue(1.0)
+
+        self._msg_label = QLabel(message)
+        self._msg_label.setObjectName("spinnerMsgLabel")
+        self._msg_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._msg_label.setMinimumWidth(360)
+
+        self._progress_bar = QProgressBar()
+        self._progress_bar.setRange(0, 0)
+        self._progress_bar.setFixedWidth(360)
+        self._progress_bar.setFixedHeight(8)
+        self._progress_bar.setTextVisible(False)
+        self._progress_bar.setVisible(False)
+
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 20, 0, 20)
-        layout.setSpacing(12)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.spinner_label = QLabel()
-        self.spinner_label.setFixedSize(48, 48)
-        layout.addWidget(self.spinner_label, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        self.spinner_timer = QTimer()
-        self.spinner_timer.timeout.connect(self.animate_spinner)
-
-        self.loading_label = QLabel(self.message)
-        self.loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.loading_label)
+        layout.setContentsMargins(60, 60, 60, 40)
+        layout.setSpacing(30)
+        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        layout.addWidget(self._canvas, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._msg_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._progress_bar, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.setStyleSheet("""
             LoadingSpinner {
                 background-color: transparent;
                 border: none;
             }
-            LoadingSpinner QLabel {
+            LoadingSpinner QLabel#spinnerMsgLabel {
                 background-color: transparent;
-                color: #00BFAE;
-                font-size: 14px;
+                color: #E8E8E8;
+                font-size: 20px;
                 font-weight: 500;
+            }
+            LoadingSpinner QProgressBar {
+                border: none;
+                border-radius: 4px;
+                text-align: center;
+                background-color: rgba(255, 255, 255, 0.08);
+            }
+            LoadingSpinner QProgressBar::chunk {
+                background-color: #E53E3E;
+                border-radius: 4px;
             }
         """)
 
-    def animate_spinner(self):
-        self.spinner_angle = (self.spinner_angle + 15) % 360
-
-        pixmap = QPixmap(48, 48)
-        if pixmap.isNull():
-            return
-        pixmap.fill(Qt.GlobalColor.transparent)
-
-        painter = QPainter(pixmap)
-        if not painter.isActive():
-            return
-
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        rainbow_colors = [
-            QColor("#FF6B6B"), QColor("#FFD93D"), QColor("#6BCF7F"),
-            QColor("#4ECDC4"), QColor("#45B7D1"), QColor("#96CEB4"),
-            QColor("#FECA57"), QColor("#FF9FF3"),
-        ]
-
-        for i in range(8):
-            angle = (self.spinner_angle + i * 45) % 360
-            progress = (angle / 360.0)
-            opacity = 0.2 + 0.8 * (1 - abs(progress - 0.5) * 2)
-
-            color = rainbow_colors[i].lighter(120)
-            color.setAlphaF(opacity)
-
-            painter.setPen(QPen(color, 4, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-
-            start_angle = angle * 16
-            span_angle = 35 * 16
-
-            rect = QRectF(8, 8, 32, 32)
-            painter.drawArc(rect, start_angle, span_angle)
-
-        painter.end()
-        self.spinner_label.setPixmap(pixmap)
-
     def start_animation(self, message=None):
         if message:
-            self.loading_label.setText(message)
-        self.spinner_timer.start(100)
+            self._msg_label.setText(message)
+        self._anim.start()
 
     def stop_animation(self):
-        self.spinner_timer.stop()
+        self._anim.stop()
+        self._canvas.progress = 0.0
+        self._canvas.update()
 
     def set_message(self, message):
-        self.loading_label.setText(message)
+        self._msg_label.setText(message)
+
+    def set_progress(self, percent):
+        if percent < 0:
+            self._progress_bar.setRange(0, 0)
+            self._progress_bar.setVisible(True)
+        else:
+            self._progress_bar.setRange(0, 100)
+            self._progress_bar.setValue(min(100, max(0, percent)))
+            self._progress_bar.setVisible(True)
+
+    def hide_progress(self):
+        self._progress_bar.setVisible(False)
+        self._progress_bar.setRange(0, 0)
+        self._progress_bar.setValue(0)
 
     def is_animating(self):
-        return self.spinner_timer.isActive()
+        return self._anim.state() == QPropertyAnimation.State.Running

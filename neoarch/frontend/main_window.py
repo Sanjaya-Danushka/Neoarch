@@ -38,6 +38,8 @@ from neoarch.managers.git_manager import GitManager
 from neoarch.frontend.components.plugins_view import PluginsView
 from neoarch.frontend.components.plugins_sidebar import PluginsSidebar
 from neoarch.frontend.components.large_search_box import LargeSearchBox
+from neoarch.frontend.components.packages_grid_view import PackagesGridView
+from neoarch.frontend.components.package_detail_card import PackageDetailCard
 from neoarch.frontend.components.loading_spinner import LoadingSpinner
 from neoarch.frontend.components.filter_card import FilterCard
 from neoarch.frontend.components.source_card import SourceCard
@@ -233,6 +235,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
     load_error = pyqtSignal()
     search_timer = QTimer()
     installation_progress = pyqtSignal(str, bool)  # status, can_cancel
+    progress_update = pyqtSignal(str, int)  # message, percent (-1 = indeterminate)
     ui_call = pyqtSignal(object)
     
     def __init__(self):
@@ -283,10 +286,14 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         self.log_signal.connect(self.log)
         self.load_error.connect(self.on_load_error)
         self.installation_progress.connect(self.on_installation_progress)
+        self.progress_update.connect(self.on_progress_update)
         self.ui_call.connect(self._on_ui_call)
         # Background loading coordination
         self.loading_context: Any = None
         self.cancel_update_load = False
+        self._updating_selection = False
+        self._view_mode = "table"
+        self._grid_view_btn = None
         self.cancel_discover_search = False
         # Nav badges (e.g., updates count)
         self.nav_badges = {}
@@ -432,12 +439,17 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         if len(query) < 2:
             if self.current_view == "discover":
                 self.large_search_box.setVisible(True)
-                self.package_table.setVisible(False)
+                self.large_search_box.clear()
+                self._hide_all_package_views()
                 self.load_more_btn.setVisible(False)
                 if hasattr(self, 'no_results_widget'):
                     self.no_results_widget.setVisible(False)
                 self.package_table.setRowCount(0)
                 self.header_info.setText("Search and discover new packages to install")
+                if hasattr(self, 'discover_select_all_btn'):
+                    self.discover_select_all_btn.setVisible(False)
+                if hasattr(self, 'discover_install_btn'):
+                    self.discover_install_btn.setVisible(False)
             elif self.current_view == "installed":
                 try:
                     if hasattr(self, 'no_results_widget'):
@@ -445,7 +457,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 except Exception:
                     pass
                 self.apply_filters()
-                self.package_table.setVisible(True)
+                self._show_active_view()
             elif self.current_view == "updates":
                 try:
                     if hasattr(self, 'no_results_widget'):
@@ -453,11 +465,11 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 except Exception:
                     pass
                 self.apply_update_filters()
-                self.package_table.setVisible(True)
+                self._show_active_view()
             return
         if self.current_view == "discover":
             self.large_search_box.setVisible(False)
-            self.package_table.setVisible(True)
+            self._show_active_view()
             self.search_discover_packages(query)
         else:
             self.filter_packages()
@@ -990,21 +1002,35 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 spacing: 8px;
             }}
             QCheckBox#tableCheckbox::indicator {{
-                width: 20px;
-                height: 20px;
-                border-radius: 10px;
-                border: 2px solid rgba({r}, {g}, {b}, 0.4);
-                background-color: transparent;
+                width: 22px;
+                height: 22px;
+                border-radius: 11px;
+                border: 2px solid rgba({r}, {g}, {b}, 0.35);
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(40, 42, 48, 0.9),
+                    stop:1 rgba(28, 30, 36, 0.9));
             }}
             QCheckBox#tableCheckbox::indicator:checked {{
-                background-color: {hex_color};
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {hex_color},
+                    stop:1 rgba({r//2}, {g//2}, {b//2}, 1));
                 border: 2px solid {hex_color};
             }}
             QCheckBox#tableCheckbox::indicator:hover {{
                 border-color: rgba({r}, {g}, {b}, 0.8);
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(50, 52, 58, 0.9),
+                    stop:1 rgba(34, 36, 42, 0.9));
             }}
             """
         )
+
+    def _apply_neumorphic_shadow(self, widget):
+        s = QGraphicsDropShadowEffect()
+        s.setBlurRadius(18)
+        s.setColor(QColor(0, 0, 0, 160))
+        s.setOffset(3, 4)
+        widget.setGraphicsEffect(s)
 
     def get_svg_icon(self, icon_path, size=18):
         try:
@@ -1057,34 +1083,39 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         except Exception:
             return QIcon()
     
-    def create_toolbar_button(self, icon_path, tooltip, callback, icon_size=24):
+    def create_toolbar_button(self, icon_path, tooltip, callback, icon_size=22):
         """Create a reusable toolbar button with icon and tooltip"""
         btn = QPushButton()
-        btn.setFixedSize(40, 40)
+        btn.setFixedSize(42, 42)
         btn.setToolTip(tooltip)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
         btn.clicked.connect(callback)
         btn.setStyleSheet("""
             QPushButton {
-                padding: 6px;
-                margin: 2px;
-                border-radius: 14px;
-                background-color: rgba(28, 30, 36, 0.5);
-                border: 1px solid rgba(255, 255, 255, 0.03);
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(40, 42, 48, 0.9),
+                    stop:1 rgba(28, 30, 36, 0.9));
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 21px;
             }
             QPushButton:hover {
-                background-color: rgba(34, 36, 42, 0.7);
-                border: 1px solid rgba(0, 191, 174, 0.15);
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(50, 52, 58, 0.9),
+                    stop:1 rgba(34, 36, 42, 0.9));
+                border: 1px solid rgba(0, 191, 174, 0.25);
             }
             QPushButton:pressed {
-                background-color: rgba(0, 191, 174, 0.12);
-                border: 1px solid rgba(0, 191, 174, 0.25);
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(20, 22, 26, 0.9),
+                    stop:1 rgba(24, 26, 32, 0.9));
+                border: 1px solid rgba(0, 191, 174, 0.4);
             }
         """)
         
         glow = QGraphicsDropShadowEffect(btn)
-        glow.setBlurRadius(18)
-        glow.setColor(QColor(0, 0, 0, 60))
-        glow.setOffset(0, 2)
+        glow.setBlurRadius(20)
+        glow.setColor(QColor(0, 0, 0, 160))
+        glow.setOffset(3, 4)
         btn.setGraphicsEffect(glow)
         
         # Try to load SVG icon, fallback to emoji
@@ -1107,12 +1138,12 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         """Add common right-side navbar icons to any toolbar layout."""
         navbar_dir = os.path.join(_BASE_DIR, "assets", "icons", "navbar")
         
-        grid_btn = self.create_toolbar_button(
+        self._grid_view_btn = self.create_toolbar_button(
             os.path.join(navbar_dir, "view.svg"),
             "Grid View",
             self.toggle_view_mode
         )
-        layout.addWidget(grid_btn)
+        layout.addWidget(self._grid_view_btn)
         
         filter_btn = self.create_toolbar_button(
             os.path.join(navbar_dir, "Filter.svg"),
@@ -1146,7 +1177,49 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             layout.addWidget(sudo_btn)
     
     def toggle_view_mode(self):
-        self.log("Toggle view mode")
+        navbar_dir = os.path.join(_BASE_DIR, "assets", "icons", "navbar")
+        if self._view_mode == "table":
+            self._view_mode = "grid"
+            self.package_table.setVisible(False)
+            self.packages_grid.setVisible(True)
+            if self._grid_view_btn:
+                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(navbar_dir, "list.svg"), 20))
+                self._grid_view_btn.setToolTip("List View")
+            self._populate_grid()
+        else:
+            self._view_mode = "table"
+            self.packages_grid.setVisible(False)
+            self.package_table.setVisible(True)
+            if self._grid_view_btn:
+                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(navbar_dir, "view.svg"), 20))
+                self._grid_view_btn.setToolTip("Grid View")
+
+    def _populate_grid(self):
+        self.packages_grid.clear()
+        dataset = self.all_packages
+        if self.current_view == "discover":
+            if hasattr(self, 'filtered_results') and self.filtered_results:
+                dataset = self.filtered_results
+            else:
+                dataset = self.search_results
+        if not dataset:
+            return
+        total = min(len(dataset), (self.current_page + 1) * self.packages_per_page)
+        for i in range(total):
+            self.packages_grid.add_package(dataset[i], i)
+        self.packages_grid._relayout()
+
+    def _show_active_view(self):
+        self.packages_grid.setVisible(self._view_mode == "grid")
+        self.package_table.setVisible(self._view_mode == "table")
+        if self._view_mode == "grid":
+            self._populate_grid()
+
+    def _hide_all_package_views(self):
+        self.package_table.setVisible(False)
+        self.packages_grid.setVisible(False)
+        if hasattr(self, 'package_detail_card'):
+            self.package_detail_card.clear()
     
     def install_from_local_file(self):
         self.log("Install from local file")
@@ -1351,22 +1424,20 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             checkbox = self.get_row_checkbox(row)
             if checkbox is not None and checkbox.isChecked():
                 name_item = self.package_table.item(row, 1)
-                id_item = self.package_table.item(row, 2)
                 pkg_name = name_item.text().strip() if name_item else ''
-                pkg_id = id_item.text().strip() if id_item else pkg_name
                 if self.current_view == "discover":
                     source = ""
-                    chip = self.package_table.cellWidget(row, 4)
+                    chip = self.package_table.cellWidget(row, 3)
                     if chip is not None:
                         labels = chip.findChildren(QLabel)
                         if labels:
                             source = labels[-1].text()
                 else:
-                    source_item = self.package_table.item(row, 5)
+                    source_item = self.package_table.item(row, 4)
                     source = source_item.text() if source_item else "pacman"
                 if source not in packages_by_source:
                     packages_by_source[source] = []
-                install_token = pkg_id if source == 'Flatpak' else pkg_name
+                install_token = pkg_name if source == 'Flatpak' else pkg_name
                 packages_by_source[source].append(install_token)
         
         if not packages_by_source:
@@ -1551,24 +1622,46 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         self.plugins_view.setVisible(False)
         self.packages_panel_layout.addWidget(self.plugins_view)
         
+        # Container for table area + detail card side panel
+        self.packages_content_area = QWidget()
+        packages_content_layout = QHBoxLayout(self.packages_content_area)
+        packages_content_layout.setContentsMargins(0, 0, 0, 0)
+        packages_content_layout.setSpacing(12)
+
+        # Left side: table + grid + load more
+        self.packages_table_area = QWidget()
+        table_area_layout = QVBoxLayout(self.packages_table_area)
+        table_area_layout.setContentsMargins(0, 0, 0, 0)
+        table_area_layout.setSpacing(8)
+
         # Packages Table
         self.package_table = QTableWidget()
-        self.package_table.setColumnCount(6)
+        self.package_table.setColumnCount(5)
         self.package_table.setHorizontalHeaderLabels(
-            ["", "Package Name", "Package ID", "Version", "New Version", "Source"]
+            ["", "Package Name", "Version", "New Version", "Source"]
         )
         self.package_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.package_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        self.package_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        self.package_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self.package_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
         self.package_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
-        self.package_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
         self.package_table.verticalHeader().setVisible(False)
         self.package_table.setAlternatingRowColors(True)
         self.package_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.package_table.setSelectionMode(QTableWidget.SelectionMode.MultiSelection)
         self.package_table.selectionModel().selectionChanged.connect(self.on_selection_changed)
-        self.packages_panel_layout.addWidget(self.package_table, 1)
+        self.package_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.package_table.setShowGrid(False)
+        self.package_table.setIconSize(QSize(20, 20))
+        self.package_table.setWordWrap(True)
+        self.package_table.verticalHeader().setDefaultSectionSize(56)
+        table_area_layout.addWidget(self.package_table, 1)
+
+        # Packages Grid View (hidden by default, toggled via toolbar button)
+        self.packages_grid = PackagesGridView()
+        self.packages_grid.setVisible(False)
+        table_area_layout.addWidget(self.packages_grid, 1)
+
         self.load_more_btn = QPushButton("Load More Packages")
         self.load_more_btn.setMinimumHeight(36)
         icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
@@ -1576,16 +1669,55 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         self.load_more_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "load-more.svg"), 20))
         self.load_more_btn.clicked.connect(self.load_more_packages)
         self.load_more_btn.setVisible(False)
-        self.packages_panel_layout.addWidget(self.load_more_btn)
+        table_area_layout.addWidget(self.load_more_btn)
+
+        packages_content_layout.addWidget(self.packages_table_area, 1)
+
+        # Right side: detail card for selected package
+        self.package_detail_card = PackageDetailCard()
+        self.package_detail_card.install_requested.connect(self.install_from_detail)
+        self.package_detail_card.update_requested.connect(self.update_from_detail)
+        self.package_detail_card.uninstall_requested.connect(self.uninstall_from_detail)
+        packages_content_layout.addWidget(self.package_detail_card, 0, Qt.AlignmentFlag.AlignRight)
+
+        self.packages_panel_layout.addWidget(self.packages_content_area, 1)
 
         # Console toggle button (bottom-right)
         self.console_toggle_btn = QPushButton()
-        self.console_toggle_btn.setFixedSize(36, 36)
+        self.console_toggle_btn.setFixedSize(42, 42)
         self.console_toggle_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "terminal.svg"), 20))
         self.console_toggle_btn.setIconSize(QSize(20, 20))
         self.console_toggle_btn.setToolTip("Show Console")
+        self.console_toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.console_toggle_btn.clicked.connect(self.toggle_console)
         self.console_toggle_btn.setVisible(False)
+        self.console_toggle_btn.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(40, 42, 48, 0.95),
+                    stop:1 rgba(28, 30, 36, 0.95));
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 21px;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(50, 52, 58, 0.95),
+                    stop:1 rgba(34, 36, 42, 0.95));
+                border: 1px solid rgba(0, 191, 174, 0.3);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(20, 22, 26, 0.95),
+                    stop:1 rgba(24, 26, 32, 0.95));
+                border: 1px solid rgba(0, 191, 174, 0.5);
+            }
+        """)
+        btn_shadow = QGraphicsDropShadowEffect()
+        btn_shadow.setBlurRadius(20)
+        btn_shadow.setColor(QColor(0, 0, 0, 160))
+        btn_shadow.setOffset(3, 4)
+        self.console_toggle_btn.setGraphicsEffect(btn_shadow)
         self.packages_panel_layout.addWidget(self.console_toggle_btn, alignment=Qt.AlignmentFlag.AlignRight)
         
         # Console Output
@@ -1649,6 +1781,12 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 }}
             """
 
+            select_all_btn = QPushButton("Select All")
+            select_all_btn.setMinimumHeight(36)
+            select_all_btn.setStyleSheet(btn_style)
+            select_all_btn.clicked.connect(self.toggle_select_all)
+            layout.addWidget(select_all_btn)
+
             update_btn = QPushButton("Update Selected")
             update_btn.setMinimumHeight(36)
             update_btn.setStyleSheet(btn_style)
@@ -1674,6 +1812,25 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         elif self.current_view == "installed":
             layout = QHBoxLayout()
             layout.setSpacing(12)
+
+            select_all_btn = QPushButton("Select All")
+            select_all_btn.setMinimumHeight(36)
+            select_all_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: transparent;
+                    color: #F0F0F0;
+                    border: 1px solid rgba(0, 191, 174, 0.3);
+                    border-radius: 6px;
+                    padding: 6px 12px;
+                    font-size: 12px;
+                    font-weight: 500;
+                }
+                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
+                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
+            """)
+            select_all_btn.clicked.connect(self.toggle_select_all)
+            layout.addWidget(select_all_btn)
+
             update_btn = QPushButton("Update Selected")
             update_btn.setMinimumHeight(36)
             update_btn.setStyleSheet(
@@ -1721,15 +1878,22 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         elif self.current_view == "discover":
             layout = QHBoxLayout()
             layout.setSpacing(8)  # Tighter spacing
-            
-            install_btn = QPushButton("Install selected packages")
-            install_btn.setMinimumHeight(36)
-            install_btn.clicked.connect(self.install_selected)
+
+            self.discover_select_all_btn = QPushButton("Select All")
+            self.discover_select_all_btn.setMinimumHeight(36)
+            self.discover_select_all_btn.clicked.connect(self.toggle_select_all)
+            self.discover_select_all_btn.setVisible(False)
+            layout.addWidget(self.discover_select_all_btn)
+
+            self.discover_install_btn = QPushButton("Install selected packages")
+            self.discover_install_btn.setMinimumHeight(36)
+            self.discover_install_btn.clicked.connect(self.install_selected)
             icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
             
-            install_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "install-selected packge.svg"), 20))
+            self.discover_install_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "install-selected packge.svg"), 20))
+            self.discover_install_btn.setVisible(False)
             
-            layout.addWidget(install_btn)
+            layout.addWidget(self.discover_install_btn)
 
             layout.addStretch()  # Push remaining buttons to the right
             
@@ -1748,6 +1912,25 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         elif self.current_view == "bundles":
             layout = QHBoxLayout()
             layout.setSpacing(12)
+
+            select_all_btn = QPushButton("Select All")
+            select_all_btn.setMinimumHeight(36)
+            select_all_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: transparent;
+                    color: #F0F0F0;
+                    border: 1px solid rgba(0, 191, 174, 0.3);
+                    border-radius: 6px;
+                    padding: 6px 12px;
+                    font-size: 12px;
+                    font-weight: 500;
+                }
+                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
+                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
+            """)
+            select_all_btn.clicked.connect(self.toggle_select_all)
+            layout.addWidget(select_all_btn)
+
             install_bundle_btn = QPushButton("Install Bundle")
             install_bundle_btn.setMinimumHeight(36)
             install_bundle_btn.setStyleSheet(
@@ -1877,6 +2060,9 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 self.console_toggle_btn.setVisible(False)
         except Exception:
             pass
+        # Clear detail card
+        if hasattr(self, 'package_detail_card'):
+            self.package_detail_card.clear()
         # Cancel ongoing non-install tasks
         self.cancel_update_load = True
         self.cancel_discover_search = True
@@ -1949,7 +2135,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                     self.loading_container.setVisible(True)
             except Exception:
                 pass
-            self.package_table.setVisible(False)
+            self._hide_all_package_views()
             self.load_updates()
         elif view_id == "installed":
             try:
@@ -1969,13 +2155,13 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             except Exception:
                 pass
             try:
-                self.package_table.setVisible(False)
+                self._hide_all_package_views()
             except Exception:
                 pass
             self.load_installed_packages()
         elif view_id == "discover":
             self.large_search_box.setVisible(True)
-            self.package_table.setVisible(False)
+            self._hide_all_package_views()
             self.load_more_btn.setVisible(False)
             self.package_table.setRowCount(0)
             self.header_info.setText("Search and discover new packages to install")
@@ -2008,7 +2194,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                     pass
                 try:
                     self.large_search_box.setVisible(False)
-                    self.package_table.setVisible(False)
+                    self._hide_all_package_views()
                 except Exception:
                     pass
                 try:
@@ -2018,7 +2204,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         elif view_id == "bundles":
             self.package_table.setRowCount(0)
             self.header_info.setText("Create, import, export, and install bundles of packages across sources")
-            self.package_table.setVisible(True)
+            self._show_active_view()
             self.load_more_btn.setVisible(False)
             try:
                 self.search_input.setPlaceholderText("Search for packages")
@@ -2049,7 +2235,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 pass
             self.large_search_box.setVisible(False)
             self.settings_container.setVisible(False)
-            self.package_table.setVisible(False)
+            self._hide_all_package_views()
             self.load_more_btn.setVisible(False)
             
             # Clear any existing source cards from sources_layout
@@ -2107,7 +2293,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             except Exception:
                 pass
             self.large_search_box.setVisible(False)
-            self.package_table.setVisible(False)
+            self._hide_all_package_views()
             self.load_more_btn.setVisible(False)
             self.settings_container.setVisible(True)
             
@@ -2445,20 +2631,31 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         if current_query and self.current_view == "discover":
             self.search_discover_packages(current_query)
     
+    def _apply_common_table_style(self):
+        self.package_table.setShowGrid(False)
+        self.package_table.setIconSize(QSize(20, 20))
+        self.package_table.setWordWrap(True)
+        self.package_table.verticalHeader().setDefaultSectionSize(56)
+        self.package_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+
     def update_table_columns(self, view_id):
+        self._apply_common_table_style()
         if view_id == "installed":
-            self.package_table.setColumnCount(6)
-            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Package ID", "Version", "Source", "Status"])
-            self.package_table.setObjectName("")  # Reset object name
-            self.package_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-            self.package_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-            self.package_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-            self.package_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-            self.package_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
-            self.package_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
-        elif view_id == "bundles":
             self.package_table.setColumnCount(5)
-            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Package ID", "Version", "Source"])
+            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "Source", "Status"])
+            self.package_table.setObjectName("")
+            self.package_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+            self.package_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+            self.package_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
+            self.package_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
+            self.package_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
+            self.package_table.setColumnWidth(0, 48)
+            self.package_table.setColumnWidth(2, 140)
+            self.package_table.setColumnWidth(3, 120)
+            self.package_table.setColumnWidth(4, 120)
+        elif view_id == "bundles":
+            self.package_table.setColumnCount(4)
+            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "Source"])
             self.package_table.setObjectName("bundlesTable")
             header = self.package_table.horizontalHeader()
             header.setStretchLastSection(False)
@@ -2466,19 +2663,26 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
             header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
             header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
-            header.setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
             self.package_table.setColumnWidth(0, 48)
-            self.package_table.setColumnWidth(2, 220)
-            self.package_table.setColumnWidth(3, 140)
-            self.package_table.setColumnWidth(4, 120)
-            self.package_table.setShowGrid(False)
-            self.package_table.setIconSize(QSize(20, 20))
-            self.package_table.setWordWrap(True)
-            self.package_table.verticalHeader().setDefaultSectionSize(56)
+            self.package_table.setColumnWidth(2, 140)
+            self.package_table.setColumnWidth(3, 120)
         elif view_id == "discover":
+            self.package_table.setColumnCount(4)
+            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "Source"])
+            self.package_table.setObjectName("discoverTable")
+            header = self.package_table.horizontalHeader()
+            header.setStretchLastSection(False)
+            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+            header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
+            header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
+            self.package_table.setColumnWidth(0, 48)
+            self.package_table.setColumnWidth(2, 140)
+            self.package_table.setColumnWidth(3, 120)
+        else:
             self.package_table.setColumnCount(5)
-            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Package ID", "Version", "Source"])
-            self.package_table.setObjectName("discoverTable")  # Apply special styling
+            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "New Version", "Source"])
+            self.package_table.setObjectName("")
             header = self.package_table.horizontalHeader()
             header.setStretchLastSection(False)
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
@@ -2487,23 +2691,9 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
             header.setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
             self.package_table.setColumnWidth(0, 48)
-            self.package_table.setColumnWidth(2, 220)
+            self.package_table.setColumnWidth(2, 140)
             self.package_table.setColumnWidth(3, 140)
             self.package_table.setColumnWidth(4, 120)
-            self.package_table.setShowGrid(False)
-            self.package_table.setIconSize(QSize(20, 20))
-            self.package_table.setWordWrap(True)
-            self.package_table.verticalHeader().setDefaultSectionSize(56)
-        else:
-            self.package_table.setColumnCount(6)
-            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Package ID", "Version", "New Version", "Source"])
-            self.package_table.setObjectName("")  # Reset object name
-            self.package_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-            self.package_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-            self.package_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-            self.package_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-            self.package_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
-            self.package_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
     
     def load_updates(self):
         return packages_service.load_updates(self)
@@ -2538,7 +2728,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 pass
         
         
-        # Hide loading spinner, stop animation, and show packages table
+        # Hide loading spinner, stop animation, and show packages
         self.loading_widget.setVisible(False)
         self.loading_widget.stop_animation()
         try:
@@ -2546,7 +2736,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 self.loading_container.setVisible(False)
         except Exception:
             pass
-        self.package_table.setVisible(True)
+        self._show_active_view()
         # Show console toggle button for updates view like Discover
         try:
             if self.current_view in ("updates", "installed") and hasattr(self, 'console_toggle_btn'):
@@ -2573,7 +2763,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 self.loading_container.setVisible(False)
         except Exception:
             pass
-        self.package_table.setVisible(True)
+        self._show_active_view()
         try:
             if self.current_view in ("updates", "installed") and hasattr(self, 'console_toggle_btn'):
                 self.console_toggle_btn.setVisible(True)
@@ -2596,6 +2786,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 pass
             self.load_more_btn.setVisible(False)
             self.loading_widget.set_message("Installing packages...")
+            self.loading_widget.set_progress(-1)
             self.loading_widget.setVisible(True)
             self.loading_widget.start_animation()
             try:
@@ -2614,7 +2805,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             except Exception:
                 pass
             try:
-                self.package_table.setVisible(False)
+                self._hide_all_package_views()
             except Exception:
                 pass
             # Keep console accessible via toggle, but hide the panel by default
@@ -2655,6 +2846,28 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             # Keep spinner visible briefly to show cancellation, then hide
             QTimer.singleShot(1500, lambda: self.finish_installation_progress())
     
+    def on_progress_update(self, message, percent):
+        try:
+            self.loading_widget.set_message(message)
+            self.loading_widget.set_progress(percent)
+        except Exception:
+            pass
+
+    def _show_operation_spinner(self, message):
+        """Show loading spinner for an ongoing operation."""
+        self._hide_all_package_views()
+        self.load_more_btn.setVisible(False)
+        self.loading_widget.set_message(message)
+        self.loading_widget.set_progress(-1)
+        self.loading_widget.setVisible(True)
+        self.loading_widget.start_animation()
+        self.loading_container.setVisible(True)
+        try:
+            self.large_search_box.setVisible(False)
+            self.no_results_widget.setVisible(False)
+        except Exception:
+            pass
+
     def finish_installation_progress(self):
         try:
             self._installing = False
@@ -2662,13 +2875,14 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             pass
         self.loading_widget.setVisible(False)
         self.loading_widget.stop_animation()
+        self.loading_widget.hide_progress()
         try:
             if hasattr(self, 'loading_container'):
                 self.loading_container.setVisible(False)
         except Exception:
             pass
         try:
-            self.package_table.setVisible(True)
+            self._show_active_view()
         except Exception:
             pass
         self.update_load_more_visibility()
@@ -2714,6 +2928,8 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'))
         
         self.package_table.setUpdatesEnabled(True)
+        if self._view_mode == "grid":
+            self._populate_grid()
         # Make sure nothing is selected by default
         try:
             self.package_table.clearSelection()
@@ -2757,6 +2973,8 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             else:
                 self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'))
         self.package_table.setUpdatesEnabled(True)
+        if self._view_mode == "grid":
+            self._populate_grid()
         
         has_more = end < total
         self.load_more_btn.setVisible(has_more)
@@ -2788,23 +3006,19 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         cb_layout.addStretch()
         cb_layout.addWidget(checkbox)
         cb_layout.addStretch()
+        self._apply_neumorphic_shadow(cb_container)
         self.package_table.setCellWidget(row, 0, cb_container)
         checkbox.stateChanged.connect(lambda state, r=row: self.on_checkbox_changed(r, state))
         
         name_item = QTableWidgetItem(pkg['name'])
         name_item.setToolTip(pkg['name'])
-        font = QFont()
-        font.setBold(True)
-        name_item.setFont(font)
+        name_item.setData(Qt.ItemDataRole.UserRole, pkg)
         icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
         name_item.setIcon(self.get_svg_icon(os.path.join(icon_dir, "packagename.svg"), 20))
         self.package_table.setItem(row, 1, name_item)
-        id_item = QTableWidgetItem(pkg['id'])
-        id_item.setIcon(self.get_svg_icon(os.path.join(icon_dir, "pacakgeid.svg"), 18))
-        self.package_table.setItem(row, 2, id_item)
         ver_item = QTableWidgetItem(pkg['version'])
         ver_item.setIcon(self.get_svg_icon(os.path.join(icon_dir, "version.svg"), 18))
-        self.package_table.setItem(row, 3, ver_item)
+        self.package_table.setItem(row, 2, ver_item)
         source_chip = QWidget()
         source_chip.setObjectName("sourceChip")
         chip_layout = QHBoxLayout(source_chip)
@@ -2817,7 +3031,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         chip_layout.addWidget(chip_icon)
         chip_text = QLabel(pkg.get('source', ''))
         chip_layout.addWidget(chip_text)
-        self.package_table.setCellWidget(row, 4, source_chip)
+        self.package_table.setCellWidget(row, 3, source_chip)
         try:
             installed = self.is_package_installed(pkg)
         except Exception:
@@ -2825,11 +3039,9 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         if installed:
             green = QColor(16, 185, 129)
             name_item.setForeground(green)
-            id_item.setForeground(green)
             ver_item.setForeground(green)
             tip = "Already installed"
             name_item.setToolTip(tip)
-            id_item.setToolTip(tip)
             ver_item.setToolTip(tip)
             try:
                 chip_text.setStyleSheet("color: rgb(16,185,129);")
@@ -2858,39 +3070,35 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         cb_layout.addStretch()
         cb_layout.addWidget(checkbox)
         cb_layout.addStretch()
+        self._apply_neumorphic_shadow(cb_container)
         self.package_table.setCellWidget(row, 0, cb_container)
         checkbox.stateChanged.connect(lambda state, r=row: self.on_checkbox_changed(r, state))
         
         name_item = QTableWidgetItem(name)
-        font = QFont()
-        font.setBold(True)
-        name_item.setFont(font)
         icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
         name_item.setIcon(self.get_svg_icon(os.path.join(icon_dir, "packagename.svg"), 20))
+        if pkg_data:
+            name_item.setData(Qt.ItemDataRole.UserRole, pkg_data)
         self.package_table.setItem(row, 1, name_item)
-        id_item = QTableWidgetItem(pkg_id)
-        id_item.setIcon(self.get_svg_icon(os.path.join(icon_dir, "pacakgeid.svg"), 18))
-        self.package_table.setItem(row, 2, id_item)
         ver_item = QTableWidgetItem(version)
         ver_item.setIcon(self.get_svg_icon(os.path.join(icon_dir, "version.svg"), 18))
-        self.package_table.setItem(row, 3, ver_item)
+        self.package_table.setItem(row, 2, ver_item)
         
         if self.current_view == "installed" and pkg_data:
-            self.package_table.setItem(row, 4, QTableWidgetItem(pkg_data.get('source', 'pacman')))
+            self.package_table.setItem(row, 3, QTableWidgetItem(pkg_data.get('source', 'pacman')))
             status = "⬆️ Update available" if pkg_data.get('has_update') else "✓ Up to date"
             status_item = QTableWidgetItem(status)
             if pkg_data.get('has_update'):
                 status_item.setForeground(QColor(255, 165, 0))
             else:
                 status_item.setForeground(QColor(16, 185, 129))
-            self.package_table.setItem(row, 5, status_item)
-        elif self.package_table.columnCount() > 4:
+            self.package_table.setItem(row, 4, status_item)
+        elif self.package_table.columnCount() > 3:
             new_version_item = QTableWidgetItem(new_version)
             if self.current_view == "updates":
-                # Make new version green to indicate available update
-                new_version_item.setForeground(QColor(16, 185, 129))  # Green color
-            self.package_table.setItem(row, 4, new_version_item)
-            self.package_table.setItem(row, 5, QTableWidgetItem(source))
+                new_version_item.setForeground(QColor(16, 185, 129))
+            self.package_table.setItem(row, 3, new_version_item)
+            self.package_table.setItem(row, 4, QTableWidgetItem(source))
     
     def filter_packages(self):
         query = self.search_input.text().lower()
@@ -2898,7 +3106,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         if not query:
             if self.current_view == "discover":
                 self.large_search_box.setVisible(True)
-                self.package_table.setVisible(False)
+                self._hide_all_package_views()
                 self.load_more_btn.setVisible(False)
                 if hasattr(self, 'no_results_widget'):
                     self.no_results_widget.setVisible(False)
@@ -2970,7 +3178,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         self.loading_widget.setVisible(True)
         self.loading_widget.set_message("Searching packages...")
         self.loading_widget.start_animation()
-        self.package_table.setVisible(False)
+        self._hide_all_package_views()
         try:
             if hasattr(self, 'loading_container'):
                 self.loading_container.setVisible(True)
@@ -3179,7 +3387,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         if packages is not None:
             self.search_results = packages
         
-        # Hide loading spinner and show package table
+        # Hide loading spinner and show packages
         self.loading_widget.setVisible(False)
         self.loading_widget.stop_animation()
         try:
@@ -3187,7 +3395,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 self.loading_container.setVisible(False)
         except Exception:
             pass
-        self.package_table.setVisible(True)
+        self._show_active_view()
         try:
             if hasattr(self, 'console_toggle_btn'):
                 self.console_toggle_btn.setVisible(True)
@@ -3231,7 +3439,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         # Provide feedback if no results match
         if not filtered:
             self.header_info.setText(f"No packages found matching '{query}'.")
-            self.package_table.setVisible(False)
+            self._hide_all_package_views()
             if hasattr(self, 'no_results_widget'):
                 self.no_results_desc.setText(f"No packages found matching '{query}'.")
                 self.no_results_widget.setVisible(True)
@@ -3240,7 +3448,15 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             self.header_info.setText(f"{count} packages were found, {count} of which match the specified filters")
             if hasattr(self, 'no_results_widget'):
                 self.no_results_widget.setVisible(False)
-            self.package_table.setVisible(True)
+            self._show_active_view()
+
+        # Show/hide discover toolbar buttons based on whether results exist
+        if self.current_view == "discover":
+            has_results = bool(filtered)
+            if hasattr(self, 'discover_select_all_btn'):
+                self.discover_select_all_btn.setVisible(has_results)
+            if hasattr(self, 'discover_install_btn'):
+                self.discover_install_btn.setVisible(has_results)
 
     def refresh_packages(self):
         if self.current_view == "updates":
@@ -3269,6 +3485,20 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 checkbox.setChecked(True)
         self.update_selected()
 
+    def toggle_select_all(self):
+        """Toggle all checkboxes: if all checked, uncheck all; otherwise check all."""
+        total = self.package_table.rowCount()
+        checked = 0
+        for row in range(total):
+            checkbox = self.get_row_checkbox(row)
+            if checkbox is not None and checkbox.isChecked():
+                checked += 1
+        new_state = checked < total
+        for row in range(total):
+            checkbox = self.get_row_checkbox(row)
+            if checkbox is not None:
+                checkbox.setChecked(new_state)
+
     def clean_cache(self):
         """Clean pacman package cache."""
         self.log("Cleaning package cache…")
@@ -3290,28 +3520,27 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             checkbox = self.get_row_checkbox(row)
             if checkbox is not None and checkbox.isChecked():
                 name_item = self.package_table.item(row, 1)
-                id_item = self.package_table.item(row, 2)
-                # Source column differs by view: Updates has Source at col 5; Installed at col 4
-                source_col = 5 if self.current_view == "updates" else 4
+                # Source column: Updates has Source at col 4; Installed at col 3
+                source_col = 4 if self.current_view == "updates" else 3
                 source_item = self.package_table.item(row, source_col)
                 # On Installed view, only update rows that actually have an update available
                 if self.current_view == "installed":
-                    status_item = self.package_table.item(row, 5)
+                    status_item = self.package_table.item(row, 4)
                     if not status_item or "Update" not in (status_item.text() or ""):
                         continue
                 if not name_item:
                     continue
                 pkg_name = name_item.text().strip()
-                pkg_id = id_item.text().strip() if id_item else pkg_name
                 source = source_item.text() if source_item else "pacman"
                 if source not in packages_by_source:
                     packages_by_source[source] = []
-                token = pkg_id if source == 'Flatpak' else pkg_name
+                token = pkg_name if source == 'Flatpak' else pkg_name
                 packages_by_source[source].append(token)
         if not packages_by_source:
             self.log("No packages selected for update")
             return
         self.log(f"Selected packages for update: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
+        self._show_operation_spinner("Updating packages...")
         update_service.update_packages(self, packages_by_source)
     
     def ignore_selected(self):
@@ -3324,17 +3553,17 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         vid = view_id or self.current_view
         try:
             if vid in ("discover", "bundles"):
-                cell = self.package_table.cellWidget(row, 4)
+                cell = self.package_table.cellWidget(row, 3)
                 if cell:
                     labels = cell.findChildren(QLabel)
                     if labels:
                         return labels[-1].text()
                 return ""
             elif vid == "updates":
-                itm = self.package_table.item(row, 5)
+                itm = self.package_table.item(row, 4)
                 return itm.text() if itm else ""
             elif vid == "installed":
-                itm = self.package_table.item(row, 4)
+                itm = self.package_table.item(row, 3)
                 return itm.text() if itm else ""
         except Exception:
             return ""
@@ -3343,13 +3572,11 @@ class ArchPkgManagerUniGetUI(QMainWindow):
     def get_row_info(self, row, view_id=None):
         vid = view_id or self.current_view
         name_item = self.package_table.item(row, 1)
-        id_item = self.package_table.item(row, 2)
-        version_item = self.package_table.item(row, 3)
+        version_item = self.package_table.item(row, 2)
         name = name_item.text().strip() if name_item else ""
-        pkg_id = id_item.text().strip() if id_item else name
         version = version_item.text().strip() if version_item else ""
         source = self.get_source_text(row, vid)
-        return {"name": name, "id": pkg_id, "version": version, "source": source}
+        return {"name": name, "id": name, "version": version, "source": source}
     
     def build_installed_index(self, selected_sources=None, force=False):
         idx = self.installed_index if (self.installed_index is not None and not force) else {'pacman': set(), 'AUR': set(), 'Flatpak': set(), 'npm': set()}
@@ -3478,22 +3705,20 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             checkbox = self.get_row_checkbox(row)
             if checkbox is not None and checkbox.isChecked():
                 name_item = self.package_table.item(row, 1)
-                id_item = self.package_table.item(row, 2)
                 pkg_name = name_item.text().strip() if name_item else ''
-                pkg_id = id_item.text().strip() if id_item else pkg_name
                 if self.current_view == "discover":
                     source = ""
-                    chip = self.package_table.cellWidget(row, 4)
+                    chip = self.package_table.cellWidget(row, 3)
                     if chip is not None:
                         labels = chip.findChildren(QLabel)
                         if labels:
                             source = labels[-1].text()
                 else:
-                    source_item = self.package_table.item(row, 5)
+                    source_item = self.package_table.item(row, 4)
                     source = source_item.text() if source_item else "pacman"
                 if source not in packages_by_source:
                     packages_by_source[source] = []
-                install_token = pkg_id if source == 'Flatpak' else pkg_name
+                install_token = pkg_name if source == 'Flatpak' else pkg_name
                 packages_by_source[source].append(install_token)
         
         if not packages_by_source:
@@ -3556,20 +3781,17 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             green = QColor(16, 185, 129)
             for row in range(self.package_table.rowCount()):
                 name_item = self.package_table.item(row, 1)
-                id_item = self.package_table.item(row, 2)
-                ver_item = self.package_table.item(row, 3)
-                if not name_item or not id_item or not ver_item:
+                ver_item = self.package_table.item(row, 2)
+                if not name_item or not ver_item:
                     continue
-                chip = self.package_table.cellWidget(row, 4)
+                chip = self.package_table.cellWidget(row, 3)
                 src = self.get_source_text(row, "discover")
-                pkg = {"name": name_item.text().strip(), "id": id_item.text().strip(), "source": src}
+                pkg = {"name": name_item.text().strip(), "id": name_item.text().strip(), "source": src}
                 if self.is_package_installed(pkg):
                     name_item.setForeground(green)
-                    id_item.setForeground(green)
                     ver_item.setForeground(green)
                     tip = "Already installed"
                     name_item.setToolTip(tip)
-                    id_item.setToolTip(tip)
                     ver_item.setToolTip(tip)
                     if chip is not None:
                         try:
@@ -3600,22 +3822,43 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         for model_index in selected_rows:
             row = model_index.row()
             name_item = self.package_table.item(row, 1)
-            id_item = self.package_table.item(row, 2)
-            source_item = self.package_table.item(row, 4)
+            source_item = self.package_table.item(row, 3)
             if not name_item or not source_item:
                 continue
             name = (name_item.text() or "").strip()
-            pkg_id = (id_item.text() or name).strip() if id_item else name
             source = (source_item.text() or "pacman").strip()
             if source not in packages_by_source:
                 packages_by_source[source] = []
-            token = pkg_id if source == 'Flatpak' else name
+            token = name if source == 'Flatpak' else name
             packages_by_source[source].append(token)
         
         flat_summary = ', '.join([f"{pkg} ({src})" for src, pkgs in packages_by_source.items() for pkg in pkgs])
         self.log(f"Selected for uninstallation: {flat_summary}")
+        self._show_operation_spinner("Uninstalling packages...")
         uninstall_service.uninstall_packages(self, packages_by_source)
     
+    def install_from_detail(self):
+        pkg = getattr(self.package_detail_card, '_pkg_data', None)
+        if not pkg:
+            return
+        source = pkg.get('source', 'pacman')
+        install_service.install_packages(self, {source: [pkg['name']]})
+
+    def update_from_detail(self):
+        pkg = getattr(self.package_detail_card, '_pkg_data', None)
+        if not pkg:
+            return
+        source = pkg.get('source', 'pacman')
+        self._show_operation_spinner("Updating package...")
+        update_service.update_packages(self, {source: [pkg['name']]})
+
+    def uninstall_from_detail(self):
+        pkg = getattr(self.package_detail_card, '_pkg_data', None)
+        if not pkg:
+            return
+        source = pkg.get('source', 'pacman')
+        uninstall_service.uninstall_packages(self, {source: [pkg['name']]})
+
     def apply_filters(self):
         return filters_service.apply_filters(self)
 
@@ -3623,18 +3866,87 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         return filters_service.apply_update_filters(self)
 
     def on_selection_changed(self):
+        if self._updating_selection:
+            return
+        self._updating_selection = True
         selected_rows = set(index.row() for index in self.package_table.selectionModel().selectedRows())
         for row in range(self.package_table.rowCount()):
             checkbox = self.get_row_checkbox(row)
             if checkbox is not None:
+                checkbox.blockSignals(True)
                 checkbox.setChecked(row in selected_rows)
+                checkbox.blockSignals(False)
+        self._updating_selection = False
+
+        if len(selected_rows) == 1:
+            row = next(iter(selected_rows))
+            self._show_detail_for_row(row)
+        else:
+            self.package_detail_card.clear()
+
+    def _show_detail_for_row(self, row):
+        try:
+            name_item = self.package_table.item(row, 1)
+            ver_item = self.package_table.item(row, 2)
+            if not name_item:
+                self.package_detail_card.clear()
+                return
+
+            stored = name_item.data(Qt.ItemDataRole.UserRole) or {}
+            name = name_item.text().strip()
+            version = ver_item.text().strip() if ver_item else ''
+
+            source = self.get_source_text(row)
+            new_version = ''
+            has_update = False
+            installed = False
+            description = stored.get('description', '')
+
+            if self.current_view == "installed":
+                source_item = self.package_table.item(row, 3)
+                source = source_item.text() if source_item else 'pacman'
+                status_item = self.package_table.item(row, 4)
+                if status_item:
+                    has_update = 'Update' in status_item.text()
+                installed = True
+            elif self.current_view == "updates":
+                source_item = self.package_table.item(row, 4)
+                source = source_item.text() if source_item else 'pacman'
+                nv_item = self.package_table.item(row, 3)
+                new_version = nv_item.text().strip() if nv_item else ''
+                has_update = True
+                installed = True
+            else:
+                source = self.get_source_text(row, 'discover')
+                pkg = {'name': name, 'id': name, 'source': source}
+                installed = self.is_package_installed(pkg)
+
+            pkg_data = {
+                'name': name,
+                'id': stored.get('id', name),
+                'version': version,
+                'new_version': new_version,
+                'source': source,
+                'installed': installed,
+                'has_update': has_update,
+                'description': description,
+                '_view': self.current_view,
+            }
+            self.package_detail_card.show_package(pkg_data)
+        except Exception:
+            self.package_detail_card.clear()
     
     def on_checkbox_changed(self, row, state):
-        model = self.package_table.selectionModel()
+        if self._updating_selection:
+            return
+        self._updating_selection = True
+        sel_model = self.package_table.selectionModel()
+        idx = self.package_table.model().index(row, 0)
         if state == Qt.CheckState.Checked.value:
-            model.select(self.package_table.model().index(row, 0), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+            sel_model.select(idx, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
         else:
-            model.select(self.package_table.model().index(row, 0), QItemSelectionModel.SelectionFlag.Deselect | QItemSelectionModel.SelectionFlag.Rows)
+            sel_model.select(idx, QItemSelectionModel.SelectionFlag.Deselect | QItemSelectionModel.SelectionFlag.Rows)
+        self._updating_selection = False
     
     def load_settings(self):
         return settings_service.load_settings()
@@ -4386,6 +4698,12 @@ def on_tick(app):
         try:
             if hasattr(self, 'console_toggle_btn'):
                 self.console_toggle_btn.setToolTip("Hide Console" if new_state else "Show Console")
+        except Exception:
+            pass
+
+        try:
+            if hasattr(self, 'large_search_box') and hasattr(self.large_search_box, 'recent_activity'):
+                self.large_search_box.recent_activity.setVisible(not new_state)
         except Exception:
             pass
     
