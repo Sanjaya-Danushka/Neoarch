@@ -8,7 +8,9 @@ import os
 import subprocess
 from typing import Tuple
 
-__all__ = ["get_auth_command", "get_sudo_askpass", "prepare_askpass_env"]
+from neoarch.backend import session_auth
+
+__all__ = ["get_auth_command", "get_sudo_askpass", "prepare_askpass_env", "get_askpass_env"]
 
 
 def get_auth_command(env=None):
@@ -16,6 +18,9 @@ def get_auth_command(env=None):
 
     Detects Hyprland, Wayland, GNOME, KDE, XFCE and selects pkexec or sudo -A
     accordingly. Ensures GUI password dialogs work properly.
+
+    When session auth has cached credentials, always prefer sudo -A so the
+    cached password is reused instead of prompting the user again.
 
     Args:
         env: Environment dictionary to check for desktop variables.
@@ -25,6 +30,11 @@ def get_auth_command(env=None):
     """
     if env is None:
         env = os.environ
+
+    # If session auth has cached credentials, always use sudo -A
+    # to avoid redundant password prompts from pkexec
+    if session_auth.is_session_active():
+        return ["sudo", "-A"]
 
     desktop = env.get('XDG_CURRENT_DESKTOP', '').lower()
     session_type = env.get('XDG_SESSION_TYPE', '').lower()
@@ -143,3 +153,28 @@ def prepare_askpass_env(env=None) -> Tuple[dict, str]:
 
     env['SUDO_ASKPASS'] = script_path
     return env, script_path
+
+
+def get_askpass_env(base_env=None) -> dict:
+    """Return an environment dict with SUDO_ASKPASS set.
+
+    If the session auth manager has an active credential cache, its
+    askpass script is preferred. Otherwise falls back to creating a
+    temporary askpass via prepare_askpass_env().
+
+    Args:
+        base_env: Optional base environment to extend. If None, uses
+                  a copy of os.environ.
+
+    Returns:
+        dict: Environment with SUDO_ASKPASS set.
+    """
+    if session_auth.is_session_active():
+        return session_auth.get_askpass_env()
+    if base_env is not None:
+        env = base_env.copy()
+    else:
+        env = os.environ.copy()
+    if "SUDO_ASKPASS" not in env:
+        env, _ = prepare_askpass_env(env)
+    return env

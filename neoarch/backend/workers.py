@@ -8,7 +8,7 @@ import os
 import subprocess
 from PyQt6.QtCore import QObject, pyqtSignal
 
-from neoarch.backend.auth import get_auth_command, prepare_askpass_env
+from neoarch.backend.auth import get_auth_command, get_askpass_env, prepare_askpass_env
 
 __all__ = ["PackageLoaderWorker", "CommandWorker"]
 
@@ -83,7 +83,7 @@ class CommandWorker(QObject):
                 auth_cmd = get_auth_command(self.env)
                 self.command = auth_cmd + self.command
                 if auth_cmd == ["sudo", "-A"] and 'SUDO_ASKPASS' not in self.env:
-                    self.env, _ = prepare_askpass_env()
+                    self.env = get_askpass_env(self.env)
 
             process = subprocess.Popen(
                 self.command,

@@ -252,7 +252,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             self.setWindowIcon(_build_window_icon(icon_path))
         # self.set_minimal_icon()
         
-        self.current_view = "discover"
+        self.current_view = "updates"
         self.updating = False
         self.all_packages = []
         self.search_results = []
@@ -309,8 +309,8 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             btn.setChecked(btn_id == self.current_view)
         self.center_window()
         
-        # Initialize the default view
-        self.switch_view(self.current_view)
+        # Initialize the default view (UI only, no data loading — deferred to auth flow)
+        self.switch_view(self.current_view, load=False)
         
         # Show welcome animation in console on first launch
         QTimer.singleShot(500, self.show_welcome_animation)
@@ -963,6 +963,67 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             except Exception:
                 pass
 
+    def _startup_auth_and_sync(self):
+        """Ask for password once, sync with loading spinner, then show updates."""
+        try:
+            self._startup_auth_and_sync_impl()
+        except Exception as e:
+            self.log(f"Session auth skipped: {e}")
+            self._finish_startup_no_auth()
+
+    def _startup_auth_and_sync_impl(self):
+        from neoarch.backend.session_auth import setup_session_auth, is_session_active
+
+        if is_session_active():
+            self._show_loading_spinner("Syncing package databases...")
+            QTimer.singleShot(50, self._do_sync_and_show_updates)
+            return
+
+        success = setup_session_auth(self)
+        if success:
+            self.log("Session authentication established")
+            self._show_loading_spinner("Syncing package databases...")
+            QTimer.singleShot(50, self._do_sync_and_show_updates)
+        else:
+            self.log("Session authentication declined or failed")
+            self._finish_startup_no_auth()
+
+    def _show_loading_spinner(self, message):
+        """Show loading spinner on the updates view."""
+        try:
+            self.loading_widget.set_message(message)
+            self.loading_widget.setVisible(True)
+            self.loading_widget.start_animation()
+            if hasattr(self, 'loading_container'):
+                self.loading_container.setVisible(True)
+        except Exception:
+            pass
+
+    def _do_sync_and_show_updates(self):
+        """Sync package databases (blocking, runs after spinner paints)."""
+        import subprocess
+        from neoarch.backend.auth import get_askpass_env
+
+        self.log("Syncing package databases...")
+        try:
+            env = get_askpass_env()
+            result = subprocess.run(
+                ["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
+                capture_output=True, text=True, timeout=120, env=env,
+            )
+            if result.returncode == 0:
+                self.log("Package databases synced successfully")
+            else:
+                self.log(f"Database sync: {result.stderr.strip()}")
+        except Exception as e:
+            self.log(f"Database sync skipped: {e}")
+
+        self.switch_view("updates")
+
+    def _finish_startup_no_auth(self):
+        """Without session auth, switch to updates view (will prompt per-op)."""
+        self.switch_view("updates")
+
     def update_core_tools(self):
         return update_service.update_core_tools(self)
     
@@ -971,6 +1032,10 @@ class ArchPkgManagerUniGetUI(QMainWindow):
 
     def prepare_askpass_env(self):
         return askpass_service.prepare_askpass_env()
+
+    def get_askpass_env(self):
+        from neoarch.backend.auth import get_askpass_env as _get_askpass_env
+        return _get_askpass_env()
     
     def check_authentication_tools(self):
         """Check if authentication tools are available and warn user if not"""
@@ -2035,7 +2100,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         # Start the animation
         animate_next_message()
     
-    def switch_view(self, view_id):
+    def switch_view(self, view_id, load=True):
         self.current_view = view_id
         try:
             _installing = getattr(self, "_installing", False) or hasattr(self, 'install_cancel_event')
@@ -2127,16 +2192,17 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                     self.console_toggle_btn.setToolTip("Show Console")
             except Exception:
                 pass
-            try:
-                self.loading_widget.set_message("Checking for updates...")
-                self.loading_widget.setVisible(True)
-                self.loading_widget.start_animation()
-                if hasattr(self, 'loading_container'):
-                    self.loading_container.setVisible(True)
-            except Exception:
-                pass
-            self._hide_all_package_views()
-            self.load_updates()
+            if load:
+                try:
+                    self.loading_widget.set_message("Checking for updates...")
+                    self.loading_widget.setVisible(True)
+                    self.loading_widget.start_animation()
+                    if hasattr(self, 'loading_container'):
+                        self.loading_container.setVisible(True)
+                except Exception:
+                    pass
+                self._hide_all_package_views()
+                self.load_updates()
         elif view_id == "installed":
             try:
                 self.console_label.setVisible(False)
@@ -3503,9 +3569,10 @@ class ArchPkgManagerUniGetUI(QMainWindow):
         """Clean pacman package cache."""
         self.log("Cleaning package cache…")
         try:
+            env = self.get_askpass_env()
             result = subprocess.run(
-                ["sudo", "pacman", "-Sc", "--noconfirm"],
-                capture_output=True, text=True, timeout=60
+                ["sudo", "-A", "pacman", "-Sc", "--noconfirm"],
+                capture_output=True, text=True, timeout=60, env=env,
             )
             if result.returncode == 0:
                 self.log("Cache cleaned successfully.")
@@ -4231,6 +4298,9 @@ class ArchPkgManagerUniGetUI(QMainWindow):
                 self.plugin_timer.start()
             except Exception:
                 pass
+            # Start session auth and update loading only if auto-check is enabled
+            if self.settings.get('auto_check_updates', True):
+                QTimer.singleShot(0, self._startup_auth_and_sync)
         except Exception as e:
             self.log(f"Plugin init error: {e}")
     
@@ -4240,15 +4310,7 @@ class ArchPkgManagerUniGetUI(QMainWindow):
             'auto_check_updates.py': (
                 """
 def on_startup(app):
-    try:
-        if app.settings.get('auto_check_updates', True):
-            from PyQt6.QtCore import QTimer
-            QTimer.singleShot(800, lambda: app.switch_view("updates"))
-    except Exception as e:
-        try:
-            app.log(f"auto_check_updates plugin: {e}")
-        except Exception:
-            pass
+    pass
                 """.strip()
             ),
             'flathub_remote.py': (
@@ -4763,6 +4825,11 @@ def on_tick(app):
         except Exception as e:
             self._show_message("Remove Plugins", f"Error: {e}")
     
+    def closeEvent(self, event):
+        from neoarch.backend.session_auth import cleanup_session
+        cleanup_session()
+        super().closeEvent(event)
+
     def refresh_plugins_table(self):
         # This method is used internally by the main class
         # The component will call this if needed

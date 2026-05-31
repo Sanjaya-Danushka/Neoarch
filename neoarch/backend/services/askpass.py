@@ -37,6 +37,10 @@ def prepare_askpass_env() -> tuple:
     env = os.environ.copy()
     cleanup_path = None
 
+    # If SUDO_ASKPASS is already set (e.g. by session auth), use as-is
+    if env.get("SUDO_ASKPASS") and os.path.exists(env["SUDO_ASKPASS"]):
+        return env, cleanup_path
+
     available_tools = []
     for tool in ["kdialog", "zenity", "yad"]:
         if shutil.which(tool):

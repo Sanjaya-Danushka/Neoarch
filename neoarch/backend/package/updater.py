@@ -11,6 +11,7 @@ from threading import Thread
 from PyQt6.QtCore import QTimer
 
 from neoarch.backend.workers import CommandWorker
+from neoarch.backend.auth import get_askpass_env
 from neoarch.backend import sys_utils
 
 __all__ = [
@@ -69,7 +70,7 @@ def update_packages(app, packages_by_source: dict):
                         app.log("Error: No AUR helper available. Install yay, paru, trizen, or pikaur.")
                         overall_success = False
                         continue
-                    env, _ = app.prepare_askpass_env()
+                    env = get_askpass_env()
                     cmd = [aur_helper, "-S", "--noconfirm"] + pkgs
                     worker = CommandWorker(cmd, sudo=False, env=env)
                     worker.output.connect(app.log)
@@ -303,7 +304,7 @@ def _update_aur(app):
     preferred = app.settings.get('aur_helper', 'auto')
     aur_helper = sys_utils.get_aur_helper(None if preferred == 'auto' else preferred)
     if aur_helper:
-        env, _ = app.prepare_askpass_env()
+        env = get_askpass_env()
         w4 = CommandWorker([aur_helper, "-Syu", "--noconfirm", "--sudoflags", "-A"], sudo=False, env=env)
         w4.output.connect(app.log)
         w4.error.connect(app.log)

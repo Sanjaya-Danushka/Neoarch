@@ -11,7 +11,7 @@ import subprocess
 import time
 from threading import Thread, Event
 
-from neoarch.backend.auth import get_auth_command, prepare_askpass_env
+from neoarch.backend.auth import get_auth_command, get_askpass_env
 from neoarch.backend.workers import CommandWorker
 from neoarch.backend import sys_utils
 
@@ -139,11 +139,11 @@ def install_packages(app, packages_by_source: dict):
                 if source == 'AUR':
                     app.log_signal.emit(f"AUR install (as user): {' '.join(cmd)}")
                     if not env.get('SUDO_ASKPASS'):
-                        env, cleanup_path = app.prepare_askpass_env()
+                        env = get_askpass_env(env)
 
                 if source == 'Flatpak' and force_sudo:
                     if not env.get('SUDO_ASKPASS'):
-                        env, cleanup_path = app.prepare_askpass_env()
+                        env = get_askpass_env(env)
 
                 worker = CommandWorker(cmd, sudo=False, env=env)
                 worker.output.connect(lambda msg: app.log_signal.emit(msg))

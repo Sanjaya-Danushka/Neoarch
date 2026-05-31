@@ -9,7 +9,7 @@ import json
 import subprocess
 from threading import Thread
 
-from neoarch.backend.auth import prepare_askpass_env
+from neoarch.backend.auth import get_askpass_env
 
 __all__ = ["load_updates", "load_installed_packages"]
 
@@ -60,7 +60,7 @@ def load_updates(app):
 
             try:
                 app.log("Syncing package database...")
-                env, _ = app.prepare_askpass_env()
+                env = get_askpass_env()
                 sync_result = subprocess.run(["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
                                             capture_output=True, text=True, timeout=120, env=env)
                 if sync_result.returncode == 0:
