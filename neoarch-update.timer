@@ -1,0 +1,11 @@
+[Unit]
+Description=NeoArch Scheduled Update Timer
+Requires=neoarch-update.service
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+Unit=neoarch-update.service
+
+[Install]
+WantedBy=timers.target

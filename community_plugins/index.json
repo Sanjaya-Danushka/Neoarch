@@ -1,0 +1,51 @@
+{
+  "example_plugin": {
+    "id": "example_plugin",
+    "name": "Example Plugin",
+    "description": "A sample plugin demonstrating NeoArch plugin capabilities. Shows welcome messages and basic functionality.",
+    "author": "NeoArch Team",
+    "version": "1.0.0",
+    "url": "https://raw.githubusercontent.com/Sanjaya-Danushka/Neoarch/main/community_plugins/example_plugin.py",
+    "downloads": 42,
+    "last_updated": "2024-01-15",
+    "features": [
+      "Welcome messages",
+      "Basic plugin hooks",
+      "Example functions"
+    ]
+  },
+  "system_monitor": {
+    "id": "system_monitor",
+    "name": "System Monitor",
+    "description": "Advanced system monitoring plugin with real-time CPU, memory, and disk usage tracking.",
+    "author": "DevTools Community",
+    "version": "2.1.0",
+    "url": "https://raw.githubusercontent.com/Sanjaya-Danushka/Neoarch/main/community_plugins/system_monitor.py",
+    "downloads": 128,
+    "last_updated": "2024-01-20",
+    "features": [
+      "Real-time system monitoring",
+      "CPU usage graphs",
+      "Memory tracking",
+      "Disk I/O monitoring",
+      "Network statistics"
+    ]
+  },
+  "backup_manager": {
+    "id": "backup_manager",
+    "name": "Smart Backup Manager",
+    "description": "Intelligent backup system with automatic scheduling and cloud integration.",
+    "author": "Backup Solutions Inc",
+    "version": "1.5.2",
+    "url": "https://raw.githubusercontent.com/Sanjaya-Danushka/Neoarch/main/community_plugins/backup_manager.py",
+    "downloads": 89,
+    "last_updated": "2024-01-18",
+    "features": [
+      "Automated backups",
+      "Cloud storage integration",
+      "Incremental backups",
+      "Restore functionality",
+      "Backup scheduling"
+    ]
+  }
+}

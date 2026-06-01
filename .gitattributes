@@ -1,0 +1,29 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Force LF line endings for specific file types
+*.sh text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Force CRLF for Windows-specific files (if any)
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Mark executable scripts
+*.sh executable
+install_*.sh executable
+*.cmd executable
+
+# Language settings
+*.py linguist-language=Python
+*.sh linguist-language=Shell
+
+# Documentation
+*.md linguist-documentation
+LICENSE linguist-license
+CODE_OF_CONDUCT.md linguist-documentation
+SECURITY.md linguist-documentation

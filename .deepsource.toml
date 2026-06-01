@@ -1,0 +1,15 @@
+version = 1
+
+[[analyzers]]
+name = "python"
+enabled = true
+
+  [analyzers.meta]
+  runtime_version = "3.x.x"
+  # Set complexity threshold to "critical" (>50) to focus on most severe cases
+  # install_packages (76) and update_packages (46) are documented with TODOs
+  cyclomatic_complexity_threshold = "critical"
+
+[[analyzers]]
+name = "test-coverage"
+enabled = false

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=NeoArch
+Comment=NeoArch Package Manager
+Exec=/home/test/New Folder/Aurora/bin/neoarch.sh
+Icon=/home/test/New Folder/Aurora/assets/icons/NeoarchLogo.svg
+Terminal=false
+Type=Application
+Categories=System;Utility;

@@ -1,0 +1,19 @@
+# Code owners for automatic PR assignment
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners
+* @Sanjaya-Danushka
+
+# Python source code
+*.py @Sanjaya-Danushka
+
+# Documentation
+*.md @Sanjaya-Danushka
+docs/ @Sanjaya-Danushka
+
+# Build and packaging
+neoarch-git/ @Sanjaya-Danushka
+scripts/ @Sanjaya-Danushka
+
+# GitHub configuration
+.github/ @Sanjaya-Danushka

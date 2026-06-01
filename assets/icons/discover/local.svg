@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Local/Home icon with teal color -->
+  <path d="M12 3L2 12H5V20H10V15H14V20H19V12H22L12 3Z" fill="#00BFAE" stroke="#00BFAE" stroke-width="0.5" stroke-linejoin="round"/>
+  <!-- Optional inner details for better definition -->
+  <path d="M9 16H7V18H9V16Z" fill="#0A0A0A" opacity="0.3"/>
+  <path d="M17 16H15V18H17V16Z" fill="#0A0A0A" opacity="0.3"/>
+  <path d="M12 7L8 11H10V17H14V11H16L12 7Z" fill="#00BFAE" opacity="0.8"/>
+</svg>
