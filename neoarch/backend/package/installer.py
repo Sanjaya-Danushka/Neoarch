@@ -7,8 +7,8 @@ authentication and progress tracking.
 
 import os
 import re
+import select
 import subprocess
-import time
 from threading import Thread, Event
 
 from neoarch.backend.auth import get_auth_command, get_askpass_env
@@ -84,6 +84,7 @@ def install_packages(app, packages_by_source: dict):
                 update_progress_message("")
 
         try:
+            app._installed_packages = {}
             for source, packages in packages_by_source.items():
                 if app.install_cancel_event.is_set():
                     app.log_signal.emit("Installation cancelled by user")
@@ -195,20 +196,25 @@ def install_packages(app, packages_by_source: dict):
                             return
 
                         if process.poll() is not None:
+                            if process.stdout:
+                                for line in process.stdout:
+                                    if line:
+                                        line = line.strip()
+                                        parse_output_line(line)
+                                        worker.output.emit(line)
                             break
 
-                        if process.stdout:
+                        if process.stdout and select.select([process.stdout], [], [], 0.2)[0]:
                             line = process.stdout.readline()
                             if line:
                                 line = line.strip()
                                 parse_output_line(line)
                                 worker.output.emit(line)
 
-                        time.sleep(0.1)
-
                     if process.returncode == 0:
                         completed_packages += len(packages)
                         completed_sources += 1
+                        app._installed_packages[source] = packages
                         update_progress_message(f"Completed {source} packages")
                         app.log_signal.emit(f"Successfully installed {len(packages)} {source} package(s)")
                     else:
@@ -249,18 +255,24 @@ def install_packages(app, packages_by_source: dict):
                                                 app.installation_progress.emit("cancelled", False)
                                                 return
                                             if process2.poll() is not None:
+                                                if process2.stdout:
+                                                    for line in process2.stdout:
+                                                        if line:
+                                                            line2 = line.strip()
+                                                            parse_output_line(line2)
+                                                            worker.output.emit(line2)
                                                 break
-                                            if process2.stdout:
+                                            if process2.stdout and select.select([process2.stdout], [], [], 0.2)[0]:
                                                 line2 = process2.stdout.readline()
                                                 if line2:
                                                     line2 = line2.strip()
                                                     parse_output_line(line2)
                                                     worker.output.emit(line2)
-                                            time.sleep(0.1)
                                         if process2.returncode == 0:
                                             success = True
                                             completed_packages += len(packages)
                                             completed_sources += 1
+                                            app._installed_packages[source] = packages
                                             update_progress_message(f"Completed {source} packages (elevated)")
                                             app.log_signal.emit(f"Successfully installed {len(packages)} {source} package(s) with system privileges")
                                         else:

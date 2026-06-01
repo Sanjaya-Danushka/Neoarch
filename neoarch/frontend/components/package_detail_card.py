@@ -90,48 +90,41 @@ def _make_sep() -> QFrame:
 def _close_btn_stylesheet() -> str:
     return """
         QPushButton {
-            background: rgba(255,255,255,0.08);
-            color: #8B8D97;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px;
-            font-size: 15px;
-            font-weight: 600;
+            background-color: #FF5F57;
+            color: transparent;
+            border: none;
+            border-radius: 9px;
+            font-size: 11px;
+            font-weight: 700;
         }
         QPushButton:hover {
-            background: rgba(255,80,80,0.2);
-            color: #FF6B6B;
-            border-color: rgba(255,80,80,0.25);
+            background-color: #FF5F57;
+            color: rgba(80, 20, 20, 0.7);
         }
         QPushButton:pressed {
-            background: rgba(255,80,80,0.35);
+            background-color: #E0554E;
         }
     """
 
 
-def _action_btn_stylesheet(color: str, hover_border: str) -> str:
+def _nav_btn_stylesheet(color: str = _C["text_sec"]) -> str:
     return f"""
         QPushButton {{
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 {color}18,
-                stop:1 {color}0A);
+            background-color: transparent;
+            border: none;
             color: {color};
-            border: 1px solid {color}35;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
             padding: 0 20px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 8px;
         }}
         QPushButton:hover {{
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 {color}2A,
-                stop:1 {color}14);
-            border: 1px solid {hover_border};
+            background-color: rgba(255, 255, 255, 0.04);
+            color: {_C['text']};
         }}
         QPushButton:pressed {{
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 {color}38,
-                stop:1 {color}20);
-            border: 1px solid {color}50;
+            background-color: rgba(255, 255, 255, 0.08);
         }}
     """
 
@@ -148,6 +141,7 @@ class PackageDetailCard(QFrame):
     install_requested = pyqtSignal()
     update_requested = pyqtSignal()
     uninstall_requested = pyqtSignal()
+    updates_check_completed = pyqtSignal(str, str, bool, bool)  # name, new_version, has_updates, check_ok
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -221,7 +215,7 @@ class PackageDetailCard(QFrame):
         hl.addLayout(nc, 1)
 
         self.close_btn = QPushButton("✕")
-        self.close_btn.setFixedSize(28, 28)
+        self.close_btn.setFixedSize(18, 18)
         self.close_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.close_btn.setStyleSheet(_close_btn_stylesheet())
         self.close_btn.clicked.connect(self.close_card)
@@ -287,7 +281,7 @@ class PackageDetailCard(QFrame):
         self.install_btn.setMinimumHeight(40)
         self.install_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.install_btn.setStyleSheet(
-            _action_btn_stylesheet(_C["accent"], "rgba(0,191,174,0.5)")
+            _nav_btn_stylesheet(_C["accent"])
         )
         self.install_btn.clicked.connect(self.install_requested.emit)
         self.action_layout.addWidget(self.install_btn)
@@ -296,7 +290,7 @@ class PackageDetailCard(QFrame):
         self.update_btn.setMinimumHeight(40)
         self.update_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.update_btn.setStyleSheet(
-            _action_btn_stylesheet(_C["warning"], "rgba(255,138,101,0.5)")
+            _nav_btn_stylesheet(_C["warning"])
         )
         self.update_btn.clicked.connect(self.update_requested.emit)
         self.action_layout.addWidget(self.update_btn)
@@ -305,10 +299,26 @@ class PackageDetailCard(QFrame):
         self.uninstall_btn.setMinimumHeight(40)
         self.uninstall_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.uninstall_btn.setStyleSheet(
-            _action_btn_stylesheet(_C["danger"], "rgba(255,107,107,0.5)")
+            _nav_btn_stylesheet(_C["danger"])
         )
         self.uninstall_btn.clicked.connect(self.uninstall_requested.emit)
         self.action_layout.addWidget(self.uninstall_btn)
+
+        self.check_updates_btn = QPushButton("Check for Updates")
+        self.check_updates_btn.setMinimumHeight(40)
+        self.check_updates_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.check_updates_btn.setStyleSheet(
+            _nav_btn_stylesheet(_C["warning"])
+        )
+        self.action_layout.addWidget(self.check_updates_btn)
+
+        self.up_to_date_label = QLabel("✓  Up to date")
+        self.up_to_date_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.up_to_date_label.setStyleSheet(
+            f"color: {_C['success']}; font-size: 12px; font-weight: 600; "
+            f"background: rgba(16,185,129,0.08); border-radius: 8px; padding: 8px;"
+        )
+        self.action_layout.addWidget(self.up_to_date_label)
 
         content.addWidget(self.action_container)
         layout.addWidget(scroll)
@@ -379,19 +389,35 @@ class PackageDetailCard(QFrame):
             self.install_btn.setVisible(False)
             self.update_btn.setVisible(True)
             self.uninstall_btn.setVisible(False)
+            self.check_updates_btn.setVisible(False)
+            self.up_to_date_label.setVisible(False)
+        elif view == "discover" and installed:
+            self.install_btn.setVisible(False)
+            self.update_btn.setVisible(False)
+            self.uninstall_btn.setVisible(False)
+            self.check_updates_btn.setVisible(True)
+            self.check_updates_btn.setText("Check for Updates")
+            self.check_updates_btn.setEnabled(True)
+            self.up_to_date_label.setVisible(False)
         elif installed:
             if has_update:
                 self.install_btn.setVisible(False)
                 self.update_btn.setVisible(True)
                 self.uninstall_btn.setVisible(True)
+                self.check_updates_btn.setVisible(False)
+                self.up_to_date_label.setVisible(False)
             else:
                 self.install_btn.setVisible(False)
                 self.update_btn.setVisible(False)
                 self.uninstall_btn.setVisible(True)
+                self.check_updates_btn.setVisible(False)
+                self.up_to_date_label.setVisible(False)
         else:
             self.install_btn.setVisible(True)
             self.update_btn.setVisible(False)
             self.uninstall_btn.setVisible(False)
+            self.check_updates_btn.setVisible(False)
+            self.up_to_date_label.setVisible(False)
 
         self.setVisible(True)
 
