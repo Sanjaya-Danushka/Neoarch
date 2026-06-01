@@ -452,36 +452,36 @@ class _ViewsMixin:
         )
         layout.addWidget(self._grid_view_btn)
 
-        filter_btn = self.create_toolbar_button(
+        self._filter_btn = self.create_toolbar_button(
             os.path.join(navbar_dir, "Filter.svg"),
             "Filter Packages",
             self.show_category_filter
         )
-        layout.addWidget(filter_btn)
+        layout.addWidget(self._filter_btn)
 
         if show_install_file:
-            file_btn = self.create_toolbar_button(
+            self._install_file_btn = self.create_toolbar_button(
                 os.path.join(navbar_dir, "install_from_file.svg"),
                 "Install from File",
                 self.install_from_local_file
             )
-            layout.addWidget(file_btn)
+            layout.addWidget(self._install_file_btn)
 
         if show_bundle:
-            bundle_btn = self.create_toolbar_button(
+            self._bundle_btn = self.create_toolbar_button(
                 os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"),
                 "Add selected to Bundle",
                 self.add_selected_to_bundle
             )
-            layout.addWidget(bundle_btn)
+            layout.addWidget(self._bundle_btn)
 
         if show_sudo:
-            sudo_btn = self.create_toolbar_button(
+            self._sudo_btn = self.create_toolbar_button(
                 os.path.join(navbar_dir, "insatllwithsudo.svg"),
                 "Install with Sudo Privileges",
                 self.sudo_install_selected
             )
-            layout.addWidget(sudo_btn)
+            layout.addWidget(self._sudo_btn)
 
     def _show_active_view(self):
         self.packages_grid.setVisible(self._view_mode == "grid")
@@ -818,10 +818,8 @@ class _ViewsMixin:
         table_area_layout.addWidget(self.packages_grid, 1)
 
         self.load_more_btn = QPushButton("Load More Packages")
-        self.load_more_btn.setMinimumHeight(36)
-        icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
-
-        self.load_more_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "load-more.svg"), 20))
+        self.load_more_btn.setObjectName("loadMoreBtn")
+        self.load_more_btn.setMinimumHeight(44)
         self.load_more_btn.clicked.connect(self.load_more_packages)
         self.load_more_btn.setVisible(False)
         table_area_layout.addWidget(self.load_more_btn)
@@ -840,6 +838,7 @@ class _ViewsMixin:
         self.packages_panel_layout.addWidget(self.packages_content_area, 1)
 
         # Console toggle button (bottom-right)
+        icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
         self.console_toggle_btn = QPushButton()
         self.console_toggle_btn.setFixedSize(42, 42)
         self.console_toggle_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "terminal.svg"), 20))
@@ -918,6 +917,10 @@ class _ViewsMixin:
         self.discover_select_all_btn = None
         self.discover_install_btn = None
         self._grid_view_btn = None
+        self._filter_btn = None
+        self._install_file_btn = None
+        self._bundle_btn = None
+        self._sudo_btn = None
 
         if self.current_view == "updates":
             layout = QHBoxLayout()
@@ -1070,6 +1073,16 @@ class _ViewsMixin:
             layout.addStretch()  # Push remaining buttons to the right
 
             self._add_right_toolbar_icons(layout, show_install_file=True, show_sudo=True)
+
+            # Hide grid/filter/bundle/sudo until search results are shown
+            if self._grid_view_btn:
+                self._grid_view_btn.setVisible(False)
+            if self._filter_btn:
+                self._filter_btn.setVisible(False)
+            if self._bundle_btn:
+                self._bundle_btn.setVisible(False)
+            if self._sudo_btn:
+                self._sudo_btn.setVisible(False)
 
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "plugins":

@@ -1056,16 +1056,6 @@ def get_all_plugins_data():
             'icon': os.path.join(PLUGINS_ITEMS_DIR, 'postman.png'),
             'category': 'Development',
         },
-        {
-            'id': 'mongodb-compass',
-            'name': 'MongoDB Compass',
-            'desc': 'MongoDB GUI for exploring and manipulating data.',
-            'pkg': 'aur/mongodb-compass',
-            'cmd': 'mongodb-compass',
-            'icon': os.path.join(PLUGINS_ITEMS_DIR, 'mongodb.png'),
-            'category': 'Development',
-        },
-
         # More Flatpak Packages
         {
             'id': 'org.mozilla.firefox',
@@ -1304,15 +1294,6 @@ def get_all_plugins_data():
             'pkg': 'npm-graphql',
             'cmd': 'graphql',
             'icon': os.path.join(PLUGINS_ITEMS_DIR, 'graphql.png'),
-            'category': 'Development',
-        },
-        {
-            'id': 'npm-mongodb',
-            'name': 'MongoDB Driver',
-            'desc': 'MongoDB Node.js driver.',
-            'pkg': 'npm-mongodb',
-            'cmd': 'mongo',
-            'icon': os.path.join(PLUGINS_ITEMS_DIR, 'mongodb.png'),
             'category': 'Development',
         },
     ]

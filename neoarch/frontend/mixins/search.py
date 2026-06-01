@@ -114,6 +114,10 @@ class _SearchMixin:
                 install_btn = getattr(self, 'discover_install_btn', None)
                 if install_btn is not None:
                     install_btn.setVisible(False)
+                for attr in ('_grid_view_btn', '_filter_btn', '_bundle_btn', '_sudo_btn'):
+                    tb = getattr(self, attr, None)
+                    if tb is not None:
+                        tb.setVisible(False)
             elif self.current_view == "installed":
                 try:
                     if hasattr(self, 'no_results_widget'):
@@ -529,3 +533,9 @@ class _SearchMixin:
             if install_btn is not None:
                 install_btn.setVisible(has_results)
                 install_btn.setEnabled(False)
+
+            # Show toolbar icons only when results are present
+            for attr in ('_grid_view_btn', '_filter_btn', '_bundle_btn', '_sudo_btn'):
+                tb = getattr(self, attr, None)
+                if tb is not None:
+                    tb.setVisible(has_results)

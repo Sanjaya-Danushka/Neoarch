@@ -137,6 +137,26 @@ QPushButton:pressed {{
     background-color: rgba(38, 40, 48, 0.9);
 }}
 
+QPushButton#loadMoreBtn {{
+    background-color: {_CARD};
+    color: {_TEXT};
+    border: 1px solid {_BORDER};
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+}}
+
+QPushButton#loadMoreBtn:hover {{
+    background-color: {_CARD_HOVER};
+    border-color: rgba(0, 191, 174, 0.4);
+    color: {_TEXT};
+}}
+
+QPushButton#loadMoreBtn:pressed {{
+    background-color: rgba(38, 40, 48, 0.9);
+}}
+
 /* ── Sidebar ────────────────────────────────────────────────────── */
 QWidget#sidebar {{
     background-color: rgba(14, 14, 16, 0.95);
@@ -552,5 +572,27 @@ class Styles:
                 font-weight: 600;
                 text-transform: uppercase;
                 letter-spacing: 0.6px;
+            }}
+        """
+
+    @staticmethod
+    def get_load_more_button_stylesheet():
+        return f"""
+            QPushButton#loadMoreBtn {{
+                background-color: {_CARD};
+                color: {_TEXT};
+                border: 1px solid {_BORDER};
+                border-radius: 10px;
+                padding: 10px 18px;
+                font-size: 13px;
+                font-weight: 500;
+            }}
+            QPushButton#loadMoreBtn:hover {{
+                background-color: {_CARD_HOVER};
+                border-color: rgba(0, 191, 174, 0.4);
+                color: {_TEXT};
+            }}
+            QPushButton#loadMoreBtn:pressed {{
+                background-color: rgba(38, 40, 48, 0.9);
             }}
         """
