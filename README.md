@@ -6,7 +6,12 @@ website: https://sanjaya-danushka.github.io/Neoarch/
 
 preview: https://drive.google.com/file/d/17cfs7VEui4zfFhghsIWBp2duqpPjWtEQ/view?usp=sharing
 
-<img width="1229" height="851" alt="Screenshot_20251111_185003" src="https://github.com/user-attachments/assets/1539d8eb-7d18-41e9-bc16-96ff061c1b4a" />
+<img width="1256" height="840" alt="Screenshot_20260531_195537" src="https://github.com/user-attachments/assets/b5113660-8c05-453d-a70d-b2e3e5274241" />
+<img width="1174" height="777" alt="Screenshot_20260531_180219" src="https://github.com/user-attachments/assets/eedc4d2f-c806-4089-9842-695d04fbd7df" />
+<img width="1210" height="804" alt="Screenshot_20260531_211952" src="https://github.com/user-attachments/assets/b34f304e-c521-45de-8fad-2a78642d5dbc" />
+
+
+
 
 
 

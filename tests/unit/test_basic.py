@@ -16,8 +16,8 @@ class TestNeoArchBasics:
     def test_import_aurora_home(self):
         """Test that aurora_home module can be imported"""
         try:
-            import aurora_home
-            assert aurora_home is not None
+            import Neoarch
+            assert Neoarch is not None
         except ImportError as e:
             pytest.fail(f"Failed to import aurora_home: {e}")
 
