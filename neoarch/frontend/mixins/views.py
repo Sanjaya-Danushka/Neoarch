@@ -198,8 +198,9 @@ class _ViewsMixin:
         layout.addStretch()
 
         # ── Footer ──
-        footer = QHBoxLayout()
-        footer.setContentsMargins(0, 0, 0, 0)
+        footer = QVBoxLayout()
+        footer.setContentsMargins(0, 0, 8, 0)
+        footer.setSpacing(2)
 
         # User avatar / login button
         self.user_avatar_btn = QPushButton()
@@ -2385,33 +2386,37 @@ class _ViewsMixin:
         painter.end()
         return result
 
+    def _load_avatar_image(self, url, name, size=36):
+        try:
+            import requests
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                pixmap = QPixmap()
+                pixmap.loadFromData(resp.content)
+                if not pixmap.isNull():
+                    circular = self._make_circular_pixmap(pixmap, size)
+                    self.user_avatar_label.setPixmap(circular)
+                    self.user_avatar_label.setStyleSheet("")
+                    self.user_avatar_btn.setToolTip(f"Signed in as {name}")
+                    return True
+        except Exception:
+            pass
+        return False
+
     def update_user_avatar(self, user):
         size = 36
         self.user_avatar_label.setFixedSize(size, size)
 
         if user and user.avatar_url:
-            try:
-                import urllib.request
-                data = urllib.request.urlopen(user.avatar_url, timeout=5).read()
-                pixmap = QPixmap()
-                pixmap.loadFromData(data)
-                if not pixmap.isNull():
-                    circular = self._make_circular_pixmap(pixmap, size)
-                    self.user_avatar_label.setPixmap(circular)
-                    self.user_avatar_label.setStyleSheet("")
-                    self.user_avatar_btn.setToolTip(f"Signed in as {user.name}")
-                    return
-            except Exception:
-                pass
-            initials = user.name[:2].upper() if user.name else "?"
-            self.user_avatar_label.setText(initials)
-            self.user_avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.user_avatar_label.setStyleSheet(f"""
-                color: #00BFAE; font-weight: bold; font-size: 14px;
-                background-color: rgba(0,191,174,0.15);
-                border-radius: {size // 2}px;
-            """)
-            self.user_avatar_btn.setToolTip(f"Signed in as {user.name}")
+            if not self._load_avatar_image(user.avatar_url, user.name, size):
+                initials = user.name[:2].upper() if user.name else "?"
+                self.user_avatar_label.setText(initials)
+                self.user_avatar_label.setStyleSheet(f"""
+                    color: #00BFAE; font-weight: bold; font-size: 14px;
+                    background-color: rgba(0,191,174,0.15);
+                    border-radius: {size // 2}px;
+                """)
+                self.user_avatar_btn.setToolTip(f"Signed in as {user.name}")
         else:
             default = self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "user.svg"), 20)
             if not default.isNull():
