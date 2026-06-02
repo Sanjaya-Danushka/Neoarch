@@ -457,6 +457,7 @@ class _ViewsMixin:
             "Filter Packages",
             self.show_category_filter
         )
+        self._filter_btn.setProperty("defaultStyle", self._filter_btn.styleSheet())
         layout.addWidget(self._filter_btn)
 
         if show_install_file:
@@ -1410,6 +1411,10 @@ class _ViewsMixin:
                 pass
             QTimer.singleShot(0, self.refresh_bundles_table)
         elif view_id == "plugins":
+            self._view_mode = "grid"
+            if hasattr(self, '_grid_view_btn') and self._grid_view_btn:
+                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "navbar", "list.svg"), 20))
+                self._grid_view_btn.setToolTip("List View")
             try:
                 self.loading_widget.setVisible(False)
                 self.loading_widget.stop_animation()

@@ -6,6 +6,7 @@ import os
 import json
 import subprocess
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
 
 from PyQt6.QtWidgets import QMessageBox, QLabel
@@ -189,23 +190,26 @@ class _OperationsMixin:
             needed.add("npm")
         now = time.time()
         if (not force) and self.installed_index is not None:
-            if (now - (self._installed_index_last_built or 0) < 10) and needed.issubset(self._installed_index_sources or set()):
+            if (now - (self._installed_index_last_built or 0) < 30) and needed.issubset(self._installed_index_sources or set()):
                 return
+        _sources = self._installed_index_sources or set()
         built_any = False
-        try:
-            if (force or (('pacman' not in self._installed_index_sources) or ('AUR' not in self._installed_index_sources))) and (show_pacman or show_aur):
+
+        def _build_pacman():
+            nonlocal built_any
+            if (force or ('pacman' not in _sources) or ('AUR' not in _sources)) and (show_pacman or show_aur):
                 r = subprocess.run(["pacman", "-Qq"], capture_output=True, text=True, timeout=30)
                 if r.returncode == 0 and r.stdout:
                     names = [l.strip() for l in r.stdout.strip().split('\n') if l.strip()]
                     idx['pacman'].update(names)
                     idx['AUR'].update(names)
-                    self._installed_index_sources.update(["pacman", "AUR"])
+                    _sources.update(["pacman", "AUR"])
                     built_any = True
-        except Exception:
-            pass
-        try:
+
+        def _build_flatpak():
+            nonlocal built_any
             import shutil as _sh
-            if (force or ('Flatpak' not in self._installed_index_sources)) and show_flatpak and _sh.which('flatpak'):
+            if (force or ('Flatpak' not in _sources)) and show_flatpak and _sh.which('flatpak'):
                 installed_flatpak = set()
                 for scope in ([], ["--user"], ["--system"]):
                     try:
@@ -219,13 +223,13 @@ class _OperationsMixin:
                     except Exception:
                         continue
                 idx['Flatpak'].update(installed_flatpak)
-                self._installed_index_sources.add("Flatpak")
+                _sources.add("Flatpak")
                 built_any = True
-        except Exception:
-            pass
-        try:
+
+        def _build_npm():
+            nonlocal built_any
             import shutil as _sh
-            if (force or ('npm' not in self._installed_index_sources)) and show_npm and _sh.which('npm'):
+            if (force or ('npm' not in _sources)) and show_npm and _sh.which('npm'):
                 results = []
                 np_def = subprocess.run(["npm", "ls", "-g", "--depth=0", "--json"], capture_output=True, text=True, timeout=30)
                 results.append((np_def.returncode, np_def.stdout))
@@ -249,11 +253,25 @@ class _OperationsMixin:
                                 idx['npm'].add(name)
                         except Exception:
                             pass
-                self._installed_index_sources.add("npm")
+                _sources.add("npm")
                 built_any = True
-        except Exception:
-            pass
+
+        with ThreadPoolExecutor(max_workers=3) as ex:
+            fs = []
+            if show_pacman or show_aur:
+                fs.append(ex.submit(_build_pacman))
+            if show_flatpak:
+                fs.append(ex.submit(_build_flatpak))
+            if show_npm:
+                fs.append(ex.submit(_build_npm))
+            for f in as_completed(fs):
+                try:
+                    f.result()
+                except Exception:
+                    pass
+
         self.installed_index = idx
+        self._installed_index_sources = _sources
         if built_any:
             self._installed_index_last_built = now
 
@@ -316,6 +334,9 @@ class _OperationsMixin:
         install_service.install_packages(self, to_install)
 
     def _prewarm_installed_index_async(self):
+        now = time.time()
+        if self.installed_index is not None and (now - (self._installed_index_last_built or 0)) < 30:
+            return
         try:
             def _run():
                 try:
