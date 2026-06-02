@@ -27,7 +27,6 @@ export default function AuthCallback() {
       }
     })
 
-    // Exchange the auth code for a session if needed
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session && desktopCallback) {
         const accessToken = session.access_token
@@ -41,33 +40,11 @@ export default function AuthCallback() {
   }, [router.isReady, router.query])
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <p style={styles.text}>{status}</p>
+    <div className="min-h-screen flex items-center justify-center bg-neoarch-bg">
+      <div className="card text-center py-10 px-8">
+        <div className="text-4xl text-neoarch-accent mb-3 animate-pulse">◆</div>
+        <p className="text-neoarch-text">{status}</p>
       </div>
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#0a0a0a',
-    color: '#fff',
-    fontFamily: 'system-ui, sans-serif',
-  },
-  card: {
-    background: '#1a1a1a',
-    borderRadius: 16,
-    padding: 48,
-    border: '1px solid #2a2a2a',
-    textAlign: 'center',
-  },
-  text: {
-    fontSize: 18,
-    color: '#D1D5DB',
-  },
 }

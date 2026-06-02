@@ -30,22 +30,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={styles.logo}>⬡</div>
-          <h1 style={styles.title}>NeoArch</h1>
-          <p style={styles.subtitle}>Sign in to sync your package favourites</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-neoarch-bg px-4">
+      <div className="card w-full max-w-sm py-10 px-8 text-center">
+        <div className="text-5xl text-neoarch-accent mb-2">◆</div>
+        <h1 className="text-2xl font-bold mb-1">NeoArch</h1>
+        <p className="text-neoarch-muted text-sm mb-8">Sign in to sync your package favourites</p>
 
         {error && (
-          <div style={styles.error}>
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2.5 text-sm text-red-300 mb-4">
             {error}
           </div>
         )}
 
-        <button onClick={handleGoogleSignIn} style={styles.googleBtn}>
-          <svg width="20" height="20" viewBox="0 0 24 24" style={{ marginRight: 12, flexShrink: 0 }}>
+        <button
+          onClick={handleGoogleSignIn}
+          className="flex items-center justify-center w-full bg-white hover:bg-gray-100 text-neoarch-bg font-semibold rounded-lg px-6 py-3 transition-colors"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" className="mr-3 flex-shrink-0">
             <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
             <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
             <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -55,75 +56,11 @@ export default function LoginPage() {
         </button>
 
         {callbackUrl && (
-          <p style={styles.hint}>
+          <p className="mt-6 text-xs text-neoarch-muted">
             After signing in, you'll be redirected back to the NeoArch app
           </p>
         )}
       </div>
     </div>
   )
-}
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#0a0a0a',
-    color: '#fff',
-    fontFamily: 'system-ui, sans-serif',
-  },
-  card: {
-    background: '#1a1a1a',
-    borderRadius: 16,
-    padding: 48,
-    maxWidth: 420,
-    width: '90%',
-    border: '1px solid #2a2a2a',
-  },
-  logo: {
-    fontSize: 48,
-    color: '#00BFAE',
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 700,
-    margin: '0 0 8px',
-  },
-  subtitle: {
-    color: '#9CA3AF',
-    margin: 0,
-  },
-  googleBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    background: '#fff',
-    color: '#1a1a1a',
-    border: 'none',
-    borderRadius: 8,
-    padding: '14px 24px',
-    fontSize: 16,
-    fontWeight: 600,
-    cursor: 'pointer',
-  },
-  error: {
-    background: 'rgba(239,68,68,0.1)',
-    border: '1px solid rgba(239,68,68,0.3)',
-    borderRadius: 8,
-    padding: '10px 14px',
-    marginBottom: 16,
-    color: '#FCA5A5',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  hint: {
-    marginTop: 24,
-    textAlign: 'center',
-    fontSize: 13,
-    color: '#6B7280',
-  },
 }
