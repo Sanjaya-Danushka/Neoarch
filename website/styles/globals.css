@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  body {
+    @apply bg-[#0F1117] text-[#F0F0F0] font-sans;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[#00BFAE] hover:bg-[#00D4C4] text-[#0F1117] font-semibold px-6 py-2.5 rounded-lg transition-all duration-200;
+  }
+  .btn-outline {
+    @apply border border-[#2A2D3A] text-[#F0F0F0] hover:bg-[#252836] px-6 py-2.5 rounded-lg transition-all duration-200;
+  }
+  .card {
+    @apply bg-[#1A1C25] border border-[#2A2D3A] rounded-xl p-6;
+  }
+}
