@@ -84,11 +84,17 @@ class CloudAuthManager(QObject):
 
     def _set_user(self, supabase_user):
         metadata = supabase_user.user_metadata or {}
+        avatar = (
+            metadata.get("avatar_url")
+            or metadata.get("picture")
+            or metadata.get("avatar")
+            or ""
+        )
         self._user = CloudUser(
             id=supabase_user.id,
             email=supabase_user.email or "",
             name=metadata.get("full_name") or metadata.get("name") or supabase_user.email or "User",
-            avatar_url=metadata.get("avatar_url") or "",
+            avatar_url=avatar,
         )
         self.login_changed.emit(self._user)
 
