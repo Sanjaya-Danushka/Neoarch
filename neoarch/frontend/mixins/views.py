@@ -1197,6 +1197,39 @@ class _ViewsMixin:
             add_to_community_btn.setToolTip("Share selected bundle items with the community")
             layout.addWidget(add_to_community_btn)
 
+            cloud_style = """
+                QPushButton {
+                    background-color: transparent;
+                    color: #00BFAE;
+                    border: 1px solid rgba(0, 191, 174, 0.5);
+                    border-radius: 6px;
+                    padding: 6px 12px;
+                    font-size: 12px;
+                    font-weight: 500;
+                }
+                QPushButton:hover {
+                    background-color: rgba(0, 191, 174, 0.15);
+                    border-color: #00BFAE;
+                }
+                QPushButton:pressed {
+                    background-color: rgba(0, 191, 174, 0.25);
+                }
+            """
+
+            save_cloud_btn = QPushButton("☁ Save to Cloud")
+            save_cloud_btn.setMinimumHeight(36)
+            save_cloud_btn.setStyleSheet(cloud_style)
+            save_cloud_btn.clicked.connect(self._cloud_save_favourites)
+            save_cloud_btn.setToolTip("Upload bundle items to cloud (replace remote)")
+            layout.addWidget(save_cloud_btn)
+
+            load_cloud_btn = QPushButton("☁ Load from Cloud")
+            load_cloud_btn.setMinimumHeight(36)
+            load_cloud_btn.setStyleSheet(cloud_style)
+            load_cloud_btn.clicked.connect(self._cloud_sync_favourites)
+            load_cloud_btn.setToolTip("Download bundle items from cloud (replace local)")
+            layout.addWidget(load_cloud_btn)
+
             clear_btn = QPushButton("Clear Bundle")
             clear_btn.setMinimumHeight(36)
             clear_btn.setStyleSheet(install_bundle_btn.styleSheet())
@@ -2339,37 +2372,43 @@ class _ViewsMixin:
             cm.logout()
         self.user_avatar_label.setText("👤")
 
-    def _cloud_save_favourites(self):
+    def _cloud_ensure_login(self):
         cm = getattr(self, '_cloud_auth', None)
         if not cm or not cm.is_logged_in:
-            self.log("Not signed in")
+            self.log("Not signed in — open browser to log in")
+            self._cloud_login()
+            return False
+        return True
+
+    def _cloud_save_favourites(self):
+        if not self._cloud_ensure_login():
             return
+        cm = getattr(self, '_cloud_auth', None)
         if not self.bundle_items:
-            self.log("Bundle is empty — add packages first")
+            ok = cm.delete_all_favorites()
+            if ok:
+                self.log("Cleared cloud favourites")
+            else:
+                self.log("Cloud: nothing to clear")
             return
-        from PyQt6.QtWidgets import QInputDialog
-        name, ok = QInputDialog.getText(self, "Save Favourites", "Name this bundle:", text="My Favourites")
-        if not ok or not name.strip():
-            return
-        ok = cm.save_favorites(name.strip(), self.bundle_items)
+        ok = cm.save_favorites("My Favourites", self.bundle_items)
         if ok:
-            self.log(f"Saved {len(self.bundle_items)} favourites to cloud")
+            self.log(f"☁ Saved {len(self.bundle_items)} items to cloud")
         else:
-            self.log("Failed to save favourites to cloud")
+            self.log("☁ Failed to save to cloud")
 
     def _cloud_sync_favourites(self):
-        cm = getattr(self, '_cloud_auth', None)
-        if not cm or not cm.is_logged_in:
-            self.log("Not signed in")
+        if not self._cloud_ensure_login():
             return
+        cm = getattr(self, '_cloud_auth', None)
         faves = cm.get_favorites()
         if faves:
             self.bundle_items = list(faves)
             from neoarch.backend.services.bundle import refresh_bundles_table
             refresh_bundles_table(self)
-            self.log(f"Synced {len(faves)} favourites from cloud")
+            self.log(f"☁ Synced {len(faves)} items from cloud")
         else:
-            self.log("No cloud favourites found")
+            self.log("☁ No cloud favourites found — bundle unchanged")
 
     def _make_circular_pixmap(self, pixmap, size=36):
         result = QPixmap(size, size)
