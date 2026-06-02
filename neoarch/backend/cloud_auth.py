@@ -13,8 +13,8 @@ from PyQt6.QtCore import QObject, pyqtSignal
 CONFIG_DIR = Path.home() / ".config" / "neoarch"
 SESSION_FILE = CONFIG_DIR / "cloud_session.json"
 
-SUPABASE_URL = "https://fdzeqeobabojnhqiokky.supabase.co"
-SUPABASE_ANON_KEY = "sb_publishable_YkQx9d5kwC7r2ewA6ZI30g_hYHV5-FU"
+SUPABASE_URL = "https://rlbwkihgijdlqvyeycjj.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_IlIXtZ8W3lnrkGli9TXVRA_XrrzIOPH"
 WEBSITE_URL = "https://sanjaya-danushka.github.io/Neoarch"
 
 try:
