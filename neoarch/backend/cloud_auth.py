@@ -184,34 +184,44 @@ class CloudAuthManager(QObject):
 
     def get_favorites(self) -> list:
         if not self._client or not self._user:
+            print("get_favorites: no client or user")
             return []
         try:
-            data = self._client.table("user_favorites") \
+            print(f"get_favorites: querying user_id={self._user.id}")
+            resp = self._client.table("user_favorites") \
                 .select("bundle_data") \
                 .eq("user_id", self._user.id) \
                 .order("created_at", ascending=False) \
                 .limit(1) \
                 .execute()
-            if data.data and len(data.data) > 0:
-                return data.data[0].get("bundle_data", [])
-        except Exception:
-            pass
+            print(f"get_favorites: response data={resp.data}")
+            if resp.data and len(resp.data) > 0:
+                result = resp.data[0].get("bundle_data", [])
+                print(f"get_favorites: returning {len(result)} items")
+                return result
+            print("get_favorites: no rows found")
+        except Exception as e:
+            print(f"get_favorites error: {e}")
         return []
 
     def save_favorites(self, bundle_name: str, bundle_data: list) -> bool:
         if not self._client or not self._user:
+            print("save_favorites: no client or user")
             return False
         try:
-            self._client.table("user_favorites") \
+            print(f"save_favorites: user_id={self._user.id}, items={len(bundle_data)}")
+            del_resp = self._client.table("user_favorites") \
                 .delete() \
                 .eq("user_id", self._user.id) \
                 .execute()
-            self._client.table("user_favorites").insert({
+            print(f"save_favorites: delete response={del_resp.data}")
+            ins_resp = self._client.table("user_favorites").insert({
                 "user_id": self._user.id,
                 "bundle_name": bundle_name,
                 "bundle_data": bundle_data,
                 "item_count": len(bundle_data),
             }).execute()
+            print(f"save_favorites: insert response={ins_resp.data}")
             return True
         except Exception as e:
             print(f"Save favorites error: {e}")
