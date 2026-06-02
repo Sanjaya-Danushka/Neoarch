@@ -13,16 +13,20 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     setError(null)
-    const base = window.location.pathname.replace(/\/login\/?$/, '') || ''
-    const redirectTo = callbackUrl
-      ? `${window.location.origin}${base}/auth/callback?callback=${encodeURIComponent(callbackUrl)}`
-      : `${window.location.origin}${base}/auth/callback`
+    try {
+      const base = window.location.pathname.replace(/\/login\/?$/, '') || ''
+      const redirectTo = callbackUrl
+        ? `${window.location.origin}${base}/auth/callback?callback=${encodeURIComponent(callbackUrl)}`
+        : `${window.location.origin}${base}/auth/callback`
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo },
-    })
-    if (error) setError(error.message)
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo },
+      })
+      if (error) setError(error.message)
+    } catch (e: any) {
+      setError(e?.message || 'Failed to start sign in')
+    }
   }
 
   return (
