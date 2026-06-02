@@ -202,7 +202,11 @@ class CloudAuthManager(QObject):
         if not self._client or not self._user:
             return False
         try:
-            self._client.table("user_favorites").upsert({
+            self._client.table("user_favorites") \
+                .delete() \
+                .eq("user_id", self._user.id) \
+                .execute()
+            self._client.table("user_favorites").insert({
                 "user_id": self._user.id,
                 "bundle_name": bundle_name,
                 "bundle_data": bundle_data,
