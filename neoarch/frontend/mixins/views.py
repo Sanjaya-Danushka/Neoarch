@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QTimer, QSize, QItemSelectionModel
 from PyQt6.QtGui import (
-    QFont, QColor, QPixmap, QPainter, QIcon, QFontMetrics,
+    QFont, QColor, QPixmap, QPainter, QPainterPath, QIcon, QFontMetrics,
 )
 
 from neoarch.resources.paths import PROJECT_ROOT
@@ -2370,7 +2370,25 @@ class _ViewsMixin:
         else:
             self.log("No cloud favourites found")
 
+    def _make_circular_pixmap(self, pixmap, size=36):
+        result = QPixmap(size, size)
+        result.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(result)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        path = QPainterPath()
+        path.addEllipse(0, 0, size, size)
+        painter.setClipPath(path)
+        scaled = pixmap.scaled(size, size, Qt.AspectRatioMode.KeepAspectByExpanding, Qt.TransformationMode.SmoothTransformation)
+        x = (scaled.width() - size) // 2
+        y = (scaled.height() - size) // 2
+        painter.drawPixmap(0, 0, scaled.copy(x, y, size, size))
+        painter.end()
+        return result
+
     def update_user_avatar(self, user):
+        size = 36
+        self.user_avatar_label.setFixedSize(size, size)
+
         if user and user.avatar_url:
             try:
                 import urllib.request
@@ -2378,25 +2396,26 @@ class _ViewsMixin:
                 pixmap = QPixmap()
                 pixmap.loadFromData(data)
                 if not pixmap.isNull():
-                    self.user_avatar_label.setPixmap(
-                        pixmap.scaled(28, 28, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-                    )
-                    self.user_avatar_label.setStyleSheet("border-radius: 14px;")
+                    circular = self._make_circular_pixmap(pixmap, size)
+                    self.user_avatar_label.setPixmap(circular)
+                    self.user_avatar_label.setStyleSheet("")
                     self.user_avatar_btn.setToolTip(f"Signed in as {user.name}")
                     return
             except Exception:
                 pass
-            self.user_avatar_label.setText(user.name[:2].upper() if user.name else "?")
-            self.user_avatar_label.setStyleSheet("""
-                color: #00BFAE; font-weight: bold; font-size: 13px;
+            initials = user.name[:2].upper() if user.name else "?"
+            self.user_avatar_label.setText(initials)
+            self.user_avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.user_avatar_label.setStyleSheet(f"""
+                color: #00BFAE; font-weight: bold; font-size: 14px;
                 background-color: rgba(0,191,174,0.15);
-                border-radius: 14px;
+                border-radius: {size // 2}px;
             """)
             self.user_avatar_btn.setToolTip(f"Signed in as {user.name}")
         else:
-            default = self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "user.svg"), 24)
+            default = self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "user.svg"), 20)
             if not default.isNull():
-                self.user_avatar_label.setPixmap(default.pixmap(24, 24))
+                self.user_avatar_label.setPixmap(default.pixmap(20, 20))
             else:
                 self.user_avatar_label.setText("👤")
             self.user_avatar_label.setStyleSheet("")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # cSpell:disable
-# best package manager for arch linux, aur helper, aur, yay, paru, trizen, pikaur, aurutils, pamac, octopi, aurman, aura, yay-git, paru-git, trizen-git, pikaur-git, aurutils-git, pamac-git, octopi-git, aurman-git, aura-git
+# best package manager for arch linux, aur helper, aur, yay, paru, trizen, pikaur, aurutils, pamac, octopi, aurman, aura, yay-git, paru-git, trizen-git, pikaur-git, aurutils-git, pamac-git, octopi-git, aurman-git, aura-git.
 """
 NeoArch - Backward-compatible wrapper.
 
