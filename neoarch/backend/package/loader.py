@@ -18,6 +18,8 @@ __all__ = ["load_updates", "load_installed_packages"]
 def _run_cmd(cmd, timeout=60, env=None):
     try:
         return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
+    except FileNotFoundError:
+        return None
     except Exception:
         return None
 
@@ -44,33 +46,14 @@ def _check_pacman_updates():
 
 
 def _check_aur_updates():
-    packages = []
-    try:
-        result_aur = _run_cmd(["yay", "-Qua"], timeout=60)
-        if result_aur and result_aur.returncode == 0 and result_aur.stdout:
-            for line in result_aur.stdout.strip().split('\n'):
-                if line.strip() and ' -> ' in line:
-                    parts = line.split(' -> ')
-                    if len(parts) == 2:
-                        package_info = parts[0].strip().split()
-                        new_version = parts[1].strip()
-                        if len(package_info) >= 2:
-                            packages.append({
-                                'name': package_info[0],
-                                'version': package_info[1],
-                                'new_version': new_version,
-                                'id': package_info[0],
-                                'source': 'AUR'
-                            })
-            return packages
-    except Exception:
-        pass
-
-    for aur_helper in ['paru', 'trizen', 'pikaur']:
-        try:
-            result_aur = _run_cmd([aur_helper, "-Qua"], timeout=60)
-            if result_aur and result_aur.returncode == 0 and result_aur.stdout:
-                for line in result_aur.stdout.strip().split('\n'):
+    helpers = ['yay', 'paru', 'trizen', 'pikaur']
+    with ThreadPoolExecutor(max_workers=len(helpers)) as ex:
+        fut_map = {ex.submit(_run_cmd, [h, "-Qua"], 60): h for h in helpers}
+        for fut in as_completed(fut_map):
+            result = fut.result()
+            if result and result.returncode in (0, 1) and result.stdout:
+                packages = []
+                for line in result.stdout.strip().split('\n'):
                     if line.strip() and ' -> ' in line:
                         parts = line.split(' -> ')
                         if len(parts) == 2:
@@ -84,10 +67,9 @@ def _check_aur_updates():
                                     'id': package_info[0],
                                     'source': 'AUR'
                                 })
-                break
-        except Exception:
-            continue
-    return packages
+                if packages:
+                    return packages
+    return []
 
 
 def _check_flatpak_updates():
@@ -201,6 +183,28 @@ def _check_npm_updates():
     return packages
 
 
+def _sync_pacman_db(app):
+    try:
+        app.log("Syncing package database...")
+        env = get_askpass_env()
+        sync_result = subprocess.run(["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
+                                    capture_output=True, text=True, timeout=120, env=env)
+        if sync_result.returncode == 0:
+            app.log("Package database synced successfully")
+        else:
+            err = sync_result.stderr or ""
+            app.log(f"Warning: Database sync failed: {err}")
+            low = err.lower()
+            if ("could not lock database" in low) or ("unable to lock database" in low):
+                try:
+                    app.ui_call.emit(lambda: app.show_busy_pm_warning(err))
+                except Exception:
+                    pass
+    except Exception as e:
+        app.log(f"Warning: Could not sync database: {str(e)}")
+    return []
+
+
 def load_updates(app):
     try:
         app._updates_loading = True
@@ -240,35 +244,17 @@ def load_updates(app):
         try:
             packages = []
 
-            try:
-                app.log("Syncing package database...")
-                env = get_askpass_env()
-                sync_result = subprocess.run(["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
-                                            capture_output=True, text=True, timeout=120, env=env)
-                if sync_result.returncode == 0:
-                    app.log("Package database synced successfully")
-                else:
-                    err = sync_result.stderr or ""
-                    app.log(f"Warning: Database sync failed: {err}")
-                    low = err.lower()
-                    if ("could not lock database" in low) or ("unable to lock database" in low):
-                        try:
-                            app.ui_call.emit(lambda: app.show_busy_pm_warning(err))
-                        except Exception:
-                            pass
-            except Exception as e:
-                app.log(f"Warning: Could not sync database: {str(e)}")
-
-            with ThreadPoolExecutor(max_workers=4) as ex:
+            with ThreadPoolExecutor(max_workers=5) as ex:
                 fut_pacman = ex.submit(_check_pacman_updates)
                 fut_aur = ex.submit(_check_aur_updates)
                 fut_flatpak = ex.submit(_check_flatpak_updates)
                 fut_npm = ex.submit(_check_npm_updates)
+                fut_sync = ex.submit(_sync_pacman_db, app)
 
-                for fut in as_completed([fut_pacman, fut_aur, fut_flatpak, fut_npm]):
+                for fut in as_completed([fut_pacman, fut_aur, fut_flatpak, fut_npm, fut_sync]):
                     try:
-                        packages.extend(fut.result())
-                    except Exception as e:
+                        packages.extend(fut.result() or [])
+                    except Exception:
                         pass
 
             try:
@@ -336,13 +322,22 @@ def load_installed_packages(app):
 
     def load_in_thread():
         try:
-            result = subprocess.run(["pacman", "-Q"], capture_output=True, text=True, timeout=60)
             packages = []
             updates = {}
+            aur_packages = set()
 
-            if result.returncode == 0 and result.stdout:
+            with ThreadPoolExecutor(max_workers=3) as ex:
+                fut_q = ex.submit(_run_cmd, ["pacman", "-Q"], 60)
+                fut_qu = ex.submit(_run_cmd, ["pacman", "-Qu"], 30)
+                fut_qm = ex.submit(_run_cmd, ["pacman", "-Qm"], 30)
+
+                result = fut_q.result()
+                result_updates = fut_qu.result()
+                result_aur = fut_qm.result()
+
+            if result and result.returncode == 0 and result.stdout:
                 lines = result.stdout.strip().split('\n')
-                for i, line in enumerate(lines):
+                for line in lines:
                     if line.strip():
                         parts = line.split()
                         if len(parts) >= 2:
@@ -354,8 +349,7 @@ def load_installed_packages(app):
                                 'has_update': False
                             })
 
-            result_updates = subprocess.run(["pacman", "-Qu"], capture_output=True, text=True, timeout=30)
-            if result_updates.returncode == 0 and result_updates.stdout:
+            if result_updates and result_updates.returncode == 0 and result_updates.stdout:
                 for line in result_updates.stdout.strip().split('\n'):
                     if line.strip():
                         parts = line.split()
@@ -367,9 +361,7 @@ def load_installed_packages(app):
                     pkg['has_update'] = True
                     pkg['new_version'] = updates[pkg['name']]
 
-            result_aur = subprocess.run(["pacman", "-Qm"], capture_output=True, text=True, timeout=30)
-            aur_packages = set()
-            if result_aur.returncode == 0 and result_aur.stdout:
+            if result_aur and result_aur.returncode == 0 and result_aur.stdout:
                 for line in result_aur.stdout.strip().split('\n'):
                     if line.strip():
                         parts = line.split()
@@ -381,28 +373,8 @@ def load_installed_packages(app):
                     pkg['source'] = 'AUR'
 
             try:
-                aur_updates = {}
-                for h in ['yay', 'paru', 'trizen', 'pikaur']:
-                    try:
-                        r = subprocess.run([h, "-Qua"], capture_output=True, text=True, timeout=60)
-                        if r.returncode in (0, 1):
-                            output_text = (r.stdout or '').strip()
-                            if output_text:
-                                for ln in [x for x in output_text.split('\n') if x.strip()]:
-                                    parts = ln.split()
-                                    if len(parts) >= 2:
-                                        name = parts[0]
-                                        if '->' in ln:
-                                            try:
-                                                new_v = parts[-1]
-                                            except Exception:
-                                                new_v = ''
-                                        else:
-                                            new_v = parts[1]
-                                        aur_updates[name] = new_v
-                            break
-                    except Exception:
-                        continue
+                aur_pkg_updates = _check_aur_updates()
+                aur_updates = {p['name']: p.get('new_version', '') for p in aur_pkg_updates}
                 if aur_updates:
                     for pkg in packages:
                         if pkg.get('source') == 'AUR' and pkg['name'] in aur_updates:

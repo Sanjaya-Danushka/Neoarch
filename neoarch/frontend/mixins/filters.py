@@ -17,8 +17,125 @@ _BASE_DIR = str(PROJECT_ROOT)
 
 
 class _FiltersMixin:
+    def _update_filter_btn_state(self):
+        if not hasattr(self, '_filter_btn') or not self._filter_btn:
+            return
+        if hasattr(self, 'plugins_view') and self.plugins_view:
+            states = getattr(self.plugins_view, '_current_filter_states', {})
+            all_on = all(states.get(n, True) for n in ("Available", "Installed"))
+        else:
+            all_on = True
+        if all_on:
+            self._filter_btn.setStyleSheet(self._filter_btn.property("defaultStyle") or "")
+        else:
+            self._filter_btn.setStyleSheet("""
+                QPushButton {
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 rgba(0, 191, 174, 0.2),
+                        stop:1 rgba(0, 191, 174, 0.1));
+                    border: 1px solid rgba(0, 191, 174, 0.35);
+                    border-radius: 21px;
+                }
+                QPushButton:hover {
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 rgba(0, 191, 174, 0.28),
+                        stop:1 rgba(0, 191, 174, 0.15));
+                    border: 1px solid rgba(0, 191, 174, 0.5);
+                }
+                QPushButton:pressed {
+                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                        stop:0 rgba(0, 191, 174, 0.35),
+                        stop:1 rgba(0, 191, 174, 0.2));
+                    border: 1px solid rgba(0, 191, 174, 0.6);
+                }
+            """)
+
+    def _make_toggle_icon(self, checked, size=18):
+        from PyQt6.QtGui import QPixmap, QPainter, QColor, QPen
+        from PyQt6.QtCore import Qt
+        pm = QPixmap(size, size)
+        pm.fill(Qt.GlobalColor.transparent)
+        p = QPainter(pm)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        track_h = 14
+        track_y = (size - track_h) // 2
+        knob_d = 12
+        knob_y = track_y + 1
+        pad = 2
+        if checked:
+            p.setBrush(QColor("#00BFAE"))
+            p.setPen(Qt.PenStyle.NoPen)
+            p.drawRoundedRect(0, track_y, size, track_h, track_h // 2, track_h // 2)
+            p.setBrush(QColor(255, 255, 255))
+            p.drawEllipse(size - knob_d - pad, knob_y, knob_d, knob_d)
+        else:
+            p.setBrush(QColor(0, 0, 0, 0))
+            p.setPen(QPen(QColor(100, 102, 110), 2))
+            p.drawRoundedRect(1, track_y, size - 2, track_h, track_h // 2, track_h // 2)
+            p.setBrush(QColor(80, 82, 90))
+            p.setPen(Qt.PenStyle.NoPen)
+            p.drawEllipse(pad, knob_y, knob_d, knob_d)
+        p.end()
+        from PyQt6.QtGui import QIcon
+        return QIcon(pm)
+
     def show_category_filter(self):
-        self.log("Category filter")
+        if not hasattr(self, '_filter_btn') or not self._filter_btn:
+            return
+        self._update_filter_btn_state()
+        from PyQt6.QtWidgets import QMenu
+
+        menu = QMenu(self._filter_btn)
+        menu.setObjectName("filterTogglePopup")
+        menu.setStyleSheet("""
+            QMenu#filterTogglePopup {
+                background-color: rgba(22, 23, 26, 0.85);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 12px;
+                padding: 6px;
+            }
+            QMenu#filterTogglePopup::item {
+                padding: 10px 14px;
+                border-radius: 8px;
+                margin: 1px 0;
+                color: #EDEDEF;
+                font-size: 13px;
+                font-weight: 500;
+                background: transparent;
+            }
+            QMenu#filterTogglePopup::item:selected {
+                background-color: rgba(255, 255, 255, 0.04);
+                color: #FFFFFF;
+            }
+            QMenu#filterTogglePopup::icon {
+                padding-right: 10px;
+            }
+        """)
+
+        if hasattr(self, 'plugins_view') and self.plugins_view:
+            current = getattr(self.plugins_view, '_current_filter_states', {})
+        else:
+            current = {}
+
+        for name in ("Available", "Installed"):
+            checked = current.get(name, True)
+            action = menu.addAction(self._make_toggle_icon(checked), name)
+            action.setCheckable(True)
+            action.setChecked(checked)
+            def make_handler(n):
+                return lambda ch: self._on_filter_chip_toggled(n, ch)
+            action.triggered.connect(make_handler(name))
+
+        menu.exec(self._filter_btn.mapToGlobal(
+            self._filter_btn.rect().bottomLeft()
+        ))
+
+    def _on_filter_chip_toggled(self, filter_name, checked):
+        if hasattr(self, 'plugins_view') and self.plugins_view:
+            states = getattr(self.plugins_view, '_current_filter_states', {})
+            states[filter_name] = checked
+            self.plugins_view.apply_filters(states)
+        self._update_filter_btn_state()
 
     def get_row_checkbox(self, row):
         cell = self.package_table.cellWidget(row, 0)

@@ -5,24 +5,24 @@ Allows users to discover, install, and share plugins from the community
 
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
                              QScrollArea, QFrame, QGridLayout, QTextEdit, QLineEdit,
-                             QMessageBox, QProgressBar, QGroupBox, QListWidget, QFileDialog)
-from PyQt6.QtCore import pyqtSignal, Qt, QThread, QTimer
-from PyQt6.QtGui import QGuiApplication
-from typing import Any
+                             QMessageBox, QProgressBar, QGroupBox, QGraphicsDropShadowEffect)
+from PyQt6.QtCore import pyqtSignal, Qt, QTimer
+from PyQt6.QtGui import QColor
 import os
 
-
-try:
-    from neoarch.backend.stores.supabase_store import SupabasePluginStore
-except Exception:
-    SupabasePluginStore = None  # type: ignore
-
-from neoarch.backend.stores.mongo_store import MongoPluginStore
 from neoarch.backend.stores.plugin_store import PluginStore
 
 
+def _shadow(widget: QWidget, blur=22, offset=(4, 5), alpha=140):
+    s = QGraphicsDropShadowEffect()
+    s.setBlurRadius(blur)
+    s.setColor(QColor(0, 0, 0, alpha))
+    s.setOffset(*offset)
+    widget.setGraphicsEffect(s)
+
+
 class CommunityPluginCard(QFrame):
-    """Card displaying a community plugin"""
+    """Card displaying a community plugin with modern glassmorphism design"""
 
     def __init__(self, plugin_info: dict, on_install, on_view_details, parent=None):
         super().__init__(parent)
@@ -32,47 +32,105 @@ class CommunityPluginCard(QFrame):
 
         self.setObjectName("communityPluginCard")
         self.setFrameShape(QFrame.Shape.StyledPanel)
+        self.setMinimumHeight(80)
         self.setStyleSheet(self._style())
-        self.setMinimumHeight(64)
+        _shadow(self, blur=20, offset=(3, 5), alpha=150)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 6, 6, 6)
-        layout.setSpacing(6)
+        layout.setContentsMargins(14, 12, 14, 12)
+        layout.setSpacing(8)
 
-        # Header with title, author, and version (no image)
+        # Header with title, author, and version
         header = QHBoxLayout()
+        header.setSpacing(8)
+
+        avatar = QLabel("\U0001f9e9")
+        avatar.setFixedSize(32, 32)
+        avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        avatar.setStyleSheet(
+            "font-size: 18px; background: rgba(255,255,255,0.03); "
+            "border: 1px solid rgba(255,255,255,0.06); border-radius: 8px;"
+        )
+        header.addWidget(avatar)
+
+        title_col = QVBoxLayout()
+        title_col.setSpacing(2)
         title = QLabel(plugin_info.get('name', 'Unknown Plugin'))
         title.setObjectName("pluginTitle")
-        header.addWidget(title)
-        author = QLabel(f"by {plugin_info.get('author', 'Unknown')}")
+        title_col.addWidget(title)
+
+        author = QLabel(f"by {plugin_info.get('author', 'Unknown')} \u00b7 v{plugin_info.get('version', '1.0.0')}")
         author.setObjectName("pluginAuthor")
-        author.setStyleSheet("color: #888; font-size: 11px;")
-        header.addWidget(author)
-        header.addStretch()
-        ver = QLabel(f"v{plugin_info.get('version', '1.0.0')}")
-        ver.setStyleSheet("color: #666; font-size: 10px;")
-        header.addWidget(ver)
+        title_col.addWidget(author)
+        header.addLayout(title_col, 1)
+
         layout.addLayout(header)
 
         # Description
         desc = QLabel(plugin_info.get('description', ''))
         desc.setObjectName("pluginDesc")
         desc.setWordWrap(True)
-        desc.setMaximumHeight(32)
+        desc.setMaximumHeight(34)
         layout.addWidget(desc)
+
+        layout.addStretch()
 
         # Footer with actions
         footer = QHBoxLayout()
+        footer.setSpacing(8)
         footer.addStretch()
 
-        # Buttons
         details_btn = QPushButton("Details")
-        details_btn.setFixedWidth(54)
+        details_btn.setFixedHeight(28)
+        details_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        details_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #8B8D97;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 7px;
+                font-weight: 600;
+                font-size: 10px;
+                padding: 0 14px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.04);
+                border-color: rgba(255, 255, 255, 0.12);
+                color: #EDEDEF;
+            }
+        """)
         details_btn.clicked.connect(lambda: self.on_view_details(self.plugin_info))
         footer.addWidget(details_btn)
 
         install_btn = QPushButton("Install")
-        install_btn.setFixedWidth(54)
+        install_btn.setFixedHeight(28)
+        install_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        install_btn.setStyleSheet("""
+            QPushButton {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(0, 207, 188, 0.9),
+                    stop:1 rgba(0, 175, 160, 0.9));
+                color: #0C0C0E;
+                border-top: 1px solid rgba(255, 255, 255, 0.15);
+                border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+                border-left: 1px solid rgba(255, 255, 255, 0.08);
+                border-right: 1px solid rgba(0, 0, 0, 0.15);
+                border-radius: 7px;
+                font-weight: 700;
+                font-size: 10px;
+                padding: 0 14px;
+            }
+            QPushButton:hover {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(0, 220, 200, 0.95),
+                    stop:1 rgba(0, 190, 174, 0.95));
+            }
+            QPushButton:pressed {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(0, 155, 140, 0.95),
+                    stop:1 rgba(0, 175, 160, 0.95));
+            }
+        """)
         install_btn.clicked.connect(lambda: self.on_install(self.plugin_info))
         footer.addWidget(install_btn)
 
@@ -81,30 +139,31 @@ class CommunityPluginCard(QFrame):
     def _style(self):
         return """
         QFrame#communityPluginCard {
-            background-color: #1a1a1a;
-            border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.1);
+            background-color: rgba(22, 23, 26, 0.85);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+            border-left: 1px solid rgba(255, 255, 255, 0.03);
+            border-right: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 14px;
+        }
+        QFrame#communityPluginCard:hover {
+            border-top: 1px solid rgba(255, 255, 255, 0.10);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+            background-color: rgba(26, 28, 32, 0.85);
         }
         QLabel#pluginTitle {
-            color: #F0F0F0;
-            font-size: 10px;
+            color: #EDEDEF;
+            font-size: 13px;
             font-weight: 600;
         }
+        QLabel#pluginAuthor {
+            color: #5C5E66;
+            font-size: 10px;
+        }
         QLabel#pluginDesc {
-            color: #A0A0A0;
-            font-size: 9px;
+            color: #8B8D97;
+            font-size: 11px;
             line-height: 1.3;
-        }
-        QPushButton {
-            background-color: transparent;
-            color: #00BFAE;
-            border: 1px solid #00BFAE;
-            border-radius: 4px;
-            padding: 2px 8px;
-            font-size: 9px;
-        }
-        QPushButton:hover {
-            background-color: rgba(0, 191, 174, 0.1);
         }
         """
 
@@ -190,37 +249,49 @@ class PluginDetailsDialog(QFrame):
     def _dialog_style(self):
         return """
         QFrame#pluginDetailsDialog {
-            background-color: #2a2a2a;
-            border-radius: 8px;
-            border: 1px solid #444;
+            background-color: rgba(18, 19, 22, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
         }
         QLabel#dialogTitle {
-            color: #FFF;
+            color: #EDEDEF;
             font-size: 18px;
-            font-weight: bold;
+            font-weight: 700;
         }
         QGroupBox {
-            font-weight: bold;
-            border: 1px solid #555;
-            border-radius: 4px;
-            margin-top: 8px;
-            padding-top: 8px;
+            font-weight: 600;
+            color: #8B8D97;
+            font-size: 11px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            margin-top: 12px;
+            padding: 12px 8px 8px 8px;
         }
         QGroupBox::title {
             subcontrol-origin: margin;
-            left: 8px;
-            padding: 0 4px;
+            left: 12px;
+            padding: 0 6px;
         }
         QPushButton {
-            background-color: #00BFAE;
-            color: white;
+            background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(0, 207, 188, 0.9),
+                stop:1 rgba(0, 175, 160, 0.9));
+            color: #0C0C0E;
             border: none;
-            border-radius: 4px;
-            padding: 8px 16px;
-            font-weight: bold;
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-weight: 700;
+            font-size: 12px;
         }
         QPushButton:hover {
-            background-color: #00A090;
+            background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(0, 220, 200, 0.95),
+                stop:1 rgba(0, 190, 174, 0.95));
+        }
+        QPushButton:pressed {
+            background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(0, 155, 140, 0.95),
+                stop:1 rgba(0, 175, 160, 0.95));
         }
         """
 
@@ -347,39 +418,60 @@ class PluginCreatorDialog(QFrame):
     def _dialog_style(self):
         return """
         QFrame#pluginCreatorDialog {
-            background-color: #2a2a2a;
-            border-radius: 8px;
-            border: 1px solid #444;
+            background-color: rgba(18, 19, 22, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
         }
         QLabel#dialogTitle {
-            color: #FFF;
+            color: #EDEDEF;
             font-size: 18px;
-            font-weight: bold;
+            font-weight: 700;
         }
         QLineEdit, QTextEdit {
-            background-color: #1a1a1a;
-            border: 1px solid #555;
-            border-radius: 4px;
-            color: #FFF;
-            padding: 4px;
+            background-color: rgba(14, 14, 16, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            color: #EDEDEF;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        QLineEdit:focus, QTextEdit:focus {
+            border: 1px solid rgba(0, 191, 174, 0.5);
         }
         QGroupBox {
-            font-weight: bold;
-            border: 1px solid #555;
-            border-radius: 4px;
-            margin-top: 8px;
-            padding-top: 8px;
+            font-weight: 600;
+            color: #8B8D97;
+            font-size: 11px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            margin-top: 12px;
+            padding: 12px 8px 8px 8px;
+        }
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            left: 12px;
+            padding: 0 6px;
         }
         QPushButton {
-            background-color: #00BFAE;
-            color: white;
+            background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(0, 207, 188, 0.9),
+                stop:1 rgba(0, 175, 160, 0.9));
+            color: #0C0C0E;
             border: none;
-            border-radius: 4px;
-            padding: 8px 16px;
-            font-weight: bold;
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-weight: 700;
+            font-size: 12px;
         }
         QPushButton:hover {
-            background-color: #00A090;
+            background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(0, 220, 200, 0.95),
+                stop:1 rgba(0, 190, 174, 0.95));
+        }
+        QPushButton:pressed {
+            background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(0, 155, 140, 0.95),
+                stop:1 rgba(0, 175, 160, 0.95));
         }
         """
 
@@ -391,189 +483,132 @@ class CommunityPluginsTab(QWidget):
     def __init__(self, main_app, parent=None):
         super().__init__(parent)
         self.main_app = main_app
-        self.plugin_store: Any = None
-        self._is_supabase = False
-        self._is_mongo = False
-        try:
-            if MongoPluginStore is not None:
-                m = MongoPluginStore()
-                if m.is_configured():
-                    self.plugin_store = m
-                    self._is_mongo = True
-        except Exception:
-            self.plugin_store = None
-        if self.plugin_store is None:
-            try:
-                if SupabasePluginStore is not None:
-                    s = SupabasePluginStore()
-                    if s.is_configured():
-                        self.plugin_store = s
-                        self._is_supabase = True
-            except Exception:
-                self.plugin_store = None
-        if self.plugin_store is None:
-            self.plugin_store = PluginStore()
+        self.plugin_store = PluginStore()
         self.community_plugins = []
         self.details_dialog = None
         self.creator_dialog = None
-        self.my_plugins = []
-        self._selected_my_id = None
-        self._setup_status = None
 
         self._init_ui()
         self.refresh_plugins()
 
     def _init_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(12)
 
-        # Header with title and refresh button
-        header = QHBoxLayout()
+        # Header with title and action buttons
+        header = QFrame()
+        header.setObjectName("communityHeader")
+        header.setStyleSheet("""
+            QFrame#communityHeader {
+                background-color: rgba(14, 14, 16, 0.95);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 10px;
+            }
+        """)
+        header.setFixedHeight(44)
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(12, 4, 8, 4)
+        header_layout.setSpacing(6)
 
         title = QLabel("Community Plugins")
-        title.setObjectName("sectionLabel")
-        header.addWidget(title)
+        title.setStyleSheet("color: #EDEDEF; font-size: 13px; font-weight: 600; border: none;")
+        header_layout.addWidget(title)
 
-        header.addStretch()
+        header_layout.addStretch()
 
-        # Action buttons
-        create_btn = QPushButton("Create Plugin")
+        def _header_btn_style():
+            return """
+            QPushButton {
+                background-color: transparent;
+                color: #8B8D97;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 7px;
+                padding: 0 12px;
+                font-weight: 500;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.04);
+                color: #EDEDEF;
+                border-color: rgba(255, 255, 255, 0.12);
+            }
+            """
+
+        create_btn = QPushButton("+ Create")
+        create_btn.setFixedHeight(30)
+        create_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        create_btn.setStyleSheet(_header_btn_style())
         create_btn.clicked.connect(self.show_plugin_creator)
-        header.addWidget(create_btn)
+        header_layout.addWidget(create_btn)
 
-        submit_btn = QPushButton("Submit Plugin")
+        submit_btn = QPushButton("Submit")
+        submit_btn.setFixedHeight(30)
+        submit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        submit_btn.setStyleSheet(_header_btn_style())
         submit_btn.clicked.connect(self.submit_plugin)
-        header.addWidget(submit_btn)
+        header_layout.addWidget(submit_btn)
 
         refresh_btn = QPushButton("Refresh")
+        refresh_btn.setFixedHeight(30)
+        refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        refresh_btn.setStyleSheet(_header_btn_style())
         refresh_btn.clicked.connect(self.refresh_plugins)
-        header.addWidget(refresh_btn)
+        header_layout.addWidget(refresh_btn)
 
-        layout.addLayout(header)
-
-        if self._is_supabase:
-            self.onboarding_group = QGroupBox("Supabase Setup Required")
-            ob_layout = QVBoxLayout(self.onboarding_group)
-            self.ob_text = QLabel("Your Supabase project is missing required objects. Use the buttons below to copy SQL and run it in the Supabase SQL editor, and create two storage buckets: plugin-icons and plugin-files.")
-            self.ob_text.setWordWrap(True)
-            ob_layout.addWidget(self.ob_text)
-            btns = QHBoxLayout()
-            self.btn_copy_sql = QPushButton("Copy Table + RLS SQL")
-            self.btn_copy_sql.clicked.connect(self._copy_sql_setup)
-            self.btn_copy_storage = QPushButton("Copy Storage Policies SQL")
-            self.btn_copy_storage.clicked.connect(self._copy_storage_policies)
-            btns.addWidget(self.btn_copy_sql)
-            btns.addWidget(self.btn_copy_storage)
-            btns.addStretch()
-            ob_layout.addLayout(btns)
-            layout.addWidget(self.onboarding_group)
-            self.onboarding_group.setVisible(False)
-            auth_row = QHBoxLayout()
-            self.email_input = QLineEdit()
-            self.email_input.setPlaceholderText("Email")
-            self.password_input = QLineEdit()
-            self.password_input.setPlaceholderText("Password")
-            self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-            self.btn_login = QPushButton("Login")
-            self.btn_signup = QPushButton("Sign up")
-            self.btn_logout = QPushButton("Logout")
-            self.btn_login.clicked.connect(self.sign_in)
-            self.btn_signup.clicked.connect(self.sign_up)
-            self.btn_logout.clicked.connect(self.sign_out)
-            auth_row.addWidget(self.email_input)
-            auth_row.addWidget(self.password_input)
-            auth_row.addWidget(self.btn_login)
-            auth_row.addWidget(self.btn_signup)
-            auth_row.addWidget(self.btn_logout)
-            auth_row.addStretch()
-            layout.addLayout(auth_row)
+        layout.addWidget(header)
 
         # Progress bar for loading
         self.progress_bar = QProgressBar()
+        self.progress_bar.setFixedHeight(4)
         self.progress_bar.setVisible(False)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: none;
+                border-radius: 2px;
+                background-color: rgba(255, 255, 255, 0.03);
+            }
+            QProgressBar::chunk {
+                background-color: #00BFAE;
+                border-radius: 2px;
+            }
+        """)
         layout.addWidget(self.progress_bar)
 
         # Scrollable content area
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        scroll_area.setStyleSheet("""
+            QScrollArea { background: transparent; border: none; }
+            QScrollBar:vertical {
+                border: none; background: transparent; width: 8px; margin: 0;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(60, 60, 65, 0.5); border-radius: 4px;
+                min-height: 24px; margin: 2px;
+            }
+            QScrollBar::handle:vertical:hover { background: rgba(80, 80, 85, 0.7); }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                border: none; background: transparent; height: 0;
+            }
+            QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+                border: none; width: 0; height: 0; background: transparent;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: transparent;
+            }
+        """)
 
         self.content_widget = QWidget()
+        self.content_widget.setStyleSheet("background: transparent;")
         self.grid_layout = QGridLayout(self.content_widget)
-        self.grid_layout.setContentsMargins(6, 6, 6, 6)
-        self.grid_layout.setSpacing(6)
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+        self.grid_layout.setSpacing(14)
 
         scroll_area.setWidget(self.content_widget)
-        layout.addWidget(scroll_area)
-
-        if self._is_supabase:
-            self.my_group = QGroupBox("My Plugins")
-            my_layout = QHBoxLayout(self.my_group)
-            self.my_list = QListWidget()
-            self.my_list.currentTextChanged.connect(self._on_my_select)
-            my_layout.addWidget(self.my_list, 1)
-
-            form_col = QVBoxLayout()
-            form_grid = QGridLayout()
-            form_grid.setSpacing(6)
-            self.input_id = QLineEdit()
-            self.input_name = QLineEdit()
-            self.input_version = QLineEdit()
-            self.input_author = QLineEdit()
-            self.input_desc = QTextEdit()
-            self.input_desc.setMaximumHeight(80)
-            self.input_cats = QLineEdit()
-            self.icon_path = QLineEdit()
-            self.file_path = QLineEdit()
-            btn_browse_icon = QPushButton("Browse Icon")
-            btn_browse_icon.clicked.connect(self._browse_icon)
-            btn_browse_file = QPushButton("Browse File")
-            btn_browse_file.clicked.connect(self._browse_file)
-            form_grid.addWidget(QLabel("ID"), 0, 0)
-            form_grid.addWidget(self.input_id, 0, 1)
-            form_grid.addWidget(QLabel("Name"), 1, 0)
-            form_grid.addWidget(self.input_name, 1, 1)
-            form_grid.addWidget(QLabel("Version"), 2, 0)
-            form_grid.addWidget(self.input_version, 2, 1)
-            form_grid.addWidget(QLabel("Author"), 3, 0)
-            form_grid.addWidget(self.input_author, 3, 1)
-            form_grid.addWidget(QLabel("Categories (comma)"), 4, 0)
-            form_grid.addWidget(self.input_cats, 4, 1)
-            form_grid.addWidget(QLabel("Description"), 5, 0)
-            form_grid.addWidget(self.input_desc, 5, 1)
-            form_grid.addWidget(QLabel("Icon"), 6, 0)
-            row6 = QHBoxLayout()
-            row6.addWidget(self.icon_path, 1)
-            row6.addWidget(btn_browse_icon)
-            form_col.addLayout(form_grid)
-            form_col.addLayout(row6)
-            form_grid2 = QGridLayout()
-            form_grid2.addWidget(QLabel("Plugin File (.py)"), 0, 0)
-            rowf = QHBoxLayout()
-            rowf.addWidget(self.file_path, 1)
-            rowf.addWidget(btn_browse_file)
-            form_col.addLayout(form_grid2)
-            form_col.addLayout(rowf)
-            btn_row = QHBoxLayout()
-            self.btn_new = QPushButton("New")
-            self.btn_save = QPushButton("Save")
-            self.btn_delete = QPushButton("Delete")
-            self.btn_reload_my = QPushButton("Reload")
-            self.btn_new.clicked.connect(self._reset_my_form)
-            self.btn_save.clicked.connect(self._save_my_plugin)
-            self.btn_delete.clicked.connect(self._delete_my_plugin)
-            self.btn_reload_my.clicked.connect(self._load_my_plugins)
-            btn_row.addWidget(self.btn_new)
-            btn_row.addWidget(self.btn_save)
-            btn_row.addWidget(self.btn_delete)
-            btn_row.addWidget(self.btn_reload_my)
-            btn_row.addStretch()
-            form_col.addLayout(btn_row)
-            my_layout.addLayout(form_col, 2)
-            layout.addWidget(self.my_group)
-            self._update_auth_ui()
-            self._update_onboarding_panel()
+        layout.addWidget(scroll_area, 1)
 
     def refresh_plugins(self):
         """Refresh the list of community plugins"""
@@ -594,10 +629,6 @@ class CommunityPluginsTab(QWidget):
         # Load plugins in background
         QTimer.singleShot(100, self._load_plugins_async)
 
-        if self._is_supabase:
-            QTimer.singleShot(150, self._load_my_plugins)
-            QTimer.singleShot(50, self._update_onboarding_panel)
-
     def _load_plugins_async(self):
         """Load plugins asynchronously"""
         try:
@@ -606,107 +637,6 @@ class CommunityPluginsTab(QWidget):
         except Exception as e:
             self._show_error(f"Failed to load community plugins: {e}")
             self.progress_bar.setVisible(False)
-
-    def _update_auth_ui(self):
-        if not self._is_supabase:
-            return
-        try:
-            uid = self.plugin_store.current_user_id()
-        except Exception:
-            uid = None
-        logged_in = bool(uid)
-        self.btn_logout.setVisible(logged_in)
-        self.btn_login.setVisible(not logged_in)
-        self.btn_signup.setVisible(not logged_in)
-        self.email_input.setVisible(not logged_in)
-        self.password_input.setVisible(not logged_in)
-        if hasattr(self, "my_group"):
-            self.my_group.setVisible(logged_in)
-
-    def _update_onboarding_panel(self):
-        if not self._is_supabase:
-            return
-        try:
-            status = self.plugin_store.get_setup_status()
-        except Exception:
-            status = None
-        self._setup_status = status
-        if not status:
-            if hasattr(self, 'onboarding_group'):
-                self.onboarding_group.setVisible(False)
-            return
-        missing = (not status.get('has_plugins_table')) or (not status.get('has_increment_fn'))
-        if hasattr(self, 'onboarding_group'):
-            self.onboarding_group.setVisible(bool(missing))
-            if missing:
-                parts = []
-                if not status.get('has_plugins_table'):
-                    parts.append("plugins table")
-                if not status.get('has_increment_fn'):
-                    parts.append("increment_downloads function")
-                self.ob_text.setText("Missing: " + ", ".join(parts) + ". Copy SQL and run in Supabase SQL editor, and create buckets plugin-icons and plugin-files.")
-
-    def _copy_sql_setup(self):
-        try:
-            QGuiApplication.clipboard().setText(self._get_sql_setup())
-            QMessageBox.information(self, "Copied", "SQL copied to clipboard.")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
-
-    def _copy_storage_policies(self):
-        try:
-            QGuiApplication.clipboard().setText(self._get_sql_storage())
-            QMessageBox.information(self, "Copied", "Storage SQL copied to clipboard.")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
-
-    def _get_sql_setup(self) -> str:
-        return (
-            "create table if not exists public.plugins (\n"
-            "  id text primary key,\n"
-            "  name text not null,\n"
-            "  description text,\n"
-            "  version text default '1.0.0' not null,\n"
-            "  author text not null,\n"
-            "  categories text[] default '{}',\n"
-            "  icon_url text,\n"
-            "  file_url text not null,\n"
-            "  downloads bigint default 0 not null,\n"
-            "  created_by uuid not null references auth.users(id) on delete cascade,\n"
-            "  created_at timestamptz not null default now(),\n"
-            "  updated_at timestamptz not null default now(),\n"
-            "  constraint id_slug check (id ~ '^[a-z0-9_]+$')\n"
-            ");\n\n"
-            "create or replace function public.set_updated_at() returns trigger language plpgsql as $$\n"
-            "begin new.updated_at = now(); return new; end; $$;\n"
-            "drop trigger if exists trg_plugins_set_updated_at on public.plugins;\n"
-            "create trigger trg_plugins_set_updated_at before update on public.plugins for each row execute function public.set_updated_at();\n\n"
-            "alter table public.plugins enable row level security;\n"
-            "drop policy if exists \"plugins_select_all\" on public.plugins;\n"
-            "create policy \"plugins_select_all\" on public.plugins for select to public using (true);\n"
-            "drop policy if exists \"plugins_insert_owner\" on public.plugins;\n"
-            "create policy \"plugins_insert_owner\" on public.plugins for insert to authenticated with check (created_by = auth.uid());\n"
-            "drop policy if exists \"plugins_update_owner\" on public.plugins;\n"
-            "create policy \"plugins_update_owner\" on public.plugins for update to authenticated using (created_by = auth.uid()) with check (created_by = auth.uid());\n"
-            "drop policy if exists \"plugins_delete_owner\" on public.plugins;\n"
-            "create policy \"plugins_delete_owner\" on public.plugins for delete to authenticated using (created_by = auth.uid());\n\n"
-            "create or replace function public.increment_downloads(p_id text) returns void language plpgsql security definer as $$\n"
-            "begin update public.plugins set downloads = downloads + 1, updated_at = now() where id = p_id; end; $$;\n"
-            "revoke all on function public.increment_downloads(text) from public;\n"
-            "grant execute on function public.increment_downloads(text) to anon, authenticated;\n"
-        )
-
-    def _get_sql_storage(self) -> str:
-        return (
-            "create policy if not exists \"icons_read_public\" on storage.objects for select to public using (bucket_id = 'plugin-icons');\n"
-            "create policy if not exists \"files_read_public\" on storage.objects for select to public using (bucket_id = 'plugin-files');\n"
-            "create policy if not exists \"icons_insert_auth\" on storage.objects for insert to authenticated with check (bucket_id = 'plugin-icons');\n"
-            "create policy if not exists \"files_insert_auth\" on storage.objects for insert to authenticated with check (bucket_id = 'plugin-files');\n"
-            "create policy if not exists \"icons_update_owner\" on storage.objects for update to authenticated using (bucket_id = 'plugin-icons' and owner = auth.uid()) with check (bucket_id = 'plugin-icons' and owner = auth.uid());\n"
-            "create policy if not exists \"icons_delete_owner\" on storage.objects for delete to authenticated using (bucket_id = 'plugin-icons' and owner = auth.uid());\n"
-            "create policy if not exists \"files_update_owner\" on storage.objects for update to authenticated using (bucket_id = 'plugin-files' and owner = auth.uid()) with check (bucket_id = 'plugin-files' and owner = auth.uid());\n"
-            "create policy if not exists \"files_delete_owner\" on storage.objects for delete to authenticated using (bucket_id = 'plugin-files' and owner = auth.uid());\n"
-        )
 
     def _display_plugins(self):
         """Display the loaded plugins"""
@@ -762,139 +692,6 @@ class CommunityPluginsTab(QWidget):
             QMessageBox.critical(self, "Error", f"Installation error: {e}")
         finally:
             self.progress_bar.setVisible(False)
-
-    def sign_in(self):
-        if not self._is_supabase:
-            return
-        email = (self.email_input.text() or "").strip()
-        password = (self.password_input.text() or "").strip()
-        if not email or not password:
-            QMessageBox.warning(self, "Login", "Enter email and password")
-            return
-        res = self.plugin_store.sign_in(email, password)
-        if not res.get("ok"):
-            QMessageBox.critical(self, "Login", str(res.get("error")))
-            return
-        self._update_auth_ui()
-        self._load_my_plugins()
-
-    def sign_up(self):
-        if not self._is_supabase:
-            return
-        email = (self.email_input.text() or "").strip()
-        password = (self.password_input.text() or "").strip()
-        if not email or not password:
-            QMessageBox.warning(self, "Sign up", "Enter email and password")
-            return
-        res = self.plugin_store.sign_up(email, password)
-        if not res.get("ok"):
-            QMessageBox.critical(self, "Sign up", str(res.get("error")))
-            return
-        QMessageBox.information(self, "Sign up", "Check your email to confirm (if required). Now login.")
-
-    def sign_out(self):
-        if not self._is_supabase:
-            return
-        self.plugin_store.sign_out()
-        self._update_auth_ui()
-
-    def _load_my_plugins(self):
-        if not self._is_supabase:
-            return
-        try:
-            self.my_plugins = self.plugin_store.list_my_plugins() or []
-        except Exception:
-            self.my_plugins = []
-        try:
-            self.my_list.blockSignals(True)
-            self.my_list.clear()
-            for p in self.my_plugins:
-                name = p.get('name') or p.get('id')
-                self.my_list.addItem(name)
-        finally:
-            self.my_list.blockSignals(False)
-
-    def _find_my_by_name(self, name):
-        for p in self.my_plugins:
-            if (p.get('name') or p.get('id')) == name:
-                return p
-        return None
-
-    def _on_my_select(self, text):
-        p = self._find_my_by_name(text)
-        if not p:
-            return
-        self._selected_my_id = p.get('id')
-        self.input_id.setText(p.get('id') or "")
-        self.input_id.setEnabled(False)
-        self.input_name.setText(p.get('name') or "")
-        self.input_version.setText(p.get('version') or "")
-        self.input_author.setText(p.get('author') or "")
-        self.input_desc.setPlainText(p.get('description') or "")
-        cats = p.get('categories') or []
-        self.input_cats.setText(','.join(cats))
-        self.icon_path.setText("")
-        self.file_path.setText("")
-
-    def _reset_my_form(self):
-        self._selected_my_id = None
-        self.input_id.setEnabled(True)
-        self.input_id.clear()
-        self.input_name.clear()
-        self.input_version.clear()
-        self.input_author.clear()
-        self.input_desc.clear()
-        self.input_cats.clear()
-        self.icon_path.clear()
-        self.file_path.clear()
-
-    def _save_my_plugin(self):
-        if not self._is_supabase:
-            return
-        pid = (self.input_id.text() or "").strip()
-        name = (self.input_name.text() or "").strip()
-        version = (self.input_version.text() or "").strip() or "1.0.0"
-        author = (self.input_author.text() or "").strip() or "Unknown"
-        desc = self.input_desc.toPlainText().strip()
-        cats = [c.strip() for c in (self.input_cats.text() or "").split(',') if c.strip()]
-        iconp = (self.icon_path.text() or "").strip() or None
-        filep = (self.file_path.text() or "").strip() or None
-        if not pid or not name:
-            QMessageBox.warning(self, "Save", "ID and Name are required")
-            return
-        if self._selected_my_id:
-            res = self.plugin_store.update_plugin(self._selected_my_id, name=name, description=desc, version=version, author=author, categories=cats, icon_path=iconp, file_path=filep)
-        else:
-            res = self.plugin_store.create_plugin(pid, name, desc, version, author, cats, iconp, filep)
-        if not res.get('ok'):
-            QMessageBox.critical(self, "Save", str(res.get('error')))
-            return
-        QMessageBox.information(self, "Save", "Saved")
-        self._reset_my_form()
-        self._load_my_plugins()
-        self.refresh_plugins()
-
-    def _delete_my_plugin(self):
-        if not self._is_supabase or not self._selected_my_id:
-            return
-        res = self.plugin_store.delete_plugin(self._selected_my_id)
-        if not res.get('ok'):
-            QMessageBox.critical(self, "Delete", str(res.get('error')))
-            return
-        QMessageBox.information(self, "Delete", "Deleted")
-        self._reset_my_form()
-        self._load_my_plugins()
-        self.refresh_plugins()
-
-    def _browse_icon(self):
-        p, _ = QFileDialog.getOpenFileName(self, "Select Icon", os.path.expanduser('~'), "Images (*.png *.svg *.jpg *.jpeg)")
-        if p:
-            self.icon_path.setText(p)
-
-    def _browse_file(self):
-        p, _ = QFileDialog.getOpenFileName(self, "Select Plugin File", os.path.expanduser('~'), "Python (*.py)")
-        if p:
-            self.file_path.setText(p)
 
     def show_plugin_details(self, plugin_info):
         """Show detailed information about a plugin"""

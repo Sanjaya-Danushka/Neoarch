@@ -21,7 +21,6 @@ from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.managers.docker_manager import DockerManager
 from neoarch.managers.git_manager import GitManager
 from neoarch.frontend.components.title_bar import _TitleBar
-from neoarch.frontend.components.plugins_view import PluginsView
 from neoarch.frontend.components.large_search_box import LargeSearchBox
 from neoarch.frontend.components.packages_grid_view import PackagesGridView
 from neoarch.frontend.components.package_detail_card import PackageDetailCard
@@ -269,7 +268,12 @@ class _ViewsMixin:
         return btn
 
     def _handle_nav(self, view_id: str):
-        self.switch_view(view_id)
+        try:
+            self.switch_view(view_id)
+        except Exception:
+            import traceback, sys
+            traceback.print_exc()
+            sys.stdout.flush()
 
     def set_updates_count(self, count):
         """Update the updates count in nav and header."""
@@ -452,36 +456,37 @@ class _ViewsMixin:
         )
         layout.addWidget(self._grid_view_btn)
 
-        filter_btn = self.create_toolbar_button(
+        self._filter_btn = self.create_toolbar_button(
             os.path.join(navbar_dir, "Filter.svg"),
             "Filter Packages",
             self.show_category_filter
         )
-        layout.addWidget(filter_btn)
+        self._filter_btn.setProperty("defaultStyle", self._filter_btn.styleSheet())
+        layout.addWidget(self._filter_btn)
 
         if show_install_file:
-            file_btn = self.create_toolbar_button(
+            self._install_file_btn = self.create_toolbar_button(
                 os.path.join(navbar_dir, "install_from_file.svg"),
                 "Install from File",
                 self.install_from_local_file
             )
-            layout.addWidget(file_btn)
+            layout.addWidget(self._install_file_btn)
 
         if show_bundle:
-            bundle_btn = self.create_toolbar_button(
+            self._bundle_btn = self.create_toolbar_button(
                 os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"),
                 "Add selected to Bundle",
                 self.add_selected_to_bundle
             )
-            layout.addWidget(bundle_btn)
+            layout.addWidget(self._bundle_btn)
 
         if show_sudo:
-            sudo_btn = self.create_toolbar_button(
+            self._sudo_btn = self.create_toolbar_button(
                 os.path.join(navbar_dir, "insatllwithsudo.svg"),
                 "Install with Sudo Privileges",
                 self.sudo_install_selected
             )
-            layout.addWidget(sudo_btn)
+            layout.addWidget(self._sudo_btn)
 
     def _show_active_view(self):
         self.packages_grid.setVisible(self._view_mode == "grid")
@@ -763,19 +768,8 @@ class _ViewsMixin:
         self.settings_container.setWidget(self.settings_root)
         self.packages_panel_layout.addWidget(self.settings_container)
 
-        # Plugins view (hidden by default)
-        self.plugins_view = PluginsView(self, self.get_svg_icon)
-        self.plugins_view.install_requested.connect(self.on_plugin_install_requested)
-        self.plugins_view.launch_requested.connect(self.on_plugin_launch_requested)
-        try:
-            self.plugins_view.uninstall_requested.connect(self.on_plugin_uninstall_requested)
-        except Exception:
-            pass
-        self.plugins_view.setVisible(False)
-
-        # Add plugins view directly (no tabs needed)
-        self.plugins_view.setVisible(False)
-        self.packages_panel_layout.addWidget(self.plugins_view)
+        # Plugins view placeholder — created lazily in switch_view("plugins")
+        self.plugins_view = None
 
         # Container for table area + detail card side panel
         self.packages_content_area = QWidget()
@@ -818,10 +812,8 @@ class _ViewsMixin:
         table_area_layout.addWidget(self.packages_grid, 1)
 
         self.load_more_btn = QPushButton("Load More Packages")
-        self.load_more_btn.setMinimumHeight(36)
-        icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
-
-        self.load_more_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "load-more.svg"), 20))
+        self.load_more_btn.setObjectName("loadMoreBtn")
+        self.load_more_btn.setMinimumHeight(44)
         self.load_more_btn.clicked.connect(self.load_more_packages)
         self.load_more_btn.setVisible(False)
         table_area_layout.addWidget(self.load_more_btn)
@@ -840,6 +832,7 @@ class _ViewsMixin:
         self.packages_panel_layout.addWidget(self.packages_content_area, 1)
 
         # Console toggle button (bottom-right)
+        icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
         self.console_toggle_btn = QPushButton()
         self.console_toggle_btn.setFixedSize(42, 42)
         self.console_toggle_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "terminal.svg"), 20))
@@ -918,6 +911,10 @@ class _ViewsMixin:
         self.discover_select_all_btn = None
         self.discover_install_btn = None
         self._grid_view_btn = None
+        self._filter_btn = None
+        self._install_file_btn = None
+        self._bundle_btn = None
+        self._sudo_btn = None
 
         if self.current_view == "updates":
             layout = QHBoxLayout()
@@ -1070,6 +1067,16 @@ class _ViewsMixin:
             layout.addStretch()  # Push remaining buttons to the right
 
             self._add_right_toolbar_icons(layout, show_install_file=True, show_sudo=True)
+
+            # Hide grid/filter/bundle/sudo until search results are shown
+            if self._grid_view_btn:
+                self._grid_view_btn.setVisible(False)
+            if self._filter_btn:
+                self._filter_btn.setVisible(False)
+            if self._bundle_btn:
+                self._bundle_btn.setVisible(False)
+            if self._sudo_btn:
+                self._sudo_btn.setVisible(False)
 
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "plugins":
@@ -1232,6 +1239,9 @@ class _ViewsMixin:
                 self.console_toggle_btn.setVisible(False)
         except Exception:
             pass
+        # Restore packages content area visibility (hidden by plugins/settings)
+        if hasattr(self, 'packages_content_area'):
+            self.packages_content_area.setVisible(True)
         # Clear detail card
         if hasattr(self, 'package_detail_card'):
             self.package_detail_card.clear()
@@ -1397,6 +1407,10 @@ class _ViewsMixin:
                 pass
             QTimer.singleShot(0, self.refresh_bundles_table)
         elif view_id == "plugins":
+            self._view_mode = "grid"
+            if hasattr(self, '_grid_view_btn') and self._grid_view_btn:
+                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "navbar", "list.svg"), 20))
+                self._grid_view_btn.setToolTip("List View")
             try:
                 self.loading_widget.setVisible(False)
                 self.loading_widget.stop_animation()
@@ -1427,9 +1441,11 @@ class _ViewsMixin:
             self.filter_card = FilterCard(self)
             self.filter_card.filter_changed.connect(self.on_filter_selection_changed)
 
-            # Add plugin status filters
+            # Block signals during initial filter setup to avoid double render
+            self.filter_card.blockSignals(True)
             self.filter_card.add_filter("Available")
             self.filter_card.add_filter("Installed")
+            self.filter_card.blockSignals(False)
 
             self.filters_layout.addWidget(self.filter_card)
 
@@ -1442,7 +1458,21 @@ class _ViewsMixin:
             # Add source cards like installed section
             self.update_plugins_sources()
 
-            # Show plugins view directly (no tab widget)
+            # Hide packages content area (has stretch=1, would push plugins to bottom)
+            if hasattr(self, 'packages_content_area'):
+                self.packages_content_area.setVisible(False)
+
+            # Lazy-create plugins view on first visit
+            if self.plugins_view is None:
+                from neoarch.frontend.components.plugins_view import PluginsView
+                self.plugins_view = PluginsView(self, self.get_svg_icon)
+                self.plugins_view.install_requested.connect(self.on_plugin_install_requested)
+                self.plugins_view.launch_requested.connect(self.on_plugin_launch_requested)
+                try:
+                    self.plugins_view.uninstall_requested.connect(self.on_plugin_uninstall_requested)
+                except Exception:
+                    pass
+                self.packages_panel_layout.insertWidget(5, self.plugins_view, 1)
             try:
                 self.plugins_view.setVisible(True)
             except Exception:

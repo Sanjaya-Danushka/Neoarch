@@ -5,6 +5,9 @@ import json
 import subprocess
 from threading import Thread
 
+from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QWidget, QTableWidgetItem, QHeaderView
+from PyQt6.QtCore import Qt
+
 from neoarch.resources.paths import PROJECT_ROOT
 
 
@@ -114,6 +117,10 @@ class _SearchMixin:
                 install_btn = getattr(self, 'discover_install_btn', None)
                 if install_btn is not None:
                     install_btn.setVisible(False)
+                for attr in ('_grid_view_btn', '_filter_btn', '_bundle_btn', '_sudo_btn'):
+                    tb = getattr(self, attr, None)
+                    if tb is not None:
+                        tb.setVisible(False)
             elif self.current_view == "installed":
                 try:
                     if hasattr(self, 'no_results_widget'):
@@ -142,16 +149,23 @@ class _SearchMixin:
         navbar_dir = os.path.join(str(PROJECT_ROOT), "assets", "icons", "navbar")
         if self._view_mode == "table":
             self._view_mode = "grid"
-            self.package_table.setVisible(False)
-            self.packages_grid.setVisible(True)
+            if self.current_view == "plugins" and hasattr(self, 'plugins_view') and self.plugins_view:
+                self.plugins_view.show_grid_mode()
+            else:
+                self.package_table.setVisible(False)
+                self.packages_grid.setVisible(True)
             if self._grid_view_btn:
                 self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(navbar_dir, "list.svg"), 20))
                 self._grid_view_btn.setToolTip("List View")
-            self._populate_grid()
+            if self.current_view != "plugins":
+                self._populate_grid()
         else:
             self._view_mode = "table"
-            self.packages_grid.setVisible(False)
-            self.package_table.setVisible(True)
+            if self.current_view == "plugins" and hasattr(self, 'plugins_view') and self.plugins_view:
+                self.plugins_view.show_table_mode()
+            else:
+                self.packages_grid.setVisible(False)
+                self.package_table.setVisible(True)
             if self._grid_view_btn:
                 self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(navbar_dir, "view.svg"), 20))
                 self._grid_view_btn.setToolTip("Grid View")
@@ -529,3 +543,9 @@ class _SearchMixin:
             if install_btn is not None:
                 install_btn.setVisible(has_results)
                 install_btn.setEnabled(False)
+
+            # Show toolbar icons only when results are present
+            for attr in ('_grid_view_btn', '_filter_btn', '_bundle_btn', '_sudo_btn'):
+                tb = getattr(self, attr, None)
+                if tb is not None:
+                    tb.setVisible(has_results)
