@@ -104,6 +104,12 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         self.settings_nav_buttons = {}
         self.source_card: Any = None
         self.filters_panel: Any = None
+
+        # Cloud auth (Supabase sync)
+        from neoarch.backend.cloud_auth import CloudAuthManager
+        self._cloud_auth = CloudAuthManager()
+        self._cloud_auth.login_changed.connect(self._on_cloud_user_changed)
+
         self.setup_ui()
         # Set initial nav button state
         for btn_id, btn in self.nav_buttons.items():
@@ -129,5 +135,11 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         except Exception:
             pass
         QTimer.singleShot(1500, self.run_first_run_checks)
+        # Restore cloud avatar UI state
+        QTimer.singleShot(2000, lambda: self._on_cloud_user_changed(self._cloud_auth.user))
+
+    def _on_cloud_user_changed(self, user):
+        if hasattr(self, 'update_user_avatar'):
+            self.update_user_avatar(user)
 
 

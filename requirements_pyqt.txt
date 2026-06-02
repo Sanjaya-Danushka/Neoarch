@@ -1,5 +1,7 @@
 PyQt6==6.6.1
 requests
+supabase>=2.0.0
+httpx>=0.27.0
 # description
 #comments
 # performance

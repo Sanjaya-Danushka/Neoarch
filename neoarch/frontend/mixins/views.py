@@ -200,6 +200,28 @@ class _ViewsMixin:
         # ── Footer ──
         footer = QHBoxLayout()
         footer.setContentsMargins(0, 0, 0, 0)
+
+        # User avatar / login button
+        self.user_avatar_btn = QPushButton()
+        self.user_avatar_btn.setObjectName("sidebarBtn")
+        self.user_avatar_btn.setFixedHeight(48)
+        self.user_avatar_btn.setToolTip("Sign in to sync favourites")
+        self.user_avatar_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.user_avatar_label = QLabel()
+        self.user_avatar_label.setObjectName("sidebarNavIcon")
+        self.user_avatar_label.setFixedSize(48, 48)
+        self.user_avatar_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        default_avatar_icon = self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "user.svg"), 24)
+        if not default_avatar_icon.isNull():
+            self.user_avatar_label.setPixmap(default_avatar_icon.pixmap(24, 24))
+        else:
+            self.user_avatar_label.setText("👤")
+        avatar_layout = QHBoxLayout(self.user_avatar_btn)
+        avatar_layout.setContentsMargins(0, 0, 0, 0)
+        avatar_layout.addWidget(self.user_avatar_label, 0, Qt.AlignmentFlag.AlignCenter)
+        self.user_avatar_btn.clicked.connect(self._on_avatar_clicked)
+        footer.addWidget(self.user_avatar_btn)
+
         about_btn = QPushButton()
         about_btn.setObjectName("sidebarBtn")
         about_btn.setFixedHeight(48)
@@ -2278,6 +2300,107 @@ class _ViewsMixin:
                 self.large_search_box.recent_activity.setVisible(not new_state)
         except Exception:
             pass
+
+    def _on_avatar_clicked(self):
+        from PyQt6.QtWidgets import QMenu
+        cm = getattr(self, '_cloud_auth', None)
+        if cm and cm.is_logged_in:
+            menu = QMenu(self)
+            menu.setStyleSheet("""
+                QMenu {
+                    background-color: #1C1E24; color: #F3F4F6;
+                    border: 1px solid #373A43; border-radius: 8px; padding: 4px;
+                }
+                QMenu::item { padding: 8px 16px; border-radius: 4px; }
+                QMenu::item:selected { background-color: #00BFAE; color: #fff; }
+            """)
+            save_act = menu.addAction("Save Favourites to Cloud")
+            save_act.triggered.connect(self._cloud_save_favourites)
+            sync_act = menu.addAction("Load Favourites from Cloud")
+            sync_act.triggered.connect(self._cloud_sync_favourites)
+            menu.addSeparator()
+            logout_act = menu.addAction("Sign Out")
+            logout_act.triggered.connect(self._cloud_logout)
+            menu.exec(self.user_avatar_btn.mapToGlobal(self.user_avatar_btn.rect().center()))
+        else:
+            self._cloud_login()
+
+    def _cloud_login(self):
+        from neoarch.backend.cloud_auth import CloudAuthManager
+        cm = getattr(self, '_cloud_auth', None)
+        if cm:
+            cm.start_login()
+
+    def _cloud_logout(self):
+        from neoarch.backend.cloud_auth import CloudAuthManager
+        cm = getattr(self, '_cloud_auth', None)
+        if cm:
+            cm.logout()
+        self.user_avatar_label.setText("👤")
+
+    def _cloud_save_favourites(self):
+        cm = getattr(self, '_cloud_auth', None)
+        if not cm or not cm.is_logged_in:
+            self.log("Not signed in")
+            return
+        if not self.bundle_items:
+            self.log("Bundle is empty — add packages first")
+            return
+        from PyQt6.QtWidgets import QInputDialog
+        name, ok = QInputDialog.getText(self, "Save Favourites", "Name this bundle:", text="My Favourites")
+        if not ok or not name.strip():
+            return
+        ok = cm.save_favorites(name.strip(), self.bundle_items)
+        if ok:
+            self.log(f"Saved {len(self.bundle_items)} favourites to cloud")
+        else:
+            self.log("Failed to save favourites to cloud")
+
+    def _cloud_sync_favourites(self):
+        cm = getattr(self, '_cloud_auth', None)
+        if not cm or not cm.is_logged_in:
+            self.log("Not signed in")
+            return
+        faves = cm.get_favorites()
+        if faves:
+            self.bundle_items = list(faves)
+            from neoarch.backend.services.bundle import refresh_bundles_table
+            refresh_bundles_table(self)
+            self.log(f"Synced {len(faves)} favourites from cloud")
+        else:
+            self.log("No cloud favourites found")
+
+    def update_user_avatar(self, user):
+        if user and user.avatar_url:
+            try:
+                import urllib.request
+                data = urllib.request.urlopen(user.avatar_url, timeout=5).read()
+                pixmap = QPixmap()
+                pixmap.loadFromData(data)
+                if not pixmap.isNull():
+                    self.user_avatar_label.setPixmap(
+                        pixmap.scaled(28, 28, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                    )
+                    self.user_avatar_label.setStyleSheet("border-radius: 14px;")
+                    self.user_avatar_btn.setToolTip(f"Signed in as {user.name}")
+                    return
+            except Exception:
+                pass
+            self.user_avatar_label.setText(user.name[:2].upper() if user.name else "?")
+            self.user_avatar_label.setStyleSheet("""
+                color: #00BFAE; font-weight: bold; font-size: 13px;
+                background-color: rgba(0,191,174,0.15);
+                border-radius: 14px;
+            """)
+            self.user_avatar_btn.setToolTip(f"Signed in as {user.name}")
+        else:
+            default = self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "user.svg"), 24)
+            if not default.isNull():
+                self.user_avatar_label.setPixmap(default.pixmap(24, 24))
+            else:
+                self.user_avatar_label.setText("👤")
+            self.user_avatar_label.setStyleSheet("")
+            self.user_avatar_btn.setToolTip("Sign in to sync favourites")
 
     def show_about(self):
         help_service.show_about(self)
