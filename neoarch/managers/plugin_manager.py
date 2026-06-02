@@ -22,7 +22,7 @@ class PluginsManager:
                 return
             if plugins_view.is_installed(spec):
                 self._message("Plugins", f"{spec.get('name')} is already installed")
-                QTimer.singleShot(0, plugins_view.refresh_all)
+                QTimer.singleShot(0, lambda: plugins_view.refresh_all(force=True))
                 return
             pkg = spec.get('pkg')
             if not pkg:
@@ -48,7 +48,7 @@ class PluginsManager:
                     self._message("Plugins", f"Install failed: {e}")
                 finally:
                     QTimer.singleShot(0, lambda: plugins_view.set_installing(plugin_id, False))
-                    QTimer.singleShot(200, plugins_view.refresh_all)
+                    QTimer.singleShot(200, lambda: plugins_view.refresh_all(force=True))
 
             Thread(target=_run, daemon=True).start()
         except Exception as e:
@@ -93,7 +93,7 @@ class PluginsManager:
                 self._message("Plugins", "No package specified for uninstall")
                 return
             if not plugins_view.is_installed(spec):
-                QTimer.singleShot(0, plugins_view.refresh_all)
+                QTimer.singleShot(0, lambda: plugins_view.refresh_all(force=True))
                 return
             auth_cmd = get_auth_command()
             cmd = auth_cmd + ["pacman", "-R", "--noconfirm", pkg]
@@ -115,7 +115,7 @@ class PluginsManager:
                     self._message("Plugins", f"Uninstall failed: {e}")
                 finally:
                     QTimer.singleShot(0, lambda: plugins_view.set_installing(plugin_id, False))
-                    QTimer.singleShot(200, plugins_view.refresh_all)
+                    QTimer.singleShot(200, lambda: plugins_view.refresh_all(force=True))
 
             Thread(target=_run, daemon=True).start()
         except Exception as e:

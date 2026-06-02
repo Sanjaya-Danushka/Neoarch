@@ -21,7 +21,6 @@ from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.managers.docker_manager import DockerManager
 from neoarch.managers.git_manager import GitManager
 from neoarch.frontend.components.title_bar import _TitleBar
-from neoarch.frontend.components.plugins_view import PluginsView
 from neoarch.frontend.components.large_search_box import LargeSearchBox
 from neoarch.frontend.components.packages_grid_view import PackagesGridView
 from neoarch.frontend.components.package_detail_card import PackageDetailCard
@@ -269,7 +268,12 @@ class _ViewsMixin:
         return btn
 
     def _handle_nav(self, view_id: str):
-        self.switch_view(view_id)
+        try:
+            self.switch_view(view_id)
+        except Exception:
+            import traceback, sys
+            traceback.print_exc()
+            sys.stdout.flush()
 
     def set_updates_count(self, count):
         """Update the updates count in nav and header."""
@@ -764,19 +768,8 @@ class _ViewsMixin:
         self.settings_container.setWidget(self.settings_root)
         self.packages_panel_layout.addWidget(self.settings_container)
 
-        # Plugins view (hidden by default)
-        self.plugins_view = PluginsView(self, self.get_svg_icon)
-        self.plugins_view.install_requested.connect(self.on_plugin_install_requested)
-        self.plugins_view.launch_requested.connect(self.on_plugin_launch_requested)
-        try:
-            self.plugins_view.uninstall_requested.connect(self.on_plugin_uninstall_requested)
-        except Exception:
-            pass
-        self.plugins_view.setVisible(False)
-
-        # Add plugins view directly (no tabs needed)
-        self.plugins_view.setVisible(False)
-        self.packages_panel_layout.addWidget(self.plugins_view)
+        # Plugins view placeholder — created lazily in switch_view("plugins")
+        self.plugins_view = None
 
         # Container for table area + detail card side panel
         self.packages_content_area = QWidget()
@@ -1246,6 +1239,9 @@ class _ViewsMixin:
                 self.console_toggle_btn.setVisible(False)
         except Exception:
             pass
+        # Restore packages content area visibility (hidden by plugins/settings)
+        if hasattr(self, 'packages_content_area'):
+            self.packages_content_area.setVisible(True)
         # Clear detail card
         if hasattr(self, 'package_detail_card'):
             self.package_detail_card.clear()
@@ -1445,9 +1441,11 @@ class _ViewsMixin:
             self.filter_card = FilterCard(self)
             self.filter_card.filter_changed.connect(self.on_filter_selection_changed)
 
-            # Add plugin status filters
+            # Block signals during initial filter setup to avoid double render
+            self.filter_card.blockSignals(True)
             self.filter_card.add_filter("Available")
             self.filter_card.add_filter("Installed")
+            self.filter_card.blockSignals(False)
 
             self.filters_layout.addWidget(self.filter_card)
 
@@ -1460,7 +1458,21 @@ class _ViewsMixin:
             # Add source cards like installed section
             self.update_plugins_sources()
 
-            # Show plugins view directly (no tab widget)
+            # Hide packages content area (has stretch=1, would push plugins to bottom)
+            if hasattr(self, 'packages_content_area'):
+                self.packages_content_area.setVisible(False)
+
+            # Lazy-create plugins view on first visit
+            if self.plugins_view is None:
+                from neoarch.frontend.components.plugins_view import PluginsView
+                self.plugins_view = PluginsView(self, self.get_svg_icon)
+                self.plugins_view.install_requested.connect(self.on_plugin_install_requested)
+                self.plugins_view.launch_requested.connect(self.on_plugin_launch_requested)
+                try:
+                    self.plugins_view.uninstall_requested.connect(self.on_plugin_uninstall_requested)
+                except Exception:
+                    pass
+                self.packages_panel_layout.insertWidget(5, self.plugins_view, 1)
             try:
                 self.plugins_view.setVisible(True)
             except Exception:

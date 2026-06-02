@@ -5,15 +5,24 @@ Allows users to discover, install, and share plugins from the community
 
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
                              QScrollArea, QFrame, QGridLayout, QTextEdit, QLineEdit,
-                             QMessageBox, QProgressBar, QGroupBox)
+                             QMessageBox, QProgressBar, QGroupBox, QGraphicsDropShadowEffect)
 from PyQt6.QtCore import pyqtSignal, Qt, QTimer
+from PyQt6.QtGui import QColor
 import os
 
 from neoarch.backend.stores.plugin_store import PluginStore
 
 
+def _shadow(widget: QWidget, blur=22, offset=(4, 5), alpha=140):
+    s = QGraphicsDropShadowEffect()
+    s.setBlurRadius(blur)
+    s.setColor(QColor(0, 0, 0, alpha))
+    s.setOffset(*offset)
+    widget.setGraphicsEffect(s)
+
+
 class CommunityPluginCard(QFrame):
-    """Card displaying a community plugin"""
+    """Card displaying a community plugin with modern glassmorphism design"""
 
     def __init__(self, plugin_info: dict, on_install, on_view_details, parent=None):
         super().__init__(parent)
@@ -23,47 +32,105 @@ class CommunityPluginCard(QFrame):
 
         self.setObjectName("communityPluginCard")
         self.setFrameShape(QFrame.Shape.StyledPanel)
+        self.setMinimumHeight(80)
         self.setStyleSheet(self._style())
-        self.setMinimumHeight(64)
+        _shadow(self, blur=20, offset=(3, 5), alpha=150)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 6, 6, 6)
-        layout.setSpacing(6)
+        layout.setContentsMargins(14, 12, 14, 12)
+        layout.setSpacing(8)
 
-        # Header with title, author, and version (no image)
+        # Header with title, author, and version
         header = QHBoxLayout()
+        header.setSpacing(8)
+
+        avatar = QLabel("\U0001f9e9")
+        avatar.setFixedSize(32, 32)
+        avatar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        avatar.setStyleSheet(
+            "font-size: 18px; background: rgba(255,255,255,0.03); "
+            "border: 1px solid rgba(255,255,255,0.06); border-radius: 8px;"
+        )
+        header.addWidget(avatar)
+
+        title_col = QVBoxLayout()
+        title_col.setSpacing(2)
         title = QLabel(plugin_info.get('name', 'Unknown Plugin'))
         title.setObjectName("pluginTitle")
-        header.addWidget(title)
-        author = QLabel(f"by {plugin_info.get('author', 'Unknown')}")
+        title_col.addWidget(title)
+
+        author = QLabel(f"by {plugin_info.get('author', 'Unknown')} \u00b7 v{plugin_info.get('version', '1.0.0')}")
         author.setObjectName("pluginAuthor")
-        author.setStyleSheet("color: #888; font-size: 11px;")
-        header.addWidget(author)
-        header.addStretch()
-        ver = QLabel(f"v{plugin_info.get('version', '1.0.0')}")
-        ver.setStyleSheet("color: #666; font-size: 10px;")
-        header.addWidget(ver)
+        title_col.addWidget(author)
+        header.addLayout(title_col, 1)
+
         layout.addLayout(header)
 
         # Description
         desc = QLabel(plugin_info.get('description', ''))
         desc.setObjectName("pluginDesc")
         desc.setWordWrap(True)
-        desc.setMaximumHeight(32)
+        desc.setMaximumHeight(34)
         layout.addWidget(desc)
+
+        layout.addStretch()
 
         # Footer with actions
         footer = QHBoxLayout()
+        footer.setSpacing(8)
         footer.addStretch()
 
-        # Buttons
         details_btn = QPushButton("Details")
-        details_btn.setFixedWidth(54)
+        details_btn.setFixedHeight(28)
+        details_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        details_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #8B8D97;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 7px;
+                font-weight: 600;
+                font-size: 10px;
+                padding: 0 14px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.04);
+                border-color: rgba(255, 255, 255, 0.12);
+                color: #EDEDEF;
+            }
+        """)
         details_btn.clicked.connect(lambda: self.on_view_details(self.plugin_info))
         footer.addWidget(details_btn)
 
         install_btn = QPushButton("Install")
-        install_btn.setFixedWidth(54)
+        install_btn.setFixedHeight(28)
+        install_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        install_btn.setStyleSheet("""
+            QPushButton {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(0, 207, 188, 0.9),
+                    stop:1 rgba(0, 175, 160, 0.9));
+                color: #0C0C0E;
+                border-top: 1px solid rgba(255, 255, 255, 0.15);
+                border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+                border-left: 1px solid rgba(255, 255, 255, 0.08);
+                border-right: 1px solid rgba(0, 0, 0, 0.15);
+                border-radius: 7px;
+                font-weight: 700;
+                font-size: 10px;
+                padding: 0 14px;
+            }
+            QPushButton:hover {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(0, 220, 200, 0.95),
+                    stop:1 rgba(0, 190, 174, 0.95));
+            }
+            QPushButton:pressed {
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(0, 155, 140, 0.95),
+                    stop:1 rgba(0, 175, 160, 0.95));
+            }
+        """)
         install_btn.clicked.connect(lambda: self.on_install(self.plugin_info))
         footer.addWidget(install_btn)
 
@@ -72,30 +139,31 @@ class CommunityPluginCard(QFrame):
     def _style(self):
         return """
         QFrame#communityPluginCard {
-            background-color: #1a1a1a;
-            border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.1);
+            background-color: rgba(22, 23, 26, 0.85);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+            border-left: 1px solid rgba(255, 255, 255, 0.03);
+            border-right: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 14px;
+        }
+        QFrame#communityPluginCard:hover {
+            border-top: 1px solid rgba(255, 255, 255, 0.10);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+            background-color: rgba(26, 28, 32, 0.85);
         }
         QLabel#pluginTitle {
-            color: #F0F0F0;
-            font-size: 10px;
+            color: #EDEDEF;
+            font-size: 13px;
             font-weight: 600;
         }
+        QLabel#pluginAuthor {
+            color: #5C5E66;
+            font-size: 10px;
+        }
         QLabel#pluginDesc {
-            color: #A0A0A0;
-            font-size: 9px;
+            color: #8B8D97;
+            font-size: 11px;
             line-height: 1.3;
-        }
-        QPushButton {
-            background-color: transparent;
-            color: #00BFAE;
-            border: 1px solid #00BFAE;
-            border-radius: 4px;
-            padding: 2px 8px;
-            font-size: 9px;
-        }
-        QPushButton:hover {
-            background-color: rgba(0, 191, 174, 0.1);
         }
         """
 
@@ -181,37 +249,49 @@ class PluginDetailsDialog(QFrame):
     def _dialog_style(self):
         return """
         QFrame#pluginDetailsDialog {
-            background-color: #2a2a2a;
-            border-radius: 8px;
-            border: 1px solid #444;
+            background-color: rgba(18, 19, 22, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
         }
         QLabel#dialogTitle {
-            color: #FFF;
+            color: #EDEDEF;
             font-size: 18px;
-            font-weight: bold;
+            font-weight: 700;
         }
         QGroupBox {
-            font-weight: bold;
-            border: 1px solid #555;
-            border-radius: 4px;
-            margin-top: 8px;
-            padding-top: 8px;
+            font-weight: 600;
+            color: #8B8D97;
+            font-size: 11px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            margin-top: 12px;
+            padding: 12px 8px 8px 8px;
         }
         QGroupBox::title {
             subcontrol-origin: margin;
-            left: 8px;
-            padding: 0 4px;
+            left: 12px;
+            padding: 0 6px;
         }
         QPushButton {
-            background-color: #00BFAE;
-            color: white;
+            background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(0, 207, 188, 0.9),
+                stop:1 rgba(0, 175, 160, 0.9));
+            color: #0C0C0E;
             border: none;
-            border-radius: 4px;
-            padding: 8px 16px;
-            font-weight: bold;
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-weight: 700;
+            font-size: 12px;
         }
         QPushButton:hover {
-            background-color: #00A090;
+            background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(0, 220, 200, 0.95),
+                stop:1 rgba(0, 190, 174, 0.95));
+        }
+        QPushButton:pressed {
+            background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(0, 155, 140, 0.95),
+                stop:1 rgba(0, 175, 160, 0.95));
         }
         """
 
@@ -338,39 +418,60 @@ class PluginCreatorDialog(QFrame):
     def _dialog_style(self):
         return """
         QFrame#pluginCreatorDialog {
-            background-color: #2a2a2a;
-            border-radius: 8px;
-            border: 1px solid #444;
+            background-color: rgba(18, 19, 22, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
         }
         QLabel#dialogTitle {
-            color: #FFF;
+            color: #EDEDEF;
             font-size: 18px;
-            font-weight: bold;
+            font-weight: 700;
         }
         QLineEdit, QTextEdit {
-            background-color: #1a1a1a;
-            border: 1px solid #555;
-            border-radius: 4px;
-            color: #FFF;
-            padding: 4px;
+            background-color: rgba(14, 14, 16, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            color: #EDEDEF;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        QLineEdit:focus, QTextEdit:focus {
+            border: 1px solid rgba(0, 191, 174, 0.5);
         }
         QGroupBox {
-            font-weight: bold;
-            border: 1px solid #555;
-            border-radius: 4px;
-            margin-top: 8px;
-            padding-top: 8px;
+            font-weight: 600;
+            color: #8B8D97;
+            font-size: 11px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            margin-top: 12px;
+            padding: 12px 8px 8px 8px;
+        }
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            left: 12px;
+            padding: 0 6px;
         }
         QPushButton {
-            background-color: #00BFAE;
-            color: white;
+            background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(0, 207, 188, 0.9),
+                stop:1 rgba(0, 175, 160, 0.9));
+            color: #0C0C0E;
             border: none;
-            border-radius: 4px;
-            padding: 8px 16px;
-            font-weight: bold;
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-weight: 700;
+            font-size: 12px;
         }
         QPushButton:hover {
-            background-color: #00A090;
+            background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(0, 220, 200, 0.95),
+                stop:1 rgba(0, 190, 174, 0.95));
+        }
+        QPushButton:pressed {
+            background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 rgba(0, 155, 140, 0.95),
+                stop:1 rgba(0, 175, 160, 0.95));
         }
         """
 
@@ -392,50 +493,122 @@ class CommunityPluginsTab(QWidget):
 
     def _init_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(12)
 
-        # Header with title and refresh button
-        header = QHBoxLayout()
+        # Header with title and action buttons
+        header = QFrame()
+        header.setObjectName("communityHeader")
+        header.setStyleSheet("""
+            QFrame#communityHeader {
+                background-color: rgba(14, 14, 16, 0.95);
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 10px;
+            }
+        """)
+        header.setFixedHeight(44)
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(12, 4, 8, 4)
+        header_layout.setSpacing(6)
 
         title = QLabel("Community Plugins")
-        title.setObjectName("sectionLabel")
-        header.addWidget(title)
+        title.setStyleSheet("color: #EDEDEF; font-size: 13px; font-weight: 600; border: none;")
+        header_layout.addWidget(title)
 
-        header.addStretch()
+        header_layout.addStretch()
 
-        # Action buttons
-        create_btn = QPushButton("Create Plugin")
+        def _header_btn_style():
+            return """
+            QPushButton {
+                background-color: transparent;
+                color: #8B8D97;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                border-radius: 7px;
+                padding: 0 12px;
+                font-weight: 500;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.04);
+                color: #EDEDEF;
+                border-color: rgba(255, 255, 255, 0.12);
+            }
+            """
+
+        create_btn = QPushButton("+ Create")
+        create_btn.setFixedHeight(30)
+        create_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        create_btn.setStyleSheet(_header_btn_style())
         create_btn.clicked.connect(self.show_plugin_creator)
-        header.addWidget(create_btn)
+        header_layout.addWidget(create_btn)
 
-        submit_btn = QPushButton("Submit Plugin")
+        submit_btn = QPushButton("Submit")
+        submit_btn.setFixedHeight(30)
+        submit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        submit_btn.setStyleSheet(_header_btn_style())
         submit_btn.clicked.connect(self.submit_plugin)
-        header.addWidget(submit_btn)
+        header_layout.addWidget(submit_btn)
 
         refresh_btn = QPushButton("Refresh")
+        refresh_btn.setFixedHeight(30)
+        refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        refresh_btn.setStyleSheet(_header_btn_style())
         refresh_btn.clicked.connect(self.refresh_plugins)
-        header.addWidget(refresh_btn)
+        header_layout.addWidget(refresh_btn)
 
-        layout.addLayout(header)
+        layout.addWidget(header)
 
         # Progress bar for loading
         self.progress_bar = QProgressBar()
+        self.progress_bar.setFixedHeight(4)
         self.progress_bar.setVisible(False)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: none;
+                border-radius: 2px;
+                background-color: rgba(255, 255, 255, 0.03);
+            }
+            QProgressBar::chunk {
+                background-color: #00BFAE;
+                border-radius: 2px;
+            }
+        """)
         layout.addWidget(self.progress_bar)
 
         # Scrollable content area
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        scroll_area.setStyleSheet("""
+            QScrollArea { background: transparent; border: none; }
+            QScrollBar:vertical {
+                border: none; background: transparent; width: 8px; margin: 0;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(60, 60, 65, 0.5); border-radius: 4px;
+                min-height: 24px; margin: 2px;
+            }
+            QScrollBar::handle:vertical:hover { background: rgba(80, 80, 85, 0.7); }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                border: none; background: transparent; height: 0;
+            }
+            QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+                border: none; width: 0; height: 0; background: transparent;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: transparent;
+            }
+        """)
 
         self.content_widget = QWidget()
+        self.content_widget.setStyleSheet("background: transparent;")
         self.grid_layout = QGridLayout(self.content_widget)
-        self.grid_layout.setContentsMargins(6, 6, 6, 6)
-        self.grid_layout.setSpacing(6)
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+        self.grid_layout.setSpacing(14)
 
         scroll_area.setWidget(self.content_widget)
-        layout.addWidget(scroll_area)
+        layout.addWidget(scroll_area, 1)
 
     def refresh_plugins(self):
         """Refresh the list of community plugins"""
