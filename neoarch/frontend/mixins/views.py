@@ -2379,7 +2379,7 @@ class _ViewsMixin:
         path = QPainterPath()
         path.addEllipse(0, 0, size, size)
         painter.setClipPath(path)
-        scaled = pixmap.scaled(size, size, Qt.AspectRatioMode.KeepAspectByExpanding, Qt.TransformationMode.SmoothTransformation)
+        scaled = pixmap.scaled(size, size, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
         x = (scaled.width() - size) // 2
         y = (scaled.height() - size) // 2
         painter.drawPixmap(0, 0, scaled.copy(x, y, size, size))
