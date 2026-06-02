@@ -2388,19 +2388,25 @@ class _ViewsMixin:
 
     def _load_avatar_image(self, url, name, size=36):
         try:
-            import requests
-            resp = requests.get(url, timeout=5)
-            if resp.status_code == 200:
+            try:
+                import requests
+                resp = requests.get(url, timeout=5)
+                data = resp.content if resp.status_code == 200 else None
+            except ImportError:
+                import urllib.request
+                data = urllib.request.urlopen(url, timeout=5).read()
+
+            if data:
                 pixmap = QPixmap()
-                pixmap.loadFromData(resp.content)
+                pixmap.loadFromData(data)
                 if not pixmap.isNull():
                     circular = self._make_circular_pixmap(pixmap, size)
                     self.user_avatar_label.setPixmap(circular)
                     self.user_avatar_label.setStyleSheet("")
                     self.user_avatar_btn.setToolTip(f"Signed in as {name}")
                     return True
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Avatar load error: {e}")
         return False
 
     def update_user_avatar(self, user):
