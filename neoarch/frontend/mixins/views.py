@@ -2426,34 +2426,26 @@ class _ViewsMixin:
         return result
 
     def _load_avatar_image(self, url, name, size=36):
-        self.log(f"Loading avatar: {url[:50]}...")
         try:
             try:
                 import requests
                 resp = requests.get(url, timeout=5, headers={"User-Agent": "NeoArch"})
                 data = resp.content if resp.status_code == 200 else None
-                self.log(f"  requests status: {resp.status_code}")
             except ImportError:
                 import urllib.request
                 req = urllib.request.Request(url, headers={"User-Agent": "NeoArch"})
                 data = urllib.request.urlopen(req, timeout=5).read()
-                self.log(f"  urllib OK: {len(data)} bytes")
 
-            if not data:
-                self.log("  no data")
-                return False
-
-            pixmap = QPixmap()
-            ok = pixmap.loadFromData(data)
-            self.log(f"  pixmap loaded: {ok}, size: {pixmap.width()}x{pixmap.height()}")
-            if ok and not pixmap.isNull():
-                circular = self._make_circular_pixmap(pixmap, size)
-                self.user_avatar_label.setPixmap(circular)
-                self.user_avatar_label.setStyleSheet("")
-                self.user_avatar_btn.setToolTip(f"Signed in as {name}")
-                return True
-        except Exception as e:
-            self.log(f"Avatar error: {e}")
+            if data:
+                pixmap = QPixmap()
+                if pixmap.loadFromData(data) and not pixmap.isNull():
+                    circular = self._make_circular_pixmap(pixmap, size)
+                    self.user_avatar_label.setPixmap(circular)
+                    self.user_avatar_label.setStyleSheet("")
+                    self.user_avatar_btn.setToolTip(f"Signed in as {name}")
+                    return True
+        except Exception:
+            pass
         return False
 
     def update_user_avatar(self, user):
