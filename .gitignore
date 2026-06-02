@@ -47,6 +47,7 @@ package.json
 website/.env.local
 website/.next/
 website/out/
+!/website/lib/
 
 # Build artifacts
 pkg/
