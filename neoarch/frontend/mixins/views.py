@@ -25,7 +25,7 @@ from neoarch.frontend.components.large_search_box import LargeSearchBox
 from neoarch.frontend.components.packages_grid_view import PackagesGridView
 from neoarch.frontend.components.package_detail_card import PackageDetailCard
 from neoarch.frontend.components.loading_spinner import LoadingSpinner
-from neoarch.frontend.components.filter_card import FilterCard
+
 from neoarch.frontend.components.source_card import SourceCard
 from neoarch.backend.services import help as help_service
 from neoarch.backend.package import loader as packages_service
@@ -42,24 +42,6 @@ _C = {
 
 class _ViewsMixin:
     """Mixin providing view/display/navigation methods for the main window."""
-
-    def contextMenuEvent(self, event):
-        menu = QMenu(self)
-        restore_act = menu.addAction("Restore")
-        min_act = menu.addAction("Minimize")
-        max_act = menu.addAction("Maximize")
-        menu.addSeparator()
-        close_act = menu.addAction("Close")
-        action = menu.exec(event.globalPos())
-        if action == restore_act:
-            self.showNormal()
-        elif action == min_act:
-            self.showMinimized()
-        elif action == max_act:
-            self.showMaximized() if not self.isMaximized() else self.showNormal()
-        elif action == close_act:
-            self.close()
-        event.accept()
 
     def set_minimal_icon(self):
         pixmap = QPixmap(64, 64)
@@ -468,24 +450,25 @@ class _ViewsMixin:
 
         return btn
 
-    def _add_right_toolbar_icons(self, layout, show_install_file=False, show_sudo=False, show_bundle=True):
+    def _add_right_toolbar_icons(self, layout, show_install_file=False, show_sudo=False, show_bundle=False, show_grid_filter=True):
         """Add common right-side navbar icons to any toolbar layout."""
         navbar_dir = os.path.join(_BASE_DIR, "assets", "icons", "navbar")
 
-        self._grid_view_btn = self.create_toolbar_button(
-            os.path.join(navbar_dir, "view.svg"),
-            "Grid View",
-            self.toggle_view_mode
-        )
-        layout.addWidget(self._grid_view_btn)
+        if show_grid_filter:
+            self._grid_view_btn = self.create_toolbar_button(
+                os.path.join(navbar_dir, "view.svg"),
+                "Grid View",
+                self.toggle_view_mode
+            )
+            layout.addWidget(self._grid_view_btn)
 
-        self._filter_btn = self.create_toolbar_button(
-            os.path.join(navbar_dir, "Filter.svg"),
-            "Filter Packages",
-            self.show_category_filter
-        )
-        self._filter_btn.setProperty("defaultStyle", self._filter_btn.styleSheet())
-        layout.addWidget(self._filter_btn)
+            self._filter_btn = self.create_toolbar_button(
+                os.path.join(navbar_dir, "Filter.svg"),
+                "Filter Packages",
+                self.show_category_filter
+            )
+            self._filter_btn.setProperty("defaultStyle", self._filter_btn.styleSheet())
+            layout.addWidget(self._filter_btn)
 
         if show_install_file:
             self._install_file_btn = self.create_toolbar_button(
@@ -522,6 +505,66 @@ class _ViewsMixin:
         self.packages_grid.setVisible(False)
         if hasattr(self, 'package_detail_card'):
             self.package_detail_card.clear()
+
+    def _update_nav_greeting(self, user=None):
+        if not hasattr(self, '_greeting_label') or not self._greeting_label:
+            return
+        if self.current_view != "discover":
+            self._greeting_label.setVisible(False)
+            return
+        import getpass
+        from datetime import datetime
+        from PyQt6.QtGui import QFont, QFontMetrics, QLinearGradient, QPainter, QPen, QPixmap
+        from PyQt6.QtCore import QRectF, Qt
+        h = datetime.now().hour
+        if h < 12:
+            prefix = "Good morning"
+        elif h < 17:
+            prefix = "Good afternoon"
+        else:
+            prefix = "Good evening"
+        if user and user.name:
+            name = user.name
+        else:
+            try:
+                name = getpass.getuser()
+            except Exception:
+                name = "User"
+        text = f"{prefix}, {name}!"
+        font = QFont()
+        font.setPixelSize(18)
+        font.setBold(True)
+        fm = QFontMetrics(font)
+        tw = fm.horizontalAdvance(text)
+        th = fm.height()
+        pw, ph = tw + 8, th + 4
+        pm = QPixmap(pw, ph)
+        pm.fill(Qt.GlobalColor.transparent)
+        p = QPainter(pm)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        grad = QLinearGradient(0, 0, pw, 0)
+        grad.setColorAt(0.0, QColor("#FFFFFF"))
+        grad.setColorAt(1.0, QColor("#4A9EFF"))
+        p.setFont(font)
+        p.setPen(QPen(grad, 1))
+        p.drawText(QRectF(0, 0, pw, ph), Qt.AlignmentFlag.AlignCenter, text)
+        p.end()
+        self._greeting_label.setPixmap(pm)
+        self._greeting_label.setVisible(True)
+
+    def _update_bundle_buttons(self):
+        empty = not self.bundle_items
+        for btn in ('_bundle_select_all_btn', '_bundle_remove_sel_btn', '_bundle_clear_btn'):
+            b = getattr(self, btn, None)
+            if b:
+                b.setVisible(not empty)
+        sep = getattr(self, '_bundle_sep1', None)
+        if sep:
+            sep.setVisible(not empty)
+        for btn in ('_bundle_install_btn', '_bundle_export_btn', '_bundle_save_cloud_btn'):
+            b = getattr(self, btn, None)
+            if b:
+                b.setEnabled(not empty)
 
     def install_from_local_file(self):
         self.log("Install from local file")
@@ -564,11 +607,6 @@ class _ViewsMixin:
         layout = QHBoxLayout(header)
         layout.setContentsMargins(24, 0, 24, 0)
         layout.setSpacing(12)
-
-        self.header_icon = QLabel()
-        self.header_icon.setFixedSize(24, 24)
-        self.header_icon.setVisible(False)
-        layout.addWidget(self.header_icon)
 
         self.header_label = QLabel("Home")
         self.header_label.setObjectName("headerLabel")
@@ -626,19 +664,6 @@ class _ViewsMixin:
             QTimer.singleShot(100, self.switch_to_community_tab)
         except Exception as e:
             self._show_message("Community Hub", f"Error opening community hub: {e}")
-
-    def switch_to_community_tab(self):
-        """Switch to the community tab in plugins settings"""
-        try:
-            if hasattr(self, 'settings_widgets') and 'plugins' in self.settings_widgets:
-                # Switch to plugins category in settings
-                self.switch_settings_category("plugins")
-                # Switch to community tab in plugins widget
-                plugins_widget = self.settings_widgets['plugins']
-                if hasattr(plugins_widget, 'tabs'):
-                    plugins_widget.tabs.setCurrentIndex(1)  # Community Hub is index 1
-        except Exception as e:
-            self._show_message("Community Hub", f"Error switching to community tab: {e}")
 
     def on_plugin_install_requested(self, plugin_id):
         try:
@@ -786,10 +811,11 @@ class _ViewsMixin:
         self.settings_container.setVisible(False)
         self.settings_root = QWidget()
         self.settings_layout = QVBoxLayout(self.settings_root)
-        self.settings_layout.setContentsMargins(12, 12, 12, 12)
-        self.settings_layout.setSpacing(12)
+        self.settings_layout.setContentsMargins(0, 0, 0, 0)
+        self.settings_layout.setSpacing(0)
         self.settings_container.setWidget(self.settings_root)
-        self.packages_panel_layout.addWidget(self.settings_container)
+        self.settings_container.horizontalScrollBar().setVisible(False)
+        self.packages_panel_layout.addWidget(self.settings_container, 1)
 
         # Plugins view placeholder — created lazily in switch_view("plugins")
         self.plugins_view = None
@@ -919,17 +945,18 @@ class _ViewsMixin:
         return panel
 
     def update_toolbar(self):
-        # Clear existing toolbar
-        while self.toolbar_layout.count():
-            item = self.toolbar_layout.takeAt(0)
-            if item.layout():
-                # Remove the layout
-                layout = item.layout()
-                while layout.count():
-                    child = layout.takeAt(0)
-                    if child.widget():
-                        child.widget().deleteLater()
-                item.layout().deleteLater()
+        # Clear existing toolbar — hide and remove all items
+        def _clear_layout(layout):
+            while layout.count():
+                item = layout.takeAt(0)
+                if item.widget():
+                    w = item.widget()
+                    w.hide()
+                    w.deleteLater()
+                elif item.layout():
+                    _clear_layout(item.layout())
+                    item.layout().deleteLater()
+        _clear_layout(self.toolbar_layout)
 
         self.discover_select_all_btn = None
         self.discover_install_btn = None
@@ -937,7 +964,15 @@ class _ViewsMixin:
         self._filter_btn = None
         self._install_file_btn = None
         self._bundle_btn = None
+        self._bundle_select_all_btn = None
+        self._bundle_sep1 = None
+        self._bundle_remove_sel_btn = None
+        self._bundle_clear_btn = None
+        self._bundle_install_btn = None
+        self._bundle_export_btn = None
+        self._bundle_save_cloud_btn = None
         self._sudo_btn = None
+        self._greeting_label = None
 
         if self.current_view == "updates":
             layout = QHBoxLayout()
@@ -1087,6 +1122,10 @@ class _ViewsMixin:
             self.discover_install_btn.setEnabled(False)
             layout.addWidget(self.discover_install_btn)
 
+            self._greeting_label = QLabel()
+            self._greeting_label.setVisible(False)
+            layout.addWidget(self._greeting_label)
+
             layout.addStretch()  # Push remaining buttons to the right
 
             self._add_right_toolbar_icons(layout, show_install_file=True, show_sudo=True)
@@ -1113,11 +1152,19 @@ class _ViewsMixin:
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "bundles":
             layout = QHBoxLayout()
-            layout.setSpacing(12)
+            layout.setSpacing(16)
 
-            select_all_btn = QPushButton("Select All")
-            select_all_btn.setMinimumHeight(36)
-            select_all_btn.setStyleSheet("""
+            def _sep():
+                s = QFrame()
+                s.setFrameShape(QFrame.Shape.VLine)
+                s.setStyleSheet("QFrame { color: rgba(255,255,255,0.08); }")
+                s.setFixedWidth(1)
+                return s
+
+            # Group 1 — Select All
+            self._bundle_select_all_btn = QPushButton("Select All")
+            self._bundle_select_all_btn.setMinimumHeight(36)
+            self._bundle_select_all_btn.setStyleSheet("""
                 QPushButton {
                     background-color: transparent;
                     color: #F0F0F0;
@@ -1130,12 +1177,18 @@ class _ViewsMixin:
                 QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
                 QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
             """)
-            select_all_btn.clicked.connect(self.toggle_select_all)
-            layout.addWidget(select_all_btn)
+            self._bundle_select_all_btn.clicked.connect(self.toggle_select_all)
+            layout.addWidget(self._bundle_select_all_btn)
+            self._bundle_sep1 = _sep()
+            layout.addWidget(self._bundle_sep1)
 
-            install_bundle_btn = QPushButton("Install Bundle")
-            install_bundle_btn.setMinimumHeight(36)
-            install_bundle_btn.setStyleSheet(
+            # Group 2 — Bundle operations
+            grp2 = QHBoxLayout()
+            grp2.setSpacing(6)
+
+            self._bundle_install_btn = QPushButton("Install Bundle")
+            self._bundle_install_btn.setMinimumHeight(36)
+            self._bundle_install_btn.setStyleSheet(
                 """
                 QPushButton {
                     background-color: transparent;
@@ -1148,55 +1201,52 @@ class _ViewsMixin:
                 }
                 QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
                 QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
+                QPushButton:disabled { color: #5C5E66; border-color: rgba(92, 94, 102, 0.3); }
                 """
             )
-            install_bundle_btn.clicked.connect(self.install_bundle)
-            layout.addWidget(install_bundle_btn)
+            self._bundle_install_btn.clicked.connect(self.install_bundle)
+            grp2.addWidget(self._bundle_install_btn)
 
-            export_btn = QPushButton("Export Bundle")
-            export_btn.setMinimumHeight(36)
-            export_btn.setStyleSheet(install_bundle_btn.styleSheet())
-            export_btn.clicked.connect(self.export_bundle)
-            layout.addWidget(export_btn)
+            self._bundle_export_btn = QPushButton("Export Bundle")
+            self._bundle_export_btn.setMinimumHeight(36)
+            self._bundle_export_btn.setStyleSheet(self._bundle_install_btn.styleSheet())
+            self._bundle_export_btn.clicked.connect(self.export_bundle)
+            grp2.addWidget(self._bundle_export_btn)
 
             import_btn = QPushButton("Import Bundle")
             import_btn.setMinimumHeight(36)
-            import_btn.setStyleSheet(install_bundle_btn.styleSheet())
-            import_btn.clicked.connect(self.import_bundle)
-            layout.addWidget(import_btn)
-
-            remove_sel_btn = QPushButton("Remove Selected")
-            remove_sel_btn.setMinimumHeight(36)
-            remove_sel_btn.setStyleSheet(install_bundle_btn.styleSheet())
-            remove_sel_btn.clicked.connect(self.remove_selected_from_bundle)
-            layout.addWidget(remove_sel_btn)
-
-            # Add to Community button
-            add_to_community_btn = QPushButton("Add to Community")
-            add_to_community_btn.setMinimumHeight(36)
-            add_to_community_btn.setStyleSheet("""
+            import_btn.setStyleSheet("""
                 QPushButton {
                     background-color: transparent;
-                    color: #00BFAE;
-                    border: 1px solid rgba(0, 191, 174, 0.4);
+                    color: #F0F0F0;
+                    border: 1px solid rgba(0, 191, 174, 0.3);
                     border-radius: 6px;
                     padding: 6px 12px;
                     font-size: 12px;
                     font-weight: 500;
                 }
-                QPushButton:hover { 
-                    background-color: rgba(0, 191, 174, 0.15); 
-                    border-color: rgba(0, 191, 174, 0.6); 
-                    color: #00D4C4;
-                }
-                QPushButton:pressed { 
-                    background-color: rgba(0, 191, 174, 0.25); 
-                }
-                """)
-            add_to_community_btn.clicked.connect(self.add_selected_to_community)
-            add_to_community_btn.setToolTip("Share selected bundle items with the community")
-            layout.addWidget(add_to_community_btn)
+                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
+                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
+            """)
+            import_btn.clicked.connect(self.import_bundle)
+            grp2.addWidget(import_btn)
 
+            self._bundle_remove_sel_btn = QPushButton("Remove Selected")
+            self._bundle_remove_sel_btn.setMinimumHeight(36)
+            self._bundle_remove_sel_btn.setStyleSheet(self._bundle_install_btn.styleSheet())
+            self._bundle_remove_sel_btn.clicked.connect(self.remove_selected_from_bundle)
+            grp2.addWidget(self._bundle_remove_sel_btn)
+
+            self._bundle_clear_btn = QPushButton("Clear Bundle")
+            self._bundle_clear_btn.setMinimumHeight(36)
+            self._bundle_clear_btn.setStyleSheet(self._bundle_install_btn.styleSheet())
+            self._bundle_clear_btn.clicked.connect(self.clear_bundle)
+            grp2.addWidget(self._bundle_clear_btn)
+
+            layout.addLayout(grp2)
+            layout.addWidget(_sep())
+
+            # Group 3 — Cloud
             cloud_style = """
                 QPushButton {
                     background-color: transparent;
@@ -1216,28 +1266,27 @@ class _ViewsMixin:
                 }
             """
 
-            save_cloud_btn = QPushButton("☁ Save to Cloud")
-            save_cloud_btn.setMinimumHeight(36)
-            save_cloud_btn.setStyleSheet(cloud_style)
-            save_cloud_btn.clicked.connect(self._cloud_save_favourites)
-            save_cloud_btn.setToolTip("Upload bundle items to cloud (replace remote)")
-            layout.addWidget(save_cloud_btn)
+            grp3 = QHBoxLayout()
+            grp3.setSpacing(6)
+
+            self._bundle_save_cloud_btn = QPushButton("☁ Save to Cloud")
+            self._bundle_save_cloud_btn.setMinimumHeight(36)
+            self._bundle_save_cloud_btn.setStyleSheet(cloud_style + "QPushButton:disabled { color: #5C5E66; border-color: rgba(92, 94, 102, 0.3); }")
+            self._bundle_save_cloud_btn.clicked.connect(self._cloud_save_favourites)
+            self._bundle_save_cloud_btn.setToolTip("Upload bundle items to cloud (replace remote)")
+            grp3.addWidget(self._bundle_save_cloud_btn)
 
             load_cloud_btn = QPushButton("☁ Load from Cloud")
             load_cloud_btn.setMinimumHeight(36)
             load_cloud_btn.setStyleSheet(cloud_style)
             load_cloud_btn.clicked.connect(self._cloud_sync_favourites)
             load_cloud_btn.setToolTip("Download bundle items from cloud (replace local)")
-            layout.addWidget(load_cloud_btn)
+            grp3.addWidget(load_cloud_btn)
 
-            clear_btn = QPushButton("Clear Bundle")
-            clear_btn.setMinimumHeight(36)
-            clear_btn.setStyleSheet(install_bundle_btn.styleSheet())
-            clear_btn.clicked.connect(self.clear_bundle)
-            layout.addWidget(clear_btn)
+            layout.addLayout(grp3)
 
             layout.addStretch()
-            self._add_right_toolbar_icons(layout, show_bundle=False)
+            self._add_right_toolbar_icons(layout, show_bundle=False, show_grid_filter=False)
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "settings":
             layout = QHBoxLayout()
@@ -1298,6 +1347,9 @@ class _ViewsMixin:
         # Restore packages content area visibility (hidden by plugins/settings)
         if hasattr(self, 'packages_content_area'):
             self.packages_content_area.setVisible(True)
+        # Restore toolbar visibility (hidden by settings)
+        if hasattr(self, 'toolbar_widget'):
+            self.toolbar_widget.setVisible(True)
         # Clear detail card
         if hasattr(self, 'package_detail_card'):
             self.package_detail_card.clear()
@@ -1322,17 +1374,12 @@ class _ViewsMixin:
         }
 
         header_data = headers.get(view_id, ("NeoArch", ""))
-        if len(header_data) == 3:  # Icon, title, subtitle
-            icon_path, title, subtitle = header_data
-            self.header_icon.setPixmap(self.get_svg_icon(icon_path, 32).pixmap(32, 32))
-            self.header_icon.setVisible(True)
-            self.header_label.setText(title)
-            self.header_info.setText(subtitle)
-        else:  # Title, subtitle
+        if len(header_data) == 3:
+            _, title, subtitle = header_data
+        else:
             title, subtitle = header_data
-            self.header_icon.setVisible(False)
-            self.header_label.setText(title)
-            self.header_info.setText(subtitle)
+        self.header_label.setText(title)
+        self.header_info.setText(subtitle)
         # Update dynamic counts if on updates/installed
         if view_id == "updates":
             QTimer.singleShot(0, self.update_updates_header_counts)
@@ -1349,6 +1396,16 @@ class _ViewsMixin:
         # Show filters panel for all views except settings and bundles
         if hasattr(self, 'filters_panel'):
             self.filters_panel.setVisible(view_id not in ("settings", "bundles"))
+
+        # Update greeting in navbar
+        self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
+
+        # Reset to table view for non-plugin sections
+        if view_id != "plugins" and self._view_mode != "table":
+            self._view_mode = "table"
+            if hasattr(self, '_grid_view_btn') and self._grid_view_btn:
+                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "navbar", "view.svg"), 20))
+                self._grid_view_btn.setToolTip("Grid View")
 
         # Load data for view
         if view_id == "updates":
@@ -1367,7 +1424,7 @@ class _ViewsMixin:
                 pass
             if load:
                 try:
-                    self.loading_widget.set_message("Checking for updates...")
+                    self.loading_widget.set_message("Syncing package databases...")
                     self.loading_widget.setVisible(True)
                     self.loading_widget.start_animation()
                     if hasattr(self, 'loading_container'):
@@ -1401,6 +1458,8 @@ class _ViewsMixin:
         elif view_id == "discover":
             self.large_search_box.setVisible(True)
             self._hide_all_package_views()
+            if hasattr(self, 'packages_content_area'):
+                self.packages_content_area.setVisible(False)
             self.load_more_btn.setVisible(False)
             self.package_table.setRowCount(0)
             self.header_info.setText("Search and discover new packages to install")
@@ -1493,18 +1552,6 @@ class _ViewsMixin:
                 if item.widget():
                     item.widget().deleteLater()
 
-            # For plugins view, create filter by plugin status (like installed view)
-            self.filter_card = FilterCard(self)
-            self.filter_card.filter_changed.connect(self.on_filter_selection_changed)
-
-            # Block signals during initial filter setup to avoid double render
-            self.filter_card.blockSignals(True)
-            self.filter_card.add_filter("Available")
-            self.filter_card.add_filter("Installed")
-            self.filter_card.blockSignals(False)
-
-            self.filters_layout.addWidget(self.filter_card)
-
             # Update visibility like installed view
             self.sources_section.setVisible(True)
             self.filters_section.setVisible(True)
@@ -1555,6 +1602,12 @@ class _ViewsMixin:
             self._hide_all_package_views()
             self.load_more_btn.setVisible(False)
             self.settings_container.setVisible(True)
+            # Hide toolbar (grid view, filter, actions — none apply to settings)
+            if hasattr(self, 'toolbar_widget'):
+                self.toolbar_widget.setVisible(False)
+            # Hide packages content area (has stretch=1, would push settings to bottom)
+            if hasattr(self, 'packages_content_area'):
+                self.packages_content_area.setVisible(False)
 
             # Retain source checkboxes; no clearing needed
 
@@ -2270,6 +2323,13 @@ class _ViewsMixin:
             sel_model.select(idx, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
         else:
             sel_model.select(idx, QItemSelectionModel.SelectionFlag.Deselect | QItemSelectionModel.SelectionFlag.Rows)
+
+        selected_rows = set(index.row() for index in sel_model.selectedRows())
+        if len(selected_rows) == 1 and row in selected_rows:
+            self._show_detail_for_row(row)
+        else:
+            self.package_detail_card.clear()
+
         self._updating_selection = False
         self._update_discover_install_btn_state()
 

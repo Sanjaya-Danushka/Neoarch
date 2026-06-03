@@ -22,19 +22,19 @@ def apply_filters(app):
         s = pkg.get('source')
         if s in selected_sources and selected_sources.get(s, True):
             filtered_by_source.append(pkg)
-    selected_filters = {"Updates available": True, "Installed": True}
-    if hasattr(app, 'filter_card') and app.filter_card:
+    selected_filters = {"Updates available": False}
+    if hasattr(app, '_installed_filter_states'):
         try:
-            selected_filters = app.filter_card.get_selected_filters()
+            selected_filters = app._installed_filter_states
         except Exception:
             pass
-    show_updates = selected_filters.get("Updates available", True)
-    show_installed = selected_filters.get("Installed", True)
+    show_updates_only = selected_filters.get("Updates available", False)
     final = []
     for pkg in filtered_by_source:
-        if pkg.get('has_update') and show_updates:
-            final.append(pkg)
-        elif not pkg.get('has_update') and show_installed:
+        if show_updates_only:
+            if pkg.get('has_update'):
+                final.append(pkg)
+        else:
             final.append(pkg)
     app.all_packages = final
     app.current_page = 0

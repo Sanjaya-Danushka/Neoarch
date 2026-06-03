@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import QFrame, QVBoxLayout, QLabel, QWidget, QCheckBox, QRa
 from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.frontend.styles import Styles
 from neoarch.frontend.components.source_card import SourceCard
-from neoarch.frontend.components.filter_card import FilterCard
+
 from neoarch.frontend.components.plugins_sidebar import PluginsSidebar
 from neoarch.managers.git_manager import GitManager
 from neoarch.managers.docker_manager import DockerManager
@@ -17,10 +17,18 @@ _BASE_DIR = str(PROJECT_ROOT)
 
 
 class _FiltersMixin:
+    def _get_filter_names(self):
+        if self.current_view == "installed":
+            return ("Updates available",)
+        return ("Available", "Installed")
+
     def _update_filter_btn_state(self):
         if not hasattr(self, '_filter_btn') or not self._filter_btn:
             return
-        if hasattr(self, 'plugins_view') and self.plugins_view:
+        if self.current_view == "installed":
+            states = getattr(self, '_installed_filter_states', {})
+            all_on = not states.get("Updates available", False)
+        elif hasattr(self, 'plugins_view') and self.plugins_view:
             states = getattr(self.plugins_view, '_current_filter_states', {})
             all_on = all(states.get(n, True) for n in ("Available", "Installed"))
         else:
@@ -112,12 +120,18 @@ class _FiltersMixin:
             }
         """)
 
-        if hasattr(self, 'plugins_view') and self.plugins_view:
+        filter_names = self._get_filter_names()
+
+        if self.current_view == "installed":
+            if not hasattr(self, '_installed_filter_states'):
+                self._installed_filter_states = {"Updates available": False}
+            current = self._installed_filter_states
+        elif hasattr(self, 'plugins_view') and self.plugins_view:
             current = getattr(self.plugins_view, '_current_filter_states', {})
         else:
             current = {}
 
-        for name in ("Available", "Installed"):
+        for name in filter_names:
             checked = current.get(name, True)
             action = menu.addAction(self._make_toggle_icon(checked), name)
             action.setCheckable(True)
@@ -131,7 +145,17 @@ class _FiltersMixin:
         ))
 
     def _on_filter_chip_toggled(self, filter_name, checked):
-        if hasattr(self, 'plugins_view') and self.plugins_view:
+        if self.current_view == "installed":
+            if not hasattr(self, '_installed_filter_states'):
+                self._installed_filter_states = {"Updates available": False}
+            self._installed_filter_states[filter_name] = checked
+            # Sync with the FilterCard in the left panel (block signals to avoid loop)
+            if hasattr(self, 'filter_card') and self.filter_card:
+                self.filter_card.blockSignals(True)
+                self.filter_card.set_selected_filters(self._installed_filter_states)
+                self.filter_card.blockSignals(False)
+            self.apply_filters()
+        elif hasattr(self, 'plugins_view') and self.plugins_view:
             states = getattr(self.plugins_view, '_current_filter_states', {})
             states[filter_name] = checked
             self.plugins_view.apply_filters(states)
@@ -199,22 +223,14 @@ class _FiltersMixin:
         if view_id == "updates":
             self.update_updates_sources()
         elif view_id == "installed":
-            # For installed view, filter by update status
-            self.filter_card = FilterCard(self)
-            self.filter_card.filter_changed.connect(self.on_filter_selection_changed)
-
-            # Add status filters
-            self.filter_card.add_filter("Updates available")
-            self.filter_card.add_filter("Installed")
-
-            self.filters_layout.addWidget(self.filter_card)
+            pass
         else:
             filter_options = []
 
         # Update visibility
         if view_id == "installed":
             self.sources_section.setVisible(True)
-            self.filters_section.setVisible(True)
+            self.filters_section.setVisible(False)
             if hasattr(self, 'sources_title_label'):
                 self.sources_title_label.setVisible(False)
             self.update_installed_sources()
@@ -284,6 +300,8 @@ class _FiltersMixin:
         """Handle changes in filter selection"""
         # Apply filtering based on current view
         if self.current_view == "installed":
+            self._installed_filter_states = filter_states.copy()
+            self._update_filter_btn_state()
             self.apply_filters()
         elif self.current_view == "updates":
             self.apply_update_filters()
@@ -365,6 +383,20 @@ class _FiltersMixin:
                 self.git_manager.create_git_section()
             except Exception:
                 pass
+        try:
+            if not hasattr(self, 'docker_manager') or self.docker_manager is None:
+                self.docker_manager = DockerManager(self.log_signal, self.show_message, self.sources_layout, self)
+            else:
+                try:
+                    self.docker_manager.sources_layout = self.sources_layout
+                except Exception:
+                    pass
+                try:
+                    self.docker_manager.create_docker_section()
+                except Exception:
+                    pass
+        except Exception:
+            pass
         self.source_card.source_changed.connect(self.on_updates_source_changed)
         try:
             self.source_card.on_source_changed()
@@ -396,6 +428,27 @@ class _FiltersMixin:
         except Exception:
             pass
         self.sources_layout.addWidget(self.source_card)
+        if not hasattr(self, 'git_manager') or self.git_manager is None:
+            self.git_manager = GitManager(self.log_signal, self.show_message, self.sources_layout, self)
+        else:
+            try:
+                self.git_manager.create_git_section()
+            except Exception:
+                pass
+        try:
+            if not hasattr(self, 'docker_manager') or self.docker_manager is None:
+                self.docker_manager = DockerManager(self.log_signal, self.show_message, self.sources_layout, self)
+            else:
+                try:
+                    self.docker_manager.sources_layout = self.sources_layout
+                except Exception:
+                    pass
+                try:
+                    self.docker_manager.create_docker_section()
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
     def update_plugins_sources(self):
         """Update plugins sources using the same SourceCard component as installed section"""
@@ -424,6 +477,27 @@ class _FiltersMixin:
         except Exception:
             pass
         self.sources_layout.addWidget(self.source_card)
+        if not hasattr(self, 'git_manager') or self.git_manager is None:
+            self.git_manager = GitManager(self.log_signal, self.show_message, self.sources_layout, self)
+        else:
+            try:
+                self.git_manager.create_git_section()
+            except Exception:
+                pass
+        try:
+            if not hasattr(self, 'docker_manager') or self.docker_manager is None:
+                self.docker_manager = DockerManager(self.log_signal, self.show_message, self.sources_layout, self)
+            else:
+                try:
+                    self.docker_manager.sources_layout = self.sources_layout
+                except Exception:
+                    pass
+                try:
+                    self.docker_manager.create_docker_section()
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
     def on_installed_source_changed(self, source_states):
         self.apply_filters()

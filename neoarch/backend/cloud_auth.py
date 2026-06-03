@@ -15,7 +15,7 @@ SESSION_FILE = CONFIG_DIR / "cloud_session.json"
 
 SUPABASE_URL = "https://rlbwkihgijdlqvyeycjj.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_IlIXtZ8W3lnrkGli9TXVRA_XrrzIOPH"
-WEBSITE_URL = "http://localhost:3000"
+WEBSITE_URL = "https://sanjaya-danushka.github.io/Neoarch"
 
 try:
     from supabase import create_client, Client as SupabaseClient
