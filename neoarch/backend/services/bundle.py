@@ -68,6 +68,10 @@ def refresh_bundles_table(app):
         app.package_table.setVisible(True)
     except Exception:
         pass
+    try:
+        app._update_bundle_buttons()
+    except Exception:
+        pass
 
 
 def export_bundle(app):

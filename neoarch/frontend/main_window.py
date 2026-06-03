@@ -141,5 +141,7 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
     def _on_cloud_user_changed(self, user):
         if hasattr(self, 'update_user_avatar'):
             self.update_user_avatar(user)
+        if hasattr(self, '_update_nav_greeting'):
+            self._update_nav_greeting(user)
 
 

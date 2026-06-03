@@ -103,9 +103,17 @@ class _SearchMixin:
 
         if len(query) < 2:
             if self.current_view == "discover":
+                self.cancel_discover_search = True
+                self.loading_context = "idle"
+                self.loading_widget.stop_animation()
+                self.loading_widget.setVisible(False)
+                if hasattr(self, 'loading_container'):
+                    self.loading_container.setVisible(False)
                 self.large_search_box.setVisible(True)
                 self.large_search_box.clear()
                 self._hide_all_package_views()
+                if hasattr(self, 'packages_content_area'):
+                    self.packages_content_area.setVisible(False)
                 self.load_more_btn.setVisible(False)
                 if hasattr(self, 'no_results_widget'):
                     self.no_results_widget.setVisible(False)
@@ -121,6 +129,7 @@ class _SearchMixin:
                     tb = getattr(self, attr, None)
                     if tb is not None:
                         tb.setVisible(False)
+                self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
             elif self.current_view == "installed":
                 try:
                     if hasattr(self, 'no_results_widget'):
@@ -140,6 +149,10 @@ class _SearchMixin:
             return
         if self.current_view == "discover":
             self.large_search_box.setVisible(False)
+            if hasattr(self, '_greeting_label') and self._greeting_label:
+                self._greeting_label.setVisible(False)
+            if hasattr(self, 'packages_content_area'):
+                self.packages_content_area.setVisible(True)
             self._show_active_view()
             self.search_discover_packages(query)
         else:
@@ -197,13 +210,22 @@ class _SearchMixin:
 
         if not query:
             if self.current_view == "discover":
+                self.cancel_discover_search = True
+                self.loading_context = "idle"
+                self.loading_widget.stop_animation()
+                self.loading_widget.setVisible(False)
+                if hasattr(self, 'loading_container'):
+                    self.loading_container.setVisible(False)
                 self.large_search_box.setVisible(True)
                 self._hide_all_package_views()
+                if hasattr(self, 'packages_content_area'):
+                    self.packages_content_area.setVisible(False)
                 self.load_more_btn.setVisible(False)
                 if hasattr(self, 'no_results_widget'):
                     self.no_results_widget.setVisible(False)
                 self.package_table.setRowCount(0)
                 self.header_info.setText("Search and discover new packages to install")
+                self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
             elif self.current_view == "installed":
                 self.apply_filters()
                 return
@@ -214,6 +236,8 @@ class _SearchMixin:
                 return
 
         if self.current_view == "discover":
+            if hasattr(self, '_greeting_label') and self._greeting_label:
+                self._greeting_label.setVisible(False)
             self.search_discover_packages(query)
         else:
             self.search_results = [pkg for pkg in self.all_packages if query in pkg['name'].lower()]
@@ -549,3 +573,5 @@ class _SearchMixin:
                 tb = getattr(self, attr, None)
                 if tb is not None:
                     tb.setVisible(has_results)
+            if hasattr(self, '_greeting_label') and self._greeting_label:
+                self._greeting_label.setVisible(not has_results)
