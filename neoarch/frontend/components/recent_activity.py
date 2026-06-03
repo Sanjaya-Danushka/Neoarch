@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QFrame, QVBoxLayout, QHBoxLayout, QLabel,
     QGraphicsDropShadowEffect,
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor
 
 
@@ -33,7 +33,7 @@ class RecentActivity(QFrame):
         self.setObjectName("recentActivity")
         self._setup_style()
         self._build()
-        self._load()
+        QTimer.singleShot(0, self._load)
 
     def _setup_style(self):
         self.setStyleSheet("""

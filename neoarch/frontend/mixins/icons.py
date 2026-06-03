@@ -24,11 +24,10 @@ def _build_window_icon(icon_path: str) -> QIcon:
         if not os.path.exists(icon_path):
             return icon
         ext = os.path.splitext(icon_path)[1].lower()
-        sizes = (16, 24, 32, 48, 64, 96, 128, 192, 256, 512)
         if ext == ".svg":
             renderer = QSvgRenderer(icon_path)
             if renderer.isValid():
-                for sz in sizes:
+                for sz in (32, 64, 256):
                     pm = QPixmap(sz, sz)
                     pm.fill(Qt.GlobalColor.transparent)
                     p = QPainter(pm)
@@ -56,16 +55,7 @@ def _build_window_icon(icon_path: str) -> QIcon:
                 base = base.copy(min_x, min_y, max_x - min_x + 1, max_y - min_y + 1)
         except Exception:
             pass
-        for sz in sizes:
-            try:
-                pm = base.scaled(sz, sz, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-                icon.addPixmap(pm)
-            except Exception:
-                pass
-        try:
-            icon.addPixmap(base)
-        except Exception:
-            pass
+        icon.addPixmap(base)
         return icon
     except Exception:
         return QIcon(icon_path)

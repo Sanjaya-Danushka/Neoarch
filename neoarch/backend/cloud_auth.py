@@ -8,7 +8,7 @@ from typing import Optional
 from dataclasses import dataclass
 from pathlib import Path
 
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 
 CONFIG_DIR = Path.home() / ".config" / "neoarch"
 SESSION_FILE = CONFIG_DIR / "cloud_session.json"
@@ -39,7 +39,7 @@ class CloudAuthManager(QObject):
         self._client: Optional[SupabaseClient] = None
         self._user: Optional[CloudUser] = None
         self._httpd: Optional[http.server.HTTPServer] = None
-        self._load_session()
+        QTimer.singleShot(0, self._load_session)
 
     def _load_session(self):
         if not SESSION_FILE.exists():
