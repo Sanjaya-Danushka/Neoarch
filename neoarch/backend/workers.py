@@ -82,8 +82,10 @@ class CommandWorker(QObject):
             if self.sudo:
                 auth_cmd = get_auth_command(self.env)
                 self.command = auth_cmd + self.command
-                if auth_cmd == ["sudo", "-A"] and 'SUDO_ASKPASS' not in self.env:
-                    self.env = get_askpass_env(self.env)
+                if auth_cmd == ["sudo", "-A"]:
+                    askpass = self.env.get('SUDO_ASKPASS', '')
+                    if not askpass or not os.path.exists(askpass):
+                        self.env = get_askpass_env(self.env)
 
             process = subprocess.Popen(
                 self.command,

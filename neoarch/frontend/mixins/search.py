@@ -22,7 +22,16 @@ class _SearchMixin:
             self.perform_update_all()
             return
         if query == "__REFRESH_DB__":
-            self.log("Refreshing databases\u2026")
+            self.log("Syncing package databases\u2026")
+            try:
+                env = self.get_askpass_env()
+                subprocess.run(
+                    ["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
+                    capture_output=True, text=True, timeout=120, env=env,
+                )
+                self.log("Package databases synced.")
+            except Exception as e:
+                self.log(f"Database sync failed: {e}")
             self.refresh_packages()
             return
         if query == "__CLEAN_CACHE__":

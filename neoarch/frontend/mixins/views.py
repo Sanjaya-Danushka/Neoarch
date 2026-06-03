@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
     QLabel, QPushButton, QLineEdit, QTextEdit, QTableWidget,
     QTableWidgetItem, QHeaderView, QCheckBox, QFrame, QSplitter,
     QScrollArea, QMessageBox, QSizePolicy, QGraphicsDropShadowEffect,
+    QFileDialog,
 )
 from PyQt6.QtCore import Qt, QTimer, QSize, QItemSelectionModel
 from PyQt6.QtGui import (
@@ -473,7 +474,7 @@ class _ViewsMixin:
         if show_install_file:
             self._install_file_btn = self.create_toolbar_button(
                 os.path.join(navbar_dir, "install_from_file.svg"),
-                "Install from File",
+                "Install Local Pkg",
                 self.install_from_local_file
             )
             layout.addWidget(self._install_file_btn)
@@ -567,7 +568,83 @@ class _ViewsMixin:
                 b.setEnabled(not empty)
 
     def install_from_local_file(self):
-        self.log("Install from local file")
+        """Open a file dialog to select and install local package files."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Package File", "",
+            "Package Files (*.pkg.tar.zst *.pkg.tar.xz *.pkg.tar.gz *.tar.zst *.tar.xz *.tar.gz *.AppImage *.flatpakref *.flatpak);;Arch Package (*.pkg.tar.zst *.pkg.tar.xz *.pkg.tar.gz);;Archive (*.tar.zst *.tar.xz *.tar.gz);;AppImage (*.AppImage);;FlatPak (*.flatpakref *.flatpak);;All Files (*)"
+        )
+        if not file_path:
+            return
+        self._install_local_file(file_path)
+
+    def _install_local_file(self, file_path):
+        """Install a local package file using the appropriate backend."""
+        fname = file_path.lower()
+        self.log(f"Installing local file: {file_path}")
+
+        if fname.endswith('.pkg.tar.zst') or fname.endswith('.pkg.tar.xz') or fname.endswith('.pkg.tar.gz'):
+            self._run_cmd(["sudo", "-A", "pacman", "-U", "--noconfirm", file_path],
+                          f"Installing {os.path.basename(file_path)}")
+        elif fname.endswith('.flatpakref') or fname.endswith('.flatpak'):
+            self._run_cmd(["flatpak", "install", "--user", "-y", file_path],
+                          f"Installing Flatpak {os.path.basename(file_path)}")
+        elif fname.endswith('.appimage'):
+            self._install_appimage(file_path)
+        else:
+            reply = QMessageBox.question(
+                self, "Unknown Package Format",
+                f"Cannot determine package type for:\n{file_path}\n\nTry installing with pacman (-U)?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                self._run_cmd(["sudo", "-A", "pacman", "-U", "--noconfirm", file_path],
+                              f"Installing {os.path.basename(file_path)}")
+
+    def _run_cmd(self, cmd, label):
+        """Run a sudo command with the askpass env in a thread."""
+        def task():
+            try:
+                self.log(f"{label}...")
+                self._show_operation_spinner(label)
+                env = self.get_askpass_env()
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300, env=env)
+                if result.returncode == 0:
+                    self.log(f"{label}: done")
+                    self.refresh_packages()
+                else:
+                    self.log(f"{label}: failed\n{result.stderr.strip()}")
+                    self.show_message.emit("Install Failed", result.stderr.strip())
+            except Exception as e:
+                self.log(f"{label}: error {e}")
+            finally:
+                self.loading_widget.stop_animation()
+                self.loading_widget.setVisible(False)
+        Thread(target=task, daemon=True).start()
+
+    def _install_appimage(self, path):
+        """Make an AppImage executable and offer to install it."""
+        try:
+            os.chmod(path, os.stat(path).st_mode | 0o111)
+            self.log(f"Made executable: {path}")
+        except Exception as e:
+            self.log(f"Failed to chmod AppImage: {e}")
+        reply = QMessageBox.question(
+            self, "AppImage Ready",
+            f"Made {os.path.basename(path)} executable.\n\nMove to ~/.local/bin for launcher access?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            dest = os.path.expanduser("~/.local/bin")
+            os.makedirs(dest, exist_ok=True)
+            dest_path = os.path.join(dest, os.path.basename(path))
+            try:
+                import shutil
+                shutil.copy2(path, dest_path)
+                self.log(f"Copied AppImage to {dest_path}")
+            except Exception as e:
+                self.log(f"Failed to copy AppImage: {e}")
 
     def create_content_area(self):
         content = QWidget()
@@ -1719,6 +1796,9 @@ class _ViewsMixin:
         self.all_packages = packages
         if self.current_view == "updates":
             self.updates_all = packages
+            if getattr(self, '_pending_update_all', False):
+                self._pending_update_all = False
+                self._do_update_all()
         elif self.current_view == "installed":
             self.installed_all = packages
         self.current_page = 0
