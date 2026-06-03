@@ -43,24 +43,6 @@ _C = {
 class _ViewsMixin:
     """Mixin providing view/display/navigation methods for the main window."""
 
-    def contextMenuEvent(self, event):
-        menu = QMenu(self)
-        restore_act = menu.addAction("Restore")
-        min_act = menu.addAction("Minimize")
-        max_act = menu.addAction("Maximize")
-        menu.addSeparator()
-        close_act = menu.addAction("Close")
-        action = menu.exec(event.globalPos())
-        if action == restore_act:
-            self.showNormal()
-        elif action == min_act:
-            self.showMinimized()
-        elif action == max_act:
-            self.showMaximized() if not self.isMaximized() else self.showNormal()
-        elif action == close_act:
-            self.close()
-        event.accept()
-
     def set_minimal_icon(self):
         pixmap = QPixmap(64, 64)
         pixmap.fill(Qt.GlobalColor.transparent)
@@ -2341,6 +2323,13 @@ class _ViewsMixin:
             sel_model.select(idx, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
         else:
             sel_model.select(idx, QItemSelectionModel.SelectionFlag.Deselect | QItemSelectionModel.SelectionFlag.Rows)
+
+        selected_rows = set(index.row() for index in sel_model.selectedRows())
+        if len(selected_rows) == 1 and row in selected_rows:
+            self._show_detail_for_row(row)
+        else:
+            self.package_detail_card.clear()
+
         self._updating_selection = False
         self._update_discover_install_btn_state()
 
