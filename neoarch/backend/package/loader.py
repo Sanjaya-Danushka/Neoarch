@@ -218,7 +218,7 @@ def load_updates(app):
 
     app.loading_widget.setVisible(True)
     try:
-        app.loading_widget.set_message("Checking for updates...")
+        app.loading_widget.set_message("Syncing package databases...")
     except Exception:
         pass
     app.package_table.setVisible(False)

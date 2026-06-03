@@ -27,7 +27,7 @@ class PluginStore:
     """
 
     def __init__(self):
-        self.config_dir = Path.home() / '.config' / 'aurora'
+        self.config_dir = Path.home() / '.config' / 'neoarch'
         self.plugins_dir = self.config_dir / 'plugins'
         self.store_cache = self.config_dir / 'plugin_store_cache.json'
 
@@ -252,7 +252,7 @@ def my_custom_function(app, param=None):
                 f"{metadata.get('description', '')}\n\n"
                 "## Installation\n\n"
                 "Copy the `.py` file to your NeoArch plugins directory:\n"
-                "```\n~/.config/aurora/plugins/\n```\n\n"
+                "```\n~/.config/neoarch/plugins/\n```\n\n"
                 "Then enable it in Settings > Plugins.\n\n"
                 "## Author\n\n"
                 f"{metadata.get('author', 'Unknown')}\n\n"

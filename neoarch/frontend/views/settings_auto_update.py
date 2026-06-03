@@ -1,8 +1,68 @@
-import os
 from typing import Any
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QGridLayout,
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
                              QLabel, QCheckBox, QSpinBox, QPushButton)
 from PyQt6.QtCore import Qt
+
+_CARD = """
+    QFrame#settingsCard {
+        background-color: rgba(28, 30, 36, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+    }
+"""
+
+_CHECKBOX = """
+    QCheckBox {
+        color: #EDEDEF;
+        font-size: 13px;
+        spacing: 10px;
+    }
+    QCheckBox::indicator {
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        border: 1.5px solid #5C5E66;
+        background-color: rgba(18, 19, 22, 0.8);
+    }
+    QCheckBox::indicator:hover {
+        border-color: #00BFAE;
+    }
+    QCheckBox::indicator:checked {
+        background-color: #00BFAE;
+        border: 1.5px solid #00BFAE;
+    }
+"""
+
+_SPINBOX = """
+    QSpinBox {
+        background-color: rgba(18, 19, 22, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: #EDEDEF;
+        font-size: 13px;
+        min-width: 80px;
+    }
+    QSpinBox:focus {
+        border-color: #00BFAE;
+    }
+"""
+
+_BTN_OUTLINE = """
+    QPushButton {
+        background-color: transparent;
+        color: #00BFAE;
+        border: 1px solid rgba(0, 191, 174, 0.35);
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+    QPushButton:hover {
+        background-color: rgba(0, 191, 174, 0.12);
+        border-color: #00BFAE;
+    }
+"""
 
 
 class AutoUpdateSettingsWidget(QWidget):
@@ -10,134 +70,88 @@ class AutoUpdateSettingsWidget(QWidget):
         super().__init__(parent)
         self.app: Any = parent
         self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(8, 8, 8, 8)
-        self.layout.setSpacing(8)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(24)
 
         self.setup_ui()
 
+    def _make_card(self, title_text):
+        card = QFrame()
+        card.setObjectName("settingsCard")
+        card.setStyleSheet(_CARD)
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(20, 18, 20, 20)
+        card_layout.setSpacing(16)
+
+        title = QLabel(title_text)
+        title.setStyleSheet("font-size: 15px; font-weight: 600; color: #EDEDEF; border: none;")
+        card_layout.addWidget(title)
+
+        return card, card_layout
+
     def setup_ui(self):
         title = QLabel("Auto Update")
-        title.setStyleSheet("""
-            font-size: 28px; font-weight: 700; color: #ffffff;
-            margin-bottom: 4px; letter-spacing: -0.5px;
-        """)
+        title.setStyleSheet("font-size: 28px; font-weight: 700; color: #EDEDEF; letter-spacing: -0.5px;")
         self.layout.addWidget(title)
 
         subtitle = QLabel("Manage automatic updates and system snapshots")
-        subtitle.setStyleSheet("font-size: 13px; color: #888; margin-bottom: 20px;")
+        subtitle.setStyleSheet("font-size: 13px; color: #8B8D97; margin-top: -16px;")
         self.layout.addWidget(subtitle)
 
-        update_box = QGroupBox("Auto Update")
-        update_box.setStyleSheet("""
-            QGroupBox {
-                font-size: 15px; font-weight: 600; color: #ffffff;
-                background-color: rgba(255, 255, 255, 0.03);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 10px; margin-top: 16px; padding-top: 16px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin; left: 16px;
-                padding: 0 8px; background-color: transparent;
-            }
-            QCheckBox { color: #e0e0e0; font-size: 14px; spacing: 8px; }
-            QCheckBox::indicator {
-                width: 18px; height: 18px; border-radius: 4px;
-                border: 2px solid rgba(255, 255, 255, 0.2);
-                background-color: rgba(255, 255, 255, 0.05);
-            }
-            QCheckBox::indicator:hover {
-                border-color: rgba(13, 115, 119, 0.6);
-                background-color: rgba(255, 255, 255, 0.08);
-            }
-            QCheckBox::indicator:checked {
-                background-color: #0d7377; border-color: #0d7377;
-            }
-            QSpinBox {
-                background-color: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 6px; padding: 8px 12px;
-                color: #e0e0e0; font-size: 13px;
-            }
-            QSpinBox:focus { border-color: #0d7377; }
-            QLabel { color: #b0b0b0; }
-        """)
-        auto_grid = QGridLayout(update_box)
-        auto_grid.setContentsMargins(16, 20, 16, 16)
-        auto_grid.setSpacing(12)
+        # ── Auto Update Card ──
+        update_card, update_layout = self._make_card("Auto Update")
 
         self.cb_auto_update = QCheckBox("Enable automatic updates")
+        self.cb_auto_update.setStyleSheet(_CHECKBOX)
         self.cb_auto_update.setChecked(bool(self.app.settings.get('auto_update_enabled', False)))
         self.cb_auto_update.toggled.connect(lambda v: self.app.update_setting('auto_update_enabled', v))
-        auto_grid.addWidget(self.cb_auto_update, 0, 0, 1, 2)
+        update_layout.addWidget(self.cb_auto_update)
 
-        auto_grid.addWidget(QLabel("Update interval (days):"), 1, 0)
+        interval_row = QHBoxLayout()
+        interval_row.setSpacing(12)
+        interval_label = QLabel("Update interval (days):")
+        interval_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        interval_row.addWidget(interval_label)
+
         self.interval_spin = QSpinBox()
+        self.interval_spin.setStyleSheet(_SPINBOX)
         self.interval_spin.setRange(1, 30)
         self.interval_spin.setValue(int(self.app.settings.get('auto_update_interval_days', 1)))
         self.interval_spin.valueChanged.connect(lambda v: self.app.update_setting('auto_update_interval_days', v))
-        auto_grid.addWidget(self.interval_spin, 1, 1)
+        interval_row.addWidget(self.interval_spin)
+        interval_row.addStretch()
 
-        self.layout.addWidget(update_box)
+        update_layout.addLayout(interval_row)
+        self.layout.addWidget(update_card)
 
-        snapshot_box = QGroupBox("Snapshots")
-        snapshot_box.setStyleSheet("""
-            QGroupBox {
-                font-size: 15px; font-weight: 600; color: #ffffff;
-                background-color: rgba(255, 255, 255, 0.03);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 10px; margin-top: 16px; padding-top: 16px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin; left: 16px;
-                padding: 0 8px; background-color: transparent;
-            }
-            QCheckBox { color: #e0e0e0; font-size: 14px; spacing: 8px; }
-            QCheckBox::indicator {
-                width: 18px; height: 18px; border-radius: 4px;
-                border: 2px solid rgba(255, 255, 255, 0.2);
-                background-color: rgba(255, 255, 255, 0.05);
-            }
-            QCheckBox::indicator:hover {
-                border-color: rgba(13, 115, 119, 0.6);
-                background-color: rgba(255, 255, 255, 0.08);
-            }
-            QCheckBox::indicator:checked {
-                background-color: #0d7377; border-color: #0d7377;
-            }
-            QPushButton {
-                background-color: transparent; color: #0d7377;
-                border: 1px solid rgba(13, 115, 119, 0.4);
-                border-radius: 6px; padding: 12px 20px;
-                font-weight: 500; font-size: 14px; min-height: 20px;
-            }
-            QPushButton:hover {
-                background-color: rgba(13, 115, 119, 0.15); border-color: #0d7377;
-            }
-        """)
-        snap_grid = QGridLayout(snapshot_box)
-        snap_grid.setContentsMargins(16, 20, 16, 16)
-        snap_grid.setSpacing(12)
+        # ── Snapshots Card ──
+        snap_card, snap_layout = self._make_card("Snapshots")
 
         self.cb_snapshot = QCheckBox("Create snapshot before updates")
+        self.cb_snapshot.setStyleSheet(_CHECKBOX)
         self.cb_snapshot.setChecked(bool(self.app.settings.get('snapshot_before_update', False)))
         self.cb_snapshot.toggled.connect(lambda v: self.app.update_setting('snapshot_before_update', v))
-        snap_grid.addWidget(self.cb_snapshot, 0, 0, 1, 2)
+        snap_layout.addWidget(self.cb_snapshot)
 
-        snap_btns = QHBoxLayout()
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(10)
+
         create_snap_btn = QPushButton("Create Snapshot")
+        create_snap_btn.setStyleSheet(_BTN_OUTLINE)
         create_snap_btn.clicked.connect(self.app.create_snapshot)
-        snap_btns.addWidget(create_snap_btn)
+        btn_row.addWidget(create_snap_btn)
 
         revert_snap_btn = QPushButton("Revert to Snapshot")
+        revert_snap_btn.setStyleSheet(_BTN_OUTLINE)
         revert_snap_btn.clicked.connect(self.app.revert_to_snapshot)
-        snap_btns.addWidget(revert_snap_btn)
+        btn_row.addWidget(revert_snap_btn)
 
         delete_snap_btn = QPushButton("Delete Snapshots")
+        delete_snap_btn.setStyleSheet(_BTN_OUTLINE)
         delete_snap_btn.clicked.connect(self.app.delete_snapshots)
-        snap_btns.addWidget(delete_snap_btn)
+        btn_row.addWidget(delete_snap_btn)
 
-        snap_btns.addStretch()
-        snap_grid.addLayout(snap_btns, 1, 0, 1, 2)
+        btn_row.addStretch()
+        snap_layout.addLayout(btn_row)
 
-        self.layout.addWidget(snapshot_box)
-        self.layout.addStretch()
+        self.layout.addWidget(snap_card)

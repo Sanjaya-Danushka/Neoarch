@@ -115,7 +115,7 @@ def show_help(parent, current_view: str):
 
     about_tab_text = (
         "ABOUT NeoArch\n\n"
-        f"Version: 1.2-beta\n"
+        f"Version: 2.0.0\n"
         f"Platform: {platform.system()} {platform.release()}\n"
         f"Python: {platform.python_version()}\n\n"
         "NeoArch - Elevate Your Arch Experience\n\n"
@@ -171,7 +171,7 @@ def show_about(parent):
     subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(subtitle)
 
-    version = QLabel("Version 1.2-beta")
+    version = QLabel("Version 2.0.0")
     version.setStyleSheet("font-size: 12px; color: #888;")
     version.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(version)

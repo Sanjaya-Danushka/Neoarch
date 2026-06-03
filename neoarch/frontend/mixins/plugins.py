@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import QFileDialog, QTabWidget
 
 class _PluginsMixin:
     def get_user_plugins_dir(self):
-        p = os.path.join(os.path.expanduser('~'), '.config', 'aurora', 'plugins')
+        p = os.path.join(os.path.expanduser('~'), '.config', 'neoarch', 'plugins')
         try:
             os.makedirs(p, exist_ok=True)
         except Exception:
@@ -74,7 +74,7 @@ def on_view_changed(app, view_id):
     if view_id != "bundles":
         return
     try:
-        base = os.path.join(os.path.expanduser('~'), '.config', 'aurora', 'bundles')
+        base = os.path.join(os.path.expanduser('~'), '.config', 'neoarch', 'bundles')
         path = os.path.join(base, 'default.json')
         if not os.path.exists(path):
             return
@@ -223,7 +223,7 @@ import json
 
 _last_update = 0
 _last_check = 0
-_state_file = os.path.join(os.path.expanduser('~'), '.config', 'aurora', 'last_update.json')
+_state_file = os.path.join(os.path.expanduser('~'), '.config', 'neoarch', 'last_update.json')
 
 def _load_state():
     try:

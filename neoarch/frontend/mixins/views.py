@@ -25,7 +25,7 @@ from neoarch.frontend.components.large_search_box import LargeSearchBox
 from neoarch.frontend.components.packages_grid_view import PackagesGridView
 from neoarch.frontend.components.package_detail_card import PackageDetailCard
 from neoarch.frontend.components.loading_spinner import LoadingSpinner
-from neoarch.frontend.components.filter_card import FilterCard
+
 from neoarch.frontend.components.source_card import SourceCard
 from neoarch.backend.services import help as help_service
 from neoarch.backend.package import loader as packages_service
@@ -683,19 +683,6 @@ class _ViewsMixin:
         except Exception as e:
             self._show_message("Community Hub", f"Error opening community hub: {e}")
 
-    def switch_to_community_tab(self):
-        """Switch to the community tab in plugins settings"""
-        try:
-            if hasattr(self, 'settings_widgets') and 'plugins' in self.settings_widgets:
-                # Switch to plugins category in settings
-                self.switch_settings_category("plugins")
-                # Switch to community tab in plugins widget
-                plugins_widget = self.settings_widgets['plugins']
-                if hasattr(plugins_widget, 'tabs'):
-                    plugins_widget.tabs.setCurrentIndex(1)  # Community Hub is index 1
-        except Exception as e:
-            self._show_message("Community Hub", f"Error switching to community tab: {e}")
-
     def on_plugin_install_requested(self, plugin_id):
         try:
             if hasattr(self, 'plugins_view') and self.plugins_view:
@@ -842,10 +829,11 @@ class _ViewsMixin:
         self.settings_container.setVisible(False)
         self.settings_root = QWidget()
         self.settings_layout = QVBoxLayout(self.settings_root)
-        self.settings_layout.setContentsMargins(12, 12, 12, 12)
-        self.settings_layout.setSpacing(12)
+        self.settings_layout.setContentsMargins(0, 0, 0, 0)
+        self.settings_layout.setSpacing(0)
         self.settings_container.setWidget(self.settings_root)
-        self.packages_panel_layout.addWidget(self.settings_container)
+        self.settings_container.horizontalScrollBar().setVisible(False)
+        self.packages_panel_layout.addWidget(self.settings_container, 1)
 
         # Plugins view placeholder — created lazily in switch_view("plugins")
         self.plugins_view = None
@@ -1377,6 +1365,9 @@ class _ViewsMixin:
         # Restore packages content area visibility (hidden by plugins/settings)
         if hasattr(self, 'packages_content_area'):
             self.packages_content_area.setVisible(True)
+        # Restore toolbar visibility (hidden by settings)
+        if hasattr(self, 'toolbar_widget'):
+            self.toolbar_widget.setVisible(True)
         # Clear detail card
         if hasattr(self, 'package_detail_card'):
             self.package_detail_card.clear()
@@ -1427,6 +1418,13 @@ class _ViewsMixin:
         # Update greeting in navbar
         self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
 
+        # Reset to table view for non-plugin sections
+        if view_id != "plugins" and self._view_mode != "table":
+            self._view_mode = "table"
+            if hasattr(self, '_grid_view_btn') and self._grid_view_btn:
+                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "navbar", "view.svg"), 20))
+                self._grid_view_btn.setToolTip("Grid View")
+
         # Load data for view
         if view_id == "updates":
             # Prepare UI for loading updates
@@ -1444,7 +1442,7 @@ class _ViewsMixin:
                 pass
             if load:
                 try:
-                    self.loading_widget.set_message("Checking for updates...")
+                    self.loading_widget.set_message("Syncing package databases...")
                     self.loading_widget.setVisible(True)
                     self.loading_widget.start_animation()
                     if hasattr(self, 'loading_container'):
@@ -1572,18 +1570,6 @@ class _ViewsMixin:
                 if item.widget():
                     item.widget().deleteLater()
 
-            # For plugins view, create filter by plugin status (like installed view)
-            self.filter_card = FilterCard(self)
-            self.filter_card.filter_changed.connect(self.on_filter_selection_changed)
-
-            # Block signals during initial filter setup to avoid double render
-            self.filter_card.blockSignals(True)
-            self.filter_card.add_filter("Available")
-            self.filter_card.add_filter("Installed")
-            self.filter_card.blockSignals(False)
-
-            self.filters_layout.addWidget(self.filter_card)
-
             # Update visibility like installed view
             self.sources_section.setVisible(True)
             self.filters_section.setVisible(True)
@@ -1634,6 +1620,12 @@ class _ViewsMixin:
             self._hide_all_package_views()
             self.load_more_btn.setVisible(False)
             self.settings_container.setVisible(True)
+            # Hide toolbar (grid view, filter, actions — none apply to settings)
+            if hasattr(self, 'toolbar_widget'):
+                self.toolbar_widget.setVisible(False)
+            # Hide packages content area (has stretch=1, would push settings to bottom)
+            if hasattr(self, 'packages_content_area'):
+                self.packages_content_area.setVisible(False)
 
             # Retain source checkboxes; no clearing needed
 

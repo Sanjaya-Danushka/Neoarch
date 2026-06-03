@@ -1,6 +1,6 @@
 """Settings management services for persisting and loading app configuration.
 
-Manages user preferences stored in ~/.config/aurora/settings.json with
+Manages user preferences stored in ~/.config/neoarch/settings.json with
 sensible defaults. Supports export and import of settings to/from JSON files.
 """
 
@@ -16,18 +16,43 @@ DEFAULT_SETTINGS = {
     'include_local_source': True,
     'enabled_plugins': [],
     'bundle_autosave': True,
-    'bundle_autosave_path': os.path.join(os.path.expanduser('~'), '.config', 'aurora', 'bundles', 'default.json'),
+    'bundle_autosave_path': os.path.join(os.path.expanduser('~'), '.config', 'neoarch', 'bundles', 'default.json'),
     'auto_refresh_updates_minutes': 0,
     'auto_update_enabled': False,
     'auto_update_interval_days': 7,
     'snapshot_before_update': False,
     'aur_helper': 'auto',
+    # Appearance
+    'theme': 'dark',
+    'accent_color': '#00BFAE',
+    'font_size': 13,
+    'source_accent_colors': True,
+    # Notifications
+    'notify_desktop': True,
+    'notify_inapp': True,
+    'notify_sound': False,
+    'notify_on_install': True,
+    'notify_on_updates': True,
+    'notify_on_errors': True,
+    'notify_cooldown': 10,
+    # Logging
+    'log_level': 'INFO',
+    'log_to_console': False,
+    'log_file_path': '',
+    'log_max_size_mb': 5,
+    # Proxy / Network
+    'proxy_type': 'none',
+    'proxy_host': '',
+    'proxy_port': 8080,
+    'request_timeout': 30,
+    'verify_ssl': True,
+    'parallel_network': True,
 }
 
 
 def _get_settings_path() -> str:
     """Get the path to the settings JSON file."""
-    base = os.path.join(os.path.expanduser('~'), '.config', 'aurora')
+    base = os.path.join(os.path.expanduser('~'), '.config', 'neoarch')
     os.makedirs(base, exist_ok=True)
     return os.path.join(base, 'settings.json')
 
