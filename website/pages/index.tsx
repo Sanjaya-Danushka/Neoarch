@@ -1,6 +1,6 @@
-import Image from 'next/image'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import { assetUrl } from '../lib/path'
 
 export default function Home() {
   return (
@@ -21,7 +21,7 @@ export default function Home() {
 
       <main className="flex-1 flex items-center justify-center px-4 pt-14">
         <div className="glass-card w-full max-w-sm text-center">
-          <Image src="/logo.png" alt="NeoArch" width={64} height={64} className="mx-auto mb-4 rounded-2xl ring-1 ring-white/10" />
+          <img src={assetUrl('/logo.png')} alt="NeoArch" className="w-16 h-16 mx-auto mb-4 rounded-2xl ring-1 ring-white/10" />
           <h1 className="text-3xl font-bold mb-1">
             <span className="gradient-text animate-shimmer">NeoArch</span>
           </h1>
