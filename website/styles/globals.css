@@ -10,6 +10,33 @@
   }
 }
 
+@keyframes float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-30px) scale(1.05); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+  33% { transform: translateY(-20px) scale(1.02) rotate(1deg); }
+  66% { transform: translateY(10px) scale(0.98) rotate(-1deg); }
+}
+
+@property --border-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes border-spin {
+  to { --border-angle: 360deg; }
+}
+
 @layer components {
   .btn-primary {
     @apply bg-[#00BFAE] hover:bg-[#00D4C4] text-[#0F1117] font-semibold px-6 py-2.5 rounded-lg transition-all duration-200;
@@ -19,5 +46,48 @@
   }
   .card {
     @apply bg-[#1A1C25] border border-[#2A2D3A] rounded-xl p-6;
+  }
+  .glass-card {
+    @apply bg-[#1A1C25]/80 backdrop-blur-xl rounded-2xl p-8 shadow-2xl;
+    position: relative;
+    isolation: isolate;
+  }
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--border-angle),
+      transparent 0deg,
+      rgba(0,191,174,0.5) 50deg,
+      rgba(59,130,246,0.3) 120deg,
+      rgba(34,211,238,0.4) 200deg,
+      transparent 280deg,
+      transparent 360deg
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    animation: border-spin 4s linear infinite;
+    pointer-events: none;
+  }
+  .glass-bubble {
+    @apply rounded-full border border-[#00BFAE]/10 bg-[#00BFAE]/5 backdrop-blur-3xl;
+  }
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  .animate-float-slow {
+    animation: float-slow 12s ease-in-out infinite;
+  }
+  .animate-shimmer {
+    background-size: 200% 200%;
+    animation: shimmer 4s ease-in-out infinite;
+  }
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent;
   }
 }

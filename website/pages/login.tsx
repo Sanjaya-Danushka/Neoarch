@@ -32,14 +32,28 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-neoarch-bg">
+    <div className="min-h-screen flex flex-col bg-[#0F1117]">
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,191,174,0.12),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(0,191,174,0.08),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,191,174,0.04),transparent_70%)]" />
+
+        <div className="absolute -left-20 top-40 h-72 w-72 glass-bubble animate-float" style={{ animationDelay: "0s" }} />
+        <div className="absolute -right-10 top-20 h-96 w-96 glass-bubble animate-float-slow" style={{ animationDelay: "1s" }} />
+        <div className="absolute bottom-20 left-1/3 h-48 w-48 glass-bubble animate-float" style={{ animationDelay: "2s" }} />
+        <div className="absolute -bottom-10 right-1/4 h-64 w-64 glass-bubble animate-float-slow" style={{ animationDelay: "0.5s" }} />
+        <div className="absolute left-1/2 top-1/3 h-32 w-32 glass-bubble animate-float" style={{ animationDelay: "1.5s" }} />
+      </div>
+
       <Header />
 
       <main className="flex-1 flex items-center justify-center px-4 pt-14">
-        <div className="card w-full max-w-sm py-12 px-8 text-center">
-          <img src="/logo.png" alt="NeoArch" className="w-16 h-16 mx-auto mb-4 rounded-xl" />
-          <h1 className="text-2xl font-bold mb-1">NeoArch</h1>
-          <p className="text-neoarch-muted text-sm mb-8">Sign in to sync your package favourites</p>
+        <div className="glass-card w-full max-w-sm text-center">
+          <img src="/logo.png" alt="NeoArch" className="w-16 h-16 mx-auto mb-4 rounded-2xl ring-1 ring-white/10" />
+          <h1 className="text-3xl font-bold mb-1">
+            <span className="gradient-text animate-shimmer">NeoArch</span>
+          </h1>
+          <p className="text-[#8B8FA3] text-sm mb-8">Sign in to sync your package favourites</p>
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2.5 text-sm text-red-300 mb-4">
@@ -49,7 +63,7 @@ export default function LoginPage() {
 
           <button
             onClick={handleGoogleSignIn}
-            className="flex items-center justify-center w-full bg-white hover:bg-gray-100 text-neoarch-bg font-semibold rounded-lg px-6 py-3 transition-colors"
+            className="flex items-center justify-center w-full bg-white hover:bg-gray-100 text-[#0F1117] font-semibold rounded-xl px-6 py-3 transition-all duration-200 shadow-lg shadow-white/10"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" className="mr-3 flex-shrink-0">
               <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
@@ -61,8 +75,8 @@ export default function LoginPage() {
           </button>
 
           {callbackUrl && (
-            <div className="mt-6 p-3 rounded-lg bg-neoarch-accent/10 border border-neoarch-accent/20">
-              <div className="flex items-center justify-center gap-2 text-neoarch-accent mb-1">
+            <div className="mt-6 p-3 rounded-xl bg-[#00BFAE]/10 border border-[#00BFAE]/20 backdrop-blur-sm">
+              <div className="flex items-center justify-center gap-2 text-[#00BFAE] mb-1">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                   <polyline points="15 3 21 3 21 9" />
@@ -70,7 +84,7 @@ export default function LoginPage() {
                 </svg>
                 <span className="text-xs font-medium">Redirecting back to app</span>
               </div>
-              <p className="text-xs text-neoarch-muted break-all">
+              <p className="text-xs text-[#8B8FA3] break-all">
                 {callbackUrl}
               </p>
             </div>
