@@ -562,7 +562,7 @@ class _ViewsMixin:
         sep = getattr(self, '_bundle_sep1', None)
         if sep:
             sep.setVisible(not empty)
-        for btn in ('_bundle_install_btn', '_bundle_export_btn', '_bundle_save_cloud_btn'):
+        for btn in ('_bundle_install_btn', '_bundle_export_btn'):
             b = getattr(self, btn, None)
             if b:
                 b.setEnabled(not empty)
@@ -1205,7 +1205,7 @@ class _ViewsMixin:
 
             layout.addStretch()  # Push remaining buttons to the right
 
-            self._add_right_toolbar_icons(layout, show_install_file=True, show_sudo=True)
+            self._add_right_toolbar_icons(layout, show_install_file=True, show_sudo=True, show_bundle=True)
 
             # Hide grid/filter/bundle/sudo until search results are shown
             if self._grid_view_btn:
