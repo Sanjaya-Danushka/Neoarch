@@ -2,7 +2,7 @@
 
 NeoArch is a modern, user-friendly package manager designed specifically for Arch Linux. It provides an intuitive graphical interface for managing packages from multiple sources including pacman, AUR, Flatpak, and npm.
 
-website: https://sanjaya-danushka.github.io/Neoarch/
+website: https://agent-6a21150e18a3770390986b17--neoarch.netlify.app/
 
 preview: https://drive.google.com/file/d/17cfs7VEui4zfFhghsIWBp2duqpPjWtEQ/view?usp=sharing
 
