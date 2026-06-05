@@ -28,8 +28,12 @@
     <a href="#license">License</a>
   </p>
 
-  <img src="https://github.com/user-attachments/assets/b5113660-8c05-453d-a70d-b2e3e5274241" alt="NeoArch Dashboard" width="800"/>
+<img width="1213" height="816" alt="home" src="https://github.com/user-attachments/assets/3f497a29-bfef-4a86-a100-b898653bdaab" />
+
 </div>
+<br>
+<br>
+Preview: <a href="https://neoarch.netlify.app/">https://neoarch.netlify.app/</a>
 
 ---
 
