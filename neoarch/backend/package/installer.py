@@ -175,17 +175,14 @@ def install_packages(app, packages_by_source: dict):
 
                 if source == 'AUR':
                     app.log_signal.emit(f"AUR install (as user): {' '.join(cmd)}")
-                    if not env.get('SUDO_ASKPASS'):
-                        env = get_askpass_env(env)
-
-                if source == 'Flatpak' and force_sudo:
+                if source == 'AUR' or (source == 'Flatpak' and force_sudo):
                     if not env.get('SUDO_ASKPASS'):
                         env = get_askpass_env(env)
 
                 worker = CommandWorker(cmd, sudo=False, env=env)
-                worker.output.connect(lambda msg: app.log_signal.emit(msg))
+                worker.output.connect(app.log_signal.emit)
                 worker.line_update.connect(app.log_line_update)
-                worker.error.connect(lambda msg: app.log_signal.emit(msg))
+                worker.error.connect(app.log_signal.emit)
                 worker.output.connect(parse_output_line)
 
                 try:
@@ -219,7 +216,7 @@ def install_packages(app, packages_by_source: dict):
                             stdin=subprocess.DEVNULL,
                             close_fds=True,
                             text=True,
-                            preexec_fn=os.setsid,
+                            start_new_session=True,
                             env=worker.env
                         )
                         os.close(slave_fd)
@@ -231,7 +228,7 @@ def install_packages(app, packages_by_source: dict):
                             stdin=subprocess.DEVNULL,
                             text=True,
                             bufsize=1,
-                            preexec_fn=os.setsid,
+                            start_new_session=True,
                             env=worker.env
                         )
 
@@ -319,7 +316,7 @@ def install_packages(app, packages_by_source: dict):
                                             exec_cmd2,
                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                             stdin=subprocess.DEVNULL, text=True, bufsize=1,
-                                            preexec_fn=os.setsid, env=env2
+                                            start_new_session=True, env=env2
                                         )
                                         while True:
                                             if app.install_cancel_event.is_set():
