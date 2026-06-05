@@ -1,121 +1,75 @@
-<div align="center">
-  <img src="https://neoarch.netlify.app/logo.png" alt="NeoArch Logo" width="120"/>
+# NeoArch
 
-  # NeoArch
+Modern Package Manager for Arch Linux
 
-  **Modern Package Manager for Arch Linux**
+[![Website](https://img.shields.io/badge/Website-neoarch.netlify.app-00BFAE?style=for-the-badge&logo=netlify&logoColor=white)](https://neoarch.netlify.app/)
+[![Version](https://img.shields.io/github/v/release/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE&label=Version)](https://github.com/Sanjaya-Danushka/Neoarch/releases)
+[![License](https://img.shields.io/github/license/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE)](LICENSE)
+[![Issues](https://img.shields.io/github/issues/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE)](https://github.com/Sanjaya-Danushka/Neoarch/issues)
 
-  <p>
-    <a href="https://neoarch.netlify.app/">
-      <img src="https://img.shields.io/badge/Website-neoarch.netlify.app-00BFAE?style=for-the-badge&logo=netlify&logoColor=white" alt="Website"/>
-    </a>
-    <a href="https://github.com/Sanjaya-Danushka/Neoarch/releases">
-      <img src="https://img.shields.io/github/v/release/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE&label=Version" alt="Version"/>
-    </a>
-    <a href="LICENSE">
-      <img src="https://img.shields.io/github/license/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE" alt="License"/>
-    </a>
-    <a href="https://github.com/Sanjaya-Danushka/Neoarch/issues">
-      <img src="https://img.shields.io/github/issues/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE" alt="Issues"/>
-    </a>
-  </p>
+[Features](#features) • [Installation](#installation) • [Usage](#usage) • [Contributing](#contributing) • [License](#license)
 
-  <p>
-    <a href="#features">Features</a> •
-    <a href="#installation">Installation</a> •
-    <a href="#usage">Usage</a> •
-    <a href="#contributing">Contributing</a> •
-    <a href="#license">License</a>
-  </p>
-
-<img width="1213" height="816" alt="home" src="https://github.com/user-attachments/assets/3f497a29-bfef-4a86-a100-b898653bdaab" />
-<br>
-<br>
-Preview: <a href="https://neoarch.netlify.app/">https://neoarch.netlify.app/</a>
-</div>
-
+![NeoArch Dashboard](https://github.com/user-attachments/assets/b5113660-8c05-453d-a70d-b2e3e5274241)
 
 ---
 
 ## Features
 
-<table>
-  <tr>
-    <td width="50%">
-      <h3>Multi-Source Management</h3>
-      <p>Unify pacman, AUR, Flatpak, and npm under one interface. Search, install, update, and remove packages from any source seamlessly.</p>
-    </td>
-    <td width="50%">
-      <h3>Plugin System</h3>
-      <p>50+ built-in plugins with an extensible Python hook system supporting lifecycle hooks (on_startup, on_tick, on_view_changed). Browse and install community plugins from the store.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>Bundle System</h3>
-      <p>Create portable package bundles for easy deployment. Export, import, install, and share bundles locally or as community bundles.</p>
-    </td>
-    <td width="50%">
-      <h3>Docker Manager</h3>
-      <p>Pull, run, list, stop, and clean containers with port mappings, volumes, environment variables, GPU passthrough, and restart policies.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>Git Manager</h3>
-      <p>Clone, build, update, and clean Git projects with a click. Auto-detects build methods: Cargo, Autotools, Makefile, and custom build commands.</p>
-    </td>
-    <td width="50%">
-      <h3>Snapshot Integration</h3>
-      <p>Create and restore Timeshift snapshots before updates. Revert to a known good state if anything goes wrong. Automatic cleanup of old snapshots.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>Cloud Sync</h3>
-      <p>Sign in with Supabase via OAuth to sync bundle favorites across devices. Session tokens are cached securely for seamless re-authentication.</p>
-    </td>
-    <td width="50%">
-      <h3>Scheduled Updates</h3>
-      <p>Set and forget with configurable auto-update intervals (1-30 days), auto-refresh, and optional snapshot-before-update via built-in plugins.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>Local Package Install</h3>
-      <p>Install <code>.pkg.tar.zst</code>, <code>.AppImage</code>, and <code>.flatpakref</code> files with a single click. Auto-detects package type and handles installation with appropriate privileges.</p>
-    </td>
-    <td width="50%">
-      <h3>Auth & Credential Caching</h3>
-      <p>Secure session-based sudo credential caching with auto-cleaning on exit. GUI password dialog with SUDO_ASKPASS support for polkit and sudo-A.</p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <h3>System Cache Cleaning</h3>
-      <p>One-click BleachBit cache cleaning and pacman package cache cleanup (<code>pacman -Sc</code>). Reclaim disk space without leaving the app.</p>
-    </td>
-    <td width="50%">
-      <h3>Ignore Updates</h3>
-      <p>Mark specific packages to ignore during updates. Persisted to <code>~/.config/neoarch/ignored_updates.json</code> — survives reboots and updates.</p>
-    </td>
-  </tr>
-</table>
+### Multi-Source Management
+
+Unify pacman, AUR, Flatpak, and npm under one interface. Search, install, update, and remove packages from any source seamlessly.
+
+### Plugin System
+
+50+ built-in plugins with an extensible Python hook system supporting lifecycle hooks (on_startup, on_tick, on_view_changed). Browse and install community plugins from the store.
+
+### Bundle System
+
+Create portable package bundles for easy deployment. Export, import, install, and share bundles locally or as community bundles.
+
+### Docker Manager
+
+Pull, run, list, stop, and clean containers with port mappings, volumes, environment variables, GPU passthrough, and restart policies.
+
+### Git Manager
+
+Clone, build, update, and clean Git projects with a click. Auto-detects build methods: Cargo, Autotools, Makefile, and custom build commands.
+
+### Snapshot Integration
+
+Create and restore Timeshift snapshots before updates. Revert to a known good state if anything goes wrong. Automatic cleanup of old snapshots.
+
+### Cloud Sync
+
+Sign in with Supabase via OAuth to sync bundle favorites across devices. Session tokens are cached securely for seamless re-authentication.
+
+### Scheduled Updates
+
+Set and forget with configurable auto-update intervals (1-30 days), auto-refresh, and optional snapshot-before-update via built-in plugins.
+
+### Local Package Install
+
+Install `.pkg.tar.zst`, `.AppImage`, and `.flatpakref` files with a single click. Auto-detects package type and handles installation with appropriate privileges.
+
+### Auth and Credential Caching
+
+Secure session-based sudo credential caching with auto-cleaning on exit. GUI password dialog with SUDO_ASKPASS support for polkit and sudo-A.
+
+### System Cache Cleaning
+
+One-click BleachBit cache cleaning and pacman package cache cleanup (`pacman -Sc`). Reclaim disk space without leaving the app.
+
+### Ignore Updates
+
+Mark specific packages to ignore during updates. Persisted to `~/.config/neoarch/ignored_updates.json` — survives reboots and updates.
 
 ## Screenshots
 
-<div align="center">
-  <table>
-    <tr>
-      <td><img src="https://github.com/user-attachments/assets/eedc4d2f-c806-4089-9842-695d04fbd7df" alt="Search Packages" width="400"/></td>
-      <td><img src="https://github.com/user-attachments/assets/b34f304e-c521-45de-8fad-2a78642d5dbc" alt="Installed Packages" width="400"/></td>
-    </tr>
-    <tr>
-      <td align="center"><em>Search & Discover Packages</em></td>
-      <td align="center"><em>Installed Packages View</em></td>
-    </tr>
-  </table>
-</div>
+![Search Packages](https://github.com/user-attachments/assets/eedc4d2f-c806-4089-9842-695d04fbd7df)
+*Search and Discover Packages*
+
+![Installed Packages](https://github.com/user-attachments/assets/b34f304e-c521-45de-8fad-2a78642d5dbc)
+*Installed Packages View*
 
 ## Installation
 
@@ -134,13 +88,13 @@ yay -S neoarch-git    # or paru -S neoarch-git
 
 ### Install Dependencies
 
-**Option A — Arch packages (recommended)**
+#### Option A — Arch packages (recommended)
 
 ```bash
 sudo pacman -S --needed python python-pyqt6 python-requests qt6-svg git flatpak nodejs npm
 ```
 
-**Option B — Python virtual environment**
+#### Option B — Python virtual environment
 
 ```bash
 python -m venv .venv
@@ -165,17 +119,17 @@ chmod +x Neoarch.py && ./Neoarch.py
 ## Usage
 
 | Action | Description |
-|--------|-------------|
-| **Discover Packages** | Search and browse available packages from pacman, AUR, Flatpak, and npm |
-| **Install Packages** | Select and install packages with a single click |
-| **Manage Updates** | View and install available system updates across all sources |
-| **Plugins** | Enable, disable, and create Python hook plugins; browse community plugins |
-| **Bundles** | Create, export, import, and install package bundles |
-| **Docker** | Pull, run, stop, and clean Docker containers with port mappings and volumes |
-| **Git** | Clone, build, update, and clean Git projects with auto-detected build methods |
-| **Snapshots** | Create and restore Timeshift snapshots before risky operations |
-| **Local Files** | Install `.pkg.tar.zst`, `.AppImage`, `.flatpakref` files directly |
-| **Cloud Sync** | Sign in with Supabase to sync favorites across devices |
+| ------ | ----------- |
+| Discover Packages | Search and browse available packages from pacman, AUR, Flatpak, and npm |
+| Install Packages | Select and install packages with a single click |
+| Manage Updates | View and install available system updates across all sources |
+| Plugins | Enable, disable, and create Python hook plugins; browse community plugins |
+| Bundles | Create, export, import, and install package bundles |
+| Docker | Pull, run, stop, and clean Docker containers with port mappings and volumes |
+| Git | Clone, build, update, and clean Git projects with auto-detected build methods |
+| Snapshots | Create and restore Timeshift snapshots before risky operations |
+| Local Files | Install `.pkg.tar.zst`, `.AppImage`, `.flatpakref` files directly |
+| Cloud Sync | Sign in with Supabase to sync favorites across devices |
 
 ## Development
 
@@ -207,7 +161,7 @@ We welcome contributions! Please follow our guidelines:
 
 ## Security
 
-If you discover any security vulnerabilities, report them immediately to **dsanjaya712@gmail.com**.
+If you discover any security vulnerabilities, report them immediately to <dsanjaya712@gmail.com>.
 
 ## License
 
@@ -215,17 +169,8 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ---
 
-<div align="center">
-  <p>
-    Built with ❤️ by <a href="https://github.com/Sanjaya-Danushka">Sanjaya Danushka</a>
-  </p>
-  <p>
-    <a href="https://neoarch.netlify.app/">Website</a> •
-    <a href="https://github.com/Sanjaya-Danushka/Neoarch/issues">Issues</a> •
-    <a href="https://github.com/Sanjaya-Danushka/Neoarch/discussions">Discussions</a> •
-    <a href="https://github.com/Sanjaya-Danushka/Neoarch/releases">Releases</a>
-  </p>
-  <a href="https://www.buymeacoffee.com/sanjayadanushka" target="_blank">
-    <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=sanjayadanushka&button_colour=FF5F5F&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00" alt="Buy Me A Coffee"/>
-  </a>
-</div>
+Built with ❤️ by [Sanjaya Danushka](https://github.com/Sanjaya-Danushka)
+
+[Website](https://neoarch.netlify.app/) • [Issues](https://github.com/Sanjaya-Danushka/Neoarch/issues) • [Discussions](https://github.com/Sanjaya-Danushka/Neoarch/discussions) • [Releases](https://github.com/Sanjaya-Danushka/Neoarch/releases)
+
+[![Buy me a coffee](https://img.buymeacoffee.com/button-api/?text=Buy+me+a+coffee&emoji=&slug=sanjayadanushka&button_colour=FF5F5F&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00)](https://www.buymeacoffee.com/sanjayadanushka)
