@@ -9,7 +9,8 @@ Modern Package Manager for Arch Linux
 
 [Features](#features) • [Installation](#installation) • [Usage](#usage) • [Contributing](#contributing) • [License](#license)
 
-![NeoArch Dashboard](https://github.com/user-attachments/assets/b5113660-8c05-453d-a70d-b2e3e5274241)
+<img width="1213" height="816" alt="home" src="https://github.com/user-attachments/assets/f942c09c-9551-4461-a42f-5b11ca77c2bf" />
+
 
 ---
 
