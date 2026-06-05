@@ -23,4 +23,4 @@ if [[ -f "$REPO_DIR/.venv/bin/activate" ]]; then
 fi
 
 cd "$REPO_DIR"
-exec python aurora_home.py "$@"
+exec python -m neoarch "$@"
