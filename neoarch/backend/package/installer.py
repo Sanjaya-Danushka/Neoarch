@@ -366,11 +366,7 @@ def install_packages(app, packages_by_source: dict):
                                     error_text += "For example, change 'tar -xzf file.tar.gz' to 'tar -xzf file.tar.gz --no-same-owner'"
                                 worker.error.emit(error_text)
                 finally:
-                    if source == 'Flatpak' and 'cleanup_path' in locals() and cleanup_path and os.path.exists(cleanup_path):
-                        try:
-                            os.remove(cleanup_path)
-                        except Exception:
-                            pass
+                    pass
 
             if success and not app.install_cancel_event.is_set():
                 try:
