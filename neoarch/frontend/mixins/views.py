@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer, QSize, QItemSelectionModel
 from PyQt6.QtGui import (
     QFont, QColor, QPixmap, QPainter, QPainterPath, QIcon, QFontMetrics,
+    QTextCursor,
 )
 
 from neoarch.resources.paths import PROJECT_ROOT
@@ -1560,7 +1561,7 @@ class _ViewsMixin:
                 _installing = False
             if _installing:
                 try:
-                    self.loading_widget.set_message("Installing packages...")
+                    self.loading_widget.set_message("Processing...")
                     self.loading_widget.setVisible(True)
                     self.loading_widget.start_animation()
                     if hasattr(self, 'loading_container'):
@@ -1791,7 +1792,9 @@ class _ViewsMixin:
 
     def on_packages_loaded(self, packages):
         # Ignore results if user has navigated away from the originating view
-        if self.loading_context != self.current_view or self.current_view not in ("updates", "installed"):
+        if self.loading_context != self.current_view and not getattr(self, '_pending_update_all', False):
+            return
+        if self.current_view not in ("updates", "installed") and not getattr(self, '_pending_update_all', False):
             return
         self.all_packages = packages
         if self.current_view == "updates":
@@ -1799,6 +1802,10 @@ class _ViewsMixin:
             if getattr(self, '_pending_update_all', False):
                 self._pending_update_all = False
                 self._do_update_all()
+        elif getattr(self, '_pending_update_all', False):
+            self.updates_all = packages
+            self._pending_update_all = False
+            self._do_update_all()
         elif self.current_view == "installed":
             self.installed_all = packages
         self.current_page = 0
@@ -1844,6 +1851,11 @@ class _ViewsMixin:
             self.update_updates_header_counts()
         elif self.current_view == "installed":
             self.update_installed_header_counts()
+        elif getattr(self, 'updates_all', None) is not None:
+            try:
+                self.set_updates_count(len(self.updates_all))
+            except Exception:
+                pass
 
     def on_load_error(self):
         # Hide loading spinner, stop animation, and show packages table (empty)
@@ -1870,7 +1882,7 @@ class _ViewsMixin:
             except Exception:
                 pass
             self.load_more_btn.setVisible(False)
-            self.loading_widget.set_message("Installing packages...")
+            self.loading_widget.set_message("Processing...")
             self.loading_widget.set_progress(-1)
             self.loading_widget.setVisible(True)
             self.loading_widget.start_animation()
@@ -1919,9 +1931,13 @@ class _ViewsMixin:
             except Exception:
                 pass
             installed = getattr(self, '_installed_packages', None) or {}
+            is_update = getattr(self, 'updates_all', None) is not None
             if installed:
                 self._install_succeeded = True
                 self.loading_widget.set_message("Install partially completed")
+            elif is_update:
+                self._install_succeeded = True
+                self.loading_widget.set_message("Update partially completed")
             else:
                 self.loading_widget.set_message("Install failed")
             self.cancel_install_btn.setVisible(False)
@@ -2447,9 +2463,37 @@ class _ViewsMixin:
 
     def log(self, message):
         try:
-            self.ui_call.emit(lambda: self.console.append(message))
+            self.ui_call.emit(lambda: self._append_console_line(message))
         except Exception:
             pass
+
+    def log_line_update(self, message):
+        """Update the console line in-place (for progress updates via \r)."""
+        try:
+            self.ui_call.emit(lambda: self._update_console_progress(message))
+        except Exception:
+            pass
+
+    def _append_console_line(self, text):
+        self.console.append(text)
+        self._last_line_was_progress = False
+
+    def _update_console_progress(self, text):
+        cursor = self.console.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        last_was_progress = getattr(self, '_last_line_was_progress', False)
+
+        if last_was_progress:
+            cursor.movePosition(
+                QTextCursor.MoveOperation.StartOfBlock,
+                QTextCursor.MoveMode.KeepAnchor,
+            )
+            cursor.removeSelectedText()
+            cursor.insertText(text)
+        else:
+            self.console.append(text)
+
+        self._last_line_was_progress = True
 
     def toggle_console(self):
         try:

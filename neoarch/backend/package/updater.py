@@ -27,6 +27,8 @@ def update_packages(app, packages_by_source: dict):
         app: Main window instance (provides signals and UI state).
         packages_by_source: Dict mapping source names to package name lists.
     """
+    app.install_cancel_event = __import__('threading').Event()
+
     def update():
         try:
             overall_success = True
@@ -34,6 +36,8 @@ def update_packages(app, packages_by_source: dict):
             lock_details = ""
             total_pkgs = sum(len(pkgs) for pkgs in packages_by_source.values())
             updated_pkgs = 0
+            cancelled = False
+            failed_sources = []
 
             def emit_progress(msg, inc=None):
                 nonlocal updated_pkgs
@@ -46,23 +50,34 @@ def update_packages(app, packages_by_source: dict):
                     pass
 
             for source, pkgs in packages_by_source.items():
+                if app.install_cancel_event.is_set():
+                    app.log("Update cancelled by user")
+                    cancelled = True
+                    break
                 emit_progress(f"Updating {source} packages...")
                 source_count = len(pkgs)
                 if source == 'pacman':
                     cmd = ["pacman", "-S", "--noconfirm"] + pkgs
-                    worker = CommandWorker(cmd, sudo=True)
+                    worker = CommandWorker(cmd, sudo=True, cancel_event=app.install_cancel_event)
                     worker.output.connect(app.log)
+                    worker.line_update.connect(app.log_line_update)
                     def _on_err(msg):
-                        nonlocal overall_success, lock_detected, lock_details
+                        nonlocal overall_success, lock_detected, lock_details, failed_sources
                         app.log(msg)
                         m = (msg or '').lower()
                         if 'could not lock database' in m or 'unable to lock database' in m:
                             lock_detected = True
                             lock_details = msg
                         overall_success = False
+                        if 'pacman' not in failed_sources:
+                            failed_sources.append('pacman')
                     worker.error.connect(_on_err)
                     worker.run()
                     emit_progress(f"Completed {source} packages", source_count)
+                    if app.install_cancel_event.is_set():
+                        app.log("Update cancelled by user")
+                        cancelled = True
+                        break
                 elif source == 'AUR':
                     preferred = app.settings.get('aur_helper', 'auto')
                     aur_helper = sys_utils.get_aur_helper(None if preferred == 'auto' else preferred)
@@ -72,26 +87,40 @@ def update_packages(app, packages_by_source: dict):
                         continue
                     env = get_askpass_env()
                     cmd = [aur_helper, "-S", "--noconfirm"] + pkgs
-                    worker = CommandWorker(cmd, sudo=False, env=env)
+                    worker = CommandWorker(cmd, sudo=False, env=env, cancel_event=app.install_cancel_event)
                     worker.output.connect(app.log)
+                    worker.line_update.connect(app.log_line_update)
                     def _on_err_aur(msg):
-                        nonlocal overall_success
+                        nonlocal overall_success, failed_sources
                         app.log(msg)
                         overall_success = False
+                        if 'AUR' not in failed_sources:
+                            failed_sources.append('AUR')
                     worker.error.connect(_on_err_aur)
                     worker.run()
                     emit_progress(f"Completed {source} packages", source_count)
+                    if app.install_cancel_event.is_set():
+                        app.log("Update cancelled by user")
+                        cancelled = True
+                        break
                 elif source == 'Flatpak':
                     cmd = ["flatpak", "update", "-y", "--noninteractive"] + pkgs
-                    worker = CommandWorker(cmd, sudo=False)
+                    worker = CommandWorker(cmd, sudo=False, cancel_event=app.install_cancel_event)
                     worker.output.connect(app.log)
+                    worker.line_update.connect(app.log_line_update)
                     def _on_err_fp(msg):
-                        nonlocal overall_success
+                        nonlocal overall_success, failed_sources
                         app.log(msg)
                         overall_success = False
+                        if 'Flatpak' not in failed_sources:
+                            failed_sources.append('Flatpak')
                     worker.error.connect(_on_err_fp)
                     worker.run()
                     emit_progress(f"Completed {source} packages", source_count)
+                    if app.install_cancel_event.is_set():
+                        app.log("Update cancelled by user")
+                        cancelled = True
+                        break
                 elif source == 'npm':
                     env_user = os.environ.copy()
                     try:
@@ -140,25 +169,35 @@ def update_packages(app, packages_by_source: dict):
 
                     if user_pkgs:
                         cmd_u = ["npm", "update", "-g"] + user_pkgs
-                        w_u = CommandWorker(cmd_u, sudo=False, env=env_user)
+                        w_u = CommandWorker(cmd_u, sudo=False, env=env_user, cancel_event=app.install_cancel_event)
                         w_u.output.connect(app.log)
+                        w_u.line_update.connect(app.log_line_update)
                         def _on_err_np_u(msg):
-                            nonlocal overall_success
+                            nonlocal overall_success, failed_sources
                             app.log(msg)
                             overall_success = False
+                            if 'npm' not in failed_sources:
+                                failed_sources.append('npm')
                         w_u.error.connect(_on_err_np_u)
                         w_u.run()
                     if sys_pkgs:
                         cmd_s = ["npm", "update", "-g"] + sys_pkgs
-                        w_s = CommandWorker(cmd_s, sudo=True, env=env_sys)
+                        w_s = CommandWorker(cmd_s, sudo=True, env=env_sys, cancel_event=app.install_cancel_event)
                         w_s.output.connect(app.log)
+                        w_s.line_update.connect(app.log_line_update)
                         def _on_err_np_s(msg):
-                            nonlocal overall_success
+                            nonlocal overall_success, failed_sources
                             app.log(msg)
                             overall_success = False
+                            if 'npm' not in failed_sources:
+                                failed_sources.append('npm')
                         w_s.error.connect(_on_err_np_s)
                         w_s.run()
                     emit_progress(f"Completed {source} packages", source_count)
+                    if app.install_cancel_event.is_set():
+                        app.log("Update cancelled by user")
+                        cancelled = True
+                        break
                 elif source == 'Local':
                     entries = { (e.get('id') or e.get('name')): e for e in app.load_local_update_entries() }
                     for token in pkgs:
@@ -183,33 +222,56 @@ def update_packages(app, packages_by_source: dict):
                         except Exception as ex:
                             app.log(str(ex))
                     emit_progress(f"Completed {source} packages", source_count)
-            if lock_detected:
+                    if app.install_cancel_event.is_set():
+                        app.log("Update cancelled by user")
+                        cancelled = True
+                        break
+            if cancelled:
+                try:
+                    app.installation_progress.emit("cancelled", False)
+                except Exception:
+                    pass
+            elif lock_detected:
                 try:
                     app.ui_call.emit(lambda: app.show_busy_pm_warning(lock_details, retry_action=lambda: update_packages(app, packages_by_source)))
                 except Exception:
                     pass
-            if overall_success:
+            elif overall_success:
                 try:
                     app.progress_update.emit("Update complete!", 100)
                 except Exception:
                     pass
                 app.show_message.emit("Update Complete", f"Successfully updated {sum(len(v) for v in packages_by_source.values())} package(s).")
-            else:
                 try:
-                    app.progress_update.emit("Update failed", -1)
+                    app.installation_progress.emit("success", False)
                 except Exception:
                     pass
-                app.show_message.emit("Update Failed", "Some updates failed. See console for details.")
-            try:
-                app.ui_call.emit(lambda: QTimer.singleShot(1500, app.finish_installation_progress))
-            except Exception:
-                pass
+            else:
+                failed_msg = "Some updates failed"
+                if failed_sources:
+                    failed_msg += f" ({', '.join(failed_sources)})"
+                failed_msg += ". See console for details."
+                try:
+                    app.progress_update.emit(failed_msg, -1)
+                except Exception:
+                    pass
+                app.show_message.emit("Update Partial", failed_msg)
+                try:
+                    app.installation_progress.emit("failed", False)
+                except Exception:
+                    pass
             try:
                 app.ui_call.emit(app.refresh_packages)
             except Exception:
                 pass
         except Exception as e:
             app.log(f"Error in update thread: {str(e)}")
+        finally:
+            try:
+                if hasattr(app, 'install_cancel_event'):
+                    delattr(app, 'install_cancel_event')
+            except Exception:
+                pass
     Thread(target=update, daemon=True).start()
 
 
@@ -252,6 +314,7 @@ def _update_system_packages(app):
     if app.cmd_exists("pacman"):
         w1 = CommandWorker(["pacman", "-Syu", "--noconfirm"] + deps, sudo=True)
         w1.output.connect(app.log)
+        w1.line_update.connect(app.log_line_update)
         w1.error.connect(app.log)
         w1.run()
 
@@ -277,6 +340,7 @@ def _update_flatpak(app):
     if app.cmd_exists("flatpak"):
         w2 = CommandWorker(["flatpak", "--user", "update", "-y"], sudo=False)
         w2.output.connect(app.log)
+        w2.line_update.connect(app.log_line_update)
         w2.error.connect(app.log)
         w2.run()
 
@@ -295,6 +359,7 @@ def _update_npm(app):
             pass
         w3 = CommandWorker(["npm", "update", "-g"], sudo=False, env=env)
         w3.output.connect(app.log)
+        w3.line_update.connect(app.log_line_update)
         w3.error.connect(app.log)
         w3.run()
 
@@ -307,6 +372,7 @@ def _update_aur(app):
         env = get_askpass_env()
         w4 = CommandWorker([aur_helper, "-Syu", "--noconfirm", "--sudoflags", "-A"], sudo=False, env=env)
         w4.output.connect(app.log)
+        w4.line_update.connect(app.log_line_update)
         w4.error.connect(app.log)
         w4.run()
     else:
