@@ -107,47 +107,16 @@ class _AuthMixin:
         from neoarch.backend.session_auth import setup_session_auth, is_session_active
 
         if is_session_active():
-            self._show_loading_spinner("Syncing package databases...")
-            QTimer.singleShot(50, self._do_sync_and_show_updates)
+            QTimer.singleShot(50, lambda: self.switch_view("updates"))
             return
 
         success = setup_session_auth(self)
         if success:
             self.log("Session authentication established")
-            self._show_loading_spinner("Syncing package databases...")
-            QTimer.singleShot(50, self._do_sync_and_show_updates)
+            QTimer.singleShot(50, lambda: self.switch_view("updates"))
         else:
             self.log("Session authentication declined or failed")
             self._finish_startup_no_auth()
-
-    def _show_loading_spinner(self, message):
-        try:
-            self.loading_widget.set_message(message)
-            self.loading_widget.setVisible(True)
-            self.loading_widget.start_animation()
-            if hasattr(self, 'loading_container'):
-                self.loading_container.setVisible(True)
-        except Exception:
-            pass
-
-    def _do_sync_and_show_updates(self):
-        from neoarch.backend.auth import get_askpass_env
-
-        self.log("Syncing package databases...")
-        try:
-            env = get_askpass_env()
-            result = subprocess.run(
-                ["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
-                capture_output=True, text=True, timeout=120, env=env,
-            )
-            if result.returncode == 0:
-                self.log("Package databases synced successfully")
-            else:
-                self.log(f"Database sync: {result.stderr.strip()}")
-        except Exception as e:
-            self.log(f"Database sync skipped: {e}")
-
-        self.switch_view("updates")
 
     def _finish_startup_no_auth(self):
         self.switch_view("updates")

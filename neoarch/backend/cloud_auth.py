@@ -8,7 +8,7 @@ from typing import Optional
 from dataclasses import dataclass
 from pathlib import Path
 
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 
 CONFIG_DIR = Path.home() / ".config" / "neoarch"
 SESSION_FILE = CONFIG_DIR / "cloud_session.json"
@@ -39,7 +39,7 @@ class CloudAuthManager(QObject):
         self._client: Optional[SupabaseClient] = None
         self._user: Optional[CloudUser] = None
         self._httpd: Optional[http.server.HTTPServer] = None
-        self._load_session()
+        QTimer.singleShot(0, self._load_session)
 
     def _load_session(self):
         if not SESSION_FILE.exists():
@@ -147,7 +147,142 @@ class CloudAuthManager(QObject):
                     self.send_response(200)
                     self.send_header("Content-Type", "text/html")
                     self.end_headers()
-                    self.wfile.write(b"<html><body><p>Signed in! You can close this window.</p><script>window.close()</script></body></html>")
+                    self.wfile.write(b"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signed In - NeoArch</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0F1117;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+    overflow: hidden;
+  }
+  .bubbles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .bubble {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(0,191,174,0.1);
+    background: rgba(0,191,174,0.05);
+    backdrop-filter: blur(64px);
+  }
+  .b1 { width: 288px; height: 288px; left: -80px; top: 160px; animation: float 6s ease-in-out infinite; }
+  .b2 { width: 384px; height: 384px; right: -40px; top: 80px; animation: float-slow 12s ease-in-out infinite; }
+  .b3 { width: 192px; height: 192px; bottom: 80px; left: 33%; animation: float 6s ease-in-out infinite; animation-delay: 2s; }
+  .card {
+    position: relative;
+    z-index: 1;
+    background: rgba(26,28,37,0.8);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(42,45,58,0.5);
+    border-radius: 16px;
+    padding: 48px 40px;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    max-width: 360px;
+    width: 90%;
+  }
+  .logo {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    display: block;
+    border-radius: 16px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    background: linear-gradient(to right, #60a5fa, #22d3ee, #3b82f6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    background-size: 200% 200%;
+    animation: shimmer 4s ease-in-out infinite;
+  }
+  .check {
+    width: 48px;
+    height: 48px;
+    margin: 24px auto 16px;
+    background: linear-gradient(135deg, #60a5fa, #22d3ee, #3b82f6);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(0,191,174,0.2);
+  }
+  .check svg {
+    width: 24px;
+    height: 24px;
+    stroke: #0F1117;
+    stroke-width: 2.5;
+    fill: none;
+  }
+  p {
+    color: #8B8FA3;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  p strong {
+    color: #F0F0F0;
+    font-weight: 600;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-30px) scale(1.05); }
+  }
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+    33% { transform: translateY(-20px) scale(1.02) rotate(1deg); }
+    66% { transform: translateY(10px) scale(0.98) rotate(-1deg); }
+  }
+  @keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+</style>
+</head>
+<body>
+<div class="bubbles">
+  <div class="bubble b1"></div>
+  <div class="bubble b2"></div>
+  <div class="bubble b3"></div>
+</div>
+<div class="card">
+  <svg class="logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" rx="20" fill="url(#g)"/>
+    <path d="M30 50 L45 65 L70 35" stroke="#0F1117" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <defs>
+      <linearGradient id="g" x1="0" y1="0" x2="100" y2="100">
+        <stop stop-color="#60a5fa"/>
+        <stop offset="0.5" stop-color="#22d3ee"/>
+        <stop offset="1" stop-color="#3b82f6"/>
+      </linearGradient>
+    </defs>
+  </svg>
+  <h1>NeoArch</h1>
+  <div class="check">
+    <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+  </div>
+  <p>Signed in! <strong>You can close this window.</strong></p>
+</div>
+<script>window.close()</script>
+</body>
+</html>""")
                     threading.Thread(target=manager._handle_tokens, args=(access_token, refresh_token), daemon=True).start()
                 else:
                     self.send_response(400)

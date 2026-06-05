@@ -66,6 +66,7 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         self._installed_index_building = False
         self._installed_index_last_built = 0
         self._installed_index_sources = set()
+        self._installed_filter_states = {"Updates available": False}
         # Working bundle state (list of {name,id,source,version?})
         self.bundle_items = []
         # Settings state
@@ -141,5 +142,7 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
     def _on_cloud_user_changed(self, user):
         if hasattr(self, 'update_user_avatar'):
             self.update_user_avatar(user)
+        if hasattr(self, '_update_nav_greeting'):
+            self._update_nav_greeting(user)
 
 

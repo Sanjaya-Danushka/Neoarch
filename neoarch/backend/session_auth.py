@@ -10,6 +10,7 @@ import stat
 import subprocess
 import tempfile
 import atexit
+from pathlib import Path
 
 _session_password_file: str | None = None
 _session_askpass_script: str | None = None
@@ -29,10 +30,10 @@ def setup_session_auth(parent_widget=None) -> bool:
     global _session_password_file, _session_askpass_script, _session_active, _atexit_registered
 
     from PyQt6.QtWidgets import (
-        QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
+        QApplication, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
         QPushButton, QMessageBox,
     )
-    from PyQt6.QtCore import Qt
+    from PyQt6.QtCore import Qt, QEventLoop
     from PyQt6.QtGui import QPixmap
 
     dlg = QDialog(parent_widget)
@@ -131,7 +132,22 @@ def setup_session_auth(parent_widget=None) -> bool:
     pw_input.setFixedHeight(40)
     root.addWidget(pw_input)
 
-    root.addSpacing(20)
+    # Error label (hidden by default, shown inline on wrong password)
+    error_label = QLabel("")
+    error_label.setStyleSheet("""
+        QLabel {
+            color: #EF4444;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 6px 0 2px 0;
+        }
+    """)
+    error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    error_label.setWordWrap(True)
+    error_label.hide()
+    root.addWidget(error_label)
+
+    root.addSpacing(14)
 
     # Buttons
     btn_row = QHBoxLayout()
@@ -188,53 +204,80 @@ def setup_session_auth(parent_widget=None) -> bool:
     btn_row.addWidget(confirm_btn)
     root.addLayout(btn_row)
 
-    # Connect confirm after setup
-    password = [""]
+    # Use a local event loop so the dialog can be reused across attempts
+    loop = QEventLoop()
+    dlg.finished.connect(loop.quit)
+
+    confirmed = [False]
     def on_confirm():
-        password[0] = pw_input.text()
+        confirmed[0] = True
         dlg.accept()
     confirm_btn.clicked.connect(on_confirm)
     pw_input.returnPressed.connect(on_confirm)
 
-    dlg.exec()
-    pw_text = password[0]
+    max_attempts = 3
+    pw_text = ""
+    for attempt in range(max_attempts):
+        error_label.hide()
+        pw_input.clear()
+        confirmed[0] = False
+        dlg.setResult(QDialog.DialogCode.Rejected)
+        dlg.show()
+        loop.exec()
 
-    if not pw_text:
-        return False
-
-    # Validate password via sudo -v (also extends sudo credential cache)
-    try:
-        result = subprocess.run(
-            ["sudo", "-S", "-v"],
-            input=pw_text + "\n",
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        if result.returncode != 0:
-            msg = result.stderr.strip() or "Authentication failed."
-            QMessageBox.warning(parent_widget, "Authentication Failed", msg)
+        if not confirmed[0]:
             return False
-    except FileNotFoundError:
-        QMessageBox.warning(
-            parent_widget,
-            "sudo Not Found",
-            "The sudo command is required but was not found on your system.",
-        )
-        return False
-    except subprocess.TimeoutExpired:
-        QMessageBox.warning(
-            parent_widget,
-            "Timeout",
-            "sudo did not respond in time. Check your system configuration.",
-        )
-        return False
-    except Exception as e:
-        QMessageBox.warning(parent_widget, "Authentication Error", str(e))
-        return False
 
-    # Write password to a secure temp file (only readable by user)
-    fd, pw_path = tempfile.mkstemp(prefix="neoarch-pw-", suffix=".tmp")
+        pw_text = pw_input.text()
+        if not pw_text:
+            continue
+
+        QApplication.processEvents()
+
+        try:
+            result = subprocess.run(
+                ["sudo", "-S", "-v"],
+                input=pw_text + "\n",
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode == 0:
+                break
+
+            remaining = max_attempts - attempt - 1
+            if remaining > 0:
+                error_label.setText(
+                    f"Incorrect password. {remaining} more attempt{'s' if remaining != 1 else ''} remaining."
+                )
+            else:
+                QMessageBox.warning(
+                    parent_widget, "Authentication Failed",
+                    "Too many failed attempts."
+                )
+                return False
+        except FileNotFoundError:
+            QMessageBox.warning(
+                parent_widget,
+                "sudo Not Found",
+                "The sudo command is required but was not found on your system.",
+            )
+            return False
+        except subprocess.TimeoutExpired:
+            QMessageBox.warning(
+                parent_widget,
+                "Timeout",
+                "sudo did not respond in time. Check your system configuration.",
+            )
+            return False
+        except Exception as e:
+            QMessageBox.warning(parent_widget, "Authentication Error", str(e))
+            return False
+
+    # Write password to a secure file in ~/.cache/neoarch/ (only readable by user)
+    cache_dir = Path.home() / ".cache" / "neoarch"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    fd, pw_path = tempfile.mkstemp(prefix="neoarch-pw-", suffix=".tmp", dir=str(cache_dir))
     try:
         with os.fdopen(fd, "w") as f:
             f.write(pw_text)
@@ -245,7 +288,7 @@ def setup_session_auth(parent_widget=None) -> bool:
     _session_password_file = pw_path
 
     # Create persistent askpass script that reads from the password file
-    fd2, script_path = tempfile.mkstemp(prefix="neoarch-askpass-", suffix=".sh")
+    fd2, script_path = tempfile.mkstemp(prefix="neoarch-askpass-", suffix=".sh", dir=str(cache_dir))
     with os.fdopen(fd2, "w") as f:
         f.write("#!/bin/sh\n")
         f.write(f'cat "{pw_path}"\n')

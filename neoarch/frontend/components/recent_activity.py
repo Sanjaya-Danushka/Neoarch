@@ -5,10 +5,10 @@ import subprocess
 from datetime import datetime
 
 from PyQt6.QtWidgets import (
-    QFrame, QVBoxLayout, QHBoxLayout, QLabel,
+    QFrame, QVBoxLayout, QHBoxLayout, QLabel, QWidget, QScrollArea,
     QGraphicsDropShadowEffect,
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor
 
 
@@ -33,7 +33,7 @@ class RecentActivity(QFrame):
         self.setObjectName("recentActivity")
         self._setup_style()
         self._build()
-        self._load()
+        QTimer.singleShot(0, self._load)
 
     def _setup_style(self):
         self.setStyleSheet("""
@@ -75,11 +75,24 @@ class RecentActivity(QFrame):
         hdr.addStretch()
         lay.addLayout(hdr)
 
-        self.items_layout = QVBoxLayout()
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setMaximumHeight(280)
+        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }"
+                             "QScrollBar:vertical { width: 4px; background: transparent; }"
+                             "QScrollBar::handle:vertical { background: rgba(255,255,255,0.15); border-radius: 2px; }"
+                             "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }")
+
+        content = QWidget()
+        content.setStyleSheet("background: transparent;")
+        self.items_layout = QVBoxLayout(content)
         self.items_layout.setSpacing(5)
         self.items_layout.setContentsMargins(0, 0, 0, 0)
-        lay.addLayout(self.items_layout)
-        lay.addStretch()
+
+        scroll.setWidget(content)
+        lay.addWidget(scroll)
 
     def _load(self):
         entries = self._parse_log()

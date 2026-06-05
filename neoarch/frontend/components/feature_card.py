@@ -170,6 +170,9 @@ class FeatureCard(QWidget):
         self._primary_btn = None
         self._badge_label = None
         self._grid_widget = None
+        self._body_widget = None
+        self._expanded = True
+        self._arrow_lbl = None
 
         self.setStyleSheet("""
             QWidget#FeatureCard {
@@ -178,10 +181,12 @@ class FeatureCard(QWidget):
                 border-radius: 12px;
             }
         """)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def build_header(self, icon_path, title, badge_text=None):
         self._header_widget = QWidget()
         self._header_widget.setObjectName("featureCardHeader")
+        self._header_widget.setCursor(Qt.CursorShape.PointingHandCursor)
         hl = QHBoxLayout(self._header_widget)
         hl.setContentsMargins(14, 10, 14, 6)
         hl.setSpacing(8)
@@ -223,7 +228,19 @@ class FeatureCard(QWidget):
         self.set_badge(badge_text)
         hl.addWidget(self._badge_label)
 
+        self._arrow_lbl = QLabel("▶")
+        self._arrow_lbl.setFixedSize(16, 16)
+        self._arrow_lbl.setStyleSheet("""
+            color: #5C5E66;
+            font-size: 9px;
+            background: transparent;
+            border: none;
+        """)
+        self._arrow_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        hl.addWidget(self._arrow_lbl)
+
         self._layout.addWidget(self._header_widget)
+        self._header_widget.mousePressEvent = lambda e: self._toggle_expanded()
         return self._header_widget
 
     def set_badge(self, text):
@@ -285,7 +302,9 @@ class FeatureCard(QWidget):
         btn.setGraphicsEffect(btn_shadow)
 
         self._primary_btn = btn
+        self._body_widget = container
         self._layout.addWidget(container)
+        container.setVisible(self._expanded)
         return btn
 
     def build_action_grid(self, actions):
@@ -305,7 +324,17 @@ class FeatureCard(QWidget):
             grid.addWidget(btn, row, col)
 
         self._layout.addWidget(self._grid_widget)
+        self._grid_widget.setVisible(self._expanded)
         return self._grid_widget
+
+    def _toggle_expanded(self):
+        self._expanded = not self._expanded
+        if self._arrow_lbl:
+            self._arrow_lbl.setText("▼" if self._expanded else "▶")
+        if self._primary_btn and self._body_widget:
+            self._body_widget.setVisible(self._expanded)
+        if self._grid_widget:
+            self._grid_widget.setVisible(self._expanded)
 
 
 class _GridActionButton(QWidget):

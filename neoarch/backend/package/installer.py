@@ -6,16 +6,52 @@ authentication and progress tracking.
 """
 
 import os
+import pty
 import re
 import select
 import subprocess
 from threading import Thread, Event
 
 from neoarch.backend.auth import get_auth_command, get_askpass_env
-from neoarch.backend.workers import CommandWorker
+from neoarch.backend.workers import CommandWorker, strip_ansi
 from neoarch.backend import sys_utils
 
 __all__ = ["install_packages"]
+
+
+def _process_pty_buf(buf, parse_output_line, worker, final=False):
+    """Process PTY buffer, handling \r progress updates and \n line endings.
+
+    Progress updates (from \r) go to worker.line_update for in-place console
+    updates. Complete lines (from \n) go to worker.output for appending.
+    """
+    while '\n' in buf:
+        line, buf = buf.split('\n', 1)
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if '\r' in line:
+            parts = line.split('\r')
+            stripped = strip_ansi(parts[-1].strip())
+        parse_output_line(stripped)
+        worker.output.emit(stripped)
+
+    if '\r' in buf:
+        parts = buf.split('\r')
+        stripped = strip_ansi(parts[-1].strip())
+        if stripped:
+            parse_output_line(stripped)
+            worker.line_update.emit(stripped)
+        buf = parts[-1]
+
+    if final and buf:
+        stripped = strip_ansi(buf.strip())
+        if stripped:
+            parse_output_line(stripped)
+            worker.output.emit(stripped)
+        buf = ""
+
+    return buf
 
 
 def install_packages(app, packages_by_source: dict):
@@ -139,16 +175,14 @@ def install_packages(app, packages_by_source: dict):
 
                 if source == 'AUR':
                     app.log_signal.emit(f"AUR install (as user): {' '.join(cmd)}")
-                    if not env.get('SUDO_ASKPASS'):
-                        env = get_askpass_env(env)
-
-                if source == 'Flatpak' and force_sudo:
+                if source == 'AUR' or (source == 'Flatpak' and force_sudo):
                     if not env.get('SUDO_ASKPASS'):
                         env = get_askpass_env(env)
 
                 worker = CommandWorker(cmd, sudo=False, env=env)
-                worker.output.connect(lambda msg: app.log_signal.emit(msg))
-                worker.error.connect(lambda msg: app.log_signal.emit(msg))
+                worker.output.connect(app.log_signal.emit)
+                worker.line_update.connect(app.log_line_update)
+                worker.error.connect(app.log_signal.emit)
                 worker.output.connect(parse_output_line)
 
                 try:
@@ -171,19 +205,34 @@ def install_packages(app, packages_by_source: dict):
                         if 'DBUS_SESSION_BUS_ADDRESS' not in worker.env and 'DBUS_SESSION_BUS_ADDRESS' in os.environ:
                             worker.env['DBUS_SESSION_BUS_ADDRESS'] = os.environ['DBUS_SESSION_BUS_ADDRESS']
 
-                    use_setsid = source not in ('pacman',)
+                    use_pty = source in ('pacman', 'AUR')
 
-                    process = subprocess.Popen(
-                        exec_cmd,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        stdin=subprocess.DEVNULL,
-                        text=True,
-                        bufsize=1,
-                        preexec_fn=os.setsid if use_setsid else None,
-                        env=worker.env
-                    )
+                    if use_pty:
+                        master_fd, slave_fd = pty.openpty()
+                        process = subprocess.Popen(
+                            exec_cmd,
+                            stdout=slave_fd,
+                            stderr=subprocess.PIPE,
+                            stdin=subprocess.DEVNULL,
+                            close_fds=True,
+                            text=True,
+                            start_new_session=True,
+                            env=worker.env
+                        )
+                        os.close(slave_fd)
+                    else:
+                        process = subprocess.Popen(
+                            exec_cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            stdin=subprocess.DEVNULL,
+                            text=True,
+                            bufsize=1,
+                            start_new_session=True,
+                            env=worker.env
+                        )
 
+                    buf = ""
                     while True:
                         if app.install_cancel_event.is_set():
                             process.terminate()
@@ -196,20 +245,45 @@ def install_packages(app, packages_by_source: dict):
                             return
 
                         if process.poll() is not None:
-                            if process.stdout:
-                                for line in process.stdout:
-                                    if line:
-                                        line = line.strip()
-                                        parse_output_line(line)
-                                        worker.output.emit(line)
                             break
 
-                        if process.stdout and select.select([process.stdout], [], [], 0.2)[0]:
-                            line = process.stdout.readline()
-                            if line:
-                                line = line.strip()
-                                parse_output_line(line)
-                                worker.output.emit(line)
+                        if use_pty:
+                            try:
+                                data = os.read(master_fd, 4096)
+                                if data:
+                                    buf += data.decode('utf-8', errors='replace')
+                                    buf = _process_pty_buf(buf, parse_output_line, worker)
+                            except OSError:
+                                pass
+                        else:
+                            if process.stdout and select.select([process.stdout], [], [], 0.2)[0]:
+                                line = process.stdout.readline()
+                                if line:
+                                    line = line.strip()
+                                    parse_output_line(line)
+                                    worker.output.emit(line)
+
+                    if use_pty:
+                        try:
+                            while True:
+                                data = os.read(master_fd, 4096)
+                                if not data:
+                                    break
+                                buf += data.decode('utf-8', errors='replace')
+                        except OSError:
+                            pass
+                        _process_pty_buf(buf, parse_output_line, worker, final=True)
+                        try:
+                            os.close(master_fd)
+                        except OSError:
+                            pass
+                    else:
+                        if process.stdout:
+                            for line in process.stdout:
+                                if line:
+                                    line = line.strip()
+                                    parse_output_line(line)
+                                    worker.output.emit(line)
 
                     if process.returncode == 0:
                         completed_packages += len(packages)
@@ -242,7 +316,7 @@ def install_packages(app, packages_by_source: dict):
                                             exec_cmd2,
                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                             stdin=subprocess.DEVNULL, text=True, bufsize=1,
-                                            preexec_fn=os.setsid, env=env2
+                                            start_new_session=True, env=env2
                                         )
                                         while True:
                                             if app.install_cancel_event.is_set():
@@ -289,11 +363,7 @@ def install_packages(app, packages_by_source: dict):
                                     error_text += "For example, change 'tar -xzf file.tar.gz' to 'tar -xzf file.tar.gz --no-same-owner'"
                                 worker.error.emit(error_text)
                 finally:
-                    if source == 'Flatpak' and 'cleanup_path' in locals() and cleanup_path and os.path.exists(cleanup_path):
-                        try:
-                            os.remove(cleanup_path)
-                        except Exception:
-                            pass
+                    pass
 
             if success and not app.install_cancel_event.is_set():
                 try:

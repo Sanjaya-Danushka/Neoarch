@@ -86,18 +86,38 @@ class _OperationsMixin:
 
     def perform_update_all(self):
         """Update all available packages."""
-        self.log("Updating all packages…")
-        if self.current_view != "updates":
-            self.switch_view("updates")
-        QTimer.singleShot(500, lambda: self._do_update_all())
+        upgrades = getattr(self, 'updates_all', None)
+        if upgrades is not None and len(upgrades) == 0:
+            self.log("No updates available.")
+            return
+        self.log("Updating all packages\u2026")
+        if upgrades:
+            self._do_update_all()
+        else:
+            self._pending_update_all = True
+            self.load_updates()
 
     def _do_update_all(self):
-        """Check all update checkboxes and trigger update."""
-        for row in range(self.package_table.rowCount()):
-            checkbox = self.get_row_checkbox(row)
-            if checkbox is not None:
-                checkbox.setChecked(True)
-        self.update_selected()
+        """Update all available packages directly from updates data."""
+        updates = getattr(self, 'updates_all', None)
+        if not updates:
+            self.log("No updates available or updates not yet loaded.")
+            return
+        packages_by_source = {}
+        for pkg in updates:
+            source = pkg.get('source', 'pacman')
+            name = (pkg.get('name') or pkg.get('id') or '').strip()
+            if not name:
+                continue
+            if source not in packages_by_source:
+                packages_by_source[source] = []
+            packages_by_source[source].append(name)
+        if not packages_by_source:
+            self.log("No packages to update.")
+            return
+        self.log(f"Updating all packages: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
+        self.installation_progress.emit("start", True)
+        update_service.update_packages(self, packages_by_source)
 
     def toggle_select_all(self):
         """Toggle all checkboxes: if all checked, uncheck all; otherwise check all."""
@@ -114,8 +134,27 @@ class _OperationsMixin:
                 checkbox.setChecked(new_state)
 
     def clean_cache(self):
-        """Clean pacman package cache."""
-        self.log("Cleaning package cache…")
+        """Clean package and system cache (BleachBit + pacman)."""
+        self.log("Cleaning package cache\u2026")
+        # BleachBit system cache cleaning
+        try:
+            r = subprocess.run(["which", "bleachbit"], capture_output=True, text=True, timeout=5)
+            if r.returncode == 0:
+                self.log("Running BleachBit cache cleaner\u2026")
+                bb = subprocess.run(
+                    ["bleachbit", "--clean", "system.cache", "system.tmp", "system.trash",
+                     "system.recent_documents", "system.clipboard"],
+                    capture_output=True, text=True, timeout=120,
+                )
+                if bb.returncode == 0:
+                    self.log("BleachBit cleaned successfully.")
+                else:
+                    self.log(f"BleachBit: {bb.stderr.strip() or 'completed with warnings'}")
+            else:
+                self.log("BleachBit not installed, skipping.")
+        except Exception as e:
+            self.log(f"BleachBit skipped: {e}")
+        # Pacman package cache clean
         try:
             env = self.get_askpass_env()
             result = subprocess.run(
@@ -123,11 +162,11 @@ class _OperationsMixin:
                 capture_output=True, text=True, timeout=60, env=env,
             )
             if result.returncode == 0:
-                self.log("Cache cleaned successfully.")
+                self.log("Pacman cache cleaned successfully.")
             else:
-                self.log(f"Cache clean: {result.stderr.strip()}")
+                self.log(f"Pacman cache clean: {result.stderr.strip()}")
         except Exception as e:
-            self.log(f"Cache clean failed: {e}")
+            self.log(f"Pacman cache clean failed: {e}")
 
     def update_selected(self):
         packages_by_source = {}
@@ -155,7 +194,7 @@ class _OperationsMixin:
             self.log("No packages selected for update")
             return
         self.log(f"Selected packages for update: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
-        self._show_operation_spinner("Updating packages...")
+        self.installation_progress.emit("start", True)
         update_service.update_packages(self, packages_by_source)
     
     def ignore_selected(self):
@@ -427,7 +466,7 @@ class _OperationsMixin:
         
         flat_summary = ', '.join([f"{pkg} ({src})" for src, pkgs in packages_by_source.items() for pkg in pkgs])
         self.log(f"Selected for uninstallation: {flat_summary}")
-        self._show_operation_spinner("Uninstalling packages...")
+        self.installation_progress.emit("start", False)
         uninstall_service.uninstall_packages(self, packages_by_source)
     
     def install_from_detail(self):
@@ -447,7 +486,7 @@ class _OperationsMixin:
         if not pkg:
             return
         source = pkg.get('source', 'pacman')
-        self._show_operation_spinner("Updating package...")
+        self.installation_progress.emit("start", False)
         update_service.update_packages(self, {source: [pkg['name']]})
 
     def uninstall_from_detail(self):

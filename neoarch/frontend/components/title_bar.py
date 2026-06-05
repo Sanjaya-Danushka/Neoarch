@@ -4,7 +4,7 @@ import os
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QLabel, QMenu, QPushButton, QWidget
 
 from neoarch.resources.paths import PROJECT_ROOT
 
@@ -105,3 +105,25 @@ class _TitleBar(QWidget):
             event.accept()
         else:
             super().mouseDoubleClickEvent(event)
+
+    def contextMenuEvent(self, event):
+        menu = QMenu(self)
+        restore_act = menu.addAction("Restore")
+        min_act = menu.addAction("Minimize")
+        max_act = menu.addAction("Maximize")
+        menu.addSeparator()
+        close_act = menu.addAction("Close")
+        action = menu.exec(event.globalPos())
+        if action == restore_act:
+            self.window().showNormal()
+        elif action == min_act:
+            self.window().showMinimized()
+        elif action == max_act:
+            w = self.window()
+            if w.isMaximized():
+                w.showNormal()
+            else:
+                w.showMaximized()
+        elif action == close_act:
+            self.window().close()
+        event.accept()

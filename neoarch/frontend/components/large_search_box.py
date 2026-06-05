@@ -371,12 +371,16 @@ class LargeSearchBox(QWidget):
             pass
 
         updates_count = 0
-        try:
-            r = subprocess.run(["checkupdates"], capture_output=True, text=True, timeout=5)
-            if r.returncode == 0 and r.stdout.strip():
-                updates_count = len(r.stdout.strip().split("\n"))
-        except Exception:
-            pass
+        app = self.window() if hasattr(self, 'window') else None
+        if app and hasattr(app, 'updates_all') and app.updates_all:
+            updates_count = len(app.updates_all)
+        else:
+            try:
+                r = subprocess.run(["checkupdates"], capture_output=True, text=True, timeout=5)
+                if r.returncode == 0 and r.stdout.strip():
+                    updates_count = len(r.stdout.strip().split("\n"))
+            except Exception:
+                pass
 
         sources_count = 1
         for cmd in (["which", "yay", "paru"], ["flatpak", "list"],

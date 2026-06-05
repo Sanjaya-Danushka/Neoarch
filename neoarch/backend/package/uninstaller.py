@@ -118,11 +118,11 @@ def uninstall_packages(app, packages_by_source: dict):
             except Exception:
                 pass
             app.show_message.emit("Uninstallation Complete", f"Successfully processed {total} package(s).")
-            QTimer.singleShot(0, app.load_installed_packages)
             try:
-                app.ui_call.emit(lambda: QTimer.singleShot(1500, app.finish_installation_progress))
+                app.installation_progress.emit("success", False)
             except Exception:
                 pass
+            QTimer.singleShot(0, app.load_installed_packages)
         except Exception as e:
             app.log(f"Error in uninstallation thread: {str(e)}")
     Thread(target=uninstall, daemon=True).start()
