@@ -17,8 +17,6 @@ class _SearchMixin:
         # Handle special dashboard actions
         if query == "__UPDATE_ALL__":
             self.log("Update All triggered from dashboard")
-            if self.current_view != "updates":
-                self.switch_view("updates")
             self.perform_update_all()
             return
         if query == "__REFRESH_DB__":

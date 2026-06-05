@@ -86,14 +86,16 @@ class _OperationsMixin:
 
     def perform_update_all(self):
         """Update all available packages."""
+        upgrades = getattr(self, 'updates_all', None)
+        if upgrades is not None and len(upgrades) == 0:
+            self.log("No updates available.")
+            return
         self.log("Updating all packages\u2026")
-        if self.current_view != "updates":
-            self.switch_view("updates")
-        updates = getattr(self, 'updates_all', None)
-        if updates:
+        if upgrades:
             self._do_update_all()
         else:
             self._pending_update_all = True
+            self.load_updates()
 
     def _do_update_all(self):
         """Update all available packages directly from updates data."""
@@ -114,7 +116,7 @@ class _OperationsMixin:
             self.log("No packages to update.")
             return
         self.log(f"Updating all packages: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
-        self._show_operation_spinner("Updating all packages...")
+        self.installation_progress.emit("start", True)
         update_service.update_packages(self, packages_by_source)
 
     def toggle_select_all(self):
@@ -192,7 +194,7 @@ class _OperationsMixin:
             self.log("No packages selected for update")
             return
         self.log(f"Selected packages for update: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
-        self._show_operation_spinner("Updating packages...")
+        self.installation_progress.emit("start", True)
         update_service.update_packages(self, packages_by_source)
     
     def ignore_selected(self):
@@ -464,7 +466,7 @@ class _OperationsMixin:
         
         flat_summary = ', '.join([f"{pkg} ({src})" for src, pkgs in packages_by_source.items() for pkg in pkgs])
         self.log(f"Selected for uninstallation: {flat_summary}")
-        self._show_operation_spinner("Uninstalling packages...")
+        self.installation_progress.emit("start", False)
         uninstall_service.uninstall_packages(self, packages_by_source)
     
     def install_from_detail(self):
@@ -484,7 +486,7 @@ class _OperationsMixin:
         if not pkg:
             return
         source = pkg.get('source', 'pacman')
-        self._show_operation_spinner("Updating package...")
+        self.installation_progress.emit("start", False)
         update_service.update_packages(self, {source: [pkg['name']]})
 
     def uninstall_from_detail(self):

@@ -6,12 +6,14 @@ environment variables, GPU passthrough, and restart policies.
 """
 
 import os
+import shutil
 import subprocess
 from threading import Thread
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QListWidget, QListWidgetItem, QDialog, QLineEdit, QMessageBox,
     QPlainTextEdit, QComboBox, QCheckBox, QMenu, QAbstractItemView,
+    QScrollArea, QSizePolicy,
 )
 from PyQt6.QtCore import Qt, QObject, QTimer, QPoint
 from PyQt6.QtGui import QCursor
@@ -51,7 +53,7 @@ class DockerManager(QObject):
         self._card.build_header(docker_icon, "Docker Containers", self._container_count or None)
         self._card.build_primary_action("Run Container", self.install_from_docker)
         self._card.build_action_grid([
-            ("List", "list", self.list_docker_containers),
+            ("Images", "list", self.list_docker_images),
             ("Stop", "stop", self.show_stop_menu),
             ("Shell", "shell", self.show_shell_menu),
             ("Clean", "clean", self.clean_docker_containers),
@@ -150,7 +152,7 @@ class DockerManager(QObject):
         """Open the advanced Docker run dialog."""
         self.show_advanced_run_dialog()
 
-    def show_advanced_run_dialog(self):
+    def show_advanced_run_dialog(self, prefill_image=None):
         """Show the advanced Docker run dialog with full options."""
         import shlex
         dialog = QDialog()
@@ -181,6 +183,8 @@ class DockerManager(QObject):
 
         image_input = QLineEdit()
         image_input.setPlaceholderText("nginx:latest or user/app:v1.0")
+        if prefill_image:
+            image_input.setText(prefill_image)
         image_input.setStyleSheet("""
             QLineEdit {
                 background-color: rgba(28, 30, 36, 0.9);
@@ -550,20 +554,181 @@ class DockerManager(QObject):
                 self.show_message.emit("Container Start Failed", f"Error: {str(e)}")
         Thread(target=run_thread, daemon=True).start()
 
-    def list_docker_containers(self):
-        """List all Docker containers to the log."""
+    def list_docker_images(self):
+        """Show Docker images as styled cards with contextual Run/Stop button."""
+        dialog = QDialog()
+        dialog.setWindowTitle("Docker Images")
+        dialog.setMinimumSize(440, 320)
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: rgba(18, 19, 22, 0.98);
+                color: #EDEDEF;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 14px;
+            }
+        """)
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        header = QWidget()
+        hl = QHBoxLayout(header)
+        hl.setContentsMargins(14, 10, 10, 6)
+        title = QLabel("Docker Images")
+        title.setStyleSheet("color: #EDEDEF; font-size: 13px; font-weight: 600; background: transparent; border: none;")
+        hl.addWidget(title)
+        hl.addStretch()
+        layout.addWidget(header)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("""
+            QScrollArea { background: transparent; border: none; }
+            QScrollBar:vertical {
+                background: rgba(255,255,255,0.02);
+                width: 5px; border-radius: 2px;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255,255,255,0.08);
+                border-radius: 2px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+        """)
+        scroll_content = QWidget()
+        scroll_content.setStyleSheet("background: transparent; border: none;")
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(12, 2, 12, 12)
+        scroll_layout.setSpacing(3)
+        scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
         try:
-            result = subprocess.run(["docker", "ps", "-a", "--format", "table {{.Names}}\\t{{.Image}}\\t{{.Status}}"],
-                                  capture_output=True, text=True, timeout=30)
-            if result.returncode == 0:
-                self.log_signal.emit("Docker containers:")
+            result = subprocess.run(
+                ["docker", "images", "--format", "{{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.ID}}"],
+                capture_output=True, text=True, timeout=30,
+            )
+            if result.returncode == 0 and result.stdout.strip():
                 for line in result.stdout.strip().split('\n'):
-                    if line.strip():
-                        self.log_signal.emit(f"  {line}")
+                    parts = line.split('\t')
+                    if len(parts) >= 3 and parts[0] and parts[0] != "<none>":
+                        card = self._create_image_card(parts[0], parts[1],
+                            parts[2] if len(parts) > 2 else "",
+                            parts[3] if len(parts) > 3 else "")
+                        scroll_layout.addWidget(card)
             else:
-                self.log_signal.emit(f"Failed to list containers: {result.stderr}")
+                empty = QLabel("No Docker images found")
+                empty.setStyleSheet("color: #5C5E66; font-size: 12px; background: transparent; border: none; padding: 24px;")
+                empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                scroll_layout.addWidget(empty)
         except Exception as e:
-            self.log_signal.emit(f"Error listing containers: {str(e)}")
+            err = QLabel(f"Error: {e}")
+            err.setStyleSheet("color: #E06C75; font-size: 12px; background: transparent; border: none; padding: 24px;")
+            scroll_layout.addWidget(err)
+
+        scroll.setWidget(scroll_content)
+        layout.addWidget(scroll)
+        dialog.exec()
+
+    def _create_image_card(self, repo, tag, size, image_id):
+        """Styled card for one image with a single contextual Run/Stop button."""
+        image_ref = f"{repo}:{tag}"
+
+        has_running = False
+        try:
+            r = subprocess.run(
+                ["docker", "ps", "-q", "--filter", f"ancestor={image_ref}"],
+                capture_output=True, text=True, timeout=10,
+            )
+            has_running = r.returncode == 0 and r.stdout.strip() != ""
+        except Exception:
+            pass
+
+        card = QWidget()
+        card.setObjectName("dockerImageCard")
+        card.setFixedHeight(36)
+
+        cl = QHBoxLayout(card)
+        cl.setContentsMargins(10, 0, 6, 0)
+        cl.setSpacing(8)
+
+        name_lbl = QLabel(f"{repo}:{tag}")
+        name_lbl.setStyleSheet("color: #EDEDEF; font-size: 12px; font-weight: 500; background: transparent; border: none;")
+        cl.addWidget(name_lbl)
+
+        meta_lbl = QLabel(size)
+        meta_lbl.setStyleSheet("color: #5C5E66; font-size: 10px; background: transparent; border: none;")
+        cl.addWidget(meta_lbl)
+        cl.addStretch()
+
+        if has_running:
+            btn = QPushButton("Stop")
+            btn.setFixedSize(48, 22)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.clicked.connect(lambda checked=False, i=image_ref: self._stop_containers_for_image(i))
+            btn.setStyleSheet("""
+                QPushButton {
+                    background: rgba(224, 108, 117, 0.12);
+                    color: #E06C75;
+                    border: 1px solid rgba(224, 108, 117, 0.2);
+                    border-radius: 5px;
+                    font-size: 10px;
+                    font-weight: 600;
+                }
+                QPushButton:hover {
+                    background: rgba(224, 108, 117, 0.2);
+                }
+            """)
+        else:
+            btn = QPushButton("Run")
+            btn.setFixedSize(48, 22)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.clicked.connect(lambda checked=False, i=image_ref: self.show_advanced_run_dialog(prefill_image=i))
+            btn.setStyleSheet("""
+                QPushButton {
+                    background: rgba(0, 191, 174, 0.1);
+                    color: #00BFAE;
+                    border: 1px solid rgba(0, 191, 174, 0.2);
+                    border-radius: 5px;
+                    font-size: 10px;
+                    font-weight: 600;
+                }
+                QPushButton:hover {
+                    background: rgba(0, 191, 174, 0.18);
+                }
+            """)
+        cl.addWidget(btn)
+
+        card.setStyleSheet("""
+            QWidget#dockerImageCard {
+                background-color: rgba(22, 23, 26, 0.4);
+                border: 1px solid rgba(255, 255, 255, 0.04);
+                border-radius: 8px;
+            }
+            QWidget#dockerImageCard:hover {
+                background-color: rgba(22, 23, 26, 0.7);
+                border-color: rgba(255, 255, 255, 0.08);
+            }
+        """)
+        return card
+
+    def _stop_containers_for_image(self, image):
+        """Stop all containers using the given image."""
+        try:
+            result = subprocess.run(
+                ["docker", "ps", "-a", "--filter", f"ancestor={image}", "--format", "{{.ID}}"],
+                capture_output=True, text=True, timeout=30,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                containers = result.stdout.strip().split('\n')
+                self.log_signal.emit(f"Stopping {len(containers)} container(s) from {image}...")
+                for cid in containers:
+                    subprocess.run(["docker", "stop", cid], capture_output=True, text=True, timeout=30)
+                    self.log_signal.emit(f"Stopped container: {cid}")
+                self.show_message.emit("Containers Stopped", f"Stopped {len(containers)} container(s)")
+                self.load_containers(include_all=True)
+            else:
+                self.show_message.emit("No Containers", f"No containers found for image {image}")
+        except Exception as e:
+            self.log_signal.emit(f"Error stopping containers: {e}")
 
     def show_stop_menu(self):
         """Show context menu for stopping containers."""
@@ -629,13 +794,25 @@ class DockerManager(QObject):
 
     def open_container_shell(self, cid):
         """Open a shell in the specified container."""
-        try:
-            subprocess.Popen(["docker", "exec", "-it", cid, "/bin/bash"])
-        except Exception:
+        terminals = ["kitty", "alacritty", "gnome-terminal", "konsole", "xterm"]
+        term = None
+        for t in terminals:
+            if shutil.which(t):
+                term = t
+                break
+        for shell in ["/bin/bash", "/bin/sh"]:
             try:
-                subprocess.Popen(["docker", "exec", "-it", cid, "/bin/sh"])
-            except Exception as e:
-                self.log_signal.emit(f"Failed to open shell: {e}")
+                if term == "gnome-terminal":
+                    subprocess.Popen([term, "--", "bash", "-c",
+                                      f"docker exec -it {cid} {shell}"])
+                elif term:
+                    subprocess.Popen([term, "-e", "docker", "exec", "-it", cid, shell])
+                else:
+                    subprocess.Popen(["docker", "exec", "-it", cid, shell])
+                return
+            except Exception:
+                continue
+        self.log_signal.emit("Failed to open shell: no shell or terminal available")
 
     def open_container_logs(self, item):
         """Open logs for the container represented by the clicked item."""
