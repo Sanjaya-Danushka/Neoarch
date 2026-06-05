@@ -18,6 +18,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QObject, QTimer, QPoint
 from PyQt6.QtGui import QCursor
 
+DOCKER_PATH = shutil.which("docker") or "docker"
+
 from neoarch.resources.paths import ICONS_DIR
 from neoarch.frontend.components.feature_card import FeatureCard
 
@@ -115,8 +117,8 @@ class DockerManager(QObject):
         """Count active containers for the header badge."""
         try:
             result = subprocess.run(
-                ["docker", "ps", "-q"],
-                capture_output=True, text=True, timeout=10,
+                [DOCKER_PATH, "ps", "-q"],
+                check=False, capture_output=True, text=True, timeout=10,
             )
             if result.returncode == 0 and result.stdout.strip():
                 self._container_count = len(result.stdout.strip().split('\n'))
@@ -134,8 +136,8 @@ class DockerManager(QObject):
         """)
         try:
             result = subprocess.run(
-                ["docker", "ps", "--format", "{{.Names}}"],
-                capture_output=True, text=True, timeout=10,
+                [DOCKER_PATH, "ps", "--format", "{{.Names}}"],
+                check=False, capture_output=True, text=True, timeout=10,
             )
             if result.returncode == 0 and result.stdout.strip():
                 names = result.stdout.strip().split('\n')
@@ -361,7 +363,7 @@ class DockerManager(QObject):
         def build_preview():
             image = image_input.text().strip()
             name = name_input.text().strip()
-            cmd = ["docker", "run"]
+            cmd = [DOCKER_PATH, "run"]
             if detach_chk.isChecked():
                 cmd.append("-d")
             if name:
@@ -465,14 +467,14 @@ class DockerManager(QObject):
     def ensure_image_local(self, image):
         """Ensure a Docker image is pulled locally."""
         try:
-            r = subprocess.run(["docker", "image", "inspect", image], capture_output=True, text=True, timeout=30)
+            r = subprocess.run([DOCKER_PATH, "image", "inspect", image], check=False, capture_output=True, text=True, timeout=30)
             if r.returncode == 0:
                 return True
         except Exception:
             pass
         self.log_signal.emit(f"Pulling image: {image}")
         try:
-            p = subprocess.Popen(["docker", "pull", image], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            p = subprocess.Popen([DOCKER_PATH, "pull", image], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             while True:
                 line = p.stdout.readline() if p.stdout else ""
                 if not line and p.poll() is not None:
@@ -505,7 +507,7 @@ class DockerManager(QObject):
             try:
                 if not self.ensure_image_local(image):
                     return
-                cmd = ["docker", "run"]
+                cmd = [DOCKER_PATH, "run"]
                 if detach:
                     cmd.append("-d")
                 if name:
@@ -539,7 +541,7 @@ class DockerManager(QObject):
                     except Exception:
                         cmd.append(extra_cmd)
                 self.log_signal.emit("Running command: " + " ".join(shlex.quote(x) for x in cmd))
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                result = subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=300)
                 if result.returncode == 0:
                     cid = (result.stdout or "").strip()
                     if cid:
@@ -603,8 +605,8 @@ class DockerManager(QObject):
 
         try:
             result = subprocess.run(
-                ["docker", "images", "--format", "{{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.ID}}"],
-                capture_output=True, text=True, timeout=30,
+                [DOCKER_PATH, "images", "--format", "{{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.ID}}"],
+                check=False, capture_output=True, text=True, timeout=30,
             )
             if result.returncode == 0 and result.stdout.strip():
                 for line in result.stdout.strip().split('\n'):
@@ -635,8 +637,8 @@ class DockerManager(QObject):
         has_running = False
         try:
             r = subprocess.run(
-                ["docker", "ps", "-q", "--filter", f"ancestor={image_ref}"],
-                capture_output=True, text=True, timeout=10,
+                [DOCKER_PATH, "ps", "-q", "--filter", f"ancestor={image_ref}"],
+                check=False, capture_output=True, text=True, timeout=10,
             )
             has_running = r.returncode == 0 and r.stdout.strip() != ""
         except Exception:
@@ -714,14 +716,14 @@ class DockerManager(QObject):
         """Stop all containers using the given image."""
         try:
             result = subprocess.run(
-                ["docker", "ps", "-a", "--filter", f"ancestor={image}", "--format", "{{.ID}}"],
-                capture_output=True, text=True, timeout=30,
+                [DOCKER_PATH, "ps", "-a", "--filter", f"ancestor={image}", "--format", "{{.ID}}"],
+                check=False, capture_output=True, text=True, timeout=30,
             )
             if result.returncode == 0 and result.stdout.strip():
                 containers = result.stdout.strip().split('\n')
                 self.log_signal.emit(f"Stopping {len(containers)} container(s) from {image}...")
                 for cid in containers:
-                    subprocess.run(["docker", "stop", cid], capture_output=True, text=True, timeout=30)
+                    subprocess.run([DOCKER_PATH, "stop", cid], check=False, capture_output=True, text=True, timeout=30)
                     self.log_signal.emit(f"Stopped container: {cid}")
                 self.show_message.emit("Containers Stopped", f"Stopped {len(containers)} container(s)")
                 self.load_containers(include_all=True)
@@ -766,19 +768,19 @@ class DockerManager(QObject):
 
         try:
             if action == start_action:
-                subprocess.run(["docker", "start", cid], capture_output=True, text=True, timeout=30)
+                subprocess.run([DOCKER_PATH, "start", cid], check=False, capture_output=True, text=True, timeout=30)
                 self.log_signal.emit(f"Started container: {cid}")
                 self.load_containers()
             elif action == stop_action:
-                subprocess.run(["docker", "stop", cid], capture_output=True, text=True, timeout=30)
+                subprocess.run([DOCKER_PATH, "stop", cid], check=False, capture_output=True, text=True, timeout=30)
                 self.log_signal.emit(f"Stopped container: {cid}")
                 self.load_containers()
             elif action == restart_action:
-                subprocess.run(["docker", "restart", cid], capture_output=True, text=True, timeout=60)
+                subprocess.run([DOCKER_PATH, "restart", cid], check=False, capture_output=True, text=True, timeout=60)
                 self.log_signal.emit(f"Restarted container: {cid}")
                 self.load_containers()
             elif action == logs_action:
-                logs = subprocess.run(["docker", "logs", "--tail", "50", cid], capture_output=True, text=True, timeout=30)
+                logs = subprocess.run([DOCKER_PATH, "logs", "--tail", "50", cid], check=False, capture_output=True, text=True, timeout=30)
                 self.log_signal.emit(f"Logs for {cid}:")
                 for line in (logs.stdout or '').strip().split('\n'):
                     if line.strip():
@@ -786,7 +788,7 @@ class DockerManager(QObject):
             elif action == shell_action:
                 self.open_container_shell(cid)
             elif action == remove_action:
-                subprocess.run(["docker", "rm", "-f", cid], capture_output=True, text=True, timeout=30)
+                subprocess.run([DOCKER_PATH, "rm", "-f", cid], check=False, capture_output=True, text=True, timeout=30)
                 self.log_signal.emit(f"Removed container: {cid}")
                 self.load_containers()
         except Exception as e:
@@ -808,7 +810,7 @@ class DockerManager(QObject):
                 elif term:
                     subprocess.Popen([term, "-e", "docker", "exec", "-it", cid, shell])
                 else:
-                    subprocess.Popen(["docker", "exec", "-it", cid, shell])
+                    subprocess.Popen([DOCKER_PATH, "exec", "-it", cid, shell])
                 return
             except Exception:
                 continue
@@ -836,7 +838,7 @@ class DockerManager(QObject):
         layout.addWidget(close_btn)
 
         try:
-            logs = subprocess.run(["docker", "logs", "--tail", "100", cid], capture_output=True, text=True, timeout=30)
+            logs = subprocess.run([DOCKER_PATH, "logs", "--tail", "100", cid], check=False, capture_output=True, text=True, timeout=30)
             log_view.setPlainText(logs.stdout or "No logs available")
         except Exception as e:
             log_view.setPlainText(f"Error fetching logs: {e}")
@@ -846,8 +848,8 @@ class DockerManager(QObject):
         """Load Docker containers into the list widget."""
         try:
             fmt = "{{.ID}}\\t{{.Names}}\\t{{.Image}}\\t{{.Status}}"
-            cmd = ["docker", "ps"] + (["-a"] if include_all else []) + ["--format", fmt]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            cmd = [DOCKER_PATH, "ps"] + (["-a"] if include_all else []) + ["--format", fmt]
+            result = subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=30)
             containers = []
             if result.returncode == 0 and result.stdout.strip():
                 for line in result.stdout.strip().split('\n'):
@@ -884,13 +886,13 @@ class DockerManager(QObject):
     def stop_docker_containers(self, only_running=True):
         """Stop Docker containers."""
         try:
-            cmd = ["docker", "ps", "-q"] if only_running else ["docker", "ps", "-a", "-q"]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            cmd = [DOCKER_PATH, "ps", "-q"] if only_running else [DOCKER_PATH, "ps", "-a", "-q"]
+            result = subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=30)
             if result.returncode == 0 and result.stdout.strip():
                 containers = result.stdout.strip().split('\n')
                 self.log_signal.emit(f"Stopping {len(containers)} containers...")
                 for container_id in containers:
-                    stop_result = subprocess.run(["docker", "stop", container_id], capture_output=True, text=True, timeout=30)
+                    stop_result = subprocess.run([DOCKER_PATH, "stop", container_id], check=False, capture_output=True, text=True, timeout=30)
                     if stop_result.returncode == 0:
                         self.log_signal.emit(f"Stopped container: {container_id}")
                     else:
@@ -918,14 +920,14 @@ class DockerManager(QObject):
 
         def clean_thread():
             steps = [
-                ("Removing stopped containers...", ["docker", "container", "prune", "-f"]),
-                ("Removing unused networks...", ["docker", "network", "prune", "-f"]),
-                ("Removing dangling images...", ["docker", "image", "prune", "-f"]),
+                ("Removing stopped containers...", [DOCKER_PATH, "container", "prune", "-f"]),
+                ("Removing unused networks...", [DOCKER_PATH, "network", "prune", "-f"]),
+                ("Removing dangling images...", [DOCKER_PATH, "image", "prune", "-f"]),
             ]
             for msg, cmd in steps:
                 try:
                     self.log_signal.emit(msg)
-                    subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+                    subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=60)
                 except Exception as e:
                     self.log_signal.emit(f"Error: {e}")
             self.log_signal.emit("Docker cleanup complete")

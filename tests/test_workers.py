@@ -1,5 +1,5 @@
 import pytest
-from utils.workers import CommandWorker, PackageLoaderWorker
+from neoarch.backend.workers import CommandWorker, PackageLoaderWorker
 
 
 def test_command_worker_output_and_finish():
