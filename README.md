@@ -1,56 +1,142 @@
-# NeoArch - Package Manager for Arch Linux
+<div align="center">
+  <img src="https://neoarch.netlify.app/logo.png" alt="NeoArch Logo" width="120"/>
 
-NeoArch is a modern, user-friendly package manager designed specifically for Arch Linux. It provides an intuitive graphical interface for managing packages from multiple sources including pacman, AUR, Flatpak, and npm.
+  # NeoArch
 
-website: https://sanjaya-danushka.github.io/Neoarch/
+  **Modern Package Manager for Arch Linux**
 
-preview: https://drive.google.com/file/d/17cfs7VEui4zfFhghsIWBp2duqpPjWtEQ/view?usp=sharing
+  <p>
+    <a href="https://neoarch.netlify.app/">
+      <img src="https://img.shields.io/badge/Website-neoarch.netlify.app-00BFAE?style=for-the-badge&logo=netlify&logoColor=white" alt="Website"/>
+    </a>
+    <a href="https://github.com/Sanjaya-Danushka/Neoarch/releases">
+      <img src="https://img.shields.io/github/v/release/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE&label=Version" alt="Version"/>
+    </a>
+    <a href="LICENSE">
+      <img src="https://img.shields.io/github/license/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE" alt="License"/>
+    </a>
+    <a href="https://github.com/Sanjaya-Danushka/Neoarch/issues">
+      <img src="https://img.shields.io/github/issues/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE" alt="Issues"/>
+    </a>
+  </p>
 
-<img width="1256" height="840" alt="Screenshot_20260531_195537" src="https://github.com/user-attachments/assets/b5113660-8c05-453d-a70d-b2e3e5274241" />
-<img width="1174" height="777" alt="Screenshot_20260531_180219" src="https://github.com/user-attachments/assets/eedc4d2f-c806-4089-9842-695d04fbd7df" />
-<img width="1210" height="804" alt="Screenshot_20260531_211952" src="https://github.com/user-attachments/assets/b34f304e-c521-45de-8fad-2a78642d5dbc" />
+  <p>
+    <a href="#features">Features</a> •
+    <a href="#installation">Installation</a> •
+    <a href="#usage">Usage</a> •
+    <a href="#contributing">Contributing</a> •
+    <a href="#license">License</a>
+  </p>
 
+  <img src="https://github.com/user-attachments/assets/b5113660-8c05-453d-a70d-b2e3e5274241" alt="NeoArch Dashboard" width="800"/>
+</div>
 
-
-
-
-
+---
 
 ## Features
 
-- **Multi-source package management**: Support for pacman, AUR, Flatpak, and npm packages
-- **Graphical user interface**: Built with PyQt6 for a smooth desktop experience
-- **Plugin system**: Extensible with plugins for additional tools and utilities
-- **Bundle management**: Create and manage package bundles for easy deployment
-- **Security-focused**: Requires appropriate privileges for package installation to maintain system security
+<table>
+  <tr>
+    <td width="50%">
+      <h3>Multi-Source Management</h3>
+      <p>Unify pacman, AUR, Flatpak, and npm under one interface. Search, install, update, and remove packages from any source seamlessly.</p>
+    </td>
+    <td width="50%">
+      <h3>Plugin System</h3>
+      <p>50+ built-in plugins with an extensible Python hook system supporting lifecycle hooks (on_startup, on_tick, on_view_changed). Browse and install community plugins from the store.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>Bundle System</h3>
+      <p>Create portable package bundles for easy deployment. Export, import, install, and share bundles locally or as community bundles.</p>
+    </td>
+    <td width="50%">
+      <h3>Docker Manager</h3>
+      <p>Pull, run, list, stop, and clean containers with port mappings, volumes, environment variables, GPU passthrough, and restart policies.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>Git Manager</h3>
+      <p>Clone, build, update, and clean Git projects with a click. Auto-detects build methods: Cargo, Autotools, Makefile, and custom build commands.</p>
+    </td>
+    <td width="50%">
+      <h3>Snapshot Integration</h3>
+      <p>Create and restore Timeshift snapshots before updates. Revert to a known good state if anything goes wrong. Automatic cleanup of old snapshots.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>Cloud Sync</h3>
+      <p>Sign in with Supabase via OAuth to sync bundle favorites across devices. Session tokens are cached securely for seamless re-authentication.</p>
+    </td>
+    <td width="50%">
+      <h3>Scheduled Updates</h3>
+      <p>Set and forget with configurable auto-update intervals (1-30 days), auto-refresh, and optional snapshot-before-update via built-in plugins.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>Local Package Install</h3>
+      <p>Install <code>.pkg.tar.zst</code>, <code>.AppImage</code>, and <code>.flatpakref</code> files with a single click. Auto-detects package type and handles installation with appropriate privileges.</p>
+    </td>
+    <td width="50%">
+      <h3>Auth & Credential Caching</h3>
+      <p>Secure session-based sudo credential caching with auto-cleaning on exit. GUI password dialog with SUDO_ASKPASS support for polkit and sudo-A.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <h3>System Cache Cleaning</h3>
+      <p>One-click BleachBit cache cleaning and pacman package cache cleanup (<code>pacman -Sc</code>). Reclaim disk space without leaving the app.</p>
+    </td>
+    <td width="50%">
+      <h3>Ignore Updates</h3>
+      <p>Mark specific packages to ignore during updates. Persisted to <code>~/.config/neoarch/ignored_updates.json</code> — survives reboots and updates.</p>
+    </td>
+  </tr>
+</table>
+
+## Screenshots
+
+<div align="center">
+  <table>
+    <tr>
+      <td><img src="https://github.com/user-attachments/assets/eedc4d2f-c806-4089-9842-695d04fbd7df" alt="Search Packages" width="400"/></td>
+      <td><img src="https://github.com/user-attachments/assets/b34f304e-c521-45de-8fad-2a78642d5dbc" alt="Installed Packages" width="400"/></td>
+    </tr>
+    <tr>
+      <td align="center"><em>Search & Discover Packages</em></td>
+      <td align="center"><em>Installed Packages View</em></td>
+    </tr>
+  </table>
+</div>
 
 ## Installation
 
 ### From AUR (Recommended)
 
-Install neoarch-git from the Arch User Repository using your preferred AUR helper:
-
 ```bash
-yay -S neoarch-git  # or paru -S neoarch-git, etc.
+yay -S neoarch-git    # or paru -S neoarch-git
 ```
 
 ### Prerequisites
 
-- Python 3.8+
-- PyQt6
-- Arch Linux system
-- Administrative privileges (sudo) for package management
+- **OS:** Arch Linux (or Arch-based distro)
+- **Python:** 3.8+
+- **PyQt6**
+- **Administrative privileges** (sudo) for package operations
 
 ### Install Dependencies
 
-Option A — Recommended (Arch packages)
+**Option A — Arch packages (recommended)**
 
 ```bash
-# Install system packages from official repos
 sudo pacman -S --needed python python-pyqt6 python-requests qt6-svg git flatpak nodejs npm
 ```
 
-Option B — Use a Python virtual environment
+**Option B — Python virtual environment**
 
 ```bash
 python -m venv .venv
@@ -58,57 +144,36 @@ source .venv/bin/activate
 pip install -r requirements_pyqt.txt
 ```
 
-Note: On Arch, using system `pip` often triggers the "externally-managed-environment" error. Prefer Option A (pacman) or install into a virtual environment (Option B). Alternatively, you can install apps with `pipx` (`sudo pacman -S python-pipx`) which manages a dedicated venv for each app.
+> **Note:** On Arch, using system `pip` often triggers the "externally-managed-environment" error. Prefer Option A (pacman) or use a virtual environment (Option B). You can also use `pipx` (`sudo pacman -S python-pipx`) which manages a dedicated venv for each app.
 
-### Run Aurora
+### Run NeoArch
 
 ```bash
-# If you created a virtual environment
-source .venv/bin/activate  # skip if not using a venv
-
-python aurora_home.py
+python Neoarch.py
 ```
 
-## Security Notice
+Or make it executable:
 
-As a package manager, Aurora requires administrative privileges to install, update, and remove system packages. This is essential for maintaining system security and integrity. The application will prompt for authentication when performing privileged operations.
-
-## Security
-
-If you discover any security vulnerabilities or have concerns about the security of NeoArch, please report them immediately to our security team at **dsanjaya712@gmail.com**. We take security seriously and will respond promptly to address any issues.
+```bash
+chmod +x Neoarch.py && ./Neoarch.py
+```
 
 ## Usage
 
-1. **Discover Packages**: Search and browse available packages from multiple repositories
-2. **Install Packages**: Select and install packages with a single click
-3. **Manage Updates**: View and install available system updates
-4. **Plugins**: Access additional tools and utilities through the plugin system
-5. **Bundles**: Create package bundles for consistent deployments
+| Action | Description |
+|--------|-------------|
+| **Discover Packages** | Search and browse available packages from pacman, AUR, Flatpak, and npm |
+| **Install Packages** | Select and install packages with a single click |
+| **Manage Updates** | View and install available system updates across all sources |
+| **Plugins** | Enable, disable, and create Python hook plugins; browse community plugins |
+| **Bundles** | Create, export, import, and install package bundles |
+| **Docker** | Pull, run, stop, and clean Docker containers with port mappings and volumes |
+| **Git** | Clone, build, update, and clean Git projects with auto-detected build methods |
+| **Snapshots** | Create and restore Timeshift snapshots before risky operations |
+| **Local Files** | Install `.pkg.tar.zst`, `.AppImage`, `.flatpakref` files directly |
+| **Cloud Sync** | Sign in with Supabase to sync favorites across devices |
 
-## Contributing
-
-We welcome contributions from the community! NeoArch aims to provide a secure, user-friendly package management experience for Arch Linux users.
-
-### Our Purpose & Standards
-
-**Purpose**: To create a modern, intuitive package manager that simplifies Arch Linux package management while maintaining the highest security standards.
-
-**Standards**:
-- **Security First**: All code must undergo security review. No compromises on system security.
-- **Code Quality**: Follow PEP 8 style guidelines, add comprehensive tests, and maintain clean, readable code.
-- **User Experience**: Prioritize intuitive UI/UX design and responsive performance.
-- **Compatibility**: Ensure compatibility with latest Arch Linux standards and dependencies.
-- **Documentation**: All features must be properly documented.
-
-### How to Contribute
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
-
-### Development Setup
+## Development
 
 ```bash
 git clone https://github.com/Sanjaya-Danushka/Neoarch.git
@@ -116,20 +181,47 @@ cd Neoarch
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements_pyqt.txt
-python aurora_home.py
+python Neoarch.py
 ```
 
-### Guidelines
+## Contributing
 
-- Write clear, concise commit messages
-- Add tests for new features
-- Update documentation as needed
-- Follow the existing code style
-- Ensure all tests pass before submitting PR
+We welcome contributions! Please follow our guidelines:
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+4. **Push** to the branch (`git push origin feature/amazing-feature`)
+5. **Open** a Pull Request
+
+### Standards
+
+- **Security First** — All code must undergo security review
+- **Code Quality** — Follow PEP 8, add tests, maintain clean readable code
+- **User Experience** — Prioritize intuitive UI/UX and responsive performance
+- **Documentation** — All features must be properly documented
+
+## Security
+
+If you discover any security vulnerabilities, report them immediately to **dsanjaya712@gmail.com**.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
+---
 
-<a href="https://www.buymeacoffee.com/sanjayadanushka" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+<div align="center">
+  <p>
+    Built with ❤️ by <a href="https://github.com/Sanjaya-Danushka">Sanjaya Danushka</a>
+  </p>
+  <p>
+    <a href="https://neoarch.netlify.app/">Website</a> •
+    <a href="https://github.com/Sanjaya-Danushka/Neoarch/issues">Issues</a> •
+    <a href="https://github.com/Sanjaya-Danushka/Neoarch/discussions">Discussions</a> •
+    <a href="https://github.com/Sanjaya-Danushka/Neoarch/releases">Releases</a>
+  </p>
+  <a href="https://www.buymeacoffee.com/sanjayadanushka" target="_blank">
+    <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=sanjayadanushka&button_colour=FF5F5F&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00" alt="Buy Me A Coffee"/>
+  </a>
+</div>
