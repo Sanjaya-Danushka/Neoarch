@@ -8,7 +8,7 @@ import os
 import platform
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QTabWidget, QTextEdit, QWidget,
+    QTabWidget, QTextBrowser, QTextEdit, QWidget,
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap
@@ -113,26 +113,34 @@ def show_help(parent, current_view: str):
     )
     tabs.addTab(_make_text_tab(tips), "Tips & Tricks")
 
-    about_tab_text = (
-        "ABOUT NeoArch\n\n"
-        f"Version: 2.0.0\n"
-        f"Platform: {platform.system()} {platform.release()}\n"
-        f"Python: {platform.python_version()}\n\n"
-        "NeoArch - Elevate Your Arch Experience\n\n"
-        "A modern graphical package manager for Arch Linux with AUR support.\n"
-        "Built with PyQt6 for a responsive, native-feeling interface.\n\n"
-        "Features:\n"
-        "- Multi-source package management (pacman, AUR, Flatpak, npm)\n"
-        "- Bundle management for bulk operations\n"
-        "- Git repository cloning and building\n"
-        "- Docker container management\n"
-        "- Timeshift snapshot integration\n"
-        "- Plugin system with community sharing\n"
-        "- Desktop-environment-aware authentication\n\n"
-        "Repository: https://github.com/Sanjaya-Danushka/Neoarch\n"
-        "License: MIT\n"
+    about_widget = QWidget()
+    about_v = QVBoxLayout(about_widget)
+    about_v.setContentsMargins(12, 12, 12, 12)
+    about_browser = QTextBrowser()
+    about_browser.setReadOnly(True)
+    about_browser.setOpenExternalLinks(True)
+    about_browser.setHtml(
+        "<h2>ABOUT NeoArch</h2>"
+        f"<p><b>Version:</b> 2.0.0<br>"
+        f"<b>Platform:</b> {platform.system()} {platform.release()}<br>"
+        f"<b>Python:</b> {platform.python_version()}</p>"
+        "<p><b>NeoArch - Elevate Your Arch Experience</b></p>"
+        "<p>A modern graphical package manager for Arch Linux with AUR support.<br>"
+        "Built with PyQt6 for a responsive, native-feeling interface.</p>"
+        "<p><b>Features:</b><br>"
+        "• Multi-source package management (pacman, AUR, Flatpak, npm)<br>"
+        "• Bundle management for bulk operations<br>"
+        "• Git repository cloning and building<br>"
+        "• Docker container management<br>"
+        "• Timeshift snapshot integration<br>"
+        "• Plugin system with community sharing<br>"
+        "• Desktop-environment-aware authentication</p>"
+        '<p>Website: <a href="https://neoarch.netlify.app/" style="color: #00BFAE;">neoarch.netlify.app</a><br>'
+        'Repository: <a href="https://github.com/Sanjaya-Danushka/Neoarch" style="color: #00BFAE;">github.com/Sanjaya-Danushka/Neoarch</a><br>'
+        "License: MIT</p>"
     )
-    tabs.addTab(_make_text_tab(about_tab_text), "About")
+    about_v.addWidget(about_browser)
+    tabs.addTab(about_widget, "About")
 
     root.addWidget(tabs)
     close_btn = QPushButton("Close")
@@ -179,11 +187,14 @@ def show_about(parent):
     layout.addSpacing(20)
 
     desc = QLabel(
-        "A modern graphical package manager for Arch Linux\n"
-        "with AUR support, bundle management, and more.\n\n"
-        "Built with PyQt6\n"
-        "Repository: github.com/Sanjaya-Danushka/Neoarch"
+        "A modern graphical package manager for Arch Linux<br>"
+        "with AUR support, bundle management, and more.<br><br>"
+        "Built with PyQt6<br>"
+        'Website: <a href="https://neoarch.netlify.app/" style="color: #00BFAE;">neoarch.netlify.app</a><br>'
+        'Repository: <a href="https://github.com/Sanjaya-Danushka/Neoarch" style="color: #00BFAE;">github.com/Sanjaya-Danushka/Neoarch</a>'
     )
+    desc.setTextFormat(Qt.TextFormat.RichText)
+    desc.setOpenExternalLinks(True)
     desc.setStyleSheet("font-size: 12px; color: #aaa; line-height: 1.5;")
     desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
     desc.setWordWrap(True)

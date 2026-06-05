@@ -87,6 +87,12 @@ class AboutDialog(QDialog):
         links_layout.setContentsMargins(0, 0, 0, 0)
         links_layout.setSpacing(12)
 
+        website_btn = QPushButton("Website")
+        website_btn.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl("https://neoarch.netlify.app/")))
+        website_btn.setObjectName("linkBtn")
+        links_layout.addWidget(website_btn)
+
         gh_btn = QPushButton("GitHub")
         gh_btn.clicked.connect(
             lambda: QDesktopServices.openUrl(QUrl("https://github.com/anomalyco/Neoarch")))
