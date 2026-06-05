@@ -5,6 +5,7 @@ method (pkexec, sudo -A) for GUI password prompts.
 """
 
 import os
+import shutil
 import subprocess
 from typing import Tuple
 
