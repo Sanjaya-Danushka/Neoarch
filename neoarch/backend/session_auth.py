@@ -6,6 +6,7 @@ use this cached credential without prompting.
 """
 
 import os
+import signal
 import stat
 import subprocess
 import tempfile
@@ -292,7 +293,7 @@ def setup_session_auth(parent_widget=None) -> bool:
     with os.fdopen(fd2, "w") as f:
         f.write("#!/bin/sh\n")
         f.write(f'cat "{pw_path}"\n')
-    os.chmod(script_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+    os.chmod(script_path, stat.S_IRWXU)
     _session_askpass_script = script_path
 
     # Set environment so all child processes inherit the askpass
@@ -303,6 +304,9 @@ def setup_session_auth(parent_widget=None) -> bool:
 
     if not _atexit_registered:
         atexit.register(cleanup_session)
+        signal.signal(signal.SIGTERM, lambda *_: cleanup_session())
+        signal.signal(signal.SIGINT, lambda *_: cleanup_session())
+        signal.signal(signal.SIGHUP, lambda *_: cleanup_session())
         _atexit_registered = True
 
     return True
@@ -352,6 +356,8 @@ def cleanup_session():
     pw_path = _session_password_file
     if pw_path and os.path.exists(pw_path):
         try:
+            with open(pw_path, "w") as f:
+                f.write("\x00" * 4096)
             os.remove(pw_path)
         except Exception:
             pass
