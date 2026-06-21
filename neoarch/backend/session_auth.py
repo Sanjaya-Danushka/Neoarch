@@ -15,9 +15,7 @@ import keyring
 import shutil
 from pathlib import Path
 from neoarch.resources.paths import APP_NAME, CONFIG_DIR, PROJECT_ROOT
-#import tempfile
 
-_session_password_file: str | None = None
 _session_askpass_script: str | None = None
 _session_active: bool = False
 _atexit_registered: bool = False
@@ -32,7 +30,7 @@ def setup_session_auth(parent_widget=None) -> bool:
     Returns:
         True if authentication succeeded, False otherwise.
     """
-    global _session_password_file, _session_askpass_script, _session_active, _atexit_registered
+    global _session_active, _atexit_registered
 
     from PyQt6.QtWidgets import (
         QApplication, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
@@ -221,7 +219,7 @@ def setup_session_auth(parent_widget=None) -> bool:
     pw_input.returnPressed.connect(on_confirm)
 
     max_attempts = 3
-    # pw_text = ""
+
     pw_text = None
     for attempt in range(max_attempts):
         error_label.hide()
@@ -234,10 +232,6 @@ def setup_session_auth(parent_widget=None) -> bool:
         if not confirmed[0]:
             return False
 
-        # pw_text = pw_input.text()
-        # if not pw_text:
-        #     continue
-
         pw_text = secure_string(pw_input.text())
         pw_input.clear()
         if not pw_text:
@@ -247,13 +241,7 @@ def setup_session_auth(parent_widget=None) -> bool:
 
         try:
             result = run_sudo_command(['-v'])
-            # result = subprocess.run(
-            #     ["sudo", "-S", "-v"],
-            #     input=pw_text.get_bytes().decode('utf-8') + "\n",
-            #     capture_output=True,
-            #     text=True,
-            #     timeout=10,
-            # )
+
             if result.returncode == 0:
                 break
 
@@ -356,7 +344,7 @@ def get_askpass_env() -> dict:
         env["SSH_ASKPASS"] = _session_askpass_script
     return env
 
-
+# pylint: disable=global-statement
 def cleanup_session():
     """Remove credential files and environment variables."""
     global _session_active
@@ -365,7 +353,7 @@ def cleanup_session():
     if lock_path.exists():
         try:
             lock_path.unlink()
-        except:
+        except Exception:
             pass
 
     helper_path = CONFIG_DIR / "askpass_helper.py"
@@ -394,7 +382,7 @@ def delete_sudo_password() -> None:
     try:
         keyring.delete_password(APP_NAME, "sudo_credential")
     except Exception:
-        pass  # Not found, that's fine
+        pass
 
 
 
@@ -439,7 +427,8 @@ def run_sudo_command(command: list[str]) -> subprocess.CompletedProcess:
             input=secure_pw.get_bytes(),
             capture_output=True,
             text=False,
-            timeout=30
+            timeout=30,
+            check=False
         )
 
         # Check result
