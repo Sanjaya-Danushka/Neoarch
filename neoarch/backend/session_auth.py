@@ -20,7 +20,7 @@ _session_askpass_script: str | None = None
 _session_active: bool = False
 _atexit_registered: bool = False
 
-
+# pylint: disable=global-statement
 def setup_session_auth(parent_widget=None) -> bool:
     """Show password dialog, validate credentials, create persistent askpass.
 
