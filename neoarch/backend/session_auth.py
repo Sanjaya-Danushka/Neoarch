@@ -30,7 +30,7 @@ def setup_session_auth(parent_widget=None) -> bool:
     Returns:
         True if authentication succeeded, False otherwise.
     """
-    global _session_active, _atexit_registered
+    global _session_active, _session_askpass_script, _atexit_registered
 
     from PyQt6.QtWidgets import (
         QApplication, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
@@ -232,10 +232,11 @@ def setup_session_auth(parent_widget=None) -> bool:
         if not confirmed[0]:
             return False
 
-        pw_text = secure_string(pw_input.text())
+        raw = pw_input.text()
         pw_input.clear()
-        if not pw_text:
+        if not raw:
             continue
+        pw_text = secure_string(raw)
         store_sudo_password(pw_text)
         QApplication.processEvents()
 
@@ -292,9 +293,11 @@ def setup_session_auth(parent_widget=None) -> bool:
     lock_path.touch(mode=stat.S_IRUSR | stat.S_IWUSR)  # 600
 
 
+    _session_askpass_script = str(target_helper)
+
     # Set environment so all child processes inherit the askpass
-    os.environ["SUDO_ASKPASS"] = str(target_helper)
-    os.environ["SSH_ASKPASS"] = str(target_helper)
+    os.environ["SUDO_ASKPASS"] = _session_askpass_script
+    os.environ["SSH_ASKPASS"] = _session_askpass_script
 
     _session_active = True
 
@@ -362,9 +365,12 @@ def cleanup_session():
     os.environ.pop("SSH_ASKPASS", None)
     _session_active = False
 
-def get_sudo_password()->'SecureBytes':
+def get_sudo_password() -> 'SecureBytes | None':
     """Retrieve cached sudo password from keyring"""
-    return secure_string(keyring.get_password(APP_NAME, "sudo_credential"))
+    pw = keyring.get_password(APP_NAME, "sudo_credential")
+    if pw is None:
+        return None
+    return secure_string(pw)
 
 
 def store_sudo_password(pw_text: 'SecureBytes') -> bool:
@@ -424,7 +430,7 @@ def run_sudo_command(command: list[str]) -> subprocess.CompletedProcess:
     try:
         proc = subprocess.run(
             ["sudo", "-S"] + command,
-            input=secure_pw.get_bytes(),
+            input=secure_pw.get_bytes() + b"\n",
             capture_output=True,
             text=False,
             timeout=30,
