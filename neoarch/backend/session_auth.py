@@ -6,18 +6,21 @@ use this cached credential without prompting.
 """
 
 import os
+import signal
 import stat
 import subprocess
-import tempfile
 import atexit
+import ctypes
+import keyring
+import shutil
 from pathlib import Path
+from neoarch.resources.paths import APP_NAME, CONFIG_DIR, PROJECT_ROOT
 
-_session_password_file: str | None = None
 _session_askpass_script: str | None = None
 _session_active: bool = False
 _atexit_registered: bool = False
 
-
+# pylint: disable=global-statement
 def setup_session_auth(parent_widget=None) -> bool:
     """Show password dialog, validate credentials, create persistent askpass.
 
@@ -27,7 +30,7 @@ def setup_session_auth(parent_widget=None) -> bool:
     Returns:
         True if authentication succeeded, False otherwise.
     """
-    global _session_password_file, _session_askpass_script, _session_active, _atexit_registered
+    global _session_active, _atexit_registered
 
     from PyQt6.QtWidgets import (
         QApplication, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
@@ -216,7 +219,8 @@ def setup_session_auth(parent_widget=None) -> bool:
     pw_input.returnPressed.connect(on_confirm)
 
     max_attempts = 3
-    pw_text = ""
+
+    pw_text = None
     for attempt in range(max_attempts):
         error_label.hide()
         pw_input.clear()
@@ -228,20 +232,16 @@ def setup_session_auth(parent_widget=None) -> bool:
         if not confirmed[0]:
             return False
 
-        pw_text = pw_input.text()
+        pw_text = secure_string(pw_input.text())
+        pw_input.clear()
         if not pw_text:
             continue
-
+        store_sudo_password(pw_text)
         QApplication.processEvents()
 
         try:
-            result = subprocess.run(
-                ["sudo", "-S", "-v"],
-                input=pw_text + "\n",
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
+            result = run_sudo_command(['-v'])
+
             if result.returncode == 0:
                 break
 
@@ -274,35 +274,35 @@ def setup_session_auth(parent_widget=None) -> bool:
             QMessageBox.warning(parent_widget, "Authentication Error", str(e))
             return False
 
-    # Write password to a secure file in ~/.cache/neoarch/ (only readable by user)
+    helper_dir = CONFIG_DIR
+    helper_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy helper from resources if not already present
+    source_helper = PROJECT_ROOT / "neoarch" / "resources" / "askpass_helper.py"
+    target_helper = helper_dir / "askpass_helper.py"
+    if not target_helper.exists():
+        shutil.copy2(source_helper, target_helper)
+    os.chmod(str(target_helper), stat.S_IRWXU)  # 700
+
     cache_dir = Path.home() / ".cache" / "neoarch"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    fd, pw_path = tempfile.mkstemp(prefix="neoarch-pw-", suffix=".tmp", dir=str(cache_dir))
-    try:
-        with os.fdopen(fd, "w") as f:
-            f.write(pw_text)
-        os.chmod(pw_path, stat.S_IRUSR | stat.S_IWUSR)
-    except Exception:
-        os.unlink(pw_path)
-        return False
-    _session_password_file = pw_path
 
-    # Create persistent askpass script that reads from the password file
-    fd2, script_path = tempfile.mkstemp(prefix="neoarch-askpass-", suffix=".sh", dir=str(cache_dir))
-    with os.fdopen(fd2, "w") as f:
-        f.write("#!/bin/sh\n")
-        f.write(f'cat "{pw_path}"\n')
-    os.chmod(script_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
-    _session_askpass_script = script_path
+    # Create session lock (marker only)
+    lock_path = cache_dir / "session.lock"
+    lock_path.touch(mode=stat.S_IRUSR | stat.S_IWUSR)  # 600
+
 
     # Set environment so all child processes inherit the askpass
-    os.environ["SUDO_ASKPASS"] = script_path
-    os.environ["SSH_ASKPASS"] = script_path
+    os.environ["SUDO_ASKPASS"] = str(target_helper)
+    os.environ["SSH_ASKPASS"] = str(target_helper)
 
     _session_active = True
 
     if not _atexit_registered:
         atexit.register(cleanup_session)
+        signal.signal(signal.SIGTERM, lambda *_: cleanup_session())
+        signal.signal(signal.SIGINT, lambda *_: cleanup_session())
+        signal.signal(signal.SIGHUP, lambda *_: cleanup_session())
         _atexit_registered = True
 
     return True
@@ -335,7 +335,7 @@ def is_session_active() -> bool:
 def get_askpass_env() -> dict:
     """Return a copy of the current environment with SUDO_ASKPASS set.
 
-    If the session askpass is active, the returned env will include it.
+    If the session askpass is active, the returned env will include it;
     Otherwise returns a copy of the current os.environ.
     """
     env = os.environ.copy()
@@ -344,32 +344,102 @@ def get_askpass_env() -> dict:
         env["SSH_ASKPASS"] = _session_askpass_script
     return env
 
-
+# pylint: disable=global-statement
 def cleanup_session():
     """Remove credential files and environment variables."""
-    global _session_active, _session_password_file, _session_askpass_script
-
-    pw_path = _session_password_file
-    if pw_path and os.path.exists(pw_path):
+    global _session_active
+    # Remove session lock file
+    lock_path = Path.home() / ".cache" / "neoarch" / "session.lock"
+    if lock_path.exists():
         try:
-            os.remove(pw_path)
+            lock_path.unlink()
         except Exception:
             pass
-    _session_password_file = None
 
-    script_path = _session_askpass_script
-    if script_path and os.path.exists(script_path):
-        try:
-            os.remove(script_path)
-        except Exception:
-            pass
-    _session_askpass_script = None
-
-    for var in ("SUDO_ASKPASS", "SSH_ASKPASS"):
-        if var in os.environ:
-            try:
-                del os.environ[var]
-            except Exception:
-                pass
-
+    helper_path = CONFIG_DIR / "askpass_helper.py"
+    if helper_path.exists(): helper_path.unlink()
+    os.environ.pop("SUDO_ASKPASS", None)
+    os.environ.pop("SSH_ASKPASS", None)
     _session_active = False
+
+def get_sudo_password()->SecureBytes:
+    """Retrieve cached sudo password from keyring"""
+    return secure_string(keyring.get_password(APP_NAME, "sudo_credential"))
+
+
+def store_sudo_password(pw_text: SecureBytes) -> bool:
+    """Store sudo password in keyring"""
+    try:
+        keyring.set_password(APP_NAME, "sudo_credential", pw_text.get_bytes().decode('utf-8'))
+        pw_text.zero()
+        return True
+    except Exception:
+        return False
+
+
+def delete_sudo_password() -> None:
+    """Remove stored password"""
+    try:
+        keyring.delete_password(APP_NAME, "sudo_credential")
+    except Exception:
+        pass
+
+
+
+def secure_string(data: str) -> 'SecureBytes':
+    """Store secret data in a mutable buffer that can be zeroed"""
+    return SecureBytes(data.encode('utf-8'))
+
+
+class SecureBytes:
+    def __init__(self, data: bytes):
+        self._buffer = ctypes.create_string_buffer(data)
+
+    def zero(self):
+        """"Overwrite with zeros in-place"""
+        ctypes.memset(ctypes.addressof(self._buffer), 0, len(self._buffer))
+
+    def get_bytes(self) -> bytes:
+        return bytes(self._buffer.value)
+
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.zero()
+
+
+def run_sudo_command(command: list[str]) -> subprocess.CompletedProcess:
+    """
+    Runs a sudo command by retrieving the credential from Keyring,
+    feeding it to stdin, and immediately zeroing the buffer.
+    """
+
+    # Retrieve from Keyring
+    secure_pw = get_sudo_password()
+    if not secure_pw:
+        raise RuntimeError("No cached credential found. Please authenticate first.")
+
+    try:
+        proc = subprocess.run(
+            ["sudo", "-S"] + command,
+            input=secure_pw.get_bytes(),
+            capture_output=True,
+            text=False,
+            timeout=30,
+            check=False
+        )
+
+        # Check result
+        if proc.returncode != 0:
+
+            delete_sudo_password()
+            raise RuntimeError(f"Sudo failed: {proc.stderr.decode()}")
+
+        return proc
+
+    finally:
+        # Zero the buffer immediately after use
+        secure_pw.zero()
+
