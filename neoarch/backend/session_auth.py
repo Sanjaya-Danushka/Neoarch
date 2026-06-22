@@ -362,12 +362,12 @@ def cleanup_session():
     os.environ.pop("SSH_ASKPASS", None)
     _session_active = False
 
-def get_sudo_password()->SecureBytes:
+def get_sudo_password()->'SecureBytes':
     """Retrieve cached sudo password from keyring"""
     return secure_string(keyring.get_password(APP_NAME, "sudo_credential"))
 
 
-def store_sudo_password(pw_text: SecureBytes) -> bool:
+def store_sudo_password(pw_text: 'SecureBytes') -> bool:
     """Store sudo password in keyring"""
     try:
         keyring.set_password(APP_NAME, "sudo_credential", pw_text.get_bytes().decode('utf-8'))
