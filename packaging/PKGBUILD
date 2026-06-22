@@ -14,11 +14,6 @@ install=neoarch-git.install
 source=('git+https://github.com/Sanjaya-Danushka/Neoarch.git')
 md5sums=('SKIP')
 
-pkgver() {
-  cd Neoarch
-  git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
-}
-
 package() {
   cd "$srcdir"
   # Install to /opt/neoarch
