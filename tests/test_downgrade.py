@@ -133,23 +133,24 @@ def test_install_version_explicit_path(tmp_path, monkeypatch):
     assert calls[0][5] == pkg
 
 
-def test_add_to_ignorepkg(tmp_path, monkeypatch):
-    conf = tmp_path / "pacman.conf"
-    conf.write_text("[options]\nColor\n")
-    monkeypatch.setattr(downgrade, "_ignorepkg_entries", lambda: [])
+def test_add_to_ignorepkg_delegates(monkeypatch):
+    from neoarch.backend.services import marks
 
-    def fake_run(cmd, timeout=600, env=None, **kw):
-        assert cmd[0] == "sudo" or cmd[0] == "bash"
-        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+    calls = []
 
-    monkeypatch.setattr(downgrade, "get_auth_command", lambda: ["sudo", "-A"])
-    monkeypatch.setattr(downgrade, "get_askpass_env", lambda: {})
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    def fake_add(pkg):
+        calls.append(pkg)
+        return True
+
+    monkeypatch.setattr(marks, "add_ignorepkg", fake_add)
     assert downgrade.add_to_ignorepkg("firefox") is True
+    assert calls == ["firefox"]
 
 
 def test_add_to_ignorepkg_already_present(monkeypatch):
-    monkeypatch.setattr(downgrade, "_ignorepkg_entries", lambda: ["firefox"])
+    from neoarch.backend.services import marks
+
+    monkeypatch.setattr(marks, "add_ignorepkg", lambda pkg: True)
     assert downgrade.add_to_ignorepkg("firefox") is True
 
 
@@ -157,11 +158,10 @@ def test_ignorepkg_shell_injection_rejected():
     assert downgrade.add_to_ignorepkg("foo; rm -rf /") is False
 
 
-def test_ignorepkg_entries_parse(tmp_path, monkeypatch):
-    conf = tmp_path / "pacman.conf"
-    conf.write_text("IgnorePkg = firefox\nIgnorePkg = vim neovim\n")
-    monkeypatch.setattr(downgrade, "PACMAN_CONF", str(conf))
+def test_ignorepkg_entries_parse_delegates(monkeypatch):
+    from neoarch.backend.services import marks
+
+    monkeypatch.setattr(marks, "get_ignorepkg",
+                        lambda: ["firefox", "vim", "neovim"])
     entries = downgrade._ignorepkg_entries()
-    assert "firefox" in entries
-    assert "vim" in entries
-    assert "neovim" in entries
+    assert entries == ["firefox", "vim", "neovim"]

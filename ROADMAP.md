@@ -34,11 +34,13 @@ Pre-install security review for AUR installs/updates.
 - **Todo** — UI: "Downgrade" action on installed package; version picker dialog.
 - **Done** — Tests: `tests/test_downgrade.py` (17 tests).
 
-### IgnorePkg / HoldPkg / install-reason marking
+### IgnorePkg / HoldPkg / install-reason marking ✅ Implemented
 
-- `neoarch/backend/services/marks.py`: read/write `IgnorePkg` and `HoldPkg` in `/etc/pacman.conf`, and `pacman -D --asdeps/--asexplicit` reason marking.
-- UI: per-package "Ignore updates" now drives real `IgnorePkg`; new Hold + explicit/dependency toggles.
-- Tests: `tests/test_marks.py`.
+- **Done** — `neoarch/backend/services/marks.py`: read/write `IgnorePkg` and `HoldPkg` in `/etc/pacman.conf` (append + safe sed removal, shell-injection guarded), `pacman -D --asexplicit/--asdeps` reason marking, `pacman -Qi` reason lookup.
+- **Done** — CLI: `neoarch-cli marks list|ignore|unignore|hold|unhold|reason <pkg> [explicit|deps]` (with `--json`).
+- **Done** — `downgrade.py` now delegates IgnorePkg handling to `marks.py`.
+- **Todo** — UI: per-package "Ignore updates" drives real `IgnorePkg`; Hold + explicit/dependency toggles.
+- **Done** — Tests: `tests/test_marks.py` (15 tests).
 
 ### AppImage manager
 

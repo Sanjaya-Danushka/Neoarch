@@ -24,7 +24,7 @@ def test_parser_has_all_commands():
     for expected in (
         "search", "install", "remove", "upgrade", "update", "list",
         "list-updates", "ignore", "news", "backup", "purge", "config",
-        "scan", "downgrade", "doctor",
+        "scan", "downgrade", "marks", "doctor",
     ):
         assert expected in subs, f"missing command {expected}"
 
@@ -132,3 +132,47 @@ def test_cmd_downgrade_no_cached(tmp_path, monkeypatch, capsys):
     args = _build_parser().parse_args(["downgrade", "nope"])
     cmd_downgrade(args)
     assert "No cached versions" in capsys.readouterr().out
+
+
+def test_cmd_marks_parser():
+    p = _build_parser()
+    a = p.parse_args(["marks", "list"])
+    assert a.command == "marks"
+    assert a.action == "list"
+    b = p.parse_args(["marks", "reason", "firefox", "explicit"])
+    assert b.action == "reason"
+    assert b.package == "firefox"
+    assert b.reason == "explicit"
+
+
+def test_cmd_marks_list(monkeypatch, capsys):
+    from neoarch.cli import cmd_marks
+    from neoarch.backend.services import marks
+
+    monkeypatch.setattr(marks, "get_ignorepkg", lambda: ["firefox"])
+    monkeypatch.setattr(marks, "get_holdpkg", lambda: ["linux"])
+    args = _build_parser().parse_args(["marks", "list"])
+    cmd_marks(args)
+    out = capsys.readouterr().out
+    assert "IgnorePkg: firefox" in out
+    assert "HoldPkg:    linux" in out
+
+
+def test_cmd_marks_reason_read(monkeypatch, capsys):
+    from neoarch.cli import cmd_marks
+    from neoarch.backend.services import marks
+
+    monkeypatch.setattr(marks, "get_install_reason", lambda pkg: "explicit")
+    args = _build_parser().parse_args(["marks", "reason", "firefox"])
+    cmd_marks(args)
+    assert "firefox: explicit" in capsys.readouterr().out
+
+
+def test_cmd_marks_reason_set(monkeypatch, capsys):
+    from neoarch.cli import cmd_marks
+    from neoarch.backend.services import marks
+
+    monkeypatch.setattr(marks, "set_install_reason", lambda pkg, reason: True)
+    args = _build_parser().parse_args(["marks", "reason", "firefox", "deps"])
+    cmd_marks(args)
+    assert "marked as deps" in capsys.readouterr().out

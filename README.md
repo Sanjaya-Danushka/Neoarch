@@ -62,6 +62,9 @@ neoarch-cli doctor                    # system health check
 neoarch-cli scan ./PKGBUILD           # security scan (risky tools, elevation, homographs)
 neoarch-cli downgrade firefox -l      # list cached versions
 neoarch-cli downgrade firefox -p      # downgrade + pin to IgnorePkg
+neoarch-cli marks list                # show IgnorePkg / HoldPkg
+neoarch-cli marks hold linux          # hold a package
+neoarch-cli marks reason firefox explicit  # set install reason
 neoarch-cli backup -c                 # create a backup
 neoarch-cli purge -o                  # remove orphaned packages
 ```

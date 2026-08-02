@@ -20,6 +20,7 @@ Commands:
     backup        Create/list/restore system backups
     purge         Remove orphans, stale cache, and .pacnew files
     config        Get/set NeoArch configuration values
+    marks         Manage IgnorePkg/HoldPkg marks and install reasons
     downgrade     Install an older cached version of a package
     scan          Scan a PKGBUILD for security risks
     doctor        Check the system for missing prerequisites
@@ -713,6 +714,49 @@ def cmd_downgrade(args) -> None:
         downgrade.install_version(args.package, path=selected)
 
 
+# ── marks ─────────────────────────────────────────────────────────────────
+
+def cmd_marks(args) -> None:
+    from neoarch.backend.services import marks
+
+    if args.action == "list":
+        ignore = marks.get_ignorepkg()
+        hold = marks.get_holdpkg()
+        if args.json:
+            print(json.dumps({"ignorepkg": ignore, "holdpkg": hold}, indent=2))
+        else:
+            print("IgnorePkg:", ", ".join(ignore) if ignore else "(none)")
+            print("HoldPkg:   ", ", ".join(hold) if hold else "(none)")
+        return
+
+    pkg = args.package
+    if args.action in ("ignore", "unignore", "hold", "unhold"):
+        op = {
+            "ignore": marks.add_ignorepkg,
+            "unignore": marks.remove_ignorepkg,
+            "hold": marks.add_holdpkg,
+            "unhold": marks.remove_holdpkg,
+        }[args.action]
+        if op(pkg):
+            print(f"{args.action.capitalize()}d '{pkg}'.")
+        else:
+            print(f"Failed to update marks for '{pkg}' (need root).", file=sys.stderr)
+            raise SystemExit(1)
+    elif args.action == "reason":
+        if args.reason:
+            if marks.set_install_reason(pkg, args.reason):
+                print(f"'{pkg}' marked as {args.reason}.")
+            else:
+                print(f"Failed to set reason for '{pkg}' (need root).", file=sys.stderr)
+                raise SystemExit(1)
+        else:
+            current = marks.get_install_reason(pkg)
+            if args.json:
+                print(json.dumps({"package": pkg, "reason": current}, indent=2))
+            else:
+                print(f"{pkg}: {current or 'not installed'}")
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Parser
 # ──────────────────────────────────────────────────────────────────────────
@@ -829,6 +873,13 @@ def _build_parser() -> argparse.ArgumentParser:
     sp.add_argument("-l", "--list-only", action="store_true", help="only list cached versions")
     sp.add_argument("-p", "--pin", action="store_true", help="add package to IgnorePkg after downgrade")
     sp.set_defaults(func=cmd_downgrade)
+
+    sp = sub.add_parser("marks", parents=[common], help="manage IgnorePkg/HoldPkg marks")
+    sp.add_argument("action", choices=["list", "ignore", "unignore", "hold", "unhold", "reason"])
+    sp.add_argument("package", nargs="?", help="package name")
+    sp.add_argument("reason", nargs="?", choices=["explicit", "deps"],
+                    help="install reason (for 'reason')")
+    sp.set_defaults(func=cmd_marks)
 
     sub.add_parser("doctor", parents=[common], help="check system health").set_defaults(func=cmd_doctor)
 

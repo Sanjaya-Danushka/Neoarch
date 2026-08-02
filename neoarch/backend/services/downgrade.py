@@ -28,9 +28,6 @@ PACMAN_CONF = "/etc/pacman.conf"
 # <pkgname>-<epoch>:<pkgver>-<pkgrel>-<arch>.pkg.tar.<ext>
 _PKG_FILE_RE = re.compile(r"-(?P<arch>\w+)\.pkg\.tar(?:\.\w+)?$")
 
-# Names that are safe to embed in a shell command.
-_SAFE_NAME_RE = re.compile(r"^[\w@.+:\-]+$")
-
 
 def _run(cmd: List[str], timeout: int = 60) -> subprocess.CompletedProcess:
     try:
@@ -246,40 +243,18 @@ def install_version(pkg: str, version: Optional[str] = None, path: Optional[str]
 
 
 def _ignorepkg_entries() -> List[str]:
-    """Current IgnorePkg package names in /etc/pacman.conf."""
-    entries: List[str] = []
-    try:
-        with open(PACMAN_CONF, "r") as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith("IgnorePkg"):
-                    for name in re.split(r"[,\s]+", line.split("=", 1)[1].strip()):
-                        if name and name not in entries:
-                            entries.append(name)
-    except Exception:
-        pass
-    return entries
+    """Current IgnorePkg package names (delegates to the marks service)."""
+    from neoarch.backend.services import marks
+    return marks.get_ignorepkg()
 
 
 def add_to_ignorepkg(pkg: str) -> bool:
     """Append `pkg` to IgnorePkg in /etc/pacman.conf (needs root)."""
-    if not _SAFE_NAME_RE.match(pkg):
-        return False
-    if pkg in _ignorepkg_entries():
-        return True
-    result = _run_sudo(
-        ["bash", "-c", f'echo "IgnorePkg = {pkg}" >> {PACMAN_CONF}'])
-    return result.returncode == 0
+    from neoarch.backend.services import marks
+    return marks.add_ignorepkg(pkg)
 
 
 def remove_from_ignorepkg(pkg: str) -> bool:
     """Remove `pkg` from IgnorePkg in /etc/pacman.conf (needs root)."""
-    if not _SAFE_NAME_RE.match(pkg):
-        return False
-    if pkg not in _ignorepkg_entries():
-        return True
-    result = _run_sudo(
-        ["sed", "-i",
-         f"/IgnorePkg/s/[ \\t,]*{re.escape(pkg)}[ \\t,]*/ /g",
-         PACMAN_CONF])
-    return result.returncode == 0
+    from neoarch.backend.services import marks
+    return marks.remove_ignorepkg(pkg)
