@@ -48,9 +48,17 @@ Sign in with Supabase via OAuth to sync bundle favorites across devices. Session
 
 Set and forget with configurable auto-update intervals (1-30 days), auto-refresh, and optional snapshot-before-update via built-in plugins.
 
+### System Backup
+
+Create full system backups (package list + config export) with Btrfs snapshot support on Btrfs roots. Restore packages from any backup, list snapshots, and auto-prune old backups (keeps last 5).
+
+### System Hygiene
+
+Keep your system clean: one-click orphaned package removal (`pacman -Qtdq`), manage leftover `.pacnew`/`.pacsave` files (view diff, accept, or delete), and read the latest Arch Linux news via the built-in RSS reader with offline caching.
+
 ### Local Package Install
 
-Install `.pkg.tar.zst`, `.AppImage`, and `.flatpakref` files with a single click. Auto-detects package type and handles installation with appropriate privileges.
+Install `.pkg.tar.zst`, `.pacman`, `.AppImage`, and `.flatpakref` files with a single click. Auto-detects package type and handles installation with appropriate privileges. Missing-dependency resolution with `--assume-installed` retry for local packages.
 
 ### Auth and Credential Caching
 
@@ -129,7 +137,9 @@ chmod +x Neoarch.py && ./Neoarch.py
 | Docker | Pull, run, stop, and clean Docker containers with port mappings and volumes |
 | Git | Clone, build, update, and clean Git projects with auto-detected build methods |
 | Snapshots | Create and restore Timeshift snapshots before risky operations |
-| Local Files | Install `.pkg.tar.zst`, `.AppImage`, `.flatpakref` files directly |
+| System Backup | Create/restore system backups with Btrfs snapshot support |
+| Hygiene | Remove orphaned packages, manage `.pacnew` files, read Arch news |
+| Local Files | Install `.pkg.tar.zst`, `.pacman`, `.AppImage`, `.flatpakref` files directly |
 | Cloud Sync | Sign in with Supabase to sync favorites across devices |
 
 ## Development
