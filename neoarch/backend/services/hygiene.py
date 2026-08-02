@@ -5,6 +5,7 @@ Arch Linux news feed. Each service is safe to call from the UI layer
 and uses the same auth/elevation helpers as the rest of the app.
 """
 
+import json
 import os
 import re
 import subprocess
@@ -20,12 +21,14 @@ __all__ = [
     "list_pacnew", "diff_pacnew", "accept_pacnew", "delete_pacnew",
     "merge_pacnew",
     "fetch_news", "news_cache", "news_cache_age",
+    "mark_news_seen", "news_seen", "news_seen_status", "news_unseen_count",
     "list_corrupted_packages", "remove_corrupted_packages",
     "purge_cache", "purge_flatpak_unused",
 ]
 
 NEWS_URL = "https://archlinux.org/feeds/news/"
 NEWS_CACHE = os.path.join(os.path.expanduser("~"), ".cache", "neoarch", "news.xml")
+NEWS_SEEN_CACHE = os.path.join(os.path.expanduser("~"), ".cache", "neoarch", "news_seen.json")
 NEWS_CACHE_MAX_AGE = 60 * 60  # 1 hour
 
 
@@ -456,6 +459,7 @@ def _parse_news(xml_text: str, limit: int = 10) -> List[Dict]:
                 entry[tag] = (child.text or "").strip()
         if entry.get("title") or entry.get("link"):
             items.append({
+                "id": entry.get("link") or entry.get("guid") or entry.get("title", ""),
                 "title": entry.get("title", "(untitled)"),
                 "link": entry.get("link", ""),
                 "published": entry.get("pubDate", ""),
@@ -494,3 +498,68 @@ def fetch_news(limit: int = 10, use_cache: bool = True) -> List[Dict]:
     if not items and not xml_text:
         return []
     return items
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# News read-tracking
+# ──────────────────────────────────────────────────────────────────────────
+
+def _load_seen() -> Dict[str, str]:
+    """Load the seen map: entry id -> ISO timestamp."""
+    try:
+        with open(NEWS_SEEN_CACHE, "r") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_seen(data: Dict[str, str]) -> None:
+    try:
+        os.makedirs(os.path.dirname(NEWS_SEEN_CACHE), exist_ok=True)
+        with open(NEWS_SEEN_CACHE, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception:
+        pass
+
+
+def _news_id(entry) -> str:
+    if isinstance(entry, dict):
+        return str(entry.get("id") or entry.get("link") or entry.get("title") or "")
+    return str(entry)
+
+
+def mark_news_seen(entry) -> bool:
+    """Mark a news entry as read, persisting alongside the RSS cache."""
+    import time as _time
+    key = _news_id(entry)
+    if not key:
+        return False
+    seen = _load_seen()
+    seen[key] = _time.strftime("%Y-%m-%d %H:%M:%S")
+    _save_seen(seen)
+    return True
+
+
+def news_seen(entry) -> bool:
+    """True when a news entry has been marked as read."""
+    key = _news_id(entry)
+    if not key:
+        return False
+    return key in _load_seen()
+
+
+def news_seen_status(entries: List[Dict]) -> List[Dict]:
+    """Return `entries` with an added `seen` boolean on each."""
+    seen = _load_seen()
+    out = []
+    for entry in entries:
+        item = dict(entry)
+        item["seen"] = _news_id(item) in seen
+        out.append(item)
+    return out
+
+
+def news_unseen_count(limit: int = 50) -> int:
+    """Number of recent news entries not yet read."""
+    return sum(1 for e in fetch_news(limit) if not news_seen(e))

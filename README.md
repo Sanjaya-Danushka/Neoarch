@@ -82,6 +82,9 @@ neoarch-cli appimage check --json     # check for AppImage updates
  neoarch-cli schedule show             # weekly update schedule
  neoarch-cli schedule set --days 1,3,5 --time 05:30 --enable
  neoarch-cli recommend --limit 5       # curated package recommendations
+ neoarch-cli install-url https://host/pkg.pkg.tar.zst  # install from URL
+ neoarch-cli aur-build yay --check     # AUR build (chroot/check/commit)
+ neoarch-cli news --mark-read          # read news + mark as read
 ```
 
 The `appimage` subcommands manage a NeoArch-owned AppImage store at

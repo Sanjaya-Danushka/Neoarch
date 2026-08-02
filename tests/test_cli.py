@@ -25,7 +25,8 @@ def test_parser_has_all_commands():
         "search", "install", "remove", "upgrade", "update", "list",
         "list-updates", "ignore", "news", "backup", "purge", "config",
         "scan", "downgrade", "marks", "appimage", "keyring", "purify",
-        "restart", "parallel", "schedule", "recommend", "doctor",
+        "restart", "parallel", "schedule", "recommend", "install-url",
+        "aur-build", "doctor",
     ):
         assert expected in subs, f"missing command {expected}"
 
@@ -338,3 +339,53 @@ def test_cmd_recommend(monkeypatch, capsys):
     args = _build_parser().parse_args(["recommend"])
     cmd_recommend(args)
     assert "htop" in capsys.readouterr().out
+
+
+def test_cmd_install_url(monkeypatch, capsys):
+    from neoarch.cli import cmd_install_url
+    from neoarch.backend.services import install_url
+
+    monkeypatch.setattr(install_url, "install_from_url", lambda url: True)
+    args = _build_parser().parse_args(
+        ["install-url", "https://example.com/a-1.0-1-x86_64.pkg.tar.zst"])
+    cmd_install_url(args)
+    assert "Installed" in capsys.readouterr().out
+
+
+def test_cmd_aur_build(monkeypatch, capsys):
+    from neoarch.cli import cmd_aur_build
+    from neoarch.backend.services import aur_build
+
+    monkeypatch.setattr(aur_build, "build_aur_package",
+                        lambda name, **k: {"name": name, "ok": True})
+    args = _build_parser().parse_args(["aur-build", "yay", "--check"])
+    cmd_aur_build(args)
+    assert "Built" in capsys.readouterr().out
+
+
+def test_cmd_aur_build_invalid_commit(monkeypatch, capsys):
+    from neoarch.cli import cmd_aur_build
+
+    args = _build_parser().parse_args(["aur-build", "yay", "--commit", ";rm"])
+    with pytest.raises(SystemExit) as exc:
+        cmd_aur_build(args)
+    assert exc.value.code == 1
+
+
+def test_cmd_news_mark_read(monkeypatch, capsys, tmp_path):
+    from neoarch.cli import cmd_news
+    from neoarch.backend.services import hygiene
+
+    monkeypatch.setattr("neoarch.cli._fetch_news",
+                        lambda limit: [{"id": "https://a/1", "title": "T"}])
+    monkeypatch.setattr(hygiene, "news_seen_status",
+                        lambda items: [dict(i, seen=False) for i in items])
+    marked = []
+    monkeypatch.setattr(hygiene, "mark_news_seen", lambda e: marked.append(e) or True)
+
+    args = _build_parser().parse_args(["news", "--mark-read", "--json"])
+    cmd_news(args)
+    out = capsys.readouterr().out
+    assert '"seen": false' in out
+    assert "Marked as read." in out
+    assert marked and marked[0]["id"] == "https://a/1"

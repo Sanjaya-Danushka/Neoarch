@@ -30,6 +30,8 @@ Commands:
     parallel      Show/set ParallelDownloads in /etc/pacman.conf
     schedule      Show/configure the weekly update schedule
     recommend     Curated package recommendations
+    install-url   Install a package archive from an HTTP(S) URL
+    aur-build     Clone and build an AUR package (chroot/check/commit)
     doctor        Check the system for missing prerequisites
 """
 
@@ -400,6 +402,7 @@ def _fetch_news(limit: int) -> List[Dict]:
             tag = child.tag.rsplit("}", 1)[-1]
             entry[tag] = (child.text or "").strip()
         items.append({
+            "id": entry.get("link") or entry.get("guid") or entry.get("title", ""),
             "title": entry.get("title", "(untitled)"),
             "link": entry.get("link", ""),
             "published": entry.get("pubDate", ""),
@@ -411,11 +414,23 @@ def _fetch_news(limit: int) -> List[Dict]:
 
 
 def cmd_news(args) -> None:
+    from neoarch.backend.services import hygiene
+
     items = _fetch_news(args.limit)
     if not items:
         print("No news available (offline?).")
         return
-    _emit(items, args.json)
+    marked = hygiene.news_seen_status(items)
+    if args.json:
+        _emit(marked, True)
+    else:
+        for item in marked:
+            tag = "[seen]" if item.get("seen") else "[new]"
+            print(f"{tag} {item.get('title')}")
+    if args.mark_read:
+        for item in items:
+            hygiene.mark_news_seen(item)
+        print("Marked as read.")
 
 
 # ── backup ────────────────────────────────────────────────────────────────
@@ -1083,6 +1098,37 @@ def cmd_recommend(args) -> None:
                   f"{item.get('desc', '')}{pop}{installed}")
 
 
+# ── install-url ──────────────────────────────────────────────────────────
+
+def cmd_install_url(args) -> None:
+    from neoarch.backend.services import install_url
+
+    if install_url.install_from_url(args.url):
+        print("Installed.")
+    else:
+        print("Failed to install from URL.", file=sys.stderr)
+        raise SystemExit(1)
+
+
+# ── aur-build ────────────────────────────────────────────────────────────
+
+def cmd_aur_build(args) -> None:
+    from neoarch.backend.services import aur_build
+
+    if args.commit and not aur_build._COMMIT_RE.match(args.commit):
+        print("error: invalid commit reference", file=sys.stderr)
+        raise SystemExit(1)
+    result = aur_build.build_aur_package(
+        args.name, chroot=args.chroot, run_checks=args.check,
+        install=args.install, commit=args.commit)
+    if result.get("ok"):
+        print(f"Built '{args.name}' successfully.")
+    else:
+        err = (result.get("stderr") or result.get("stdout") or "").strip()
+        print(f"error: build failed for '{args.name}': {err}", file=sys.stderr)
+        raise SystemExit(1)
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Parser
 # ──────────────────────────────────────────────────────────────────────────
@@ -1165,6 +1211,7 @@ def _build_parser() -> argparse.ArgumentParser:
     # news
     sp = sub.add_parser("news", parents=[common], help="read Arch Linux news")
     sp.add_argument("-l", "--limit", type=int, default=10)
+    sp.add_argument("--mark-read", action="store_true", help="mark the listed entries as read")
     sp.set_defaults(func=cmd_news)
 
     # backup
@@ -1282,6 +1329,18 @@ def _build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--limit", type=int, default=20, help="max entries (default 20)")
     sp.add_argument("--installed", action="store_true", help="include installed packages")
     sp.set_defaults(func=cmd_recommend)
+
+    sp = sub.add_parser("install-url", parents=[common], help="install a package archive from a URL")
+    sp.add_argument("url", help="http(s) URL of a .pkg.tar.* / .pacman archive")
+    sp.set_defaults(func=cmd_install_url)
+
+    sp = sub.add_parser("aur-build", parents=[common], help="clone and build an AUR package")
+    sp.add_argument("name", help="AUR package name")
+    sp.add_argument("--chroot", action="store_true", help="use makechrootpkg clean chroot")
+    sp.add_argument("--check", dest="check", action="store_true", help="run check() functions")
+    sp.add_argument("--install", dest="install", action="store_true", help="install after building")
+    sp.add_argument("--commit", help="build a specific upstream commit (sha)")
+    sp.set_defaults(func=cmd_aur_build)
 
     sub.add_parser("doctor", parents=[common], help="check system health").set_defaults(func=cmd_doctor)
 

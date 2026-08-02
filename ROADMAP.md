@@ -111,9 +111,26 @@ Pre-install security review for AUR installs/updates.
 
 ## Phase 6 — Headless helpers (v2.5)
 
-- `install_from_url`: install package archives from HTTP(S) URLs.
-- AUR build depth: clean-chroot (`makechrootpkg`) opt-in, `check()` enable, install-at-commit.
-- News read-tracking: per-entry `seen` state persisted alongside the existing RSS cache.
+### Install from URL ✅ Implemented
+
+- **Done** — `neoarch/backend/services/install_url.py`: validates http(s) URL + `.pkg.tar.*`/`.pacman` extension, streams download to a temp file (Content-Length progress callback, 2 GiB safety cap), installs with elevated `pacman -U --noconfirm`, removes the temp file. Sync + threaded (`finished_cb`) variants.
+- **Done** — CLI: `neoarch-cli install-url <url>`.
+- **Todo** — UI: "Install from URL" action wired to this service.
+- **Done** — Tests: `tests/test_install_url.py` (9 tests).
+
+### AUR build depth ✅ Implemented
+
+- **Done** — `neoarch/backend/services/aur_build.py`: clones the PKGBUILD (`--depth 1`), optionally checks out a specific upstream commit, builds with `makepkg` or opt-in `makechrootpkg -c` clean chroot, `--check` enables `check()`, `-i --noconfirm` installs. Package names and commit references validated against strict regexes; live-build progress streaming; sync + async variants.
+- **Done** — CLI: `neoarch-cli aur-build <name> [--chroot] [--check] [--install] [--commit <sha>]`.
+- **Todo** — UI: chroot/check toggles in the AUR install dialog.
+- **Done** — Tests: `tests/test_aur_build.py` (9 tests).
+
+### News read-tracking ✅ Implemented
+
+- **Done** — `hygiene.py`: per-entry `seen` state persisted to `~/.cache/neoarch/news_seen.json` beside the RSS cache; entries gain a stable `id`; `mark_news_seen`/`news_seen`/`news_seen_status`/`news_unseen_count`.
+- **Done** — CLI: `neoarch-cli news [--mark-read]` shows `[new]`/`[seen]` and marks the listed entries read on request.
+- **Todo** — UI: unread badge + read state in the News view.
+- **Done** — Tests: `tests/test_hygiene.py` extended (5 read-tracking tests).
 
 ---
 
