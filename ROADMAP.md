@@ -27,11 +27,12 @@ Pre-install security review for AUR installs/updates.
 
 ## Phase 3 — Package Lifecycle (v2.4)
 
-### Downgrade
+### Downgrade ✅ Implemented
 
-- `neoarch/backend/services/downgrade.py`: list cached/archived versions, install a specific version, optional add-to-IgnorePkg.
-- UI: "Downgrade" action on installed package; version picker dialog.
-- Tests: `tests/test_downgrade.py`.
+- **Done** — `neoarch/backend/services/downgrade.py`: `list_cached_versions` (parses `/var/cache/pacman/pkg` via pacman.conf `CacheDir`), `install_version` (`pacman -U --noconfirm`, version or explicit path), optional `add_to_ignorepkg`/`remove_from_ignorepkg` (`/etc/pacman.conf`), `vercmp`-ordered version sorting (binary + stdlib fallback).
+- **Done** — CLI: `neoarch-cli downgrade <pkg> [--version ...] [-l|--list-only] [-p|--pin]`.
+- **Todo** — UI: "Downgrade" action on installed package; version picker dialog.
+- **Done** — Tests: `tests/test_downgrade.py` (17 tests).
 
 ### IgnorePkg / HoldPkg / install-reason marking
 

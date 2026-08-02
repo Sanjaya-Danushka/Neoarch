@@ -60,6 +60,8 @@ neoarch-cli list-updates --json       # machine-readable updates
 neoarch-cli news                      # latest Arch Linux news
 neoarch-cli doctor                    # system health check
 neoarch-cli scan ./PKGBUILD           # security scan (risky tools, elevation, homographs)
+neoarch-cli downgrade firefox -l      # list cached versions
+neoarch-cli downgrade firefox -p      # downgrade + pin to IgnorePkg
 neoarch-cli backup -c                 # create a backup
 neoarch-cli purge -o                  # remove orphaned packages
 ```

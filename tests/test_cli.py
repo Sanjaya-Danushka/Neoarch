@@ -24,7 +24,7 @@ def test_parser_has_all_commands():
     for expected in (
         "search", "install", "remove", "upgrade", "update", "list",
         "list-updates", "ignore", "news", "backup", "purge", "config",
-        "scan", "doctor",
+        "scan", "downgrade", "doctor",
     ):
         assert expected in subs, f"missing command {expected}"
 
@@ -112,3 +112,23 @@ def test_cmd_scan_reports_findings(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "critical" in out
     assert "privilege elevation" in out
+
+
+def test_cmd_downgrade_parser_flags():
+    p = _build_parser()
+    a = p.parse_args(["downgrade", "firefox", "--list-only", "--pin", "--version", "1.0"])
+    assert a.command == "downgrade"
+    assert a.package == "firefox"
+    assert a.list_only is True
+    assert a.pin is True
+    assert a.version == "1.0"
+
+
+def test_cmd_downgrade_no_cached(tmp_path, monkeypatch, capsys):
+    from neoarch.cli import cmd_downgrade
+    from neoarch.backend.services import downgrade
+
+    monkeypatch.setattr(downgrade, "list_cached_versions", lambda pkg: [])
+    args = _build_parser().parse_args(["downgrade", "nope"])
+    cmd_downgrade(args)
+    assert "No cached versions" in capsys.readouterr().out

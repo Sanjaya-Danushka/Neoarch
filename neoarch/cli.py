@@ -20,6 +20,7 @@ Commands:
     backup        Create/list/restore system backups
     purge         Remove orphans, stale cache, and .pacnew files
     config        Get/set NeoArch configuration values
+    downgrade     Install an older cached version of a package
     scan          Scan a PKGBUILD for security risks
     doctor        Check the system for missing prerequisites
 """
@@ -657,6 +658,61 @@ def cmd_scan(args) -> None:
         raise SystemExit(2)
 
 
+# ── downgrade ──────────────────────────────────────────────────────────────
+
+def cmd_downgrade(args) -> None:
+    from neoarch.backend.services import downgrade
+
+    versions = downgrade.list_cached_versions(args.package)
+    if not versions:
+        print(f"No cached versions of '{args.package}' found.")
+        return
+
+    if args.json:
+        _emit([
+            {"name": v["name"], "version": v["version"], "epoch": v["epoch"],
+             "release": v["release"], "arch": v["arch"], "file": v["file"]}
+            for v in versions
+        ], True)
+        return
+
+    print(f"Cached versions of {args.package}:")
+    for i, v in enumerate(versions, start=1):
+        print(f"  {i:>3}. {v['epoch']}:{v['version']}-{v['release']} "
+              f"[{v['arch']}]")
+
+    if args.pin:
+        if downgrade.add_to_ignorepkg(args.package):
+            print(f"Pinned '{args.package}' to IgnorePkg — pacman will keep "
+                  "it at the downgraded version.")
+        else:
+            print("Failed to update IgnorePkg (need root).", file=sys.stderr)
+
+    if args.list_only:
+        return
+
+    selected = None
+    if args.version:
+        selected = downgrade.resolve_cache_path(args.package, args.version)
+        if not selected:
+            print(f"Version '{args.version}' not in cache.", file=sys.stderr)
+            raise SystemExit(1)
+    else:
+        print("\nChoose a version to install (or Ctrl-C to cancel):")
+        try:
+            choice = input(f"[1-{len(versions)}] ")
+        except (EOFError, KeyboardInterrupt):
+            return
+        if not choice.isdigit() or not (1 <= int(choice) <= len(versions)):
+            print("Invalid choice.", file=sys.stderr)
+            raise SystemExit(1)
+        selected = versions[int(choice) - 1]["path"]
+
+    if args.yes or args.no_confirm or _confirm(
+            f"Downgrade {args.package}? This may replace config files."):
+        downgrade.install_version(args.package, path=selected)
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Parser
 # ──────────────────────────────────────────────────────────────────────────
@@ -766,6 +822,13 @@ def _build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("scan", parents=[common], help="scan PKGBUILD files for security risks")
     sp.add_argument("paths", nargs="+", help="PKGBUILD or .install files to scan")
     sp.set_defaults(func=cmd_scan)
+
+    sp = sub.add_parser("downgrade", parents=[common], help="install an older cached version")
+    sp.add_argument("package", help="installed package name")
+    sp.add_argument("--version", help="specific version (epoch:ver-rel, ver-rel, or ver)")
+    sp.add_argument("-l", "--list-only", action="store_true", help="only list cached versions")
+    sp.add_argument("-p", "--pin", action="store_true", help="add package to IgnorePkg after downgrade")
+    sp.set_defaults(func=cmd_downgrade)
 
     sub.add_parser("doctor", parents=[common], help="check system health").set_defaults(func=cmd_doctor)
 
