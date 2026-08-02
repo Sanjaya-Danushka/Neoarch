@@ -22,6 +22,8 @@ from datetime import datetime, timezone
 from glob import glob
 from typing import Dict, List, Optional
 
+from neoarch.resources.paths import APP_VERSION
+
 __all__ = [
     "APPIMAGE_DIR", "METADATA_PATH", "DESKTOP_DIR", "ICON_DIR",
     "list_appimages", "add_from_file", "add_from_url", "add_from_repo",
@@ -38,7 +40,7 @@ DESKTOP_DIR = os.path.expanduser("~/.local/share/applications")
 REPO_HOSTS = ("github", "gitlab", "codeberg", "forgejo")
 
 _APPIMAGE_SUFFIXES = (".AppImage", ".appimage")
-_UA = "neoarch-appimage-manager/2.2"
+_UA = f"neoarch-appimage-manager/{APP_VERSION}"
 
 
 def _now() -> str:

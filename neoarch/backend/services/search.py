@@ -10,7 +10,11 @@ import json
 import os
 from typing import List, Dict
 
+from neoarch.resources.paths import APP_VERSION
+
 __all__ = ["search_live_packages", "search_pacman", "search_aur"]
+
+_UA_VERSION = APP_VERSION
 
 
 def _run(cmd: List[str], timeout: int = 30) -> str:
@@ -84,7 +88,7 @@ def search_aur(query: str, limit: int = 8) -> List[Dict]:
     specs = []
     try:
         url = "https://aur.archlinux.org/rpc/?v=5&type=search&arg=" + urllib.parse.quote(query)
-        req = urllib.request.Request(url, headers={"User-Agent": "neoarch/2.2"})
+        req = urllib.request.Request(url, headers={"User-Agent": f"neoarch/{_UA_VERSION}"})
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         for r in data.get("results", []):

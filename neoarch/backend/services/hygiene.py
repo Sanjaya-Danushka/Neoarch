@@ -15,6 +15,7 @@ from typing import List, Dict, Optional
 
 from neoarch.backend.auth import get_auth_command
 from neoarch.backend.workers import CommandWorker
+from neoarch.resources.paths import APP_VERSION
 
 __all__ = [
     "list_orphans", "remove_orphans",
@@ -439,7 +440,7 @@ def news_cache_age() -> float:
 def _fetch_news_xml() -> str:
     """Download the Arch news feed XML, with a short timeout."""
     import urllib.request
-    req = urllib.request.Request(NEWS_URL, headers={"User-Agent": "neoarch/2.2"})
+    req = urllib.request.Request(NEWS_URL, headers={"User-Agent": f"neoarch/{APP_VERSION}"})
     with urllib.request.urlopen(req, timeout=15) as resp:
         return resp.read().decode("utf-8")
 

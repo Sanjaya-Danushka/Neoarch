@@ -15,6 +15,7 @@ from threading import Thread
 from typing import Callable, Optional
 
 from neoarch.backend.auth import get_auth_command, get_askpass_env
+from neoarch.resources.paths import APP_VERSION
 
 __all__ = ["install_from_url", "is_package_url"]
 
@@ -41,7 +42,7 @@ def _download(url: str, dest: str, progress_cb: Optional[Callable]) -> bool:
         parsed = urllib.request.urlparse(url)
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
             return False
-        req = urllib.request.Request(url, headers={"User-Agent": "neoarch/2.5"})
+        req = urllib.request.Request(url, headers={"User-Agent": f"neoarch/{APP_VERSION}"})
         with urllib.request.urlopen(req, timeout=60) as resp:
             total = int(resp.headers.get("Content-Length") or 0)
             received = 0
