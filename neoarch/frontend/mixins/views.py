@@ -172,7 +172,7 @@ class _ViewsMixin:
         sys_items = [
             ("Sources", "plugins", os.path.join(_base, "plugins.svg")),
             ("Bundles", "bundles", os.path.join(_base, "local-builds.svg")),
-            ("AppImages", "appimage", os.path.join(_base, "about.svg")),
+            ("AppImages", "appimage", os.path.join(_base, "appimage.svg")),
             ("Settings", "settings", os.path.join(_base, "settings.svg")),
         ]
         for text, view_id, icon in sys_items:
@@ -1549,7 +1549,7 @@ class _ViewsMixin:
             "discover": (os.path.join(_BASE_DIR, "assets", "icons", "discover", "search.svg"), "Home", "Dashboard and package discovery"),
             "plugins": (os.path.join(_BASE_DIR, "assets", "icons", "plugins.svg"), "Sources & Plugins", "Manage package sources and extensions"),
             "bundles": (os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"), "Bundles", "Create, import, export, and install bundles of packages"),
-            "appimage": (os.path.join(_BASE_DIR, "assets", "icons", "about.svg"), "AppImages", "Manage AppImage applications"),
+            "appimage": (os.path.join(_BASE_DIR, "assets", "icons", "appimage.svg"), "AppImages", "Manage AppImage applications"),
             "settings": (os.path.join(_BASE_DIR, "assets", "icons", "settings.svg"), "Settings", "Configure NeoArch settings"),
         }
 
