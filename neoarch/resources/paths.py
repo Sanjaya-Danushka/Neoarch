@@ -16,7 +16,7 @@ ICONS_DIR = ASSETS_DIR / "icons"
 CONFIG_DIR = Path.home() / ".config" / "neoarch"
 
 APP_NAME = "NeoArch"
-APP_VERSION = "2.1.0"
+APP_VERSION = "2.2.0"
 APP_ICON = str(ASSETS_DIR / "icons" / "app.png")
 
 PLUGINS_ITEMS_DIR = str(PROJECT_ROOT / "assets" / "plugins" / "plugins-items")
