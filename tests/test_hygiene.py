@@ -107,3 +107,111 @@ def test_fetch_news_falls_back_to_cache(monkeypatch, tmp_path):
     monkeypatch.setattr(hygiene, "_fetch_news_xml", lambda: "")
     items = hygiene.fetch_news()
     assert items and items[0]["title"] == "Cached"
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Cache retention / corrupted archives
+# ──────────────────────────────────────────────────────────────────────────
+
+def test_list_corrupted_packages(monkeypatch, tmp_path):
+    good = tmp_path / "good-1.0-1-x86_64.pkg.tar.zst"
+    bad = tmp_path / "bad-1.0-1-x86_64.pkg.tar.zst"
+    good.write_bytes(b"data")
+    bad.write_bytes(b"data")
+    other = tmp_path / "notes.txt"
+    other.write_text("x")
+
+    results = {str(good): 0, str(bad): 1, str(other): 0}
+    monkeypatch.setattr(hygiene, "_run",
+                        lambda cmd, **k: subprocess.CompletedProcess(
+                            cmd, results.get(cmd[-1], 0), stdout="", stderr=""))
+    import neoarch.backend.services.downgrade as downgrade
+    monkeypatch.setattr(downgrade, "cache_dirs", lambda: [str(tmp_path)])
+    assert hygiene.list_corrupted_packages() == [str(bad)]
+
+
+def test_remove_corrupted_packages(monkeypatch, tmp_path):
+    monkeypatch.setattr(hygiene, "list_corrupted_packages",
+                        lambda: [str(tmp_path / "bad.pkg.tar.zst")])
+    calls = []
+    monkeypatch.setattr(hygiene, "_run_sudo", lambda cmd, **k: calls.append(cmd)
+                        or subprocess.CompletedProcess(cmd, 0, stdout="", stderr=""))
+    assert hygiene.remove_corrupted_packages() is True
+    assert calls and calls[0][0] == "rm" and calls[0][1] == "-f"
+
+
+def test_purge_cache_runs_paccache(monkeypatch):
+    calls = []
+    monkeypatch.setattr(hygiene, "_run_sudo", lambda cmd, **k: calls.append(cmd)
+                        or subprocess.CompletedProcess(cmd, 0, stdout="", stderr=""))
+    assert hygiene.purge_cache(2) is True
+    assert calls[-1][:4] == ["paccache", "-r", "-k", "2"]
+    assert hygiene.purge_cache(-1) is False
+
+
+def test_purge_flatpak_unused(monkeypatch):
+    calls = []
+    monkeypatch.setattr(hygiene, "_run_sudo", lambda cmd, **k: calls.append(cmd)
+                        or subprocess.CompletedProcess(cmd, 0, stdout="", stderr=""))
+    assert hygiene.purge_flatpak_unused() is True
+    assert calls[-1][0] == "flatpak" and "--unused" in calls[-1]
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Three-way pacnew merge
+# ──────────────────────────────────────────────────────────────────────────
+
+def test_merge_pacnew_clean_accept(monkeypatch, tmp_path):
+    original = tmp_path / "conf"
+    pacnew = tmp_path / "conf.pacnew"
+    original.write_text("A = old\nB = shared\n")
+    pacnew.write_text("A = new\nB = shared\n")
+
+    monkeypatch.setattr(hygiene, "_extract_base", lambda *a, **k: "A = old\nB = shared\n")
+    import shutil
+
+    def fake_sudo(cmd, **k):
+        if cmd and cmd[0] == "cp":
+            shutil.copy(cmd[-2], cmd[-1])
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(hygiene, "_run_sudo", fake_sudo)
+    result = hygiene.merge_pacnew(str(pacnew), accept=True)
+    assert result["conflicts"] is False
+    assert original.read_text() == "A = new\nB = shared\n"
+    assert not pacnew.exists()
+
+
+def test_merge_pacnew_with_conflicts(monkeypatch, tmp_path):
+    original = tmp_path / "conf"
+    pacnew = tmp_path / "conf.pacnew"
+    original.write_text("A = user\nB = mine\n")
+    pacnew.write_text("A = user\nB = theirs\n")
+    monkeypatch.setattr(hygiene, "_extract_base", lambda *a, **k: "A = user\nB = base\n")
+
+    result = hygiene.merge_pacnew(str(pacnew))
+    assert result["conflicts"] is True
+    merged_path = result["merged"]
+    assert merged_path.endswith(".merged")
+    content = open(merged_path).read()
+    assert "<<<<<<<" in content
+    assert pacnew.exists()
+    os.remove(merged_path)
+
+
+def test_merge_pacnew_missing_pacnew(monkeypatch, tmp_path):
+    result = hygiene.merge_pacnew(str(tmp_path / "none.pacnew"))
+    assert result["conflicts"] is True
+
+
+def test_extract_base_uses_cached_archive(monkeypatch, tmp_path):
+    archive = tmp_path / "confpkg-1.0-1-x86_64.pkg.tar.zst"
+    archive.write_bytes(b"x")
+    import neoarch.backend.services.downgrade as downgrade
+    monkeypatch.setattr(downgrade, "cache_dirs", lambda: [str(tmp_path)])
+    monkeypatch.setattr(downgrade, "_parse_pkgfile",
+                        lambda p: {"name": "confpkg", "version": "1.0-1"})
+    monkeypatch.setattr(hygiene, "_run", lambda cmd, **k: subprocess.CompletedProcess(
+        cmd, 0, stdout="A = old\n", stderr=""))
+    base = hygiene._extract_base("/etc/conf", "/etc/conf.pacnew", "confpkg")
+    assert base == "A = old\n"

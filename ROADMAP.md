@@ -51,25 +51,33 @@ Pre-install security review for AUR installs/updates.
 
 ## Phase 4 — System Depth (v2.4)
 
-### Pacman keyring manager
+### Pacman keyring manager ✅ Implemented
 
-- `neoarch/backend/services/keyring.py`: `pacman-key --init/--populate/--refresh-keys`, list keyring, receive/locally-sign keys, GUI-backed.
-- Tests: `tests/test_keyring.py`.
+- **Done** — `neoarch/backend/services/keyring.py`: `pacman-key --init/--populate/--refresh-keys`, list trusted keys (fingerprint/uid/created), key details, receive + locally-sign keys. Pure stdlib; mutations run elevated via the app's auth helpers; key ids validated against `^[0-9A-Fa-f]{8,40}$`.
+- **Done** — CLI: `neoarch-cli keyring list|details|init|populate|refresh|receive|sign` (with `--json`).
+- **Todo** — UI: keyring tab with receive/sign workflows.
+- **Done** — Tests: `tests/test_keyring.py` (8 tests).
 
-### Purify / cache retention
+### Purify / cache retention ✅ Implemented
 
-- Extend `hygiene.py`: corrupted-archive detection, `paccache -rk<N>` retention, Flatpak unused-dependency cleanup (`flatpak uninstall --unused`).
-- Tests extended in `tests/test_hygiene.py`.
+- **Done** — `hygiene.py`: corrupted-archive detection (`bsdtar -tf` verification across all `CacheDir`s), `paccache -r -k<N>` retention, Flatpak unused-dependency cleanup (`flatpak uninstall --unused`).
+- **Done** — CLI: `neoarch-cli purify corrupt|cache [--keep N]|flatpak` (with `--json`).
+- **Todo** — UI: corruption scan + cache-age chart in Purify dialog.
+- **Done** — Tests: `tests/test_hygiene.py` extended (4 new tests).
 
-### Three-way pacnew merge
+### Three-way pacnew merge ✅ Implemented
 
-- Extend `hygiene.py`: `diff3`/`meld`-style three-way merge using cached package archives as base; `.bak` backup before accept.
-- Tests extended in `tests/test_hygiene.py`.
+- **Done** — `hygiene.py` `merge_pacnew()`: `diff3 -m` three-way merge. Base extracted from the owning package's cached archive (`bsdtar -xOf`), falling back to the current original; `.pacsave` backup before accept; conflict-marked `.merged` output for manual review when conflict-free acceptance is not possible.
+- **Done** — CLI: `neoarch-cli purify merge <path> [--accept]` (exits 2 on conflicts).
+- **Todo** — UI: merge preview in the .pacnew dialog.
+- **Done** — Tests: `tests/test_hygiene.py` (4 merge tests).
 
-### Restart-required detection
+### Restart-required detection ✅ Implemented
 
-- `neoarch/backend/services/restart_check.py`: flag kernel/vulkan/glibc/other upgrades needing a reboot; prompt in update flow.
-- Tests: `tests/test_restart_check.py`.
+- **Done** — `neoarch/backend/services/restart_check.py`: flags new kernels installed but not booted (`/usr/lib/modules` vs `uname -r`, pacman version ordering), plus glibc/systemd/openssl/nss libraries replaced after boot time (`/proc/uptime`). Prompt surfaces in the update flow.
+- **Done** — CLI: `neoarch-cli restart check [--json]`.
+- **Todo** — UI: restart banner + action button after system upgrade.
+- **Done** — Tests: `tests/test_restart_check.py` (9 tests).
 
 ## Phase 5 — UX & Integration (v2.5)
 

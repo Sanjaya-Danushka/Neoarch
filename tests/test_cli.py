@@ -24,7 +24,8 @@ def test_parser_has_all_commands():
     for expected in (
         "search", "install", "remove", "upgrade", "update", "list",
         "list-updates", "ignore", "news", "backup", "purge", "config",
-        "scan", "downgrade", "marks", "appimage", "doctor",
+        "scan", "downgrade", "marks", "appimage", "keyring", "purify",
+        "restart", "doctor",
     ):
         assert expected in subs, f"missing command {expected}"
 
@@ -207,3 +208,70 @@ def test_cmd_appimage_add_missing_file(monkeypatch, capsys):
     with pytest.raises(SystemExit) as exc:
         cmd_appimage(args)
     assert exc.value.code == 1
+
+
+def test_cmd_keyring_parser_actions():
+    p = _build_parser()
+    assert p.parse_args(["keyring", "list"]).action == "list"
+    assert p.parse_args(["keyring", "sign", "ABCDEF1234567890ABCDEF1234567890ABCDEF12"]).key \
+        == "ABCDEF1234567890ABCDEF1234567890ABCDEF12"
+    assert p.parse_args(["keyring", "populate"]).keyrings == []
+
+
+def test_cmd_keyring_sign(monkeypatch, capsys):
+    from neoarch.cli import cmd_keyring
+    from neoarch.backend.services import keyring
+
+    monkeypatch.setattr(keyring, "locally_sign", lambda k: True)
+    args = _build_parser().parse_args(["keyring", "sign", "ABCD"])
+    cmd_keyring(args)
+    assert "Locally signed" in capsys.readouterr().out
+
+
+def test_cmd_purify_parser_actions():
+    p = _build_parser()
+    assert p.parse_args(["purify", "corrupt"]).action == "corrupt"
+    c = p.parse_args(["purify", "cache", "--keep", "5"])
+    assert c.action == "cache" and c.keep == 5
+    m = p.parse_args(["purify", "merge", "/etc/foo.pacnew", "--accept"])
+    assert m.path == "/etc/foo.pacnew" and m.accept is True
+
+
+def test_cmd_purify_corrupt_clean(monkeypatch, capsys):
+    from neoarch.cli import cmd_purify
+    from neoarch.backend.services import hygiene
+
+    monkeypatch.setattr(hygiene, "list_corrupted_packages", lambda: [])
+    args = _build_parser().parse_args(["purify", "corrupt"])
+    cmd_purify(args)
+    assert "No corrupted package archives" in capsys.readouterr().out
+
+
+def test_cmd_purify_merge_conflicts(monkeypatch, capsys):
+    from neoarch.cli import cmd_purify
+    from neoarch.backend.services import hygiene
+
+    monkeypatch.setattr(hygiene, "merge_pacnew",
+                        lambda path, accept=False: {"merged": "/etc/foo.merged",
+                                                    "conflicts": True, "backup": ""})
+    args = _build_parser().parse_args(["purify", "merge", "/etc/foo.pacnew"])
+    with pytest.raises(SystemExit) as exc:
+        cmd_purify(args)
+    assert exc.value.code == 2
+
+
+def test_cmd_restart_check(monkeypatch, capsys):
+    from neoarch.cli import cmd_restart
+    from neoarch.backend.services import restart_check
+
+    monkeypatch.setattr(restart_check, "check_restart_required",
+                        lambda: [{"category": "kernel",
+                                  "message": "reboot now"}])
+    args = _build_parser().parse_args(["restart", "check"])
+    cmd_restart(args)
+    assert "kernel" in capsys.readouterr().out
+
+    monkeypatch.setattr(restart_check, "check_restart_required", lambda: [])
+    args = _build_parser().parse_args(["restart", "check"])
+    cmd_restart(args)
+    assert "No restart required" in capsys.readouterr().out

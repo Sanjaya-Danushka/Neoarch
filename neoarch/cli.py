@@ -24,6 +24,9 @@ Commands:
     downgrade     Install an older cached version of a package
     appimage      Manage AppImage applications (add/update/remove)
     scan          Scan a PKGBUILD for security risks
+    keyring       Manage the pacman keyring
+    purify        Remove corrupted archives and unused runtimes
+    restart       Check whether a reboot is recommended
     doctor        Check the system for missing prerequisites
 """
 
@@ -852,6 +855,141 @@ def cmd_appimage(args) -> None:
         print(f"Synchronized: {len(entries)} managed AppImage(s).")
 
 
+# ── keyring ──────────────────────────────────────────────────────────────
+
+def cmd_keyring(args) -> None:
+    from neoarch.backend.services import keyring
+
+    action = args.action
+    if action == "list":
+        keys = keyring.list_keyring()
+        if args.json:
+            _emit(keys, True)
+        elif not keys:
+            print("No keys found (or pacman-key unavailable).")
+        else:
+            for k in keys:
+                print(f"{k.get('fingerprint', ''):>40}  "
+                      f"{k.get('uid', '') or k.get('validity', '')}"
+                      f"{('  [' + k['created'] + ']') if k.get('created') else ''}")
+        return
+
+    if action == "details":
+        info = keyring.key_details(args.key)
+        if args.json:
+            _emit(info, True)
+        elif info:
+            print(info.get("list", ""))
+        else:
+            print(f"error: invalid key id: {args.key}", file=sys.stderr)
+            raise SystemExit(1)
+        return
+
+    if action == "init":
+        if keyring.init_keyring():
+            print("Keyring initialized.")
+        else:
+            print("Failed to initialize keyring (need root).", file=sys.stderr)
+            raise SystemExit(1)
+        return
+
+    if action == "populate":
+        keyrings = args.keyrings or None
+        if keyring.populate_keyring(keyrings):
+            names = ", ".join(keyrings) if keyrings else "default keyrings"
+            print(f"Keyring populated with {names}.")
+        else:
+            print("Failed to populate keyring (need root).", file=sys.stderr)
+            raise SystemExit(1)
+        return
+
+    if action == "refresh":
+        if keyring.refresh_keys():
+            print("Keyring refreshed.")
+        else:
+            print("Failed to refresh keyring (need root).", file=sys.stderr)
+            raise SystemExit(1)
+        return
+
+    if action in ("receive", "sign"):
+        ok = keyring.receive_key(args.key) if action == "receive" \
+            else keyring.locally_sign(args.key)
+        verb = "Received" if action == "receive" else "Locally signed"
+        if ok:
+            print(f"{verb} key '{args.key}'.")
+        else:
+            print(f"Failed to {action} key '{args.key}' (need root).", file=sys.stderr)
+            raise SystemExit(1)
+        return
+
+
+# ── purify ───────────────────────────────────────────────────────────────
+
+def cmd_purify(args) -> None:
+    from neoarch.backend.services import hygiene
+
+    action = args.action
+    if action == "corrupt":
+        corrupted = hygiene.list_corrupted_packages()
+        if args.json:
+            _emit(corrupted, True)
+        elif not corrupted:
+            print("No corrupted package archives found.")
+        else:
+            print(f"{len(corrupted)} corrupted archive(s):")
+            for p in corrupted:
+                print(f"  {p}")
+            if args.yes or args.no_confirm or _confirm("Remove corrupted archives?"):
+                hygiene.remove_corrupted_packages()
+                print("Removed corrupted archives.")
+        return
+
+    if action == "cache":
+        if hygiene.purge_cache(args.keep):
+            print(f"Cache trimmed, keeping {args.keep} version(s) per package.")
+        else:
+            print("Failed to trim cache (need root).", file=sys.stderr)
+            raise SystemExit(1)
+        return
+
+    if action == "flatpak":
+        if hygiene.purge_flatpak_unused():
+            print("Removed unused Flatpak runtimes.")
+        else:
+            print("Failed to clean up Flatpak (need root).", file=sys.stderr)
+            raise SystemExit(1)
+        return
+
+    if action == "merge":
+        result = hygiene.merge_pacnew(args.path, accept=args.accept)
+        if result["conflicts"]:
+            print(f"Conflicts in {result['merged']}; review and resolve manually.",
+                  file=sys.stderr)
+            raise SystemExit(2)
+        if result["merged"]:
+            print(f"Merged into {result['merged']} "
+                  f"(backup: {result['backup'] or 'none'}).")
+        else:
+            print("error: merge failed.", file=sys.stderr)
+            raise SystemExit(1)
+
+
+# ── restart ──────────────────────────────────────────────────────────────
+
+def cmd_restart(args) -> None:
+    from neoarch.backend.services import restart_check
+
+    items = restart_check.check_restart_required()
+    if args.json:
+        _emit(items, True)
+    elif not items:
+        print("No restart required.")
+    else:
+        print(f"{len(items)} item(s) need a restart:")
+        for item in items:
+            print(f"  [{item.get('category')}] {item.get('message')}")
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Parser
 # ──────────────────────────────────────────────────────────────────────────
@@ -998,6 +1136,38 @@ def _build_parser() -> argparse.ArgumentParser:
     _a = asp.add_parser("update", parents=[common], help="install updates")
     _a.add_argument("id", nargs="?", help="managed app id (default: all)")
     sp.set_defaults(func=cmd_appimage)
+
+    sp = sub.add_parser("keyring", parents=[common], help="manage the pacman keyring")
+    ksp = sp.add_subparsers(dest="action", required=True)
+    ksp.add_parser("list", parents=[common], help="list trusted keys")
+    _k = ksp.add_parser("details", parents=[common], help="show key details")
+    _k.add_argument("key", help="key id or fingerprint")
+    ksp.add_parser("init", parents=[common], help="initialize the keyring")
+    _k = ksp.add_parser("populate", parents=[common], help="populate with official keyrings")
+    _k.add_argument("keyrings", nargs="*",
+                    help="keyring names (default: archlinux, archlinux32, archlinuxarm)")
+    ksp.add_parser("refresh", parents=[common], help="refresh keys from the keyserver")
+    _k = ksp.add_parser("receive", parents=[common], help="receive a key from the keyserver")
+    _k.add_argument("key", help="key id or fingerprint")
+    _k = ksp.add_parser("sign", parents=[common], help="locally sign a key")
+    _k.add_argument("key", help="key id or fingerprint")
+    sp.set_defaults(func=cmd_keyring)
+
+    sp = sub.add_parser("purify", parents=[common], help="deep system cleanup")
+    psp = sp.add_subparsers(dest="action", required=True)
+    psp.add_parser("corrupt", parents=[common], help="find/remove corrupted archives")
+    _p = psp.add_parser("cache", parents=[common], help="trim package cache")
+    _p.add_argument("--keep", type=int, default=3, help="versions to keep per package (default 3)")
+    psp.add_parser("flatpak", parents=[common], help="remove unused Flatpak runtimes")
+    _p = psp.add_parser("merge", parents=[common], help="three-way merge a .pacnew file")
+    _p.add_argument("path", help="path to a .pacnew file")
+    _p.add_argument("--accept", action="store_true",
+                    help="apply the merge if it has no conflicts")
+    sp.set_defaults(func=cmd_purify)
+
+    sp = sub.add_parser("restart", parents=[common], help="check whether a reboot is recommended")
+    sp.add_argument("action", choices=["check"], nargs="?", default="check")
+    sp.set_defaults(func=cmd_restart)
 
     sub.add_parser("doctor", parents=[common], help="check system health").set_defaults(func=cmd_doctor)
 

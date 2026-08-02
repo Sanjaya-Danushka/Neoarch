@@ -18,7 +18,10 @@ from neoarch.backend.workers import CommandWorker
 __all__ = [
     "list_orphans", "remove_orphans",
     "list_pacnew", "diff_pacnew", "accept_pacnew", "delete_pacnew",
+    "merge_pacnew",
     "fetch_news", "news_cache", "news_cache_age",
+    "list_corrupted_packages", "remove_corrupted_packages",
+    "purge_cache", "purge_flatpak_unused",
 ]
 
 NEWS_URL = "https://archlinux.org/feeds/news/"
@@ -187,6 +190,224 @@ def delete_pacnew(path: str) -> bool:
 def shutil_copy(src: str, dst: str):
     import shutil
     shutil.copy2(src, dst)
+
+
+def merge_pacnew(path: str, accept: bool = False) -> Dict:
+    """Three-way merge a .pacnew against the current original.
+
+    The base is taken from a cached package archive for the owning
+    package (an earlier config), falling back to the current original
+    when no archive is available. Uses `diff3 -m`.
+
+    Returns {merged, conflicts, backup}. When conflicts exist the merged
+    output (with conflict markers) is written next to the original as
+    `<original>.merged` and the .pacnew is left in place. When clean and
+    `accept=True` the original is replaced (backup to .pacsave) and the
+    .pacnew is removed.
+    """
+    info = _pacnew_info(path)
+    original = info["original"]
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            theirs = f.read()
+    except Exception:
+        return {"merged": "", "conflicts": True, "backup": ""}
+
+    base = _extract_base(original, path, info["package"])
+    try:
+        with open(original, "r", encoding="utf-8") as f:
+            ours = f.read()
+    except Exception:
+        ours = ""
+
+    # diff3 -m ours base theirs
+    import tempfile
+    def _write(content: str) -> str:
+        fd, name = tempfile.mkstemp(prefix="neoarch-merge-")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(content)
+        return name
+
+    tmp_ours, tmp_base, tmp_theirs = _write(ours), _write(base), _write(theirs)
+    try:
+        result = subprocess.run(
+            ["diff3", "-m", tmp_ours, tmp_base, tmp_theirs],
+            capture_output=True, text=True, timeout=30)
+        merged = result.stdout
+        conflicts = result.returncode != 0  # 1 = conflicts, 2 = trouble
+    finally:
+        for tmp in (tmp_ours, tmp_base, tmp_theirs):
+            try:
+                os.remove(tmp)
+            except Exception:
+                pass
+
+    if not conflicts:
+        if accept:
+            backup = original + ".pacsave"
+            try:
+                if os.path.exists(original):
+                    shutil_copy(original, backup)
+                if _run_sudo(["cp", path, original]).returncode == 0:
+                    os.remove(path)
+                    return {"merged": original, "conflicts": False, "backup": backup}
+            except Exception:
+                pass
+        return {"merged": merged, "conflicts": False, "backup": ""}
+
+    merged_path = original + ".merged"
+    try:
+        with open(merged_path, "w", encoding="utf-8") as f:
+            f.write(merged)
+        return {"merged": merged_path, "conflicts": True, "backup": ""}
+    except Exception:
+        return {"merged": "", "conflicts": True, "backup": ""}
+
+
+def _extract_base(original: str, pacnew: str, package: str) -> str:
+    """Return the previous upstream version of `original`.
+
+    Searches cached package archives for the owning package and extracts
+    the same config path, preferring an archive whose content differs
+    from the .pacnew (i.e. a genuinely older version). Falls back to the
+    current original content when nothing suitable is cached.
+    """
+    rel = original.lstrip("/")
+    try:
+        with open(pacnew, "r", encoding="utf-8") as f:
+            new_content = f.read()
+    except Exception:
+        new_content = None
+
+    from neoarch.backend.services.downgrade import cache_dirs, _parse_pkgfile
+    for cache_dir in cache_dirs():
+        try:
+            names = sorted(os.listdir(cache_dir))
+        except Exception:
+            continue
+        for name in names:
+            if not name.endswith(".pkg.tar.zst") and not name.endswith(".pkg.tar.xz"):
+                continue
+            parsed = _parse_pkgfile(os.path.join(cache_dir, name))
+            if not parsed or parsed["name"] != package:
+                continue
+            archive = os.path.join(cache_dir, name)
+            result = _run(["bsdtar", "-xOf", archive, rel], timeout=60)
+            if result.returncode == 0 and result.stdout:
+                if new_content is None or result.stdout != new_content:
+                    return result.stdout
+    # Fall back to the current original as base (two-way-ish merge).
+    try:
+        with open(original, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception:
+        return ""
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Cache retention / corrupted archives
+# ──────────────────────────────────────────────────────────────────────────
+
+def list_corrupted_packages() -> List[str]:
+    """List package archives in the cache that fail archive verification.
+
+    Each `.pkg.tar.*` archive is verified with `bsdtar -tf`; an archive
+    that cannot be listed is treated as corrupted.
+    """
+    from neoarch.backend.services.downgrade import cache_dirs
+    corrupted: List[str] = []
+    for cache_dir in cache_dirs():
+        try:
+            names = os.listdir(cache_dir)
+        except Exception:
+            continue
+        for name in names:
+            if not re.search(r"\.pkg\.tar(?:\.\w+)?$", name):
+                continue
+            path = os.path.join(cache_dir, name)
+            if not os.path.isfile(path):
+                continue
+            result = _run(["bsdtar", "-tf", path], timeout=120)
+            if result.returncode != 0:
+                corrupted.append(path)
+    return corrupted
+
+
+def remove_corrupted_packages(progress_cb=None, finished_cb=None) -> bool:
+    """Delete corrupted archives from the cache. Returns True on success."""
+    def _do() -> bool:
+        corrupted = list_corrupted_packages()
+        if not corrupted:
+            if progress_cb:
+                try:
+                    progress_cb("No corrupted package archives found.")
+                except Exception:
+                    pass
+            if finished_cb:
+                try:
+                    finished_cb(True)
+                except Exception:
+                    pass
+            return True
+        if progress_cb:
+            try:
+                progress_cb(f"Removing {len(corrupted)} corrupted archive(s)...")
+            except Exception:
+                pass
+        result = _run_sudo(["rm", "-f"] + corrupted)
+        ok = result.returncode == 0
+        if finished_cb:
+            try:
+                finished_cb(ok)
+            except Exception:
+                pass
+        return ok
+
+    if finished_cb:
+        Thread(target=_do, daemon=True).start()
+        return True
+    return _do()
+
+
+def purge_cache(retain: int = 3) -> bool:
+    """Trim the package cache, keeping `retain` versions per package.
+
+    Runs `paccache -rk<N>` which also clears the transaction database
+    temp directory. Returns True on success.
+    """
+    if retain < 0:
+        return False
+    result = _run_sudo(["paccache", "-r", "-k", str(retain)], timeout=900)
+    return result.returncode == 0
+
+
+def purge_flatpak_unused(progress_cb=None, finished_cb=None) -> bool:
+    """Remove Flatpak runtimes left unused by installed apps."""
+    def _do() -> bool:
+        if progress_cb:
+            try:
+                progress_cb("Removing unused Flatpak runtimes...")
+            except Exception:
+                pass
+        result = _run_sudo(["flatpak", "uninstall", "--unused", "-y"], timeout=900)
+        ok = result.returncode == 0
+        if progress_cb:
+            try:
+                progress_cb("Flatpak cleanup done." if ok else
+                            f"Flatpak cleanup failed: {result.stderr.strip()}")
+            except Exception:
+                pass
+        if finished_cb:
+            try:
+                finished_cb(ok)
+            except Exception:
+                pass
+        return ok
+
+    if finished_cb:
+        Thread(target=_do, daemon=True).start()
+        return True
+    return _do()
 
 
 # ──────────────────────────────────────────────────────────────────────────

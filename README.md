@@ -68,8 +68,15 @@ neoarch-cli marks reason firefox explicit  # set install reason
 neoarch-cli appimage list             # managed AppImages
 neoarch-cli appimage add-repo Obsidian obsidianmd/obsidian-releases
 neoarch-cli appimage check --json     # check for AppImage updates
-neoarch-cli backup -c                 # create a backup
-neoarch-cli purge -o                  # remove orphaned packages
+ neoarch-cli backup -c                 # create a backup
+ neoarch-cli purge -o                  # remove orphaned packages
+ neoarch-cli keyring list              # trusted pacman keys
+ neoarch-cli keyring populate          # official Arch keyrings
+ neoarch-cli purify corrupt            # find corrupted cache archives
+ neoarch-cli purify cache --keep 2     # paccache retention
+ neoarch-cli purify flatpak            # remove unused Flatpak runtimes
+ neoarch-cli purify merge /etc/x.pacnew --accept  # three-way .pacnew merge
+ neoarch-cli restart check --json      # is a reboot recommended?
 ```
 
 The `appimage` subcommands manage a NeoArch-owned AppImage store at
