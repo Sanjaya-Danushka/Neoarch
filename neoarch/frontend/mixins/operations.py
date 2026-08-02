@@ -68,6 +68,21 @@ class _OperationsMixin:
             self.log_signal.emit("All selected packages are already installed")
             return
         package_list = "\n".join(f"• {pkg}" for src, pkgs in to_install.items() for pkg in pkgs)
+        if 'AUR' in to_install:
+            aur_pkgs = ", ".join(to_install['AUR'])
+            warn = QMessageBox(
+                QMessageBox.Icon.Warning,
+                "AUR Security Notice",
+                f"AUR packages are built from third-party PKGBUILD scripts "
+                f"maintained by the community.\n\n{aur_pkgs}\n\n"
+                "Always review the PKGBUILD and .install scriptlet before building. "
+                "Proceeding with the AUR helper does not perform a static security scan.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                self)
+            warn.setInformativeText("Continue installing AUR packages?")
+            warn.setDefaultButton(QMessageBox.StandardButton.No)
+            if warn.exec() != QMessageBox.StandardButton.Yes:
+                return
         reply = QMessageBox.question(
             self, "Install Packages with Sudo",
             f"This will install the following packages with elevated privileges:\n\n{package_list}\n\nContinue?",

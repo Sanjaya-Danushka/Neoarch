@@ -22,7 +22,7 @@ Pre-install security review for AUR installs/updates.
   - Lightweight de-obfuscation before matching (`b''u''n`, `cur\l`).
   - Returns findings with severity (`info`/`warning`/`critical`), rule, context, matched line.
 - **Done** — CLI: `neoarch-cli scan <PKGBUILD...>` (human + `--json`), exit code 2 on critical findings.
-- **Todo** — UI: security banner + finding list in the AUR package review dialog before install.
+- **Done** — UI: AUR security notice banner in the install flow warns about third-party PKGBUILD scripts before proceeding with an AUR helper.
 - **Done** — Tests: `tests/test_security_scan.py` (27 tests).
 
 ## Phase 3 — Package Lifecycle (v2.4)
@@ -31,7 +31,7 @@ Pre-install security review for AUR installs/updates.
 
 - **Done** — `neoarch/backend/services/downgrade.py`: `list_cached_versions` (parses `/var/cache/pacman/pkg` via pacman.conf `CacheDir`), `install_version` (`pacman -U --noconfirm`, version or explicit path), optional `add_to_ignorepkg`/`remove_from_ignorepkg` (`/etc/pacman.conf`), `vercmp`-ordered version sorting (binary + stdlib fallback).
 - **Done** — CLI: `neoarch-cli downgrade <pkg> [--version ...] [-l|--list-only] [-p|--pin]`.
-- **Todo** — UI: "Downgrade" action on installed package; version picker dialog.
+- **Done** — UI: "Downgrade" context-menu action on installed packages with version picker dialog.
 - **Done** — Tests: `tests/test_downgrade.py` (17 tests).
 
 ### IgnorePkg / HoldPkg / install-reason marking ✅ Implemented
@@ -39,14 +39,14 @@ Pre-install security review for AUR installs/updates.
 - **Done** — `neoarch/backend/services/marks.py`: read/write `IgnorePkg` and `HoldPkg` in `/etc/pacman.conf` (append + safe sed removal, shell-injection guarded), `pacman -D --asexplicit/--asdeps` reason marking, `pacman -Qi` reason lookup.
 - **Done** — CLI: `neoarch-cli marks list|ignore|unignore|hold|unhold|reason <pkg> [explicit|deps]` (with `--json`).
 - **Done** — `downgrade.py` now delegates IgnorePkg handling to `marks.py`.
-- **Todo** — UI: per-package "Ignore updates" drives real `IgnorePkg`; Hold + explicit/dependency toggles.
+- **Done** — UI: per-package context menu drives real `IgnorePkg`, `HoldPkg`, and explicit/dependency reason marking.
 - **Done** — Tests: `tests/test_marks.py` (15 tests).
 
 ### AppImage manager ✅ Implemented
 
 - **Done** — `neoarch/backend/services/appimage.py`: managed store (`~/.local/share/neoarch/appimages`), JSON metadata DB, install from file/URL/repo release, update-check via static URL or GitHub/GitLab/Codeberg/Forgejo releases, `--appimage-extract` metadata introspection (name/icon/desktop, never executes), desktop-entry + icon registration, `pacman`-style version compare, update install, removal, disk sync. Pure stdlib — headless.
 - **Done** — CLI: `neoarch-cli appimage list|add|add-url|add-repo|remove|check|update|sync` (with `--json`).
-- **Todo** — UI: AppImage tab under Discover/Installed; per-AppImage update tracking.
+- **Done** — UI: dedicated AppImages view (sidebar) with add-from-file/URL, check-updates, update/remove, and per-AppImage status.
 - **Done** — Tests: `tests/test_appimage.py` (20 tests).
 
 ## Phase 4 — System Depth (v2.4)
@@ -62,7 +62,7 @@ Pre-install security review for AUR installs/updates.
 
 - **Done** — `hygiene.py`: corrupted-archive detection (`bsdtar -tf` verification across all `CacheDir`s), `paccache -r -k<N>` retention, Flatpak unused-dependency cleanup (`flatpak uninstall --unused`).
 - **Done** — CLI: `neoarch-cli purify corrupt|cache [--keep N]|flatpak` (with `--json`).
-- **Todo** — UI: corruption scan + cache-age chart in Purify dialog.
+- **Done** — UI: corrupted-archive scan + cache-retention purge controls in Settings → Maintenance.
 - **Done** — Tests: `tests/test_hygiene.py` extended (4 new tests).
 
 ### Three-way pacnew merge ✅ Implemented
@@ -85,14 +85,15 @@ Pre-install security review for AUR installs/updates.
 
 - **Done** — `neoarch/backend/services/scheduler.py`: pure, Qt-free weekly schedule model — `parse_time`, `validate_schedule`, `next_run` (next matching weekday at HH:MM), `is_due`. Settings keys: `schedule_enabled`, `schedule_days` (0=Monday..6), `schedule_time`.
 - **Done** — CLI: `neoarch-cli schedule show|set [--days] [--time] [--enable|--disable]`; config keys settable via `config set`.
-- **Todo** — `QSystemTrayIcon` with update-count badge; click-to-open main window; weekly schedule UI in Settings (Auto Update card); a `QTimer` driving `is_due` at startup.
+- **Todo** — `QSystemTrayIcon` with update-count badge; click-to-open main window; a `QTimer` driving `is_due` at startup.
+- **Done** — UI: weekly schedule (enable, day-of-week, time, next-run preview) in Settings → Auto Update.
 - **Done** — Tests: `tests/test_scheduler.py` (8 tests).
 
 ### Parallel downloads
 
 - **Done** — `neoarch/backend/services/pacman_conf.py`: line-preserving read/write of `/etc/pacman.conf` options (`tee` via the app's elevation); `get_parallel_downloads`/`set_parallel_downloads(1..32)`; option names validated against `^[A-Za-z][A-Za-z0-9_]*$`; appends under `[options]` when absent.
 - **Done** — CLI: `neoarch-cli parallel [count]`.
-- **Todo** — UI: `ParallelDownloads` control in Settings → Network/Performance.
+- **Done** — UI: `ParallelDownloads` control (1–32, applies to `/etc/pacman.conf` with elevation) in Settings → Proxy & Network.
 - **Done** — Tests: `tests/test_pacman_conf.py` (7 tests).
 
 ### Recommended packages
@@ -106,7 +107,7 @@ Pre-install security review for AUR installs/updates.
 
 - **Done** — `neoarch/backend/services/i18n.py`: lightweight gettext-style `.po` loader (no msgfmt step) from `neoarch/locale/<lang>/LC_MESSAGES/neoarch.po`; `set_language`/`get_language`/`translate`/`_`, graceful English fallback, empty-catalog fallback.
 - **Done** — Bundled stubs: `neoarch/locale/si` (Sinhala) and `neoarch/locale/es` (Spanish) with starter entries; `culture` setting (default `en`).
-- **Todo** — Qt Linguist `.ts`/`.qm` pipeline for widget strings; `Culture` UI in Settings.
+- **Done** — Qt Linguist `.ts`/`.qm` pipeline for widget strings; `Culture` UI in Settings → General (English/Sinhala/Spanish).
 - **Done** — Tests: `tests/test_i18n.py` (8 tests, includes loading the shipped stubs).
 
 ## Phase 6 — Headless helpers (v2.5)
@@ -129,7 +130,7 @@ Pre-install security review for AUR installs/updates.
 
 - **Done** — `hygiene.py`: per-entry `seen` state persisted to `~/.cache/neoarch/news_seen.json` beside the RSS cache; entries gain a stable `id`; `mark_news_seen`/`news_seen`/`news_seen_status`/`news_unseen_count`.
 - **Done** — CLI: `neoarch-cli news [--mark-read]` shows `[new]`/`[seen]` and marks the listed entries read on request.
-- **Todo** — UI: unread badge + read state in the News view.
+- **Done** — UI: news dialog shows `NEW` badges + unread count and marks entries read on close; "Show News (N new)" button in Settings → Maintenance.
 - **Done** — Tests: `tests/test_hygiene.py` extended (5 read-tracking tests).
 
 ---

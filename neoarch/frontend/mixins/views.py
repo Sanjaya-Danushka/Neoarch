@@ -172,6 +172,7 @@ class _ViewsMixin:
         sys_items = [
             ("Sources", "plugins", os.path.join(_base, "plugins.svg")),
             ("Bundles", "bundles", os.path.join(_base, "local-builds.svg")),
+            ("AppImages", "appimage", os.path.join(_base, "about.svg")),
             ("Settings", "settings", os.path.join(_base, "settings.svg")),
         ]
         for text, view_id, icon in sys_items:
@@ -992,6 +993,7 @@ class _ViewsMixin:
 
         # Plugins view placeholder — created lazily in switch_view("plugins")
         self.plugins_view = None
+        self.appimage_view = None
 
         # Container for table area + detail card side panel
         self.packages_content_area = QWidget()
@@ -1026,6 +1028,8 @@ class _ViewsMixin:
         self.package_table.setIconSize(QSize(20, 20))
         self.package_table.setWordWrap(True)
         self.package_table.verticalHeader().setDefaultSectionSize(56)
+        self.package_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.package_table.customContextMenuRequested.connect(self._on_package_context_menu)
         table_area_layout.addWidget(self.package_table, 1)
 
         # Packages Grid View (hidden by default, toggled via toolbar button)
@@ -1510,6 +1514,8 @@ class _ViewsMixin:
             self.settings_container.setVisible(False)
             if hasattr(self, 'plugins_view') and self.plugins_view:
                 self.plugins_view.setVisible(False)
+            if hasattr(self, 'appimage_view') and self.appimage_view:
+                self.appimage_view.setVisible(False)
             # plugins_tab_widget removed - plugins_view is handled above
             if hasattr(self, 'no_results_widget'):
                 self.no_results_widget.setVisible(False)
@@ -1543,6 +1549,7 @@ class _ViewsMixin:
             "discover": (os.path.join(_BASE_DIR, "assets", "icons", "discover", "search.svg"), "Home", "Dashboard and package discovery"),
             "plugins": (os.path.join(_BASE_DIR, "assets", "icons", "plugins.svg"), "Sources & Plugins", "Manage package sources and extensions"),
             "bundles": (os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"), "Bundles", "Create, import, export, and install bundles of packages"),
+            "appimage": (os.path.join(_BASE_DIR, "assets", "icons", "about.svg"), "AppImages", "Manage AppImage applications"),
             "settings": (os.path.join(_BASE_DIR, "assets", "icons", "settings.svg"), "Settings", "Configure NeoArch settings"),
         }
 
@@ -1764,6 +1771,35 @@ class _ViewsMixin:
                     self.console_toggle_btn.setToolTip("Show Console")
             except Exception:
                 pass
+        elif view_id == "appimage":
+            self.large_search_box.setVisible(False)
+            self._hide_all_package_views()
+            self.load_more_btn.setVisible(False)
+            self.settings_container.setVisible(False)
+            try:
+                self.loading_widget.setVisible(False)
+                self.loading_widget.stop_animation()
+            except Exception:
+                pass
+            self.sources_section.setVisible(False)
+            self.filters_section.setVisible(False)
+            try:
+                self.console_label.setVisible(False)
+                self.console.setVisible(False)
+                if hasattr(self, 'console_toggle_btn'):
+                    self.console_toggle_btn.setVisible(True)
+                    self.console_toggle_btn.setToolTip("Show Console")
+            except Exception:
+                pass
+
+            # Lazy-create the AppImage manager on first visit
+            if getattr(self, 'appimage_view', None) is None:
+                from neoarch.frontend.components.appimage_tab import AppImageTab
+                self.appimage_view = AppImageTab(self)
+                self.packages_panel_layout.insertWidget(6, self.appimage_view, 1)
+            self.appimage_view.setVisible(True)
+
+            self.header_info.setText("Install and manage AppImage applications")
         elif view_id == "settings":
             # Show settings panel, hide package table & search
             try:
@@ -1775,7 +1811,6 @@ class _ViewsMixin:
             self._hide_all_package_views()
             self.load_more_btn.setVisible(False)
             self.settings_container.setVisible(True)
-            # Hide toolbar (grid view, filter, actions — none apply to settings)
             if hasattr(self, 'toolbar_widget'):
                 self.toolbar_widget.setVisible(False)
             # Hide packages content area (has stretch=1, would push settings to bottom)
@@ -2351,6 +2386,141 @@ class _ViewsMixin:
         version = version_item.text().strip() if version_item else ""
         source = self.get_source_text(row, vid)
         return {"name": name, "id": name, "version": version, "source": source}
+
+    # ── package context menu (downgrade / marks / install reason) ────────
+
+    def _on_package_context_menu(self, pos):
+        item = self.package_table.itemAt(pos)
+        if item is None:
+            return
+        row = item.row()
+        if row < 0:
+            return
+        info = self.get_row_info(row)
+        name = info.get("name", "").strip()
+        if not name:
+            return
+
+        from PyQt6.QtWidgets import QMenu
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #1C1E24; color: #F3F4F6;
+                border: 1px solid #373A43; border-radius: 8px; padding: 4px;
+            }
+            QMenu::item { padding: 8px 16px; border-radius: 4px; }
+            QMenu::item:selected { background-color: #00BFAE; color: #fff; }
+            QMenu::separator { height: 1px; background: #373A43; margin: 4px 8px; }
+        """)
+
+        downgrade_act = menu.addAction("Downgrade...")
+        downgrade_act.triggered.connect(lambda: self._package_menu_downgrade(name))
+
+        marks = self._load_marks_for(name)
+        if marks.get("ignored"):
+            ignore_act = menu.addAction("Unignore updates (IgnorePkg)")
+        else:
+            ignore_act = menu.addAction("Ignore updates (IgnorePkg)")
+        ignore_act.triggered.connect(lambda: self._package_menu_ignore(name))
+
+        if marks.get("held"):
+            hold_act = menu.addAction("Unhold package")
+        else:
+            hold_act = menu.addAction("Hold package")
+        hold_act.triggered.connect(lambda: self._package_menu_hold(name))
+
+        menu.addSeparator()
+        explicit_act = menu.addAction("Mark as explicitly installed")
+        explicit_act.triggered.connect(lambda: self._package_menu_reason(name, "explicit"))
+        deps_act = menu.addAction("Mark as dependency")
+        deps_act.triggered.connect(lambda: self._package_menu_reason(name, "deps"))
+
+        menu.exec(self.package_table.viewport().mapToGlobal(pos))
+
+    def _load_marks_for(self, name):
+        from neoarch.backend.services import marks
+        try:
+            ignore = set(marks.get_ignorepkg())
+            hold = set(marks.get_holdpkg())
+            return {"ignored": name in ignore, "held": name in hold}
+        except Exception:
+            return {"ignored": False, "held": False}
+
+    def _package_menu_downgrade(self, name):
+        from neoarch.backend.services import downgrade
+
+        versions = downgrade.list_cached_versions(name)
+        if not versions:
+            self._show_message("Downgrade", f"No cached versions of '{name}' to downgrade to.")
+            return
+
+        from PyQt6.QtWidgets import QInputDialog
+        labels = [f"{v['version']}-{v['release']}  ({v.get('arch', '')})"
+                  for v in versions]
+        choice, ok = QInputDialog.getItem(
+            self, "Downgrade", f"Select version of {name}:", labels, 0, False)
+        if not ok:
+            return
+        idx = labels.index(choice)
+        selected = versions[idx]
+
+        reply = QMessageBox.question(
+            self, "Downgrade",
+            f"Install {name} {selected['version']}-{selected['release']}?\n"
+            "This will downgrade the package from the pacman cache.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel)
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        def task():
+            ok_result = downgrade.install_version(name, path=selected["path"])
+            if ok_result:
+                self.ui_call.emit(lambda: self.refresh_packages())
+                self.ui_call.emit(lambda: self.show_message.emit(
+                    "Downgrade", f"Downgraded '{name}' to {selected['version']}-{selected['release']}."))
+            else:
+                self.ui_call.emit(lambda: self.show_message.emit(
+                    "Downgrade", f"Failed to downgrade '{name}' (need root?)."))
+        Thread(target=task, daemon=True).start()
+
+    def _package_menu_ignore(self, name):
+        from neoarch.backend.services import marks
+
+        def task():
+            current = marks.get_ignorepkg()
+            if name in current:
+                ok_result = marks.remove_ignorepkg(name)
+            else:
+                ok_result = marks.add_ignorepkg(name)
+            self.ui_call.emit(lambda: self.show_message.emit(
+                "Marks", f"{'Unignored' if name in current else 'Ignored'} '{name}'."
+                if ok_result else f"Failed to update marks for '{name}' (need root)."))
+        Thread(target=task, daemon=True).start()
+
+    def _package_menu_hold(self, name):
+        from neoarch.backend.services import marks
+
+        def task():
+            current = marks.get_holdpkg()
+            if name in current:
+                ok_result = marks.remove_holdpkg(name)
+            else:
+                ok_result = marks.add_holdpkg(name)
+            self.ui_call.emit(lambda: self.show_message.emit(
+                "Marks", f"{'Unheld' if name in current else 'Held'} '{name}'."
+                if ok_result else f"Failed to update marks for '{name}' (need root)."))
+        Thread(target=task, daemon=True).start()
+
+    def _package_menu_reason(self, name, reason):
+        from neoarch.backend.services import marks
+
+        def task():
+            ok_result = marks.set_install_reason(name, reason)
+            self.ui_call.emit(lambda: self.show_message.emit(
+                "Install Reason",
+                f"'{name}' marked as {'explicitly installed' if reason == 'explicit' else 'dependency'}."
+                if ok_result else f"Failed to set reason for '{name}' (need root)."))
+        Thread(target=task, daemon=True).start()
 
     def on_selection_changed(self):
         if self._updating_selection:

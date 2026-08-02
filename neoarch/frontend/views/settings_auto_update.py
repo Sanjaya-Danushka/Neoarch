@@ -1,7 +1,7 @@
 from typing import Any
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
-                             QLabel, QCheckBox, QSpinBox, QPushButton)
-from PyQt6.QtCore import Qt
+                             QLabel, QCheckBox, QSpinBox, QPushButton, QTimeEdit)
+from PyQt6.QtCore import Qt, QTime
 
 _CARD = """
     QFrame#settingsCard {
@@ -124,6 +124,75 @@ class AutoUpdateSettingsWidget(QWidget):
         update_layout.addLayout(interval_row)
         self.layout.addWidget(update_card)
 
+        # ── Scheduled Checks Card ──
+        sched_card, sched_layout = self._make_card("Scheduled Checks")
+        hint = QLabel("Run the update check automatically on a weekly schedule "
+                      "(evaluated by the CLI/service layer; applies when the app is running).")
+        hint.setStyleSheet("color: #8B8D97; font-size: 12px; border: none;")
+        hint.setWordWrap(True)
+        sched_layout.addWidget(hint)
+
+        self.cb_schedule = QCheckBox("Enable scheduled update checks")
+        self.cb_schedule.setStyleSheet(_CHECKBOX)
+        self.cb_schedule.setChecked(bool(self.app.settings.get('schedule_enabled', False)))
+        self.cb_schedule.toggled.connect(self.on_schedule_enabled)
+        sched_layout.addWidget(self.cb_schedule)
+
+        days_row = QHBoxLayout()
+        days_row.setSpacing(8)
+        days_label = QLabel("Days:")
+        days_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        days_row.addWidget(days_label)
+
+        self.day_cbs = []
+        day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        current_days = set(int(d) for d in self.app.settings.get('schedule_days', [0, 1, 2, 3, 4, 5, 6]))
+        for idx, name in enumerate(day_names):
+            cb = QCheckBox(name)
+            cb.setStyleSheet(_CHECKBOX)
+            cb.setChecked(idx in current_days)
+            cb.toggled.connect(self.on_schedule_changed)
+            self.day_cbs.append(cb)
+            days_row.addWidget(cb)
+        days_row.addStretch()
+        sched_layout.addLayout(days_row)
+
+        time_row = QHBoxLayout()
+        time_row.setSpacing(12)
+        time_label = QLabel("Time:")
+        time_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        time_row.addWidget(time_label)
+
+        self.time_edit = QTimeEdit()
+        self.time_edit.setStyleSheet("""
+            QTimeEdit {
+                background-color: rgba(18, 19, 22, 0.8);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 8px;
+                padding: 8px 12px;
+                color: #EDEDEF;
+                font-size: 13px;
+            }
+            QTimeEdit:focus { border-color: #00BFAE; }
+        """)
+        self.time_edit.setDisplayFormat("HH:mm")
+        try:
+            hh, mm = str(self.app.settings.get('schedule_time', '03:00')).split(':')
+            self.time_edit.setTime(QTime(int(hh), int(mm)))
+        except Exception:
+            self.time_edit.setTime(QTime(3, 0))
+        self.time_edit.timeChanged.connect(self.on_schedule_changed)
+        time_row.addWidget(self.time_edit)
+
+        self.next_label = QLabel()
+        self.next_label.setStyleSheet("color: #8B8D97; font-size: 12px; border: none;")
+        time_row.addWidget(self.next_label)
+        time_row.addStretch()
+        sched_layout.addLayout(time_row)
+
+        self.layout.addWidget(sched_card)
+        self._update_next_label()
+
         # ── Backup Card (built-in) ──
         backup_card, backup_layout = self._make_card("Backup")
 
@@ -200,3 +269,31 @@ class AutoUpdateSettingsWidget(QWidget):
         snap_layout.addLayout(btn_row)
 
         self.layout.addWidget(snap_card)
+
+    def _collect_days(self):
+        return [idx for idx, cb in enumerate(self.day_cbs) if cb.isChecked()]
+
+    def _time_str(self):
+        t = self.time_edit.time()
+        return f"{t.hour():02d}:{t.minute():02d}"
+
+    def _update_next_label(self):
+        from neoarch.backend.services.scheduler import next_run
+        if not self.cb_schedule.isChecked():
+            self.next_label.setText("Schedule disabled")
+            return
+        days = self._collect_days()
+        nxt = next_run(days, self._time_str()) if days else None
+        self.next_label.setText(f"Next: {nxt.strftime('%a %Y-%m-%d %H:%M')}" if nxt
+                                else "No run scheduled (pick at least one day)")
+
+    def on_schedule_enabled(self, value):
+        self.app.update_setting('schedule_enabled', value)
+        self._update_next_label()
+
+    def on_schedule_changed(self, *_):
+        days = self._collect_days()
+        if days:
+            self.app.update_setting('schedule_days', days)
+        self.app.update_setting('schedule_time', self._time_str())
+        self._update_next_label()

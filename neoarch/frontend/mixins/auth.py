@@ -398,7 +398,7 @@ class _AuthMixin:
 
     def show_arch_news(self):
         """Fetch and display the latest Arch Linux news."""
-        from neoarch.backend.services.hygiene import fetch_news
+        from neoarch.backend.services.hygiene import fetch_news, news_seen_status, mark_news_seen
         from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLabel,
                                      QTextBrowser, QDialogButtonBox)
         self.log("Fetching Arch Linux news...")
@@ -406,23 +406,32 @@ class _AuthMixin:
         if not items:
             self.show_message.emit("Arch News", "Could not fetch news. Check your connection.")
             return
+        entries = news_seen_status(items)
+        unseen = sum(1 for e in entries if not e.get("seen"))
         dlg = QDialog(self)
         dlg.setWindowTitle("Arch Linux News")
         dlg.resize(720, 540)
         layout = QVBoxLayout(dlg)
-        hint = QLabel("Latest from archlinux.org")
-        hint.setStyleSheet("color: #8B8D97;")
+        if unseen:
+            hint = QLabel(f"Latest from archlinux.org — {unseen} new")
+            hint.setStyleSheet("color: #00BFAE; font-weight: 600;")
+        else:
+            hint = QLabel("Latest from archlinux.org")
+            hint.setStyleSheet("color: #8B8D97;")
         layout.addWidget(hint)
 
         browser = QTextBrowser()
         html = []
-        for entry in items:
+        for entry in entries:
             date = entry.get("published", "")
             title = entry.get("title", "")
             link = entry.get("link", "")
             summary = entry.get("summary", "")
+            badge = "" if entry.get("seen") else \
+                "<span style='background:#00BFAE;color:#0C0C0E;border-radius:4px;" \
+                "padding:1px 6px;font-size:10px;font-weight:700;'>NEW</span> "
             html.append(
-                f"<h3 style='color:#00BFAE;'>{title}</h3>"
+                f"<h3 style='color:#00BFAE;'>{badge}{title}</h3>"
                 f"<p style='color:#8B8D97;'>{date}</p>"
                 f"<p>{summary}</p>"
                 f"<p><a href='{link}'>{link}</a></p><hr>")
@@ -434,4 +443,9 @@ class _AuthMixin:
         close_btn.rejected.connect(dlg.reject)
         close_btn.accepted.connect(dlg.accept)
         layout.addWidget(close_btn)
+
+        def _mark_read():
+            for entry in entries:
+                mark_news_seen(entry)
+        dlg.finished.connect(lambda _res: _mark_read())
         dlg.exec()
