@@ -1,0 +1,114 @@
+# NeoArch Roadmap
+
+Feature plan derived from a feature-gap comparison with Shelly-ALPM. Each item lists the implementation targets (services/tests/UI) following the existing architecture: backend services in `neoarch/backend/services/`, UI mixins in `neoarch/frontend/mixins/`, views in `neoarch/frontend/views/`, tests in `tests/`.
+
+## Phase 1 — CLI (v2.3)
+
+Command-line interface mirroring the GUI, enabling scripting and automation.
+
+- New `neoarch/cli.py` (argparse) invoked via `python -m neoarch.cli` and a `neoarch` console script.
+- Commands:
+  - `search` (pacman/AUR/Flatpak/npm)
+  - `install`, `remove`, `upgrade`, `update`
+  - `list` (installed), `list-updates`
+  - `news` (with read-tracking)
+  - `backup` (export/import TOML)
+  - `purge` (orphans, pacnew, cache)
+  - `config get/set`
+  - `doctor` (system checks)
+- Flags: `--json`, `--no-confirm`, `--yes`.
+- Reuse backend services (`search.py`, `hygiene.py`, `backup.py`, `sys_utils.py`); no new logic.
+- Shell completions (bash/zsh) generated from argparse.
+- Tests: `tests/test_cli.py`.
+
+## Phase 2 — PKGBUILD Security Scanner (v2.3)
+
+Pre-install security review for AUR installs/updates.
+
+- New `neoarch/backend/services/security_scan.py`:
+  - Static scan of PKGBUILD + `.install` scriptlets.
+  - Detects: risky post-install tools (`npm`, `npx`, `pip`, `curl`, `wget`, `bun`, `yarn`, `pnpm`), dynamic command construction (`eval`, `$(...)`, backticks, `${!var}`, `base64 -d | sh`), local ELF/binary `source=()` files (magic-byte/`\x7fELF` check), privilege elevation (`sudo`, `doas`, `pkexec`, `run0`, `su`), Unicode homograph spoofing (mixed-script/confusable chars, zero-width/bidi controls).
+  - Lightweight de-obfuscation before matching (`b''u''n`, `cur\l`).
+  - Returns findings with severity (`info`/`warning`/`critical`), hook, and matched line.
+- UI: security banner + finding list in the AUR package review dialog before install.
+- Tests: `tests/test_security_scan.py`.
+
+## Phase 3 — Package Lifecycle (v2.4)
+
+### Downgrade
+
+- `neoarch/backend/services/downgrade.py`: list cached/archived versions, install a specific version, optional add-to-IgnorePkg.
+- UI: "Downgrade" action on installed package; version picker dialog.
+- Tests: `tests/test_downgrade.py`.
+
+### IgnorePkg / HoldPkg / install-reason marking
+
+- `neoarch/backend/services/marks.py`: read/write `IgnorePkg` and `HoldPkg` in `/etc/pacman.conf`, and `pacman -D --asdeps/--asexplicit` reason marking.
+- UI: per-package "Ignore updates" now drives real `IgnorePkg`; new Hold + explicit/dependency toggles.
+- Tests: `tests/test_marks.py`.
+
+### AppImage manager
+
+- `neoarch/backend/services/appimage.py`: managed store (`~/.local/share/neoarch/appimages`), metadata DB, update-check via static URL or GitHub/GitLab/Codeberg/Forgejo repo releases, sync, desktop-entry + icon registration, removal.
+- UI: AppImage tab under Discover/Installed; per-AppImage update tracking.
+- Tests: `tests/test_appimage.py`.
+
+## Phase 4 — System Depth (v2.4)
+
+### Pacman keyring manager
+
+- `neoarch/backend/services/keyring.py`: `pacman-key --init/--populate/--refresh-keys`, list keyring, receive/locally-sign keys, GUI-backed.
+- Tests: `tests/test_keyring.py`.
+
+### Purify / cache retention
+
+- Extend `hygiene.py`: corrupted-archive detection, `paccache -rk<N>` retention, Flatpak unused-dependency cleanup (`flatpak uninstall --unused`).
+- Tests extended in `tests/test_hygiene.py`.
+
+### Three-way pacnew merge
+
+- Extend `hygiene.py`: `diff3`/`meld`-style three-way merge using cached package archives as base; `.bak` backup before accept.
+- Tests extended in `tests/test_hygiene.py`.
+
+### Restart-required detection
+
+- `neoarch/backend/services/restart_check.py`: flag kernel/vulkan/glibc/other upgrades needing a reboot; prompt in update flow.
+- Tests: `tests/test_restart_check.py`.
+
+## Phase 5 — UX & Integration (v2.5)
+
+### Tray icon + scheduled checks
+
+- `QSystemTrayIcon` with update-count badge; weekly schedule (days-of-week + time) configurable in Settings; click-to-open main window.
+- Extend `settings_auto_update.py`.
+
+### Parallel downloads
+
+- Configurable `ParallelDownloadCount` written to `/etc/pacman.conf` (`ParallelDownloads`).
+
+### Recommended packages
+
+- Curated recommendations feed in Discover (sourced from local plugin data + popularity).
+
+### Translations / i18n
+
+- `gettext`-based `.ts`/`.qm` pipeline (Qt Linguist) + `Culture` setting; start with English + Sinhala + Spanish stubs.
+
+## Phase 6 — Headless helpers (v2.5)
+
+- `install_from_url`: install package archives from HTTP(S) URLs.
+- AUR build depth: clean-chroot (`makechrootpkg`) opt-in, `check()` enable, install-at-commit.
+- News read-tracking: per-entry `seen` state persisted alongside the existing RSS cache.
+
+---
+
+## Priority summary
+
+| Priority | Items |
+| --- | --- |
+| P0 | CLI, PKGBUILD security scanner |
+| P1 | Downgrade, IgnorePkg/HoldPkg marks, AppImage manager |
+| P2 | Keyring, purify, three-way merge, restart detection |
+| P3 | Tray, parallel downloads, recommended, i18n, URL install, chroot builds, news read-tracking |
+
+License note: all items are clean-room implementations; no GPL code is copied from Shelly-ALPM (NeoArch stays MIT).
