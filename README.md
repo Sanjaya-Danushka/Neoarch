@@ -80,6 +80,31 @@ Mark specific packages to ignore during updates. Persisted to `~/.config/neoarch
 ![Installed Packages](https://github.com/user-attachments/assets/b34f304e-c521-45de-8fad-2a78642d5dbc)
 *Installed Packages View*
 
+## Comparison with Shelly-ALPM
+
+NeoArch compared to [Shelly-ALPM](https://github.com/Seafoam-Labs/Shelly-ALPM), another modern Arch Linux package manager:
+
+| | Shelly-ALPM | NeoArch |
+| --- | --- | --- |
+| **License** | GPL-3.0 (copyleft) | MIT (permissive) |
+| **Stack** | Zig + Vala + .NET, GTK4 native Wayland | Python + PyQt6 |
+| **Core package mgmt** | pacman (`libalpm`) | pacman + AUR + Flatpak + npm |
+| **CLI** | Yes (`shelly`/`shelly-cli`) | No dedicated CLI |
+| **Flatpak** | Optional separate backend | Built-in |
+| **AUR support** | Yes | Yes (incl. live search) |
+| **Plugin system** | No | Yes (50+ built-in, Python hooks) |
+| **Bundle system** | No | Yes (portable bundles) |
+| **Docker manager** | No | Yes |
+| **Git manager** | No | Yes |
+| **Snapshots** | No | Yes (Timeshift) |
+| **System backup** | No | Yes (Btrfs) |
+| **System hygiene** | No | Yes (orphans, `.pacnew`, news) |
+| **Cloud sync** | No | Yes (Supabase) |
+| **Scheduled updates** | No | Yes |
+| **Local package install** | AppImage only | `.pkg.tar.zst`, `.pacman`, `.AppImage`, `.flatpakref` |
+
+Shelly is a fast native GTK4/`libalpm` frontend with a strong CLI and a clean codebase. NeoArch covers more package sources and a wider feature set, while keeping a permissive MIT license.
+
 ## Installation
 
 ### From AUR (Recommended)
