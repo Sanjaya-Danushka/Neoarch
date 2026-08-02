@@ -107,7 +107,7 @@ class _SettingsMixin:
 
         sidebar_layout.addStretch()
 
-        version_label = QLabel("NeoArch v2.0")
+        version_label = QLabel("NeoArch v2.1")
         version_label.setStyleSheet("""
             color: #5C5E66;
             font-size: 11px;

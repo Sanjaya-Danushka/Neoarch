@@ -30,6 +30,34 @@ def test_command_worker_error_on_nonzero():
     assert 'error' in ''.join(errors).lower()
 
 
+def test_command_worker_handles_crlf_lines():
+    """PTY output is CRLF-terminated; full lines must not be dropped."""
+    w = CommandWorker(['sh', '-c', "printf 'alpha\\r\\nbeta\\r\\n'"])
+    outputs = []
+    w.output.connect(lambda s: outputs.append(s))
+    w.run()
+    assert 'alpha' in outputs
+    assert 'beta' in outputs
+
+
+def test_command_worker_progress_updates_via_line_update():
+    """Carriage-return progress rewrites should emit the final state."""
+    w = CommandWorker(['sh', '-c', "printf 'a\\rb\\rc\\n'"])
+    outputs = []
+    w.output.connect(lambda s: outputs.append(s))
+    w.run()
+    assert outputs == ['c']
+
+
+def test_command_worker_streams_stderr_live():
+    """Download progress written to stderr (curl/makepkg) must appear as output."""
+    w = CommandWorker(['sh', '-c', "printf '%b' 'fetching...\\r100% done\\n' 1>&2"])
+    outputs = []
+    w.output.connect(lambda s: outputs.append(s))
+    w.run()
+    assert any('100% done' in s for s in outputs)
+
+
 def test_package_loader_emits_packages_loaded():
     w = PackageLoaderWorker(['sh', '-c', "printf 'pkg 1.0\\n'"])
     received = []

@@ -433,7 +433,7 @@ def run_sudo_command(command: list[str]) -> subprocess.CompletedProcess:
             input=secure_pw.get_bytes() + b"\n",
             capture_output=True,
             text=False,
-            timeout=30,
+            timeout=60,
             check=False
         )
 

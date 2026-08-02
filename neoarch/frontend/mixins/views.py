@@ -1905,13 +1905,13 @@ class _ViewsMixin:
                 self._hide_all_package_views()
             except Exception:
                 pass
-            # Keep console accessible via toggle, but hide the panel by default
+            # Show the console so operation progress is visible by default
             try:
                 if hasattr(self, 'console_toggle_btn'):
                     self.console_toggle_btn.setVisible(True)
-                    self.console_toggle_btn.setToolTip("Show Console")
-                self.console_label.setVisible(False)
-                self.console.setVisible(False)
+                    self.console_toggle_btn.setToolTip("Hide Console")
+                self.console_label.setVisible(True)
+                self.console.setVisible(True)
             except Exception:
                 pass
             self.cancel_install_btn.setVisible(can_cancel)
