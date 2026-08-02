@@ -121,7 +121,7 @@ def show_help(parent, current_view: str):
     about_browser.setOpenExternalLinks(True)
     about_browser.setHtml(
         "<h2>ABOUT NeoArch</h2>"
-        f"<p><b>Version:</b> 2.0.0<br>"
+        f"<p><b>Version:</b> 2.1.0<br>"
         f"<b>Platform:</b> {platform.system()} {platform.release()}<br>"
         f"<b>Python:</b> {platform.python_version()}</p>"
         "<p><b>NeoArch - Elevate Your Arch Experience</b></p>"
@@ -179,7 +179,7 @@ def show_about(parent):
     subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(subtitle)
 
-    version = QLabel("Version 2.0.0")
+    version = QLabel("Version 2.1.0")
     version.setStyleSheet("font-size: 12px; color: #888;")
     version.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(version)

@@ -127,7 +127,15 @@ class CommandWorker(QObject):
         poller = select.poll()
         poller.register(master_fd, select.POLLIN)
 
+        stderr_fd = None
+        if process.stderr is not None:
+            stderr_fd = process.stderr.fileno()
+            os.set_blocking(stderr_fd, False)
+            poller.register(stderr_fd, select.POLLIN)
+
         buf = ""
+        err_buf = ""
+        err_raw = b""
 
         while True:
             if process.poll() is not None:
@@ -152,6 +160,12 @@ class CommandWorker(QObject):
                         if data:
                             buf += data.decode('utf-8', errors='replace')
                             buf = self._process_buf(buf)
+                    elif stderr_fd is not None and fd == stderr_fd and event & select.POLLIN:
+                        data = os.read(stderr_fd, 4096)
+                        if data:
+                            err_raw = (err_raw + data)[-65536:]
+                            err_buf += data.decode('utf-8', errors='replace')
+                            err_buf = self._process_buf(err_buf)
             except OSError:
                 break
 
@@ -168,14 +182,43 @@ class CommandWorker(QObject):
         if buf:
             self._process_buf(buf, final=True)
 
-        _, stderr = process.communicate()
+        # Drain remaining stderr (already streamed live via the poll loop)
+        if stderr_fd is not None:
+            try:
+                while True:
+                    chunk = os.read(stderr_fd, 4096)
+                    if not chunk:
+                        break
+                    err_raw = (err_raw + chunk)[-65536:]
+                    err_buf += chunk.decode('utf-8', errors='replace')
+            except OSError:
+                pass
+            try:
+                process.stderr.close()
+            except Exception:
+                pass
+
+        if err_buf:
+            self._process_buf(err_buf, final=True)
+
+        try:
+            process.wait()
+        except Exception:
+            pass
         try:
             os.close(master_fd)
         except OSError:
             pass
 
-        if stderr and process.returncode != 0:
-            self.error.emit(f"Error: {stderr}")
+        if process.returncode != 0:
+            if err_raw:
+                self.error.emit(
+                    f"Error: {err_raw.decode('utf-8', errors='replace')}"
+                )
+            else:
+                self.error.emit(
+                    f"Command failed with exit code {process.returncode}"
+                )
 
         self.finished.emit()
 
@@ -191,9 +234,11 @@ class CommandWorker(QObject):
 
         if '\r' in buf:
             parts = buf.split('\r')
-            stripped = strip_ansi(parts[-1].strip())
-            if stripped:
-                self.line_update.emit(stripped)
+            for part in reversed(parts):
+                stripped = strip_ansi(part.strip())
+                if stripped:
+                    self.line_update.emit(stripped)
+                    break
             buf = parts[-1]
 
         if final and buf:
@@ -206,14 +251,17 @@ class CommandWorker(QObject):
     def _emit_line(self, line):
         """Emit a complete line.
 
-        For lines with \r progress sequences, only the last segment
-        is emitted (the final state of the line).
+        PTY output is CRLF-terminated, so a trailing '\\r' is just the line
+        terminator, not a progress update. For lines containing progress
+        sequences, only the last non-empty segment is emitted (the final
+        state of the line).
         """
         if '\r' in line:
-            parts = line.split('\r')
-            stripped = strip_ansi(parts[-1].strip())
-            if stripped:
-                self.output.emit(stripped)
+            for part in reversed(line.split('\r')):
+                stripped = strip_ansi(part.strip())
+                if stripped:
+                    self.output.emit(stripped)
+                    break
         else:
             stripped = strip_ansi(line.strip())
             if stripped:

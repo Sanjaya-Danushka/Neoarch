@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
 
 from neoarch.backend.auth import get_askpass_env
+from neoarch.backend.workers import CommandWorker
 
 __all__ = ["load_updates", "load_installed_packages"]
 
@@ -186,20 +187,29 @@ def _check_npm_updates():
 def _sync_pacman_db(app):
     try:
         app.log("Syncing package database...")
-        env = get_askpass_env()
-        sync_result = subprocess.run(["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
-                                    capture_output=True, text=True, timeout=120, env=env)
-        if sync_result.returncode == 0:
-            app.log("Package database synced successfully")
-        else:
-            err = sync_result.stderr or ""
-            app.log(f"Warning: Database sync failed: {err}")
-            low = err.lower()
-            if ("could not lock database" in low) or ("unable to lock database" in low):
+        worker = CommandWorker(
+            ["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
+            sudo=False,
+            env=get_askpass_env(),
+        )
+        lines = []
+        errors = []
+        worker.output.connect(app.log)
+        worker.output.connect(lines.append)
+        worker.line_update.connect(app.log_line_update)
+        worker.error.connect(errors.append)
+        worker.run()
+        if errors:
+            low = "\n".join(lines + errors).lower()
+            if "could not lock database" in low or "unable to lock database" in low:
                 try:
-                    app.ui_call.emit(lambda: app.show_busy_pm_warning(err))
+                    app.ui_call.emit(lambda: app.show_busy_pm_warning("\n".join(errors)))
                 except Exception:
                     pass
+            else:
+                app.log(f"Warning: Database sync failed: {errors[-1]}")
+        else:
+            app.log("Package database synced successfully")
     except Exception as e:
         app.log(f"Warning: Could not sync database: {str(e)}")
     return []

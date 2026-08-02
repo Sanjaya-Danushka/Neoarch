@@ -1,6 +1,6 @@
 pkgbase = neoarch-git
 pkgname = neoarch-git
-pkgver = 2.0.0
+pkgver = 2.1.0
 pkgrel = 1
 pkgdesc = NeoArch Package Manager for Arch Linux
 url = https://github.com/Sanjaya-Danushka/Neoarch
