@@ -12,17 +12,18 @@ Command-line interface mirroring the GUI, enabling scripting and automation.
 - Reuses pure backend services (`search.py`, `sys_utils.py`, `config_utils.py`, `hygiene.py`) — Qt-free, runs headless.
 - Tests: `tests/test_cli.py` (7 tests).
 
-## Phase 2 — PKGBUILD Security Scanner (v2.3)
+## Phase 2 — PKGBUILD Security Scanner (v2.3) ✅ Implemented
 
 Pre-install security review for AUR installs/updates.
 
-- New `neoarch/backend/services/security_scan.py`:
-  - Static scan of PKGBUILD + `.install` scriptlets.
-  - Detects: risky post-install tools (`npm`, `npx`, `pip`, `curl`, `wget`, `bun`, `yarn`, `pnpm`), dynamic command construction (`eval`, `$(...)`, backticks, `${!var}`, `base64 -d | sh`), local ELF/binary `source=()` files (magic-byte/`\x7fELF` check), privilege elevation (`sudo`, `doas`, `pkexec`, `run0`, `su`), Unicode homograph spoofing (mixed-script/confusable chars, zero-width/bidi controls).
+- **Done** — `neoarch/backend/services/security_scan.py`:
+  - Static scan of PKGBUILD + `.install` scriptlets (never executes).
+  - Detects: risky post-install tools (`npm`, `npx`, `pip`, `curl`, `wget`, `bun`, `yarn`, `pnpm`), dynamic command construction (`eval`, `$(...)`, backticks, `${!var}`, `base64 -d | sh`, pipe-to-shell), local ELF/binary `source=()` files (magic-byte/`\x7fELF` check), privilege elevation (`sudo`, `doas`, `pkexec`, `run0`, `su`), Unicode homograph spoofing (mixed-script/confusable chars, zero-width/bidi controls).
   - Lightweight de-obfuscation before matching (`b''u''n`, `cur\l`).
-  - Returns findings with severity (`info`/`warning`/`critical`), hook, and matched line.
-- UI: security banner + finding list in the AUR package review dialog before install.
-- Tests: `tests/test_security_scan.py`.
+  - Returns findings with severity (`info`/`warning`/`critical`), rule, context, matched line.
+- **Done** — CLI: `neoarch-cli scan <PKGBUILD...>` (human + `--json`), exit code 2 on critical findings.
+- **Todo** — UI: security banner + finding list in the AUR package review dialog before install.
+- **Done** — Tests: `tests/test_security_scan.py` (27 tests).
 
 ## Phase 3 — Package Lifecycle (v2.4)
 

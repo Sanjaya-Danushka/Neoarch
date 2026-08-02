@@ -59,9 +59,12 @@ neoarch-cli upgrade --all             # full system upgrade
 neoarch-cli list-updates --json       # machine-readable updates
 neoarch-cli news                      # latest Arch Linux news
 neoarch-cli doctor                    # system health check
+neoarch-cli scan ./PKGBUILD           # security scan (risky tools, elevation, homographs)
 neoarch-cli backup -c                 # create a backup
 neoarch-cli purge -o                  # remove orphaned packages
 ```
+
+The `scan` command statically reviews a PKGBUILD (and its `.install` scriptlets) without executing it, flagging risky post-install tools, privilege elevation, dynamic shell construction, local binary sources, obfuscated tool names, and Unicode homograph spoofing. It exits with code 2 if any critical finding is present, making it safe to gate scripts on.
 
 ### System Backup
 

@@ -20,6 +20,7 @@ Commands:
     backup        Create/list/restore system backups
     purge         Remove orphans, stale cache, and .pacnew files
     config        Get/set NeoArch configuration values
+    scan          Scan a PKGBUILD for security risks
     doctor        Check the system for missing prerequisites
 """
 
@@ -613,6 +614,49 @@ def cmd_doctor(args) -> None:
         print("System looks healthy." if all_ok else "Issues found — see FAIL entries above.")
 
 
+# ── scan ──────────────────────────────────────────────────────────────────
+
+def cmd_scan(args) -> None:
+    from neoarch.backend.services import security_scan
+
+    findings: List[Dict] = []
+    for path in args.paths:
+        result = security_scan.findings_for_file(path)
+        if not result and not os.path.isfile(path):
+            print(f"error: '{path}' is not a readable file", file=sys.stderr)
+            raise SystemExit(1)
+        for f in result:
+            f["file"] = path
+        findings.extend(result)
+
+    if args.json:
+        print(json.dumps(findings, indent=2))
+        return
+
+    if not findings:
+        print("No security issues found.")
+        return
+
+    by_severity = {"critical": 0, "warning": 0, "info": 0}
+    for f in findings:
+        by_severity[f.get("severity", "info")] = \
+            by_severity.get(f.get("severity", "info"), 0) + 1
+        loc = f.get("file", "?")
+        if f.get("line"):
+            loc += f":{f['line']}"
+        print(f"[{f.get('severity', 'info'):>8}] {loc}")
+        print(f"          {f['rule']}: {f['detail']}")
+        if f.get("matched"):
+            print(f"          > {f['matched']}")
+    print(f"\n{len(findings)} finding(s): "
+          f"{by_severity.get('critical', 0)} critical, "
+          f"{by_severity.get('warning', 0)} warning, "
+          f"{by_severity.get('info', 0)} info")
+
+    if by_severity.get("critical"):
+        raise SystemExit(2)
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Parser
 # ──────────────────────────────────────────────────────────────────────────
@@ -716,10 +760,13 @@ def _build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("config", parents=[common], help="read/write configuration")
     sp.add_argument("action", choices=["get", "set", "reset"])
     sp.add_argument("key", nargs="?", help="config key")
-    sp.add_argument("value", nargs="?", help="config value")
+    sp.add_argument("value", nargs="?", help="value to set")
     sp.set_defaults(func=cmd_config)
 
-    # doctor
+    sp = sub.add_parser("scan", parents=[common], help="scan PKGBUILD files for security risks")
+    sp.add_argument("paths", nargs="+", help="PKGBUILD or .install files to scan")
+    sp.set_defaults(func=cmd_scan)
+
     sub.add_parser("doctor", parents=[common], help="check system health").set_defaults(func=cmd_doctor)
 
     return p

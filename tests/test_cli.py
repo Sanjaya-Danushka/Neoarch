@@ -1,6 +1,8 @@
 import os
 import sys
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from neoarch.cli import (
@@ -21,7 +23,8 @@ def test_parser_has_all_commands():
             subs.update(action.choices)
     for expected in (
         "search", "install", "remove", "upgrade", "update", "list",
-        "list-updates", "ignore", "news", "backup", "purge", "config", "doctor",
+        "list-updates", "ignore", "news", "backup", "purge", "config",
+        "scan", "doctor",
     ):
         assert expected in subs, f"missing command {expected}"
 
@@ -72,3 +75,40 @@ def test_config_defaults(tmp_path, monkeypatch):
     data = _load_config()
     assert data["autoupdate_enabled"] is False
     assert data["snapshot_before_update"] is False
+
+
+def test_cmd_scan_flags_json(tmp_path):
+    p = _build_parser()
+    a = p.parse_args(["scan", "--json", "PKGBUILD"])
+    assert a.command == "scan"
+    assert a.json is True
+    assert a.paths == ["PKGBUILD"]
+    a2 = p.parse_args(["--json", "scan", "PKGBUILD"])
+    assert _scan_global_flags(["--json", "scan", "PKGBUILD"]).get("json") is True
+
+
+def test_cmd_scan_reports_clean(tmp_path, capsys):
+    from neoarch.cli import cmd_scan
+
+    p = tmp_path / "PKGBUILD"
+    p.write_text("pkgname=ok\npkgver=1.0\nsource=('ok.tar.gz')\n")
+    args = _build_parser().parse_args(["scan", str(p)])
+    cmd_scan(args)
+    out = capsys.readouterr().out
+    assert "No security issues found." in out
+
+
+def test_cmd_scan_reports_findings(tmp_path, capsys):
+    from neoarch.cli import cmd_scan
+
+    p = tmp_path / "PKGBUILD"
+    p.write_text(
+        "pkgname=x\npost_install() {\n  sudo systemctl enable x\n}\n"
+    )
+    args = _build_parser().parse_args(["scan", str(p)])
+    with pytest.raises(SystemExit) as exc:
+        cmd_scan(args)
+    assert exc.value.code == 2
+    out = capsys.readouterr().out
+    assert "critical" in out
+    assert "privilege elevation" in out
