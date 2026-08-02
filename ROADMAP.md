@@ -42,11 +42,12 @@ Pre-install security review for AUR installs/updates.
 - **Todo** — UI: per-package "Ignore updates" drives real `IgnorePkg`; Hold + explicit/dependency toggles.
 - **Done** — Tests: `tests/test_marks.py` (15 tests).
 
-### AppImage manager
+### AppImage manager ✅ Implemented
 
-- `neoarch/backend/services/appimage.py`: managed store (`~/.local/share/neoarch/appimages`), metadata DB, update-check via static URL or GitHub/GitLab/Codeberg/Forgejo repo releases, sync, desktop-entry + icon registration, removal.
-- UI: AppImage tab under Discover/Installed; per-AppImage update tracking.
-- Tests: `tests/test_appimage.py`.
+- **Done** — `neoarch/backend/services/appimage.py`: managed store (`~/.local/share/neoarch/appimages`), JSON metadata DB, install from file/URL/repo release, update-check via static URL or GitHub/GitLab/Codeberg/Forgejo releases, `--appimage-extract` metadata introspection (name/icon/desktop, never executes), desktop-entry + icon registration, `pacman`-style version compare, update install, removal, disk sync. Pure stdlib — headless.
+- **Done** — CLI: `neoarch-cli appimage list|add|add-url|add-repo|remove|check|update|sync` (with `--json`).
+- **Todo** — UI: AppImage tab under Discover/Installed; per-AppImage update tracking.
+- **Done** — Tests: `tests/test_appimage.py` (20 tests).
 
 ## Phase 4 — System Depth (v2.4)
 

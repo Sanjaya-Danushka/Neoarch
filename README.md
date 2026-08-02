@@ -65,9 +65,18 @@ neoarch-cli downgrade firefox -p      # downgrade + pin to IgnorePkg
 neoarch-cli marks list                # show IgnorePkg / HoldPkg
 neoarch-cli marks hold linux          # hold a package
 neoarch-cli marks reason firefox explicit  # set install reason
+neoarch-cli appimage list             # managed AppImages
+neoarch-cli appimage add-repo Obsidian obsidianmd/obsidian-releases
+neoarch-cli appimage check --json     # check for AppImage updates
 neoarch-cli backup -c                 # create a backup
 neoarch-cli purge -o                  # remove orphaned packages
 ```
+
+The `appimage` subcommands manage a NeoArch-owned AppImage store at
+`~/.local/share/neoarch/appimages`: `add` (local file), `add-url`
+(static URL), and `add-repo` (GitHub/GitLab/Codeberg/Forgejo latest
+release). Each gets a desktop entry + icon and is tracked for updates
+via `check`/`update`.
 
 The `scan` command statically reviews a PKGBUILD (and its `.install` scriptlets) without executing it, flagging risky post-install tools, privilege elevation, dynamic shell construction, local binary sources, obfuscated tool names, and Unicode homograph spoofing. It exits with code 2 if any critical finding is present, making it safe to gate scripts on.
 

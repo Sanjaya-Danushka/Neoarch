@@ -22,6 +22,7 @@ Commands:
     config        Get/set NeoArch configuration values
     marks         Manage IgnorePkg/HoldPkg marks and install reasons
     downgrade     Install an older cached version of a package
+    appimage      Manage AppImage applications (add/update/remove)
     scan          Scan a PKGBUILD for security risks
     doctor        Check the system for missing prerequisites
 """
@@ -757,6 +758,100 @@ def cmd_marks(args) -> None:
                 print(f"{pkg}: {current or 'not installed'}")
 
 
+# ── appimage ──────────────────────────────────────────────────────────────
+
+def cmd_appimage(args) -> None:
+    from neoarch.backend.services import appimage as svc
+
+    action = args.action
+    if action == "list":
+        entries = svc.list_appimages()
+        if args.json:
+            _emit(entries, True)
+        elif not entries:
+            print("No managed AppImages.")
+        else:
+            for e in entries:
+                upd = ""
+                if e.get("latest_version") and \
+                        e.get("latest_version") != e.get("version"):
+                    upd = f"  -> {e['latest_version']}"
+                print(f"{e['id']:>20}  {e.get('name', '')}"
+                      f"  {e.get('version', '')}{upd}")
+        return
+
+    if action == "add":
+        try:
+            e = svc.add_from_file(args.file)
+            print(f"Installed '{e['name']}' ({e['id']}) "
+                  f"v{e.get('version') or '?'}.")
+        except FileNotFoundError:
+            print(f"error: '{args.file}' not found", file=sys.stderr)
+            raise SystemExit(1)
+        return
+
+    if action == "add-url":
+        try:
+            e = svc.add_from_url(args.name, args.url)
+            print(f"Installed '{e['name']}' from URL (v{e.get('version') or '?'}).")
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            raise SystemExit(1)
+        return
+
+    if action == "add-repo":
+        owner, _, repo = args.repo.partition("/")
+        if not owner or not repo:
+            print("error: expected OWNER/REPO", file=sys.stderr)
+            raise SystemExit(1)
+        try:
+            e = svc.add_from_repo(args.name, owner, repo, args.host)
+            print(f"Installed '{e['name']}' from {args.host} "
+                  f"({owner}/{repo}, v{e.get('version') or '?'}).")
+        except RuntimeError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            raise SystemExit(1)
+        return
+
+    if action == "remove":
+        if svc.remove_appimage(args.id):
+            print(f"Removed '{args.id}'.")
+        else:
+            print(f"error: no managed AppImage '{args.id}'", file=sys.stderr)
+            raise SystemExit(1)
+        return
+
+    if action in ("check", "update"):
+        targets = [args.id] if args.id else \
+            [e["id"] for e in svc.list_appimages()]
+        if args.action == "check":
+            results = []
+            for app_id in targets:
+                updated = svc.check_update(app_id)
+                if updated:
+                    results.append(updated)
+            if args.json:
+                _emit(results, True)
+            else:
+                for u in results:
+                    mark = "update" if (u.get("latest_version")
+                                        and u["latest_version"] != u["version"]) \
+                        else "current"
+                    print(f"{u['id']:>20}  {u.get('version', '')}"
+                          f"  -> {u.get('latest_version') or '-'}  [{mark}]")
+        else:
+            for app_id in targets:
+                if svc.install_update(app_id):
+                    print(f"Updated '{app_id}'.")
+                else:
+                    print(f"'{app_id}' is up to date or has no update source.")
+        return
+
+    if action == "sync":
+        entries = svc.sync_from_disk()
+        print(f"Synchronized: {len(entries)} managed AppImage(s).")
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Parser
 # ──────────────────────────────────────────────────────────────────────────
@@ -880,6 +975,29 @@ def _build_parser() -> argparse.ArgumentParser:
     sp.add_argument("reason", nargs="?", choices=["explicit", "deps"],
                     help="install reason (for 'reason')")
     sp.set_defaults(func=cmd_marks)
+
+    sp = sub.add_parser("appimage", parents=[common], help="manage AppImage applications")
+    asp = sp.add_subparsers(dest="action", required=True)
+    asp.add_parser("list", parents=[common], help="list managed AppImages")
+    asp.add_parser("sync", parents=[common], help="reconcile store with disk")
+    _a = asp.add_parser("add", parents=[common], help="install from a local file")
+    _a.add_argument("file", help="path to an .AppImage file")
+    _a = asp.add_parser("add-url", parents=[common], help="install from a URL")
+    _a.add_argument("name", help="application name")
+    _a.add_argument("url", help="download URL ending in .AppImage")
+    _a = asp.add_parser("add-repo", parents=[common], help="install latest release from a repo")
+    _a.add_argument("name", help="application name")
+    _a.add_argument("repo", help="OWNER/REPO")
+    _a.add_argument("--host", default="github",
+                    choices=["github", "gitlab", "codeberg", "forgejo"],
+                    help="release host (default github)")
+    _a = asp.add_parser("remove", parents=[common], help="remove a managed AppImage")
+    _a.add_argument("id", help="managed app id")
+    _a = asp.add_parser("check", parents=[common], help="check for updates")
+    _a.add_argument("id", nargs="?", help="managed app id (default: all)")
+    _a = asp.add_parser("update", parents=[common], help="install updates")
+    _a.add_argument("id", nargs="?", help="managed app id (default: all)")
+    sp.set_defaults(func=cmd_appimage)
 
     sub.add_parser("doctor", parents=[common], help="check system health").set_defaults(func=cmd_doctor)
 

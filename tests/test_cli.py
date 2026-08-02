@@ -24,7 +24,7 @@ def test_parser_has_all_commands():
     for expected in (
         "search", "install", "remove", "upgrade", "update", "list",
         "list-updates", "ignore", "news", "backup", "purge", "config",
-        "scan", "downgrade", "marks", "doctor",
+        "scan", "downgrade", "marks", "appimage", "doctor",
     ):
         assert expected in subs, f"missing command {expected}"
 
@@ -176,3 +176,34 @@ def test_cmd_marks_reason_set(monkeypatch, capsys):
     args = _build_parser().parse_args(["marks", "reason", "firefox", "deps"])
     cmd_marks(args)
     assert "marked as deps" in capsys.readouterr().out
+
+
+def test_cmd_appimage_parser_actions():
+    p = _build_parser()
+    assert p.parse_args(["appimage", "list"]).action == "list"
+    a = p.parse_args(["appimage", "add", "x.AppImage"])
+    assert a.file == "x.AppImage"
+    b = p.parse_args(["appimage", "add-repo", "App", "owner/repo", "--host", "codeberg"])
+    assert b.repo == "owner/repo" and b.host == "codeberg"
+    c = p.parse_args(["appimage", "update", "app1"])
+    assert c.id == "app1"
+    assert p.parse_args(["appimage", "check"]).id is None
+
+
+def test_cmd_appimage_list_empty(monkeypatch, capsys):
+    from neoarch.cli import cmd_appimage
+    from neoarch.backend.services import appimage as svc
+
+    monkeypatch.setattr(svc, "list_appimages", lambda: [])
+    args = _build_parser().parse_args(["appimage", "list"])
+    cmd_appimage(args)
+    assert "No managed AppImages" in capsys.readouterr().out
+
+
+def test_cmd_appimage_add_missing_file(monkeypatch, capsys):
+    from neoarch.cli import cmd_appimage
+
+    args = _build_parser().parse_args(["appimage", "add", "/nope/App.AppImage"])
+    with pytest.raises(SystemExit) as exc:
+        cmd_appimage(args)
+    assert exc.value.code == 1
