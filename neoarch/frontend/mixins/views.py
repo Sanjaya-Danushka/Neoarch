@@ -572,7 +572,7 @@ class _ViewsMixin:
         """Open a file dialog to select and install local package files."""
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Select Package File", "",
-            "Package Files (*.pkg.tar.zst *.pkg.tar.xz *.pkg.tar.gz *.tar.zst *.tar.xz *.tar.gz *.AppImage *.flatpakref *.flatpak);;Arch Package (*.pkg.tar.zst *.pkg.tar.xz *.pkg.tar.gz);;Archive (*.tar.zst *.tar.xz *.tar.gz);;AppImage (*.AppImage);;FlatPak (*.flatpakref *.flatpak);;All Files (*)"
+            "Arch Package (*.pkg.tar.zst *.pkg.tar.xz *.pkg.tar.gz *.pacman);;Package Files (*.pkg.tar.zst *.pkg.tar.xz *.pkg.tar.gz *.tar.zst *.tar.xz *.tar.gz *.AppImage *.flatpakref *.flatpak *.pacman);;Archive (*.tar.zst *.tar.xz *.tar.gz);;AppImage (*.AppImage);;FlatPak (*.flatpakref *.flatpak);;All Files (*)"
         )
         if not file_path:
             return
@@ -583,9 +583,8 @@ class _ViewsMixin:
         fname = file_path.lower()
         self.log(f"Installing local file: {file_path}")
 
-        if fname.endswith('.pkg.tar.zst') or fname.endswith('.pkg.tar.xz') or fname.endswith('.pkg.tar.gz'):
-            self._run_cmd(["sudo", "-A", "pacman", "-U", "--noconfirm", file_path],
-                          f"Installing {os.path.basename(file_path)}")
+        if self._is_arch_package_file(fname):
+            self._install_local_arch(file_path)
         elif fname.endswith('.flatpakref') or fname.endswith('.flatpak'):
             self._run_cmd(["flatpak", "install", "--user", "-y", file_path],
                           f"Installing Flatpak {os.path.basename(file_path)}")
@@ -599,8 +598,104 @@ class _ViewsMixin:
                 QMessageBox.StandardButton.No
             )
             if reply == QMessageBox.StandardButton.Yes:
-                self._run_cmd(["sudo", "-A", "pacman", "-U", "--noconfirm", file_path],
-                              f"Installing {os.path.basename(file_path)}")
+                self._install_local_arch(file_path)
+
+    @staticmethod
+    def _is_arch_package_file(fname):
+        """Return True for recognized Arch package extensions."""
+        fname = (fname or "").lower()
+        return (fname.endswith('.pkg.tar.zst') or fname.endswith('.pkg.tar.xz')
+                or fname.endswith('.pkg.tar.gz') or fname.endswith('.pacman'))
+
+    def _install_local_arch(self, file_path):
+        """Install a local .pkg.tar.* / .pacman file, handling unresolvable deps.
+
+        Some vendor .pacman packages (e.g. built with fpm) carry dependency
+        names that differ from Arch's repos (e.g. libappindicator-gtk3 vs
+        libappindicator). If plain `pacman -U` fails on such deps, offer a
+        retry with --assume-installed for just those names.
+        """
+        import re as _re
+        base = ["sudo", "-A", "pacman", "-U", "--noconfirm"]
+        label = f"Installing {os.path.basename(file_path)}"
+
+        def run(assume):
+            cmd = base + assume + [file_path]
+            self.log(f"{label}...")
+            self.ui_call.emit(lambda: self._show_operation_spinner(label))
+            env = self.get_askpass_env()
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True,
+                                        timeout=600, env=env)
+            except Exception as e:
+                result = subprocess.CompletedProcess(cmd, 1, "", str(e))
+            finally:
+                try:
+                    self.ui_call.emit(lambda: self.loading_widget.stop_animation())
+                    self.ui_call.emit(lambda: self.loading_widget.setVisible(False))
+                except Exception:
+                    pass
+            return result
+
+        def on_success():
+            self.log(f"{label}: done")
+            self.refresh_packages()
+
+        def task():
+            def extract_missing(stderr):
+                missing = _re.findall(
+                    r"unable to satisfy dependency '([^']+)'|target not found: ([^\s]+)"
+                    r'|cannot resolve "([^"]+)"',
+                    stderr or "")
+                flat = []
+                for a, b, c in missing:
+                    flat.append(a or b or c)
+                return list(dict.fromkeys(flat))
+
+            def attempt_retry(flat, assume):
+                deps = ", ".join(flat)
+
+                def prompt():
+                    reply = QMessageBox.question(
+                        self, "Missing Dependencies",
+                        f"{os.path.basename(file_path)} requires package(s) not found in "
+                        f"Arch repos:\n\n{deps}\n\nThis usually happens with vendor-built "
+                        ".pacman files whose dependency names differ from Arch's.\n\n"
+                        "Retry ignoring those dependencies?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No)
+                    if reply == QMessageBox.StandardButton.Yes:
+                        def retry():
+                            new_assume = assume + ["--assume-installed=%s" % d for d in flat]
+                            result2 = run(new_assume)
+                            if result2.returncode == 0:
+                                self.ui_call.emit(on_success)
+                                return
+                            more = extract_missing(result2.stderr)
+                            if result2.stderr.strip():
+                                self.log(f"{label}: failed\n{result2.stderr.strip()}")
+                            if more and not all(m in flat for m in more):
+                                attempt_retry(more, new_assume)
+                            else:
+                                err = result2.stderr.strip()
+                                self.ui_call.emit(lambda: self.show_message.emit("Install Failed", err))
+                        Thread(target=retry, daemon=True).start()
+
+                self.ui_call.emit(prompt)
+
+            result = run([])
+            if result.returncode == 0:
+                self.ui_call.emit(on_success)
+                return
+            flat = extract_missing(result.stderr)
+            if result.stderr.strip():
+                self.log(f"{label}: failed\n{result.stderr.strip()}")
+            if not flat:
+                self.ui_call.emit(lambda: self.show_message.emit("Install Failed", result.stderr.strip()))
+                return
+            attempt_retry(flat, [])
+
+        Thread(target=task, daemon=True).start()
 
     def _run_cmd(self, cmd, label):
         """Run a sudo command with the askpass env in a thread."""
