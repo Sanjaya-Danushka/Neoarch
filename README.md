@@ -104,7 +104,7 @@ NeoArch compared to [Shelly-ALPM](https://github.com/Seafoam-Labs/Shelly-ALPM), 
 | **License** | GPL-3.0 (copyleft) | MIT (permissive) |
 | **Stack** | Zig + Vala + .NET, GTK4 native Wayland | Python + PyQt6 |
 | **Core package mgmt** | pacman (`libalpm`) | pacman + AUR + Flatpak + npm |
-| **CLI** | Yes (`shelly`/`shelly-cli`) | No dedicated CLI |
+| **CLI** | Yes (`shelly`/`shelly-cli`) | neoarch-cli |
 | **Flatpak** | Optional separate backend | Built-in |
 | **AUR support** | Yes | Yes (incl. live search) |
 | **Plugin system** | No | Yes (50+ built-in, Python hooks) |
