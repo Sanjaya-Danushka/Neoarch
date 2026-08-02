@@ -367,7 +367,10 @@ def cleanup_session():
 
 def get_sudo_password() -> 'SecureBytes | None':
     """Retrieve cached sudo password from keyring"""
-    pw = keyring.get_password(APP_NAME, "sudo_credential")
+    try:
+        pw = keyring.get_password(APP_NAME, "sudo_credential")
+    except Exception:
+        return None
     if pw is None:
         return None
     return secure_string(pw)

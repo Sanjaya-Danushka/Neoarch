@@ -124,14 +124,59 @@ class AutoUpdateSettingsWidget(QWidget):
         update_layout.addLayout(interval_row)
         self.layout.addWidget(update_card)
 
-        # ── Snapshots Card ──
-        snap_card, snap_layout = self._make_card("Snapshots")
+        # ── Backup Card (built-in) ──
+        backup_card, backup_layout = self._make_card("Backup")
 
-        self.cb_snapshot = QCheckBox("Create snapshot before updates")
+        self.cb_snapshot = QCheckBox("Create backup before updates")
         self.cb_snapshot.setStyleSheet(_CHECKBOX)
         self.cb_snapshot.setChecked(bool(self.app.settings.get('snapshot_before_update', False)))
         self.cb_snapshot.toggled.connect(lambda v: self.app.update_setting('snapshot_before_update', v))
-        snap_layout.addWidget(self.cb_snapshot)
+        backup_layout.addWidget(self.cb_snapshot)
+
+        fs_info = QLabel()
+        fs_info.setStyleSheet("color: #8B8D97; font-size: 12px; border: none;")
+        from neoarch.backend.services.backup import get_filesystem_type, _is_btrfs_root_snapshottable
+        fs = get_filesystem_type()
+        if fs == "btrfs" and _is_btrfs_root_snapshottable():
+            fs_info.setText("Filesystem: BTRFS - native snapshots available")
+        else:
+            fs_info.setText(f"Filesystem: {fs} - package list + config backup only")
+        backup_layout.addWidget(fs_info)
+
+        backup_btn_row = QHBoxLayout()
+        backup_btn_row.setSpacing(10)
+
+        create_backup_btn = QPushButton("Create Backup")
+        create_backup_btn.setStyleSheet(_BTN_OUTLINE)
+        create_backup_btn.clicked.connect(self.app.create_backup)
+        backup_btn_row.addWidget(create_backup_btn)
+
+        list_backup_btn = QPushButton("List Backups")
+        list_backup_btn.setStyleSheet(_BTN_OUTLINE)
+        list_backup_btn.clicked.connect(self.app.list_backups)
+        backup_btn_row.addWidget(list_backup_btn)
+
+        restore_backup_btn = QPushButton("Restore Backup")
+        restore_backup_btn.setStyleSheet(_BTN_OUTLINE)
+        restore_backup_btn.clicked.connect(self.app.restore_backup)
+        backup_btn_row.addWidget(restore_backup_btn)
+
+        prune_backup_btn = QPushButton("Prune Old")
+        prune_backup_btn.setStyleSheet(_BTN_OUTLINE)
+        prune_backup_btn.clicked.connect(self.app.prune_backups)
+        backup_btn_row.addWidget(prune_backup_btn)
+
+        backup_btn_row.addStretch()
+        backup_layout.addLayout(backup_btn_row)
+        self.layout.addWidget(backup_card)
+
+        # ── Snapshots Card (Timeshift, advanced/optional) ──
+        snap_card, snap_layout = self._make_card("Timeshift (advanced)")
+
+        snap_hint = QLabel("Requires the external 'timeshift' tool. Optional - the built-in backup above is recommended.")
+        snap_hint.setStyleSheet("color: #8B8D97; font-size: 12px; border: none;")
+        snap_hint.setWordWrap(True)
+        snap_layout.addWidget(snap_hint)
 
         btn_row = QHBoxLayout()
         btn_row.setSpacing(10)

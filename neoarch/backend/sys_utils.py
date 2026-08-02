@@ -6,6 +6,7 @@ and required system dependencies.
 
 import shutil
 import os
+import importlib.util
 from typing import List, Tuple, Optional
 
 __all__ = [
@@ -51,19 +52,67 @@ def get_aur_helper(preferred: Optional[str] = None) -> Optional[str]:
 def get_missing_dependencies() -> List[str]:
     """Check for missing system dependencies and return their names."""
     missing = []
+
+    # Core runtime binaries the app shells out to
+    if not cmd_exists("pacman"):
+        missing.append("pacman")
     if not cmd_exists("flatpak"):
         missing.append("flatpak")
     if not cmd_exists("git"):
         missing.append("git")
+    if not cmd_exists("curl"):
+        missing.append("curl")
     if not cmd_exists("node"):
         missing.append("nodejs")
     if not cmd_exists("npm"):
         missing.append("npm")
     if not cmd_exists("docker"):
         missing.append("docker")
+    if not cmd_exists("python"):
+        missing.append("python")
+    if not cmd_exists("gnome-keyring"):
+        missing.append("gnome-keyring")
+
+    # Python modules imported by the app at runtime
+    python_pkg_map = {
+        "PyQt6": "python-pyqt6",
+        "keyring": "python-keyring",
+        "requests": "python-requests",
+        "httpx": "python-httpx",
+        "supabase": "python-supabase",
+    }
+    for module, pkg in python_pkg_map.items():
+        if importlib.util.find_spec(module) is None:
+            missing.append(pkg)
+
+    # Keyring needs a running SecretService backend to persist sudo creds
+    if cmd_exists("gnome-keyring") and importlib.util.find_spec("keyring") is not None:
+        if not _keyring_usable():
+            missing.append("gnome-keyring")
+
+    # GUI password dialogs for AUR helpers / sudo prompts
+    missing_auth = get_missing_auth_tools()
+    if missing_auth:
+        missing.append(missing_auth[0])
+
     if not get_available_aur_helpers():
         missing.append("yay or paru")
     return missing
+
+
+def _keyring_usable() -> bool:
+    """Return True if the keyring backend can actually store/retrieve secrets."""
+    try:
+        import keyring
+        keyring.set_password("neoarch-selfcheck", "probe", "1")
+        ok = keyring.get_password("neoarch-selfcheck", "probe") == "1"
+        try:
+            keyring.delete_password("neoarch-selfcheck", "probe")
+        except Exception:
+            pass
+        return ok
+    except Exception:
+        return False
 
 
 def get_missing_auth_tools() -> List[str]:

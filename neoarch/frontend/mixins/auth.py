@@ -46,29 +46,62 @@ class _AuthMixin:
     def run_first_run_checks(self):
         missing = self.get_missing_dependencies()
         if not missing:
+            self.log("All required dependencies present")
             return
         text = "The following dependencies are missing and are required for best experience:\n\n" + "\n".join(f"\u2022 {m}" for m in missing) + "\n\nInstall now?"
         reply = QMessageBox.question(self, "Setup Environment", text, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.Yes)
         if reply == QMessageBox.StandardButton.Yes:
-            Thread(target=lambda: self.install_dependencies(missing), daemon=True).start()
+            Thread(target=self.install_dependencies, args=(missing,), daemon=True).start()
 
     def install_dependencies(self, missing):
         try:
-            pacman_pkgs = [p for p in missing if p not in ["yay", "yay or paru"]]
+            self.log(f"Installing missing dependencies: {', '.join(missing)}")
+            if not self.cmd_exists("git"):
+                self.log("Installing git first...")
+                self._run_sudo_install(["git"])
+            pacman_pkgs = [p for p in missing if p not in ("yay or paru", "yay", "paru", "python-supabase")]
             if pacman_pkgs:
-                cmd = ["pacman", "-S", "--needed", "--noconfirm"] + pacman_pkgs
-                worker = CommandWorker(cmd, sudo=True)
-                worker.output.connect(self.log)
-                worker.error.connect(self.log)
-                done_event = Event()
-                worker.finished.connect(lambda: done_event.set())
-                worker.run()
-                done_event.wait(timeout=1)
-            if ("yay" in missing or "yay or paru" in missing) and self.cmd_exists("git"):
+                self._run_sudo_install(pacman_pkgs)
+            if "python-supabase" in missing:
+                self._install_pip_module("supabase")
+            if ("yay or paru" in missing or "yay" in missing or "paru" in missing) and self.cmd_exists("git"):
                 self.install_aur_helper()
-            self.show_message.emit("Environment", "Dependency setup completed")
+            remaining = self.get_missing_dependencies()
+            if remaining:
+                self.log(f"Still missing after setup: {', '.join(remaining)}")
+                self.show_message.emit("Environment", f"Dependency setup incomplete. Still missing: {', '.join(remaining)}")
+            else:
+                self.show_message.emit("Environment", "Dependency setup completed")
         except Exception as e:
+            self.log(f"Setup failed: {str(e)}")
             self.show_message.emit("Environment", f"Setup failed: {str(e)}")
+
+    def _run_sudo_install(self, packages):
+        done = Event()
+        failed = {"v": False}
+        worker = CommandWorker(["pacman", "-S", "--needed", "--noconfirm"] + packages, sudo=True)
+        worker.output.connect(self.log)
+        worker.error.connect(self.log)
+        worker.error.connect(lambda _msg: failed.__setitem__("v", True))
+        worker.finished.connect(lambda: done.set())
+        worker.run()
+        done.wait(timeout=600)
+        if failed["v"]:
+            raise RuntimeError(f"pacman install failed for: {', '.join(packages)}")
+
+    def _install_pip_module(self, module):
+        self.log(f"Installing Python module via pip: {module}")
+        done = Event()
+        failed = {"v": False}
+        worker = CommandWorker(["pip", "install", "--user", "--break-system-packages", module], sudo=False)
+        worker.output.connect(self.log)
+        worker.error.connect(self.log)
+        worker.error.connect(lambda _msg: failed.__setitem__("v", True))
+        worker.finished.connect(lambda: done.set())
+        worker.run()
+        done.wait(timeout=300)
+        if failed["v"]:
+            raise RuntimeError(f"pip install failed for: {module}")
 
     def install_aur_helper(self):
         tmpdir = tempfile.mkdtemp(prefix="neoarch-yay-")
@@ -152,3 +185,253 @@ class _AuthMixin:
 
     def delete_snapshots(self):
         return delete_snapshots(self)
+
+    # ── Built-in backup (replaces timeshift as default) ──
+
+    def create_backup(self):
+        from neoarch.backend.services.backup import create_backup
+        self.log("Starting built-in backup...")
+        self.loading_widget.setVisible(True)
+        self.loading_widget.set_message("Creating backup...")
+        self.loading_widget.start_animation()
+
+        def on_progress(msg):
+            try:
+                self.ui_call.emit(lambda: self.log(msg))
+            except Exception:
+                pass
+
+        def on_done(result):
+            try:
+                self.ui_call.emit(lambda: self.loading_widget.stop_animation())
+                self.ui_call.emit(lambda: self.loading_widget.setVisible(False))
+            except Exception:
+                pass
+            if result.get("snapshot"):
+                self.show_message.emit(
+                    "Backup",
+                    f"Backup created: {result['path']}\nSnapshot: {result['snapshot']}")
+            else:
+                self.show_message.emit(
+                    "Backup",
+                    f"Backup created: {result['path']}\n"
+                    "Note: BTRFS snapshot not available; package list + config saved.")
+
+        create_backup(progress_cb=on_progress, finished_cb=on_done)
+
+    def list_backups(self):
+        from neoarch.backend.services.backup import list_backups
+        backups = list_backups()
+        if not backups:
+            self.show_message.emit("Backup", "No backups found yet.")
+            return
+        lines = ["Available backups (newest first):", ""]
+        for b in backups:
+            snap = " [snapshot]" if b.get("snapshot") else ""
+            pkg = b.get("packages", {})
+            count = len(pkg.get("pacman_all", [])) if isinstance(pkg, dict) else 0
+            lines.append(f"  {b['timestamp']} - {count} packages{snap}")
+        self.show_message.emit("Backup", "\n".join(lines))
+
+    def restore_backup(self):
+        from neoarch.backend.services.backup import list_backups, restore_packages
+        backups = list_backups()
+        if not backups:
+            self.show_message.emit("Backup", "No backups found to restore.")
+            return
+        from PyQt6.QtWidgets import (QDialog, QComboBox, QVBoxLayout, QLabel,
+                                     QDialogButtonBox)
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Restore Backup")
+        layout = QVBoxLayout(dlg)
+        layout.addWidget(QLabel("Select a backup to restore packages from:"))
+        combo = QComboBox()
+        for b in backups:
+            pkg = b.get("packages", {})
+            count = len(pkg.get("pacman_all", [])) if isinstance(pkg, dict) else 0
+            combo.addItem(f"{b['timestamp']} ({count} packages)", b['path'])
+        layout.addWidget(combo)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(dlg.accept)
+        buttons.rejected.connect(dlg.reject)
+        layout.addWidget(buttons)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+        path = combo.currentData()
+        reply = QMessageBox.question(
+            self, "Confirm Restore",
+            "Restore packages from this backup?\n\nMissing packages will be installed.\nThis may take a while.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No)
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        self.log(f"Restoring packages from {path}...")
+        restore_packages(path, progress_cb=self.log, finished_cb=lambda ok: self.show_message.emit(
+            "Backup", "Package restore completed" if ok else "Package restore failed"))
+
+    def prune_backups(self):
+        from neoarch.backend.services.backup import prune_backups
+        removed = prune_backups()
+        if removed:
+            self.show_message.emit("Backup", f"Removed {len(removed)} old backup(s).")
+        else:
+            self.show_message.emit("Backup", "No old backups to remove.")
+
+    # ── System hygiene: orphans, .pacnew, news ──
+
+    def cleanup_orphans(self):
+        """Remove orphaned packages, prompting for confirmation."""
+        from neoarch.backend.services.hygiene import list_orphans, remove_orphans
+        orphans = list_orphans()
+        if not orphans:
+            self.show_message.emit("Cleanup", "No orphaned packages found.")
+            return
+        reply = QMessageBox.question(
+            self, "Remove Orphans",
+            f"Remove {len(orphans)} orphaned package(s)?\n\n{', '.join(orphans[:10])}"
+            + ("\n..." if len(orphans) > 10 else ""),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No)
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        self.log(f"Removing {len(orphans)} orphaned package(s)...")
+
+        def on_done(ok):
+            self.show_message.emit(
+                "Cleanup",
+                "Orphaned packages removed." if ok else "Failed to remove orphaned packages.")
+
+        remove_orphans(progress_cb=self.log, finished_cb=on_done)
+
+    def manage_pacnew(self):
+        """Show the .pacnew file manager dialog."""
+        from neoarch.backend.services.hygiene import list_pacnew, diff_pacnew, accept_pacnew, delete_pacnew
+        from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
+                                     QListWidget, QListWidgetItem, QDialogButtonBox,
+                                     QPlainTextEdit, QMessageBox)
+        files = list_pacnew()
+        if not files:
+            self.show_message.emit("Config Files", "No .pacnew files found. System is clean.")
+            return
+
+        dlg = QDialog(self)
+        dlg.setWindowTitle(".pacnew Files")
+        dlg.resize(760, 520)
+        layout = QVBoxLayout(dlg)
+
+        hint = QLabel(f"{len(files)} config files pending review. Select one to inspect the diff.")
+        hint.setStyleSheet("color: #8B8D97;")
+        layout.addWidget(hint)
+
+        list_widget = QListWidget()
+        for f in files:
+            label = f"{f['package']} - {f['path']}"
+            item = QListWidgetItem(label)
+            item.setData(0x0100, f["path"])
+            list_widget.addItem(item)
+        layout.addWidget(list_widget, 1)
+
+        diff_view = QPlainTextEdit()
+        diff_view.setReadOnly(True)
+        diff_view.setMaximumHeight(200)
+        layout.addWidget(diff_view)
+
+        buttons = QDialogButtonBox()
+        btn_accept = buttons.addButton("Accept .pacnew", QDialogButtonBox.ButtonRole.AcceptRole)
+        btn_delete = buttons.addButton("Delete .pacnew", QDialogButtonBox.ButtonRole.DestructiveRole)
+        btn_close = buttons.addButton("Close", QDialogButtonBox.ButtonRole.RejectRole)
+
+        def show_diff():
+            item = list_widget.currentItem()
+            if not item:
+                return
+            diff_view.setPlainText(diff_pacnew(item.data(0x0100)))
+
+        list_widget.currentItemChanged.connect(lambda *a: show_diff())
+
+        def accept_current():
+            item = list_widget.currentItem()
+            if not item:
+                return
+            path = item.data(0x0100)
+            reply = QMessageBox.question(
+                self, "Accept .pacnew",
+                f"Replace the current config with:\n\n{path}",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No)
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+            if accept_pacnew(path):
+                list_widget.takeItem(list_widget.row(item))
+                diff_view.clear()
+                self.show_message.emit("Config Files", "Config updated.")
+            else:
+                self.show_message.emit("Config Files", "Failed to apply .pacnew file.")
+
+        def delete_current():
+            item = list_widget.currentItem()
+            if not item:
+                return
+            path = item.data(0x0100)
+            reply = QMessageBox.question(
+                self, "Delete .pacnew",
+                f"Delete without applying?\n\n{path}",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No)
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+            if delete_pacnew(path):
+                list_widget.takeItem(list_widget.row(item))
+                diff_view.clear()
+                self.show_message.emit("Config Files", ".pacnew file deleted.")
+            else:
+                self.show_message.emit("Config Files", "Failed to delete .pacnew file.")
+
+        btn_accept.clicked.connect(accept_current)
+        btn_delete.clicked.connect(delete_current)
+        btn_close.clicked.connect(dlg.reject)
+        layout.addWidget(buttons)
+
+        list_widget.setCurrentRow(0)
+        show_diff()
+        dlg.exec()
+
+    def show_arch_news(self):
+        """Fetch and display the latest Arch Linux news."""
+        from neoarch.backend.services.hygiene import fetch_news
+        from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLabel,
+                                     QTextBrowser, QDialogButtonBox)
+        self.log("Fetching Arch Linux news...")
+        items = fetch_news()
+        if not items:
+            self.show_message.emit("Arch News", "Could not fetch news. Check your connection.")
+            return
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Arch Linux News")
+        dlg.resize(720, 540)
+        layout = QVBoxLayout(dlg)
+        hint = QLabel("Latest from archlinux.org")
+        hint.setStyleSheet("color: #8B8D97;")
+        layout.addWidget(hint)
+
+        browser = QTextBrowser()
+        html = []
+        for entry in items:
+            date = entry.get("published", "")
+            title = entry.get("title", "")
+            link = entry.get("link", "")
+            summary = entry.get("summary", "")
+            html.append(
+                f"<h3 style='color:#00BFAE;'>{title}</h3>"
+                f"<p style='color:#8B8D97;'>{date}</p>"
+                f"<p>{summary}</p>"
+                f"<p><a href='{link}'>{link}</a></p><hr>")
+        browser.setHtml("\n".join(html))
+        browser.setOpenExternalLinks(True)
+        layout.addWidget(browser, 1)
+
+        close_btn = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        close_btn.rejected.connect(dlg.reject)
+        close_btn.accepted.connect(dlg.accept)
+        layout.addWidget(close_btn)
+        dlg.exec()

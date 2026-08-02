@@ -8,7 +8,7 @@ import os
 import shutil
 
 from neoarch.resources.plugin_data import get_plugins_data, get_all_plugins_data
-from neoarch.resources.paths import ICONS_DIR, ASSETS_DIR
+from neoarch.resources.paths import ICONS_DIR, ASSETS_DIR, PLUGINS_ITEMS_DIR
 
 
 def _shadow(widget: QWidget, blur=24, offset=(4, 6), alpha=150):
@@ -359,6 +359,7 @@ class PluginsView(QWidget):
     install_requested = pyqtSignal(str)   # plugin id
     launch_requested = pyqtSignal(str)    # plugin id
     uninstall_requested = pyqtSignal(str) # plugin id
+    live_search_ready = pyqtSignal(list)  # live search specs (main thread)
 
     def __init__(self, main_app, get_icon_callback, parent=None):
         super().__init__(parent)
@@ -398,6 +399,7 @@ class PluginsView(QWidget):
         
         self._init_specs()
         self._init_ui()
+        self.live_search_ready.connect(self._on_live_search_ready)
 
     def _init_specs(self):
         """Initialize plugin specifications from external data file"""
@@ -757,6 +759,13 @@ class PluginsView(QWidget):
         self.grid_layout.setSpacing(20)
         self.grid_layout.setContentsMargins(0, 0, 0, 0)
         
+        self._live_search_label = QLabel("")
+        self._live_search_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._live_search_label.setStyleSheet(
+            "color: #8B8D97; font-size: 13px; border: none; padding: 24px;")
+        self._live_search_label.hide()
+        scroll_layout.addWidget(self._live_search_label)
+        
         scroll_layout.addWidget(grid_container)
         scroll.setWidget(scroll_widget)
         self._scroll_area = scroll
@@ -1045,6 +1054,11 @@ class PluginsView(QWidget):
 
     def _render_current_page(self):
         filtered = self._get_filtered_plugins()
+        try:
+            if filtered:
+                self._live_search_label.hide()
+        except Exception:
+            pass
         if not filtered:
             self._clear_grid_and_hide_all()
             self._pagination_bar.setVisible(False)
@@ -1509,7 +1523,69 @@ class PluginsView(QWidget):
         
         self._all_filtered_search_cards = filtered if has_search else None
         
+        # Live search fallback: text query with no curated matches -> query pacman/AUR
+        if self._filter_text and not self._installed_only and not self._categories and not filtered:
+            self._run_live_search(self._filter_text)
+        
         self._refresh_content()
+
+    def _run_live_search(self, query):
+        """Query pacman + AUR live when the curated catalog has no matches."""
+        try:
+            from threading import Thread
+            def _search():
+                specs = []
+                try:
+                    from neoarch.backend.services.search import search_live_packages
+                    specs = search_live_packages(query)
+                except Exception:
+                    specs = []
+                self.live_search_ready.emit([query, specs])
+            self._pending_live_query = query
+            try:
+                self._live_search_label.setText("Searching official repos and AUR...")
+                self._live_search_label.show()
+            except Exception:
+                pass
+            Thread(target=_search, daemon=True).start()
+        except Exception:
+            pass
+
+    def _on_live_search_ready(self, payload):
+        """Handle live search results on the main thread (widgets require it)."""
+        try:
+            query, specs = payload
+            if getattr(self, '_pending_live_query', None) != query:
+                return
+            self._pending_live_query = None
+            if not specs:
+                try:
+                    self._live_search_label.setText("No packages found. Try a different search.")
+                except Exception:
+                    pass
+                return
+            card_datas = []
+            for spec in specs:
+                spec = dict(spec)
+                spec['icon'] = os.path.join(PLUGINS_ITEMS_DIR, 'default.png')
+                existing = self.get_plugin(spec['id'])
+                if existing:
+                    spec = existing
+                installed = self.is_installed(spec)
+                card = self.create_app_card(spec, None, installed)
+                card_datas.append({
+                    'plugin': spec,
+                    'installed': installed,
+                    'widget': card,
+                })
+            self._all_filtered_search_cards = card_datas
+            try:
+                self._live_search_label.hide()
+            except Exception:
+                pass
+            self._refresh_content()
+        except Exception:
+            pass
 
     def set_installing(self, plugin_id: str, installing: bool):
         """Update installing state for a plugin card"""

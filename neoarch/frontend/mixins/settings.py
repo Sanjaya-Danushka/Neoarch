@@ -8,6 +8,7 @@ from neoarch.frontend.views.settings_auto_update import AutoUpdateSettingsWidget
 from neoarch.frontend.views.settings_notifications import NotificationsSettingsWidget
 from neoarch.frontend.views.settings_logging import LoggingSettingsWidget
 from neoarch.frontend.views.settings_proxy import ProxySettingsWidget
+from neoarch.frontend.views.settings_maintenance import MaintenanceSettingsWidget
 
 
 class _SettingsMixin:
@@ -105,6 +106,12 @@ class _SettingsMixin:
         self.settings_nav_buttons["proxy"] = btn_proxy
         sidebar_layout.addWidget(btn_proxy)
 
+        btn_maintenance = QPushButton("Maintenance")
+        btn_maintenance.setCheckable(True)
+        btn_maintenance.clicked.connect(lambda: self.switch_settings_category("maintenance"))
+        self.settings_nav_buttons["maintenance"] = btn_maintenance
+        sidebar_layout.addWidget(btn_maintenance)
+
         sidebar_layout.addStretch()
 
         version_label = QLabel("NeoArch v2.1")
@@ -130,6 +137,7 @@ class _SettingsMixin:
             "notifications": NotificationsSettingsWidget(self),
             "logging": LoggingSettingsWidget(self),
             "proxy": ProxySettingsWidget(self),
+            "maintenance": MaintenanceSettingsWidget(self),
         }
 
         for key, widget in self.settings_widgets.items():
