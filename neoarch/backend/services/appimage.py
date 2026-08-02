@@ -15,6 +15,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -80,12 +81,16 @@ def _parse_version_from_name(filename: str) -> Optional[str]:
 # AppImage introspection
 # ──────────────────────────────────────────────────────────────────────────
 
-def _extract_metadata(path: str) -> Dict:
+def _extract_metadata(path: str, icon_dest_dir: str = "") -> Dict:
     """Read name/icon/desktop data from an AppImage without executing it.
 
     Uses the AppImage's `--appimage-extract` self-extraction into a
     scratch directory, then parses the embedded .desktop file. Returns
     {name, icon_inside, desktop}. Best effort — never raises.
+
+    When `icon_dest_dir` is given and an icon is found, the icon is copied
+    into that directory (the extraction scratch dir is deleted afterwards,
+    so a returned path must live elsewhere) and the copied path returned.
     """
     result = {"name": None, "icon_inside": None, "desktop": None}
     workdir = tempfile.mkdtemp(prefix="neoarch_appimg_")
@@ -107,6 +112,17 @@ def _extract_metadata(path: str) -> Dict:
             result["name"] = name.group(1).strip()
         if icon:
             icon_path = _find_icon(workdir, icon.group(1).strip())
+            if icon_path and icon_dest_dir:
+                try:
+                    os.makedirs(icon_dest_dir, exist_ok=True)
+                    ext = os.path.splitext(icon_path)[1] or ".png"
+                    dest = os.path.join(
+                        icon_dest_dir,
+                        f"appimg-{os.getpid()}-{int(time.time() * 1000)}{ext}")
+                    shutil.copy2(icon_path, dest)
+                    icon_path = dest
+                except Exception:
+                    icon_path = None
             result["icon_inside"] = icon_path
     except Exception:
         pass
@@ -206,14 +222,20 @@ def add_from_file(path: str, name: Optional[str] = None) -> Dict:
     shutil.copy2(path, bin_path)
     os.chmod(bin_path, os.stat(bin_path).st_mode | 0o111)
 
-    meta = _extract_metadata(bin_path)
+    os.makedirs(ICON_DIR, exist_ok=True)
+    meta = _extract_metadata(bin_path, icon_dest_dir=ICON_DIR)
     display_name = meta.get("name") or base_name
 
     icon_path = ""
     if meta.get("icon_inside"):
         ext = os.path.splitext(meta["icon_inside"])[1] or ".png"
-        icon_path = os.path.join(ICON_DIR, f"{app_id}{ext}")
-        shutil.copy2(meta["icon_inside"], icon_path)
+        final_icon = os.path.join(ICON_DIR, f"{app_id}{ext}")
+        try:
+            if os.path.abspath(meta["icon_inside"]) != os.path.abspath(final_icon):
+                shutil.move(meta["icon_inside"], final_icon)
+            icon_path = final_icon
+        except Exception:
+            icon_path = ""
 
     entries = [e for e in _load_db() if e.get("id") != app_id]
     entry = {

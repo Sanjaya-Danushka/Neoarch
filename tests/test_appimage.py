@@ -80,7 +80,7 @@ def test_latest_release_empty(monkeypatch):
 
 def test_add_from_file(tmp_path, monkeypatch, capsys):
     _setup(tmp_path, monkeypatch)
-    appimage._extract_metadata = lambda path: {
+    appimage._extract_metadata = lambda path, icon_dest_dir="": {
         "name": "Obsidian", "icon_inside": None, "desktop": None}
     entry = appimage.add_from_file(_fake_appimage(tmp_path))
     assert entry["id"] == "obsidian"
@@ -97,11 +97,39 @@ def test_add_from_file_with_icon(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch)
     icon = tmp_path / "obsidian.png"
     icon.write_bytes(b"png")
-    appimage._extract_metadata = lambda path: {
+    appimage._extract_metadata = lambda path, icon_dest_dir="": {
         "name": "Obsidian", "icon_inside": str(icon), "desktop": None}
     entry = appimage.add_from_file(_fake_appimage(tmp_path))
     assert os.path.isfile(entry["icon_path"])
     assert "Icon=" in open(entry["desktop_path"]).read()
+
+
+def test_extract_metadata_copies_icon_out_of_workdir(tmp_path, monkeypatch):
+    """Regression: an icon found inside the extraction scratch dir must be
+    copied out before the scratch dir is deleted, or the returned path dies."""
+    import importlib
+    importlib.reload(appimage)
+    _setup(tmp_path, monkeypatch)
+    root = tmp_path / "extract" / "squashfs-root"
+    icons_dir = root / "usr" / "share" / "icons" / "hicolor" / "128x128" / "apps"
+    icons_dir.mkdir(parents=True)
+    (icons_dir / "aptakube.png").write_bytes(b"pngdata")
+    (root / "aptakube.desktop").write_text(
+        "[Desktop Entry]\nName=Aptakube\nIcon=aptakube\n", encoding="utf-8")
+
+    def fake_extract(path):
+        workdir = tmp_path / "extract"
+        monkeypatch.setattr(appimage.tempfile, "mkdtemp", lambda *a, **k: str(workdir))
+        monkeypatch.setattr(appimage.subprocess, "run",
+                            lambda *a, **k: subprocess.CompletedProcess(args=(), returncode=0))
+        return appimage._extract_metadata(path, icon_dest_dir=str(tmp_path / "icons"))
+
+    fake = tmp_path / "fake.AppImage"
+    fake.write_bytes(b"\x7fELF" + b"\x00" * 10)
+    meta = fake_extract(str(fake))
+    assert meta["icon_inside"], "icon should have been found and copied out"
+    assert os.path.isfile(meta["icon_inside"])
+    assert meta["icon_inside"].startswith(str(tmp_path / "icons"))
 
 
 def test_desktop_entry_text():
@@ -115,7 +143,7 @@ def test_desktop_entry_text():
 
 def test_remove_appimage(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch)
-    appimage._extract_metadata = lambda path: {"name": None, "icon_inside": None, "desktop": None}
+    appimage._extract_metadata = lambda path, icon_dest_dir="": {"name": None, "icon_inside": None, "desktop": None}
     entry = appimage.add_from_file(_fake_appimage(tmp_path))
     assert appimage.remove_appimage("obsidian") is True
     assert not os.path.exists(entry["bin_path"])
@@ -126,7 +154,7 @@ def test_remove_appimage(tmp_path, monkeypatch):
 
 def test_add_from_url(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch)
-    appimage._extract_metadata = lambda path: {"name": None, "icon_inside": None, "desktop": None}
+    appimage._extract_metadata = lambda path, icon_dest_dir="": {"name": None, "icon_inside": None, "desktop": None}
     appimage._download = lambda url, dest: (_write_fake(dest), True)[1]
     entry = appimage.add_from_url("MyApp", "https://example.com/MyApp-3.0.AppImage")
     assert entry["id"] == "myapp"
@@ -146,7 +174,7 @@ def test_add_from_url_rejects_non_appimage():
 
 def test_add_from_repo(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch)
-    appimage._extract_metadata = lambda path: {"name": None, "icon_inside": None, "desktop": None}
+    appimage._extract_metadata = lambda path, icon_dest_dir="": {"name": None, "icon_inside": None, "desktop": None}
     appimage._latest_release = lambda host, owner, repo: {
         "tag": "v4.2.1", "url": "https://example.com/App-4.2.1.AppImage"}
     appimage._download = lambda url, dest: (_write_fake(dest), True)[1]
@@ -169,7 +197,7 @@ def test_add_from_repo_no_asset(tmp_path, monkeypatch):
 
 def test_check_update_repo(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch)
-    appimage._extract_metadata = lambda path: {"name": None, "icon_inside": None, "desktop": None}
+    appimage._extract_metadata = lambda path, icon_dest_dir="": {"name": None, "icon_inside": None, "desktop": None}
     appimage._download = lambda url, dest: (_write_fake(dest), True)[1]
     appimage._latest_release = lambda host, owner, repo: {
         "tag": "v9.0.0", "url": "https://example.com/App-9.0.0.AppImage"}
@@ -184,7 +212,7 @@ def test_check_update_repo(tmp_path, monkeypatch):
 
 def test_check_update_static(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch)
-    appimage._extract_metadata = lambda path: {"name": None, "icon_inside": None, "desktop": None}
+    appimage._extract_metadata = lambda path, icon_dest_dir="": {"name": None, "icon_inside": None, "desktop": None}
     appimage._download = lambda url, dest: (_write_fake(dest), True)[1]
     entry = appimage.add_from_url("App", "https://example.com/App-2.5.AppImage")
     updated = appimage.check_update("app")
@@ -193,7 +221,7 @@ def test_check_update_static(tmp_path, monkeypatch):
 
 def test_install_update(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch)
-    appimage._extract_metadata = lambda path: {"name": None, "icon_inside": None, "desktop": None}
+    appimage._extract_metadata = lambda path, icon_dest_dir="": {"name": None, "icon_inside": None, "desktop": None}
     appimage._download = lambda url, dest: (_write_fake(dest), True)[1]
     appimage._latest_release = lambda *a: {"tag": "v2.0", "url": "https://x/App-2.0.AppImage"}
     entry = appimage.add_from_file(_fake_appimage(tmp_path, "App-1.0.AppImage"), name="App")
@@ -207,7 +235,7 @@ def test_install_update(tmp_path, monkeypatch):
 
 def test_install_update_no_newer(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch)
-    appimage._extract_metadata = lambda path: {"name": None, "icon_inside": None, "desktop": None}
+    appimage._extract_metadata = lambda path, icon_dest_dir="": {"name": None, "icon_inside": None, "desktop": None}
     appimage._latest_release = lambda *a: {"tag": "v1.0", "url": "https://x/App-1.0.AppImage"}
     appimage.add_from_file(_fake_appimage(tmp_path, "App-2.0.AppImage"), name="App")
     assert appimage.install_update("app") is False
@@ -215,7 +243,7 @@ def test_install_update_no_newer(tmp_path, monkeypatch):
 
 def test_sync_from_disk_removes_missing(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch)
-    appimage._extract_metadata = lambda path: {"name": None, "icon_inside": None, "desktop": None}
+    appimage._extract_metadata = lambda path, icon_dest_dir="": {"name": None, "icon_inside": None, "desktop": None}
     entry = appimage.add_from_file(_fake_appimage(tmp_path, "App-1.0.AppImage"), name="App")
     os.remove(entry["bin_path"])
     remaining = appimage.sync_from_disk()
