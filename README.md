@@ -48,6 +48,21 @@ Sign in with Supabase via OAuth to sync bundle favorites across devices. Session
 
 Set and forget with configurable auto-update intervals (1-30 days), auto-refresh, and optional snapshot-before-update via built-in plugins.
 
+### Command-Line Interface
+
+Scriptable package management from the terminal. Search, install, remove, upgrade, list updates, read Arch news, create backups, purge orphans, and run system checks — all with `--json` output for automation. Runs headless (no GUI required).
+
+```bash
+neoarch-cli search browserpass        # search pacman + AUR
+neoarch-cli install --aur yay         # install from AUR
+neoarch-cli upgrade --all             # full system upgrade
+neoarch-cli list-updates --json       # machine-readable updates
+neoarch-cli news                      # latest Arch Linux news
+neoarch-cli doctor                    # system health check
+neoarch-cli backup -c                 # create a backup
+neoarch-cli purge -o                  # remove orphaned packages
+```
+
 ### System Backup
 
 Create full system backups (package list + config export) with Btrfs snapshot support on Btrfs roots. Restore packages from any backup, list snapshots, and auto-prune old backups (keeps last 5).
@@ -166,6 +181,7 @@ chmod +x Neoarch.py && ./Neoarch.py
 | Hygiene | Remove orphaned packages, manage `.pacnew` files, read Arch news |
 | Local Files | Install `.pkg.tar.zst`, `.pacman`, `.AppImage`, `.flatpakref` files directly |
 | Cloud Sync | Sign in with Supabase to sync favorites across devices |
+| CLI | Scriptable `neoarch-cli` with `--json` output for search/install/backup/etc. |
 
 ## Development
 

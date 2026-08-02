@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Resolve repo root (bin/..)
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+
+# Activate local venv if present
+if [[ -f "$REPO_DIR/.venv/bin/activate" ]]; then
+  # shellcheck disable=SC1090
+  source "$REPO_DIR/.venv/bin/activate"
+fi
+
+cd "$REPO_DIR"
+exec python -m neoarch.cli "$@"

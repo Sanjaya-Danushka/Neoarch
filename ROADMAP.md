@@ -2,24 +2,15 @@
 
 Feature plan derived from a feature-gap comparison with Shelly-ALPM. Each item lists the implementation targets (services/tests/UI) following the existing architecture: backend services in `neoarch/backend/services/`, UI mixins in `neoarch/frontend/mixins/`, views in `neoarch/frontend/views/`, tests in `tests/`.
 
-## Phase 1 — CLI (v2.3)
+## Phase 1 — CLI (v2.3) ✅ Implemented
 
 Command-line interface mirroring the GUI, enabling scripting and automation.
 
-- New `neoarch/cli.py` (argparse) invoked via `python -m neoarch.cli` and a `neoarch` console script.
-- Commands:
-  - `search` (pacman/AUR/Flatpak/npm)
-  - `install`, `remove`, `upgrade`, `update`
-  - `list` (installed), `list-updates`
-  - `news` (with read-tracking)
-  - `backup` (export/import TOML)
-  - `purge` (orphans, pacnew, cache)
-  - `config get/set`
-  - `doctor` (system checks)
-- Flags: `--json`, `--no-confirm`, `--yes`.
-- Reuse backend services (`search.py`, `hygiene.py`, `backup.py`, `sys_utils.py`); no new logic.
-- Shell completions (bash/zsh) generated from argparse.
-- Tests: `tests/test_cli.py`.
+- **Done** — `neoarch/cli.py` (argparse) invoked via `python -m neoarch.cli` and `bin/neoarch-cli`.
+- Commands implemented: `search`, `install`, `remove`, `upgrade`, `update`, `list`, `list-updates`, `news`, `backup`, `purge`, `ignore`, `config get/set/reset`, `doctor`.
+- Flags: `--json`, `--no-confirm`, `--yes` (accepted before or after the subcommand).
+- Reuses pure backend services (`search.py`, `sys_utils.py`, `config_utils.py`, `hygiene.py`) — Qt-free, runs headless.
+- Tests: `tests/test_cli.py` (7 tests).
 
 ## Phase 2 — PKGBUILD Security Scanner (v2.3)
 
