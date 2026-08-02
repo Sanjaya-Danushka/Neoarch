@@ -1,0 +1,28 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# Sinhala stub — add translations here to localize NeoArch.
+msgid "Install"
+msgstr "ස්ථාපනය"
+
+msgid "Remove"
+msgstr "ඉවත් කරන්න"
+
+msgid "Search"
+msgstr "සොයන්න"
+
+msgid "Updates"
+msgstr "යාවත්කාලීන"
+
+msgid "Settings"
+msgstr "සැකසුම්"
+
+msgid "Package"
+msgstr "පැකේජය"
+
+msgid "No managed AppImages."
+msgstr "කළමනාකරණය කළ AppImage නොමැත."
+
+msgid "No restart required."
+msgstr "නැවත අරඹන්න අවශ්‍ය නොවේ."

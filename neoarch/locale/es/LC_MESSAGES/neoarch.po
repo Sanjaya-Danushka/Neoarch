@@ -1,0 +1,28 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# Spanish stub — add translations here to localize NeoArch.
+msgid "Install"
+msgstr "Instalar"
+
+msgid "Remove"
+msgstr "Eliminar"
+
+msgid "Search"
+msgstr "Buscar"
+
+msgid "Updates"
+msgstr "Actualizaciones"
+
+msgid "Settings"
+msgstr "Ajustes"
+
+msgid "Package"
+msgstr "Paquete"
+
+msgid "No managed AppImages."
+msgstr "No hay AppImages gestionados."
+
+msgid "No restart required."
+msgstr "No se requiere reinicio."

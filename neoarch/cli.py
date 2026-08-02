@@ -27,6 +27,9 @@ Commands:
     keyring       Manage the pacman keyring
     purify        Remove corrupted archives and unused runtimes
     restart       Check whether a reboot is recommended
+    parallel      Show/set ParallelDownloads in /etc/pacman.conf
+    schedule      Show/configure the weekly update schedule
+    recommend     Curated package recommendations
     doctor        Check the system for missing prerequisites
 """
 
@@ -531,6 +534,10 @@ _DEFAULTS = {
     "autoupdate_interval_days": 7,
     "snapshot_before_update": False,
     "auto_clean_cache": False,
+    "schedule_enabled": False,
+    "schedule_days": [0, 1, 2, 3, 4, 5, 6],
+    "schedule_time": "03:00",
+    "culture": "en",
 }
 
 
@@ -576,6 +583,9 @@ def cmd_config(args) -> None:
                 data[args.key] = args.value.lower() in ("true", "1", "yes")
             elif isinstance(current, int):
                 data[args.key] = int(args.value)
+            elif isinstance(current, list):
+                data[args.key] = [
+                    int(t.strip()) for t in args.value.split(",") if t.strip()]
             else:
                 data[args.key] = args.value
         except ValueError:
@@ -990,6 +1000,89 @@ def cmd_restart(args) -> None:
             print(f"  [{item.get('category')}] {item.get('message')}")
 
 
+# ── parallel ─────────────────────────────────────────────────────────────
+
+def cmd_parallel(args) -> None:
+    from neoarch.backend.services import pacman_conf
+
+    if args.count is None:
+        current = pacman_conf.get_parallel_downloads()
+        if args.json:
+            _emit({"parallel_downloads": current}, True)
+        elif current is None:
+            print("ParallelDownloads is not set.")
+        else:
+            print(f"ParallelDownloads = {current}")
+        return
+
+    if pacman_conf.set_parallel_downloads(args.count):
+        print(f"ParallelDownloads = {args.count} written to /etc/pacman.conf.")
+    else:
+        print("Failed to set ParallelDownloads (need root).", file=sys.stderr)
+        raise SystemExit(1)
+
+
+# ── schedule ─────────────────────────────────────────────────────────────
+
+def cmd_schedule(args) -> None:
+    from neoarch.backend.services import scheduler
+    data = _load_config()
+
+    if args.action == "show":
+        if args.json:
+            _emit({k: data[k] for k in
+                   ("schedule_enabled", "schedule_days", "schedule_time")}, True)
+        else:
+            print(f"enabled: {data.get('schedule_enabled', False)}")
+            print(f"days:    {', '.join(str(d) for d in data.get('schedule_days', []))}")
+            print(f"time:    {data.get('schedule_time', '03:00')}")
+            nxt = scheduler.next_run(data.get("schedule_days", []),
+                                     data.get("schedule_time", "03:00"))
+            print(f"next:    {nxt.isoformat() if nxt else '(invalid schedule)'}")
+        return
+
+    if args.action == "set":
+        days = data.get("schedule_days", [])
+        if args.days:
+            try:
+                days = [int(d) for d in args.days.split(",") if d.strip()]
+            except ValueError:
+                print("error: --days expects a comma-separated list of 0-6",
+                      file=sys.stderr)
+                raise SystemExit(1)
+        time_str = args.time or data.get("schedule_time", "03:00")
+        if not scheduler.validate_schedule(days, time_str):
+            print("error: invalid schedule", file=sys.stderr)
+            raise SystemExit(1)
+        data["schedule_days"] = days
+        data["schedule_time"] = time_str
+        if args.enable is not None:
+            data["schedule_enabled"] = args.enable
+        _save_config(data)
+        print(f"Schedule set: days={days} time={time_str} "
+              f"enabled={data['schedule_enabled']}.")
+
+
+# ── recommend ────────────────────────────────────────────────────────────
+
+def cmd_recommend(args) -> None:
+    from neoarch.backend.services import recommend
+
+    items = recommend.recommendations(
+        limit=args.limit, include_installed=args.installed)
+    if args.json:
+        _emit(items, True)
+    elif not items:
+        print("No recommendations.")
+    else:
+        for item in items:
+            installed = " [installed]" if item.get("installed") else ""
+            pop = f"  (pop {item.get('popularity'):.1f})" \
+                if item.get("popularity") is not None else ""
+            print(f"{item['name']:>20}  [{item.get('category', '')}]  "
+                  f"{item.get('desc', '')}{pop}{installed}")
+
+
 # ──────────────────────────────────────────────────────────────────────────
 # Parser
 # ──────────────────────────────────────────────────────────────────────────
@@ -1168,6 +1261,27 @@ def _build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("restart", parents=[common], help="check whether a reboot is recommended")
     sp.add_argument("action", choices=["check"], nargs="?", default="check")
     sp.set_defaults(func=cmd_restart)
+
+    sp = sub.add_parser("parallel", parents=[common], help="show/set ParallelDownloads in /etc/pacman.conf")
+    sp.add_argument("count", nargs="?", type=int, help="parallel download count (1-32)")
+    sp.set_defaults(func=cmd_parallel)
+
+    sp = sub.add_parser("schedule", parents=[common], help="show/configure the weekly update schedule")
+    ssp = sp.add_subparsers(dest="action", required=True)
+    ssp.add_parser("show", parents=[common], help="show the current schedule")
+    _s = ssp.add_parser("set", parents=[common], help="set the schedule")
+    _s.add_argument("--days", help="comma-separated weekdays (0=Monday..6=Sunday)")
+    _s.add_argument("--time", help="time of day as HH:MM")
+    _s.add_argument("--enable", dest="enable", action="store_true", default=None,
+                    help="enable the schedule")
+    _s.add_argument("--disable", dest="enable", action="store_false",
+                    help="disable the schedule")
+    sp.set_defaults(func=cmd_schedule)
+
+    sp = sub.add_parser("recommend", parents=[common], help="curated package recommendations")
+    sp.add_argument("--limit", type=int, default=20, help="max entries (default 20)")
+    sp.add_argument("--installed", action="store_true", help="include installed packages")
+    sp.set_defaults(func=cmd_recommend)
 
     sub.add_parser("doctor", parents=[common], help="check system health").set_defaults(func=cmd_doctor)
 

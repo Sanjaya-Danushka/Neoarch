@@ -83,20 +83,31 @@ Pre-install security review for AUR installs/updates.
 
 ### Tray icon + scheduled checks
 
-- `QSystemTrayIcon` with update-count badge; weekly schedule (days-of-week + time) configurable in Settings; click-to-open main window.
-- Extend `settings_auto_update.py`.
+- **Done** — `neoarch/backend/services/scheduler.py`: pure, Qt-free weekly schedule model — `parse_time`, `validate_schedule`, `next_run` (next matching weekday at HH:MM), `is_due`. Settings keys: `schedule_enabled`, `schedule_days` (0=Monday..6), `schedule_time`.
+- **Done** — CLI: `neoarch-cli schedule show|set [--days] [--time] [--enable|--disable]`; config keys settable via `config set`.
+- **Todo** — `QSystemTrayIcon` with update-count badge; click-to-open main window; weekly schedule UI in Settings (Auto Update card); a `QTimer` driving `is_due` at startup.
+- **Done** — Tests: `tests/test_scheduler.py` (8 tests).
 
 ### Parallel downloads
 
-- Configurable `ParallelDownloadCount` written to `/etc/pacman.conf` (`ParallelDownloads`).
+- **Done** — `neoarch/backend/services/pacman_conf.py`: line-preserving read/write of `/etc/pacman.conf` options (`tee` via the app's elevation); `get_parallel_downloads`/`set_parallel_downloads(1..32)`; option names validated against `^[A-Za-z][A-Za-z0-9_]*$`; appends under `[options]` when absent.
+- **Done** — CLI: `neoarch-cli parallel [count]`.
+- **Todo** — UI: `ParallelDownloads` control in Settings → Network/Performance.
+- **Done** — Tests: `tests/test_pacman_conf.py` (7 tests).
 
 ### Recommended packages
 
-- Curated recommendations feed in Discover (sourced from local plugin data + popularity).
+- **Done** — `neoarch/backend/services/recommend.py`: curated feed (30 packages across browser/terminal/editor/notes/media/graphics/utilities/security/development/productivity/communication) merged with optional cached AUR popularity scores; `installed` flags; popularity-sorted, no network at read time.
+- **Done** — CLI: `neoarch-cli recommend [--limit N] [--installed]` (with `--json`).
+- **Todo** — UI: recommendations feed in Discover.
+- **Done** — Tests: `tests/test_recommend.py` (6 tests).
 
 ### Translations / i18n
 
-- `gettext`-based `.ts`/`.qm` pipeline (Qt Linguist) + `Culture` setting; start with English + Sinhala + Spanish stubs.
+- **Done** — `neoarch/backend/services/i18n.py`: lightweight gettext-style `.po` loader (no msgfmt step) from `neoarch/locale/<lang>/LC_MESSAGES/neoarch.po`; `set_language`/`get_language`/`translate`/`_`, graceful English fallback, empty-catalog fallback.
+- **Done** — Bundled stubs: `neoarch/locale/si` (Sinhala) and `neoarch/locale/es` (Spanish) with starter entries; `culture` setting (default `en`).
+- **Todo** — Qt Linguist `.ts`/`.qm` pipeline for widget strings; `Culture` UI in Settings.
+- **Done** — Tests: `tests/test_i18n.py` (8 tests, includes loading the shipped stubs).
 
 ## Phase 6 — Headless helpers (v2.5)
 

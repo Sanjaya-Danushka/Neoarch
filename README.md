@@ -77,6 +77,11 @@ neoarch-cli appimage check --json     # check for AppImage updates
  neoarch-cli purify flatpak            # remove unused Flatpak runtimes
  neoarch-cli purify merge /etc/x.pacnew --accept  # three-way .pacnew merge
  neoarch-cli restart check --json      # is a reboot recommended?
+ neoarch-cli parallel                  # show ParallelDownloads
+ neoarch-cli parallel 10               # set it in /etc/pacman.conf (root)
+ neoarch-cli schedule show             # weekly update schedule
+ neoarch-cli schedule set --days 1,3,5 --time 05:30 --enable
+ neoarch-cli recommend --limit 5       # curated package recommendations
 ```
 
 The `appimage` subcommands manage a NeoArch-owned AppImage store at

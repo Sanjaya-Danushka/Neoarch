@@ -25,7 +25,7 @@ def test_parser_has_all_commands():
         "search", "install", "remove", "upgrade", "update", "list",
         "list-updates", "ignore", "news", "backup", "purge", "config",
         "scan", "downgrade", "marks", "appimage", "keyring", "purify",
-        "restart", "doctor",
+        "restart", "parallel", "schedule", "recommend", "doctor",
     ):
         assert expected in subs, f"missing command {expected}"
 
@@ -275,3 +275,66 @@ def test_cmd_restart_check(monkeypatch, capsys):
     args = _build_parser().parse_args(["restart", "check"])
     cmd_restart(args)
     assert "No restart required" in capsys.readouterr().out
+
+
+def test_cmd_parallel_show(monkeypatch, capsys):
+    from neoarch.cli import cmd_parallel
+    from neoarch.backend.services import pacman_conf
+
+    monkeypatch.setattr(pacman_conf, "get_parallel_downloads", lambda: 5)
+    args = _build_parser().parse_args(["parallel"])
+    cmd_parallel(args)
+    assert "ParallelDownloads = 5" in capsys.readouterr().out
+
+
+def test_cmd_parallel_set(monkeypatch, capsys):
+    from neoarch.cli import cmd_parallel
+    from neoarch.backend.services import pacman_conf
+
+    monkeypatch.setattr(pacman_conf, "set_parallel_downloads", lambda n: n == 8)
+    args = _build_parser().parse_args(["parallel", "8"])
+    cmd_parallel(args)
+    assert "written to" in capsys.readouterr().out
+
+
+def test_cmd_schedule_set(monkeypatch, tmp_path, capsys):
+    from neoarch.cli import cmd_schedule, _CONFIG_PATH
+
+    cfg = tmp_path / "config.json"
+    monkeypatch.setattr("neoarch.cli._CONFIG_PATH", str(cfg))
+    args = _build_parser().parse_args(
+        ["schedule", "set", "--days", "1,3,5", "--time", "05:30", "--enable"])
+    cmd_schedule(args)
+    out = capsys.readouterr().out
+    assert "05:30" in out
+
+    args = _build_parser().parse_args(["schedule", "show", "--json"])
+    cmd_schedule(args)
+    import json as _json
+    data = _json.loads(capsys.readouterr().out)
+    assert data["schedule_days"] == [1, 3, 5]
+    assert data["schedule_enabled"] is True
+
+
+def test_cmd_schedule_set_invalid(monkeypatch, tmp_path):
+    from neoarch.cli import cmd_schedule
+
+    cfg = tmp_path / "config.json"
+    monkeypatch.setattr("neoarch.cli._CONFIG_PATH", str(cfg))
+    args = _build_parser().parse_args(["schedule", "set", "--time", "25:99"])
+    with pytest.raises(SystemExit) as exc:
+        cmd_schedule(args)
+    assert exc.value.code == 1
+
+
+def test_cmd_recommend(monkeypatch, capsys):
+    from neoarch.cli import cmd_recommend
+    from neoarch.backend.services import recommend
+
+    monkeypatch.setattr(recommend, "recommendations",
+                        lambda limit=20, include_installed=False:
+                        [{"name": "htop", "desc": "top", "category": "utilities",
+                          "popularity": None, "installed": False}])
+    args = _build_parser().parse_args(["recommend"])
+    cmd_recommend(args)
+    assert "htop" in capsys.readouterr().out
