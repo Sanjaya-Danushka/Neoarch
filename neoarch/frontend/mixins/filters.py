@@ -9,8 +9,6 @@ from neoarch.frontend.styles import Styles
 from neoarch.frontend.components.source_card import SourceCard
 
 from neoarch.frontend.components.plugins_sidebar import PluginsSidebar
-from neoarch.managers.git_manager import GitManager
-from neoarch.managers.docker_manager import DockerManager
 from neoarch.backend.services import filter as filters_service
 
 _BASE_DIR = str(PROJECT_ROOT)
@@ -20,6 +18,8 @@ class _FiltersMixin:
     def _get_filter_names(self):
         if self.current_view == "installed":
             return ("Updates available",)
+        if self.current_view == "updates":
+            return ()
         return ("Available", "Installed")
 
     def _update_filter_btn_state(self):
@@ -251,6 +251,12 @@ class _FiltersMixin:
             self.filters_section.setVisible(False)
             if hasattr(self, 'sources_title_label'):
                 self.sources_title_label.setVisible(False)
+        elif view_id in ("git", "docker"):
+            # No source or status filters for Git/Docker pages
+            self.sources_section.setVisible(False)
+            self.filters_section.setVisible(False)
+            if hasattr(self, 'sources_title_label'):
+                self.sources_title_label.setVisible(False)
         elif view_id == "plugins":
             # Show a VS Code-like extensions sidebar in filters_section
             self.sources_section.setVisible(False)
@@ -335,29 +341,6 @@ class _FiltersMixin:
             self.source_card.add_source(source_name, source_icon_path)
 
         self.sources_layout.addWidget(self.source_card)
-        if not hasattr(self, 'git_manager') or self.git_manager is None:
-            pass  # inlined
-            self.git_manager = GitManager(self.log_signal, self.show_message, self.sources_layout, self)
-        else:
-            try:
-                self.git_manager.create_git_section()
-            except Exception:
-                pass
-        try:
-            if not hasattr(self, 'docker_manager') or self.docker_manager is None:
-                pass  # inlined
-                self.docker_manager = DockerManager(self.log_signal, self.show_message, self.sources_layout, self)
-            else:
-                try:
-                    self.docker_manager.sources_layout = self.sources_layout
-                except Exception:
-                    pass
-                try:
-                    self.docker_manager.create_docker_section()
-                except Exception:
-                    pass
-        except Exception:
-            pass
 
     def update_updates_sources(self):
         while self.sources_layout.count() > 1:
@@ -375,28 +358,6 @@ class _FiltersMixin:
         for source_name, source_icon_path in sources:
             self.source_card.add_source(source_name, source_icon_path)
         self.sources_layout.addWidget(self.source_card)
-        if not hasattr(self, 'git_manager') or self.git_manager is None:
-            pass  # inlined
-            self.git_manager = GitManager(self.log_signal, self.show_message, self.sources_layout, self)
-        else:
-            try:
-                self.git_manager.create_git_section()
-            except Exception:
-                pass
-        try:
-            if not hasattr(self, 'docker_manager') or self.docker_manager is None:
-                self.docker_manager = DockerManager(self.log_signal, self.show_message, self.sources_layout, self)
-            else:
-                try:
-                    self.docker_manager.sources_layout = self.sources_layout
-                except Exception:
-                    pass
-                try:
-                    self.docker_manager.create_docker_section()
-                except Exception:
-                    pass
-        except Exception:
-            pass
         self.source_card.source_changed.connect(self.on_updates_source_changed)
         try:
             self.source_card.on_source_changed()
@@ -428,27 +389,6 @@ class _FiltersMixin:
         except Exception:
             pass
         self.sources_layout.addWidget(self.source_card)
-        if not hasattr(self, 'git_manager') or self.git_manager is None:
-            self.git_manager = GitManager(self.log_signal, self.show_message, self.sources_layout, self)
-        else:
-            try:
-                self.git_manager.create_git_section()
-            except Exception:
-                pass
-        try:
-            if not hasattr(self, 'docker_manager') or self.docker_manager is None:
-                self.docker_manager = DockerManager(self.log_signal, self.show_message, self.sources_layout, self)
-            else:
-                try:
-                    self.docker_manager.sources_layout = self.sources_layout
-                except Exception:
-                    pass
-                try:
-                    self.docker_manager.create_docker_section()
-                except Exception:
-                    pass
-        except Exception:
-            pass
 
     def update_plugins_sources(self):
         """Update plugins sources using the same SourceCard component as installed section"""
@@ -477,27 +417,6 @@ class _FiltersMixin:
         except Exception:
             pass
         self.sources_layout.addWidget(self.source_card)
-        if not hasattr(self, 'git_manager') or self.git_manager is None:
-            self.git_manager = GitManager(self.log_signal, self.show_message, self.sources_layout, self)
-        else:
-            try:
-                self.git_manager.create_git_section()
-            except Exception:
-                pass
-        try:
-            if not hasattr(self, 'docker_manager') or self.docker_manager is None:
-                self.docker_manager = DockerManager(self.log_signal, self.show_message, self.sources_layout, self)
-            else:
-                try:
-                    self.docker_manager.sources_layout = self.sources_layout
-                except Exception:
-                    pass
-                try:
-                    self.docker_manager.create_docker_section()
-                except Exception:
-                    pass
-        except Exception:
-            pass
 
     def on_installed_source_changed(self, source_states):
         self.apply_filters()
@@ -532,10 +451,6 @@ class _FiltersMixin:
         self.display_page()
         self.update_load_more_visibility()
         self.update_updates_header_counts()
-
-        if not hasattr(self, 'git_manager') or self.git_manager is None:
-            pass  # inlined
-            self.git_manager = GitManager(self.log_signal, self.show_message, self.sources_layout, self)
 
     def on_source_selection_changed(self, source_states):
         """Handle changes in source selection"""

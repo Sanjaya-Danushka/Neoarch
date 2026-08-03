@@ -20,8 +20,6 @@ from PyQt6.QtGui import (
 )
 
 from neoarch.resources.paths import PROJECT_ROOT
-from neoarch.managers.docker_manager import DockerManager
-from neoarch.managers.git_manager import GitManager
 from neoarch.frontend.components.title_bar import _TitleBar
 from neoarch.frontend.components.large_search_box import LargeSearchBox
 from neoarch.frontend.components.packages_grid_view import PackagesGridView
@@ -29,6 +27,8 @@ from neoarch.frontend.components.package_detail_card import PackageDetailCard
 from neoarch.frontend.components.loading_spinner import LoadingSpinner
 
 from neoarch.frontend.components.source_card import SourceCard
+from neoarch.frontend.components.flow_layout import FlowLayout
+from neoarch.frontend.styles import Styles
 from neoarch.backend.services import help as help_service
 from neoarch.backend.package import loader as packages_service
 from neoarch.backend.package import installer as install_service
@@ -171,6 +171,8 @@ class _ViewsMixin:
 
         sys_items = [
             ("Sources", "plugins", os.path.join(_base, "plugins.svg")),
+            ("Git", "git", os.path.join(_base, "git.svg")),
+            ("Docker", "docker", os.path.join(_base, "docker.svg")),
             ("Bundles", "bundles", os.path.join(_base, "local-builds.svg")),
             ("AppImages", "appimage", os.path.join(_base, "appimage.svg")),
             ("Settings", "settings", os.path.join(_base, "settings.svg")),
@@ -327,11 +329,12 @@ class _ViewsMixin:
         if self.current_view != "updates":
             return
         total = len(getattr(self, 'updates_all', []) or [])
-        matched = len(self.all_packages or [])
-        try:
-            self.header_info.setText(f"{total} packages were found, {matched} of which match the specified filters")
-        except Exception:
-            pass
+        if total == 0:
+            self.header_info.setText("Your system is up to date")
+        elif total == 1:
+            self.header_info.setText("1 update available")
+        else:
+            self.header_info.setText(f"{total} updates available")
 
     def update_installed_header_counts(self):
         """Update the header info subtitle for Installed with total installed count."""
@@ -453,7 +456,7 @@ class _ViewsMixin:
 
         return btn
 
-    def _add_right_toolbar_icons(self, layout, show_install_file=False, show_sudo=False, show_bundle=False, show_grid_filter=True):
+    def _add_right_toolbar_icons(self, layout, show_install_file=False, show_sudo=False, show_bundle=False, show_grid_filter=True, show_filter=True):
         """Add common right-side navbar icons to any toolbar layout."""
         navbar_dir = os.path.join(_BASE_DIR, "assets", "icons", "navbar")
 
@@ -465,13 +468,14 @@ class _ViewsMixin:
             )
             layout.addWidget(self._grid_view_btn)
 
-            self._filter_btn = self.create_toolbar_button(
-                os.path.join(navbar_dir, "Filter.svg"),
-                "Filter Packages",
-                self.show_category_filter
-            )
-            self._filter_btn.setProperty("defaultStyle", self._filter_btn.styleSheet())
-            layout.addWidget(self._filter_btn)
+            if show_filter:
+                self._filter_btn = self.create_toolbar_button(
+                    os.path.join(navbar_dir, "Filter.svg"),
+                    "Filter Packages",
+                    self.show_category_filter
+                )
+                self._filter_btn.setProperty("defaultStyle", self._filter_btn.styleSheet())
+                layout.addWidget(self._filter_btn)
 
         if show_install_file:
             self._install_file_btn = self.create_toolbar_button(
@@ -822,12 +826,14 @@ class _ViewsMixin:
         return header
 
     def show_docker_install_dialog(self):
-        """Show Docker container management dialog"""
-        if not self.docker_manager:
-            pass  # inlined
-            self.docker_manager = DockerManager(self.log_signal, self.show_message, self.sources_layout, self)
+        """Open the Docker container management page."""
+        self.switch_view("docker")
+        QTimer.singleShot(50, self._open_docker_run_dialog)
 
-        self.docker_manager.install_from_docker()
+    def _open_docker_run_dialog(self):
+        view = getattr(self, 'docker_view', None)
+        if view is not None:
+            view.run_container()
 
     def show_community_hub(self):
         """Show Community Hub for plugins and extensions"""
@@ -872,12 +878,14 @@ class _ViewsMixin:
             self._show_message("Plugins", f"Cannot open folder: {e}")
 
     def show_git_install_dialog(self):
-        """Show Git repository installation dialog"""
-        if not self.git_manager:
-            pass  # inlined
-            self.git_manager = GitManager(self.log_signal, self.show_message, self.sources_layout, self)
+        """Open the Git repository management page."""
+        self.switch_view("git")
+        QTimer.singleShot(50, self._open_git_install_dialog)
 
-        self.git_manager.install_from_git()
+    def _open_git_install_dialog(self):
+        view = getattr(self, 'git_view', None)
+        if view is not None:
+            view.install_from_git()
 
     def show_help(self):
         """Show help dialog"""
@@ -909,9 +917,10 @@ class _ViewsMixin:
         self.toolbar_widget = QWidget()
         self.toolbar_layout = QVBoxLayout(self.toolbar_widget)
         self.toolbar_layout.setContentsMargins(0,0,0,0)
-        # Keep toolbar fixed-height and top-aligned so it doesn't shift during loading
+        # Keep toolbar top-aligned; vertical policy grows so buttons wrap
+        # to a second row instead of being squeezed/clipped when narrow.
         try:
-            self.toolbar_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            self.toolbar_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         except Exception:
             pass
         self.packages_panel_layout.addWidget(self.toolbar_widget, 0, Qt.AlignmentFlag.AlignTop)
@@ -994,6 +1003,8 @@ class _ViewsMixin:
         # Plugins view placeholder — created lazily in switch_view("plugins")
         self.plugins_view = None
         self.appimage_view = None
+        self.git_view = None
+        self.docker_view = None
 
         # Container for table area + detail card side panel
         self.packages_content_area = QWidget()
@@ -1152,8 +1163,7 @@ class _ViewsMixin:
         self._greeting_label = None
 
         if self.current_view == "updates":
-            layout = QHBoxLayout()
-            layout.setSpacing(12)
+            layout = FlowLayout(h_spacing=12, v_spacing=8)
 
             btn_style = f"""
                 QPushButton {{
@@ -1174,11 +1184,25 @@ class _ViewsMixin:
                 }}
             """
 
+            refresh_btn = QPushButton("Check for Updates")
+            refresh_btn.setMinimumHeight(36)
+            refresh_btn.setStyleSheet(btn_style)
+            refresh_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "discover", "refresh.svg"), 16))
+            refresh_btn.clicked.connect(self.load_updates)
+            layout.addWidget(refresh_btn)
+
             select_all_btn = QPushButton("Select All")
             select_all_btn.setMinimumHeight(36)
             select_all_btn.setStyleSheet(btn_style)
             select_all_btn.clicked.connect(self.toggle_select_all)
             layout.addWidget(select_all_btn)
+
+            update_all_btn = QPushButton("Update All")
+            update_all_btn.setMinimumHeight(36)
+            update_all_btn.setStyleSheet(Styles.get_accent_button_stylesheet())
+            update_all_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "discover", "updateall.svg"), 16))
+            update_all_btn.clicked.connect(self.perform_update_all)
+            layout.addWidget(update_all_btn)
 
             update_btn = QPushButton("Update Selected")
             update_btn.setMinimumHeight(36)
@@ -1198,8 +1222,7 @@ class _ViewsMixin:
             manage_btn.clicked.connect(self.manage_ignored)
             layout.addWidget(manage_btn)
 
-            layout.addStretch()
-            self._add_right_toolbar_icons(layout, show_sudo=True)
+            self._add_right_toolbar_icons(layout, show_filter=False)
 
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "installed":
@@ -1516,6 +1539,10 @@ class _ViewsMixin:
                 self.plugins_view.setVisible(False)
             if hasattr(self, 'appimage_view') and self.appimage_view:
                 self.appimage_view.setVisible(False)
+            if hasattr(self, 'git_view') and self.git_view:
+                self.git_view.setVisible(False)
+            if hasattr(self, 'docker_view') and self.docker_view:
+                self.docker_view.setVisible(False)
             # plugins_tab_widget removed - plugins_view is handled above
             if hasattr(self, 'no_results_widget'):
                 self.no_results_widget.setVisible(False)
@@ -1550,6 +1577,8 @@ class _ViewsMixin:
             "plugins": (os.path.join(_BASE_DIR, "assets", "icons", "plugins.svg"), "Sources & Plugins", "Manage package sources and extensions"),
             "bundles": (os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"), "Bundles", "Create, import, export, and install bundles of packages"),
             "appimage": (os.path.join(_BASE_DIR, "assets", "icons", "appimage.svg"), "AppImages", "Manage AppImage applications"),
+            "git": (os.path.join(_BASE_DIR, "assets", "icons", "git.svg"), "Git Repositories", "Clone, build, update, and manage Git repositories"),
+            "docker": (os.path.join(_BASE_DIR, "assets", "icons", "docker.svg"), "Docker Containers", "Pull, run, and manage Docker containers"),
             "settings": (os.path.join(_BASE_DIR, "assets", "icons", "settings.svg"), "Settings", "Configure NeoArch settings"),
         }
 
@@ -1573,9 +1602,9 @@ class _ViewsMixin:
         if view_id != "discover":
             self.large_search_box.setVisible(False)
 
-        # Show filters panel for all views except settings and bundles
+        # Show filters panel for all views except settings, bundles, git, and docker
         if hasattr(self, 'filters_panel'):
-            self.filters_panel.setVisible(view_id not in ("settings", "bundles"))
+            self.filters_panel.setVisible(view_id not in ("settings", "bundles", "git", "docker"))
 
         # Update greeting in navbar
         self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
@@ -1800,6 +1829,62 @@ class _ViewsMixin:
             self.appimage_view.setVisible(True)
 
             self.header_info.setText("Install and manage AppImage applications")
+        elif view_id == "git":
+            self.large_search_box.setVisible(False)
+            self._hide_all_package_views()
+            self.load_more_btn.setVisible(False)
+            self.settings_container.setVisible(False)
+            self.sources_section.setVisible(False)
+            self.filters_section.setVisible(False)
+            if hasattr(self, 'toolbar_widget'):
+                self.toolbar_widget.setVisible(False)
+            try:
+                self.console_label.setVisible(False)
+                self.console.setVisible(False)
+                if hasattr(self, 'console_toggle_btn'):
+                    self.console_toggle_btn.setVisible(True)
+                    self.console_toggle_btn.setToolTip("Show Console")
+            except Exception:
+                pass
+
+            if getattr(self, 'git_view', None) is None:
+                from neoarch.managers.git_manager import GitManager
+                self.git_manager = GitManager(self.log_signal, self.show_message, self)
+                from neoarch.frontend.components.git_tab import GitTab
+                self.git_view = GitTab(self.git_manager, self)
+                self.packages_panel_layout.insertWidget(7, self.git_view, 1)
+            self.git_view.setVisible(True)
+            self.git_view.refresh()
+
+            self.header_info.setText("Clone, build, update, and manage Git repositories")
+        elif view_id == "docker":
+            self.large_search_box.setVisible(False)
+            self._hide_all_package_views()
+            self.load_more_btn.setVisible(False)
+            self.settings_container.setVisible(False)
+            self.sources_section.setVisible(False)
+            self.filters_section.setVisible(False)
+            if hasattr(self, 'toolbar_widget'):
+                self.toolbar_widget.setVisible(False)
+            try:
+                self.console_label.setVisible(False)
+                self.console.setVisible(False)
+                if hasattr(self, 'console_toggle_btn'):
+                    self.console_toggle_btn.setVisible(True)
+                    self.console_toggle_btn.setToolTip("Show Console")
+            except Exception:
+                pass
+
+            if getattr(self, 'docker_view', None) is None:
+                from neoarch.managers.docker_manager import DockerManager
+                self.docker_manager = DockerManager(self.log_signal, self.show_message, self)
+                from neoarch.frontend.components.docker_tab import DockerTab
+                self.docker_view = DockerTab(self.docker_manager, self)
+                self.packages_panel_layout.insertWidget(8, self.docker_view, 1)
+            self.docker_view.setVisible(True)
+            self.docker_view.refresh()
+
+            self.header_info.setText("Pull, run, and manage Docker containers")
         elif view_id == "settings":
             # Show settings panel, hide package table & search
             try:
