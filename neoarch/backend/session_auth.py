@@ -11,7 +11,7 @@ import stat
 import subprocess
 import atexit
 import ctypes
-import keyring
+import importlib.util
 import shutil
 from pathlib import Path
 from neoarch.resources.paths import APP_NAME, CONFIG_DIR, PROJECT_ROOT
@@ -19,6 +19,25 @@ from neoarch.resources.paths import APP_NAME, CONFIG_DIR, PROJECT_ROOT
 _session_askpass_script: str | None = None
 _session_active: bool = False
 _atexit_registered: bool = False
+
+_keyring_available: bool | None = None
+
+
+def _load_keyring():
+    """Lazily import and cache the keyring module if available.
+
+    Returns the keyring module, or None if it is not installed.
+    """
+    global _keyring_available
+    if _keyring_available is False:
+        return None
+    if _keyring_available is None:
+        _keyring_available = importlib.util.find_spec("keyring") is not None
+    if not _keyring_available:
+        return None
+    import keyring
+    return keyring
+
 
 # pylint: disable=global-statement
 def setup_session_auth(parent_widget=None) -> bool:
@@ -368,7 +387,10 @@ def cleanup_session():
 def get_sudo_password() -> 'SecureBytes | None':
     """Retrieve cached sudo password from keyring"""
     try:
-        pw = keyring.get_password(APP_NAME, "sudo_credential")
+        kr = _load_keyring()
+        if kr is None:
+            return None
+        pw = kr.get_password(APP_NAME, "sudo_credential")
     except Exception:
         return None
     if pw is None:
@@ -379,7 +401,10 @@ def get_sudo_password() -> 'SecureBytes | None':
 def store_sudo_password(pw_text: 'SecureBytes') -> bool:
     """Store sudo password in keyring"""
     try:
-        keyring.set_password(APP_NAME, "sudo_credential", pw_text.get_bytes().decode('utf-8'))
+        kr = _load_keyring()
+        if kr is None:
+            return False
+        kr.set_password(APP_NAME, "sudo_credential", pw_text.get_bytes().decode('utf-8'))
         pw_text.zero()
         return True
     except Exception:
@@ -389,7 +414,10 @@ def store_sudo_password(pw_text: 'SecureBytes') -> bool:
 def delete_sudo_password() -> None:
     """Remove stored password"""
     try:
-        keyring.delete_password(APP_NAME, "sudo_credential")
+        kr = _load_keyring()
+        if kr is None:
+            return
+        kr.delete_password(APP_NAME, "sudo_credential")
     except Exception:
         pass
 
