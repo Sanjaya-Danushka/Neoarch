@@ -2,7 +2,8 @@
 
 import os
 
-from PyQt6.QtWidgets import QFrame, QVBoxLayout, QLabel, QWidget, QCheckBox, QRadioButton
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QLabel, QWidget, QCheckBox, QRadioButton, QScrollArea
+from PyQt6.QtCore import Qt
 
 from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.frontend.styles import Styles
@@ -10,8 +11,19 @@ from neoarch.frontend.components.source_card import SourceCard
 
 from neoarch.frontend.components.plugins_sidebar import PluginsSidebar
 from neoarch.backend.services import filter as filters_service
+from neoarch.frontend.components.updates_table import classify_update, _parse_size, _parse_version
 
 _BASE_DIR = str(PROJECT_ROOT)
+
+
+def _fmt_size(b):
+    try:
+        mb = float(b) / (1024 * 1024)
+        if mb >= 1024:
+            return f"{mb / 1024:.2f} GiB"
+        return f"{mb:.1f} MiB"
+    except Exception:
+        return ""
 
 
 class _FiltersMixin:
@@ -175,40 +187,47 @@ class _FiltersMixin:
 
     def create_filters_panel(self):
         self.filters_panel = QFrame()
-        self.filters_panel.setStyleSheet(Styles.get_filters_panel_stylesheet())
+        self.filters_panel.setMinimumWidth(260)
+        self.filters_panel.setStyleSheet("""
+            QFrame {
+                background-color: #0C0C0E;
+            }
+        """)
 
-        layout = QVBoxLayout(self.filters_panel)
-        layout.setContentsMargins(10, 16, 10, 16)
-        layout.setSpacing(10)
+        panel_layout = QVBoxLayout(self.filters_panel)
+        panel_layout.setContentsMargins(0, 0, 0, 0)
+        panel_layout.setSpacing(0)
+
+        scroll = QScrollArea(self.filters_panel)
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setStyleSheet("""
+            QScrollArea { background: transparent; border: none; }
+        """)
+
+        container = QWidget()
+        container.setStyleSheet("background: transparent; border: none;")
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         self.sources_section = QWidget()
         self.sources_layout = QVBoxLayout(self.sources_section)
-        self.sources_layout.setContentsMargins(0, 0, 0, 0)
-        self.sources_layout.setSpacing(6)
+        self.sources_layout.setContentsMargins(12, 0, 12, 0)
+        self.sources_layout.setSpacing(0)
 
-        self.sources_title_label = QLabel("Sources")
-        self.sources_title_label.setObjectName("sectionLabel")
-        self.sources_title_label.setStyleSheet("""
-            QLabel#sectionLabel {
-                color: #8B8D97;
-                font-size: 10px;
-                font-weight: 500;
-                padding: 0 2px 2px 2px;
-                background: transparent;
-                border: none;
-            }
-        """)
-        self.sources_layout.addWidget(self.sources_title_label)
-
-        layout.addWidget(self.sources_section)
+        layout.addWidget(self.sources_section, 1)
 
         self.filters_section = QWidget()
         self.filters_layout = QVBoxLayout(self.filters_section)
         self.filters_layout.setContentsMargins(0, 0, 0, 0)
-        self.filters_layout.setSpacing(6)
+        self.filters_layout.setSpacing(8)
 
         layout.addWidget(self.filters_section)
-        layout.addStretch()
+
+        scroll.setWidget(container)
+        panel_layout.addWidget(scroll)
 
         return self.filters_panel
 
@@ -231,38 +250,26 @@ class _FiltersMixin:
         if view_id == "installed":
             self.sources_section.setVisible(True)
             self.filters_section.setVisible(False)
-            if hasattr(self, 'sources_title_label'):
-                self.sources_title_label.setVisible(False)
             self.update_installed_sources()
         elif view_id == "updates":
             self.sources_section.setVisible(True)
             self.filters_section.setVisible(False)
-            if hasattr(self, 'sources_title_label'):
-                self.sources_title_label.setVisible(False)
         elif view_id == "discover":
             self.sources_section.setVisible(True)
             self.filters_section.setVisible(False)
-            if hasattr(self, 'sources_title_label'):
-                self.sources_title_label.setVisible(False)
             self.update_discover_sources()
         elif view_id == "bundles":
             # No source or status filters for bundles
             self.sources_section.setVisible(False)
             self.filters_section.setVisible(False)
-            if hasattr(self, 'sources_title_label'):
-                self.sources_title_label.setVisible(False)
         elif view_id in ("git", "docker"):
             # No source or status filters for Git/Docker pages
             self.sources_section.setVisible(False)
             self.filters_section.setVisible(False)
-            if hasattr(self, 'sources_title_label'):
-                self.sources_title_label.setVisible(False)
         elif view_id == "plugins":
             # Show a VS Code-like extensions sidebar in filters_section
             self.sources_section.setVisible(False)
             self.filters_section.setVisible(True)
-            if hasattr(self, 'sources_title_label'):
-                self.sources_title_label.setVisible(False)
             # Clear and add PluginsSidebar
             while self.filters_layout.count():
                 item = self.filters_layout.takeAt(0)
@@ -294,13 +301,9 @@ class _FiltersMixin:
         elif view_id == "settings":
             self.sources_section.setVisible(False)
             self.filters_section.setVisible(False)
-            if hasattr(self, 'sources_title_label'):
-                self.sources_title_label.setVisible(False)
         else:
             self.sources_section.setVisible(True)
             self.filters_section.setVisible(True)
-            if hasattr(self, 'sources_title_label'):
-                self.sources_title_label.setVisible(True)
 
     def on_filter_selection_changed(self, filter_states):
         """Handle changes in filter selection"""
@@ -310,7 +313,7 @@ class _FiltersMixin:
             self._update_filter_btn_state()
             self.apply_filters()
         elif self.current_view == "updates":
-            self.apply_update_filters()
+            self._recompute_updates()
         elif self.current_view == "plugins":
             # Apply plugin status filters (Available/Installed)
             if hasattr(self, 'plugins_view') and self.plugins_view:
@@ -318,9 +321,9 @@ class _FiltersMixin:
 
     def update_discover_sources(self):
         """Update the discover sources using the new SourceCard component"""
-        # Clear existing sources layout (except the title label)
-        while self.sources_layout.count() > 1:
-            item = self.sources_layout.takeAt(1)
+        # Clear existing sources layout
+        while self.sources_layout.count():
+            item = self.sources_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
@@ -341,10 +344,11 @@ class _FiltersMixin:
             self.source_card.add_source(source_name, source_icon_path)
 
         self.sources_layout.addWidget(self.source_card)
+        self.source_card.configure_sections(show_search=True)
 
     def update_updates_sources(self):
-        while self.sources_layout.count() > 1:
-            item = self.sources_layout.takeAt(1)
+        while self.sources_layout.count():
+            item = self.sources_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
         self.source_card = SourceCard(self)
@@ -359,14 +363,29 @@ class _FiltersMixin:
             self.source_card.add_source(source_name, source_icon_path)
         self.sources_layout.addWidget(self.source_card)
         self.source_card.source_changed.connect(self.on_updates_source_changed)
+        self.source_card.search_mode_changed.connect(self.on_search_mode_changed)
+        self.source_card.search_mode_changed.connect(self._recompute_updates)
+        self.source_card.status_filter_changed.connect(self._recompute_updates)
+        self.source_card.sort_changed.connect(self._recompute_updates)
+        self.source_card.set_action_callbacks(
+            update_all=self.perform_update_all,
+            ignore_selected=self.ignore_selected,
+            manage_ignored=self.manage_ignored,
+        )
+        self.source_card.configure_sections(
+            show_status=True, show_sort=True, show_actions=True,
+            show_summary=True, show_search=True, show_counts=True,
+        )
         try:
             self.source_card.on_source_changed()
         except Exception:
             pass
+        self._refresh_updates_summary()
+        self._recompute_updates()
 
     def update_installed_sources(self):
-        while self.sources_layout.count() > 1:
-            item = self.sources_layout.takeAt(1)
+        while self.sources_layout.count():
+            item = self.sources_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
         self.source_card = SourceCard(self)
@@ -379,21 +398,13 @@ class _FiltersMixin:
         ]
         for source_name, source_icon_path in sources:
             self.source_card.add_source(source_name, source_icon_path)
-        try:
-            for obj_name in ("searchModeTitle",):
-                w = self.source_card.findChild(QLabel, obj_name)
-                if w:
-                    w.setVisible(False)
-            for rb in self.source_card.findChildren(QRadioButton, "searchModeRadio"):
-                rb.setVisible(False)
-        except Exception:
-            pass
         self.sources_layout.addWidget(self.source_card)
+        self.source_card.configure_sections(show_search=False)
 
     def update_plugins_sources(self):
         """Update plugins sources using the same SourceCard component as installed section"""
-        while self.sources_layout.count() > 1:
-            item = self.sources_layout.takeAt(1)
+        while self.sources_layout.count():
+            item = self.sources_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
@@ -407,16 +418,8 @@ class _FiltersMixin:
         ]
         for source_name, source_icon_path in sources:
             self.source_card.add_source(source_name, source_icon_path)
-        try:
-            for obj_name in ("searchModeTitle",):
-                w = self.source_card.findChild(QLabel, obj_name)
-                if w:
-                    w.setVisible(False)
-            for rb in self.source_card.findChildren(QRadioButton, "searchModeRadio"):
-                rb.setVisible(False)
-        except Exception:
-            pass
         self.sources_layout.addWidget(self.source_card)
+        self.source_card.configure_sections(show_search=False)
 
     def on_installed_source_changed(self, source_states):
         self.apply_filters()
@@ -426,31 +429,119 @@ class _FiltersMixin:
             self.plugins_view.apply_source_filters(source_states)
 
     def on_updates_source_changed(self, source_states):
-        base = getattr(self, 'updates_all', self.all_packages)
-        show_pacman = source_states.get("pacman", True)
-        show_aur = source_states.get("AUR", True)
-        show_flatpak = source_states.get("Flatpak", True)
-        show_npm = source_states.get("npm", True)
-        show_local = source_states.get("Local", True)
-        filtered = []
+        self._recompute_updates()
+
+    def _pkg_status(self, pkg):
+        try:
+            return pkg.get("status") or classify_update(pkg.get("version"), pkg.get("new_version"))
+        except Exception:
+            return "Maintenance"
+
+    def _matches_query(self, pkg, query, mode):
+        name = (pkg.get('name') or '').lower()
+        pid = (pkg.get('id') or pkg.get('name') or '').lower()
+        if mode == 'name':
+            return query in name
+        if mode == 'id':
+            return query in pid
+        return query in name or query in pid
+
+    def _sort_updates(self, dataset, field, asc):
+        try:
+            if field == 'size':
+                def key(p): return _parse_size(p.get('download_size') or '')
+            elif field == 'version':
+                def key(p): return (_parse_version(p.get('version')), _parse_version(p.get('new_version')))
+            elif field == 'status':
+                def key(p): return classify_update(p.get('version'), p.get('new_version'))
+            else:
+                def key(p): return (p.get('name') or '').lower()
+            return sorted(dataset, key=key, reverse=not asc)
+        except Exception:
+            return dataset
+
+    def _refresh_updates_summary(self):
+        """Refresh per-source counts and the total size summary from updates_all."""
+        if self.current_view != "updates" or not getattr(self, 'source_card', None):
+            return
+        base = getattr(self, 'updates_all', None) or []
+        per = {}
         for pkg in base:
             s = pkg.get('source')
-            if s == 'pacman' and show_pacman:
-                filtered.append(pkg)
-            elif s == 'AUR' and show_aur:
-                filtered.append(pkg)
-            elif s == 'Flatpak' and show_flatpak:
-                filtered.append(pkg)
-            elif s == 'npm' and show_npm:
-                filtered.append(pkg)
-            elif s == 'Local' and show_local:
-                filtered.append(pkg)
-        self.all_packages = filtered
+            if s not in per:
+                per[s] = [0, 0.0]
+            per[s][0] += 1
+            per[s][1] += _parse_size(pkg.get('download_size') or '')
+        try:
+            for name, item in self.source_card.sources.items():
+                n, b = per.get(name, (0, 0.0))
+                item.set_count(n, _fmt_size(b))
+        except Exception:
+            pass
+        total_b = sum(per[s][1] for s in per)
+        try:
+            self.source_card.set_summary(len(base), _fmt_size(total_b))
+        except Exception:
+            pass
+
+    def _recompute_updates(self):
+        """Compose source, status, search, and sort filters for the updates view."""
+        if self.current_view != "updates":
+            return
+        self._refresh_updates_summary()
+        dataset = list(getattr(self, 'updates_all', None) or [])
+        states = {}
+        try:
+            states = self.source_card.get_selected_sources()
+        except Exception:
+            states = {}
+        if states:
+            dataset = [p for p in dataset if states.get(p.get('source'), True)]
+        try:
+            active = self.source_card.get_active_statuses()
+            dataset = [p for p in dataset if self._pkg_status(p) in active]
+        except Exception:
+            pass
+        query = ""
+        try:
+            query = (self.search_input.text() or '').strip().lower()
+        except Exception:
+            pass
+        if query:
+            mode = 'both'
+            try:
+                mode = self.source_card.get_search_mode()
+            except Exception:
+                pass
+            dataset = [p for p in dataset if self._matches_query(p, query, mode)]
+        field, asc = 'name', True
+        try:
+            field = self.source_card.get_sort()
+            asc = self.source_card.get_sort_asc()
+        except Exception:
+            pass
+        dataset = self._sort_updates(dataset, field, asc)
+        self.all_packages = dataset
         self.current_page = 0
-        self.package_table.setRowCount(0)
-        self.display_page()
-        self.update_load_more_visibility()
-        self.update_updates_header_counts()
+        try:
+            self.load_more_btn.setVisible(False)
+        except Exception:
+            pass
+        try:
+            col_map = {"name": 1, "size": 3, "version": 2, "status": 5}
+            self.updates_table.sort_by_column(col_map.get(field, 1), asc)
+        except Exception:
+            pass
+        if query:
+            total = len(getattr(self, 'updates_all', None) or [])
+            self.header_info.setText(
+                f"{total} packages were found, {len(dataset)} of which match the specified filters")
+        else:
+            self.update_updates_header_counts()
+        try:
+            self._sync_updates_table(dataset)
+        except Exception:
+            pass
 
     def on_source_selection_changed(self, source_states):
         """Handle changes in source selection"""

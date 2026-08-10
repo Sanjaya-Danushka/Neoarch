@@ -233,12 +233,24 @@ def load_updates(app):
         pass
     app.package_table.setVisible(False)
     app.load_more_btn.setVisible(False)
-    app.loading_widget.start_animation()
-    try:
-        if hasattr(app, 'loading_container'):
-            app.loading_container.setVisible(True)
-    except Exception:
-        pass
+    use_skeleton = getattr(app, 'updates_table', None) is not None and app.current_view == 'updates'
+    if use_skeleton:
+        try:
+            app.updates_table.set_loading(True)
+            app.updates_table.setVisible(True)
+            app.loading_widget.stop_animation()
+            app.loading_widget.setVisible(False)
+            if hasattr(app, 'loading_container'):
+                app.loading_container.setVisible(False)
+        except Exception:
+            pass
+    else:
+        app.loading_widget.start_animation()
+        try:
+            if hasattr(app, 'loading_container'):
+                app.loading_container.setVisible(True)
+        except Exception:
+            pass
     try:
         app.cancel_install_btn.setVisible(False)
     except Exception:

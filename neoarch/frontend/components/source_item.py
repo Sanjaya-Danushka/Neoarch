@@ -1,27 +1,29 @@
-"""SourceItem Component - Individual source selection widget"""
+"""SourceItem Component — macOS-style list row for package source selection."""
 
 import os
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QLabel
-from PyQt6.QtGui import QPixmap, QPainter, QColor, QPen
+from PyQt6.QtWidgets import (
+    QWidget, QHBoxLayout, QVBoxLayout, QLabel, QSizePolicy,
+)
+from PyQt6.QtGui import QPixmap, QPainter, QColor, QPen, QPalette, QFontMetrics
 from PyQt6.QtCore import Qt, QRectF, pyqtSignal, QPropertyAnimation, QEasingCurve, pyqtProperty
 from PyQt6.QtSvg import QSvgRenderer
 
 
 class ToggleSwitch(QWidget):
-    """macOS-style toggle switch with smooth animation."""
+    """macOS-style toggle switch with spring animation and blue accent."""
 
     toggled = pyqtSignal(bool)
 
-    def __init__(self, accent_color="#00BFAE", parent=None):
+    def __init__(self, accent_color="#3B82F6", parent=None):
         super().__init__(parent)
-        self.setFixedSize(40, 22)
+        self.setFixedSize(38, 20)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._checked = True
         self._knob_pos = 1.0
         self._on_color = QColor(accent_color)
-        self._off_color = QColor(72, 72, 77)
+        self._off_color = QColor(48, 50, 58, 220)
         self._animation = QPropertyAnimation(self, b"knob_pos", self)
-        self._animation.setDuration(200)
+        self._animation.setDuration(180)
         self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def set_accent_color(self, color):
@@ -67,19 +69,14 @@ class ToggleSwitch(QWidget):
 
         w = self.width()
         h = self.height()
-        track_h = 20
+        track_h = 18
         track_y = (h - track_h) / 2
         radius = track_h / 2
 
         knob_pos = self._knob_pos
-        knob_diam = h - 4
-        min_knob_x = 2
-        max_knob_x = w - knob_diam - 2
-
-        if self._checked:
-            t = knob_pos
-        else:
-            t = 1.0 - knob_pos
+        knob_diam = 14
+        min_knob_x = 3
+        max_knob_x = w - knob_diam - 3
 
         on_color = self._on_color
         off_color = self._off_color
@@ -91,52 +88,104 @@ class ToggleSwitch(QWidget):
         else:
             track_color = off_color
 
-        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setPen(QPen(QColor(255, 255, 255, 20), 0.5))
         painter.setBrush(track_color)
         painter.drawRoundedRect(QRectF(0, track_y, w, track_h), radius, radius)
 
-        knob_pos_x = min_knob_x + (max_knob_x - min_knob_x) * knob_pos
+        knob_x = min_knob_x + (max_knob_x - min_knob_x) * knob_pos
+        knob_rect = QRectF(knob_x, (h - knob_diam) / 2, knob_diam, knob_diam)
+
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(0, 0, 0, 40))
+        painter.drawEllipse(knob_rect.translated(0, 1))
+
         painter.setBrush(QColor(255, 255, 255))
-        painter.setPen(QPen(QColor(0, 0, 0, 30), 0.5))
-        painter.drawEllipse(QRectF(knob_pos_x, 1, knob_diam, knob_diam))
+        painter.setPen(QPen(QColor(0, 0, 0, 15), 0.5))
+        painter.drawEllipse(knob_rect)
 
         painter.end()
 
 
-class SourceItem(QWidget):
-    """Component for individual source selection with toggle and icon."""
+class _ElideLabel(QLabel):
+    """QLabel that elides text to the right when space is tight."""
 
-    def __init__(self, source_name, icon_path, parent=None):
+    def __init__(self, text, parent=None):
+        super().__init__(text, parent)
+        self.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
+        self.setMinimumWidth(0)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setFont(self.font())
+        color = self.palette().color(QPalette.ColorRole.WindowText)
+        if not color.isValid():
+            color = QColor(245, 246, 250)
+        painter.setPen(color)
+        fm = QFontMetrics(self.font())
+        text = fm.elidedText(self.text(), Qt.TextElideMode.ElideRight, self.width())
+        painter.drawText(self.rect(), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text)
+        painter.end()
+
+
+class SourceItem(QWidget):
+    """macOS preference-style list row.
+
+    Layout: [icon]  Source Name  [badge]  [toggle]
+    - Height 54px, radius 14px
+    - Soft hover surface, selected row uses subtle blue surface
+    - Capsule badge with semi-transparent dark background
+    """
+
+    def __init__(self, source_name, icon_path, parent=None, count=None, size=None):
         super().__init__(parent)
         self.source_name = source_name
         self.icon_path = icon_path
         self._checked = True
+        self._hover = False
         self.accent_hex = self.get_accent_color(self.source_name)
         self.accent_color = QColor(self.accent_hex)
-        self.init_ui()
+        self.init_ui(count, size)
 
-    def init_ui(self):
-        self.setFixedHeight(42)
+    def init_ui(self, count=None, size=None):
+        self.setFixedHeight(40)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(10, 0, 10, 0)
+        layout.setContentsMargins(12, 4, 12, 4)
         layout.setSpacing(10)
         layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
         self.icon_label = QLabel()
         self.icon_label.setFixedSize(22, 22)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.icon_label.setStyleSheet("background: transparent; border: none; padding: 0; margin: 0;")
         self.set_icon(self.icon_path)
         layout.addWidget(self.icon_label)
 
-        self.name_label = QLabel(self.source_name)
+        text_col = QVBoxLayout()
+        text_col.setSpacing(1)
+        text_col.setContentsMargins(0, 0, 0, 0)
+
+        self.name_label = _ElideLabel(self.source_name)
         self.name_label.setObjectName("sourceItemName")
-        layout.addWidget(self.name_label, 1)
+        self.name_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        text_col.addWidget(self.name_label)
+
+        layout.addLayout(text_col, 1)
+
+        self.count_label = QLabel()
+        self.count_label.setObjectName("sourceItemCount")
+        self.count_label.setMinimumWidth(26)
+        self.count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.count_label.setVisible(count is not None)
+        self.set_count_label(count)
+        layout.addWidget(self.count_label, alignment=Qt.AlignmentFlag.AlignVCenter)
 
         self.toggle = ToggleSwitch(accent_color=self.accent_hex)
         self.toggle.setChecked(self._checked)
         self.toggle.toggled.connect(self.on_toggled)
-        layout.addWidget(self.toggle, alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        layout.addWidget(self.toggle)
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -144,25 +193,37 @@ class SourceItem(QWidget):
 
         self.update_visual_state()
 
-    def set_icon(self, icon_path):
-        source_key = self.source_name.lower()
+    def set_count_label(self, count):
+        if count is None:
+            self.count_label.setVisible(False)
+            return
+        c_int = int(count) if (isinstance(count, (int, str)) and str(count).isdigit()) else 0
+        self.count_label.setText(str(c_int) if c_int > 0 else "")
+        self.count_label.setVisible(c_int > 0)
 
+    def set_count(self, count, size_text=None):
+        self.set_count_label(count)
+        if size_text:
+            self.setToolTip(f"{self.source_name}: {count} updates ({size_text})")
+        else:
+            self.setToolTip(f"Toggle {self.source_name}")
+
+    def set_icon(self, icon_path):
         if self._try_load_svg(icon_path):
             return
 
         icon_styles = {
-            "pacman": {"text": "", "color": "#4FC3F7"},
-            "aur": {"text": "", "color": "#FF8A65"},
-            "flatpak": {"text": "", "color": "#26A69A"},
-            "npm": {"text": "", "color": "#E53935"},
-            "local": {"text": "", "color": "#00BFAE"},
+            "pacman": {"text": "\u25C9", "color": "#4FC3F7"},
+            "aur": {"text": "\u25C9", "color": "#FF8A65"},
+            "flatpak": {"text": "\u25C9", "color": "#26A69A"},
+            "npm": {"text": "\u25C9", "color": "#E53935"},
+            "local": {"text": "\u25C9", "color": "#3B82F6"},
         }
-
-        style = icon_styles.get(source_key, {"text": "●", "color": "#8B8D97"})
+        style = icon_styles.get(self.source_name.lower(), {"text": "\u25C9", "color": "#727B89"})
         self.icon_label.setText(style["text"])
         self.icon_label.setStyleSheet(f"""
             QLabel {{
-                font-size: 14px;
+                font-size: 16px;
                 color: {style["color"]};
                 background: transparent;
                 border: none;
@@ -194,8 +255,8 @@ class SourceItem(QWidget):
 
     def get_accent_color(self, name):
         n = name.lower()
-        mapping = {"pacman": "#4FC3F7", "aur": "#FF8A65", "flatpak": "#26A69A", "npm": "#E53935"}
-        return mapping.get(n, "#00BFAE")
+        mapping = {"pacman": "#3B82F6", "aur": "#F59E0B", "flatpak": "#10B981", "npm": "#EF4444", "local": "#3B82F6"}
+        return mapping.get(n, "#3B82F6")
 
     def on_toggled(self, state):
         self._checked = state
@@ -203,42 +264,103 @@ class SourceItem(QWidget):
 
     def update_visual_state(self):
         if self._checked:
-            self.setStyleSheet(f"""
-                SourceItem {{
-                    background-color: rgba({self.accent_color.red()}, {self.accent_color.green()}, {self.accent_color.blue()}, 0.06);
-                    border-radius: 8px;
-                    border: 1px solid rgba({self.accent_color.red()}, {self.accent_color.green()}, {self.accent_color.blue()}, 0.15);
-                }}
-                QLabel#sourceItemName {{
-                    color: #5C5E66;
-                    font-size: 13px;
-                    font-weight: 500;
+            self.setStyleSheet("""
+                SourceItem {
+                    border: none;
+                    border-radius: 14px;
+                }
+                QLabel#sourceItemName {
+                    color: #F5F6FA;
+                    font-size: 12px;
+                    font-weight: 600;
                     background: transparent;
                     border: none;
-                }}
+                }
+                QLabel#sourceItemSubtitle {
+                    color: #6B7280;
+                    font-size: 10px;
+                    font-weight: 400;
+                    background: transparent;
+                    border: none;
+                }
+                QLabel#sourceItemCount {
+                    color: #F5F6FA;
+                    font-size: 10px;
+                    font-weight: 600;
+                    background: rgba(255, 255, 255, 0.08);
+                    border: 1px solid rgba(255, 255, 255, 0.10);
+                    border-radius: 10px;
+                    padding: 1px 7px;
+                    margin: 0;
+                }
             """)
         else:
             self.setStyleSheet("""
                 SourceItem {
-                    background-color: transparent;
-                    border-radius: 8px;
-                    border: 1px solid transparent;
+                    border: none;
+                    border-radius: 14px;
                 }
                 QLabel#sourceItemName {
-                    color: #5C5E66;
-                    font-size: 13px;
+                    color: #A7B1C2;
+                    font-size: 12px;
                     font-weight: 500;
                     background: transparent;
                     border: none;
                 }
+                QLabel#sourceItemSubtitle {
+                    color: #6B7280;
+                    font-size: 10px;
+                    font-weight: 400;
+                    background: transparent;
+                    border: none;
+                }
+                QLabel#sourceItemCount {
+                    color: #A7B1C2;
+                    font-size: 10px;
+                    font-weight: 600;
+                    background: rgba(255, 255, 255, 0.04);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 10px;
+                    padding: 1px 7px;
+                    margin: 0;
+                }
             """)
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = QRectF(self.rect()).adjusted(1, 1, -1, -1)
+
+        if self._checked:
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor(0, 0, 0, 0))
+            painter.drawRoundedRect(rect, 14, 14)
+        elif self._hover:
+            painter.setPen(QPen(QColor(255, 255, 255, 10), 1))
+            painter.setBrush(QColor("#202733"))
+            painter.drawRoundedRect(rect, 14, 14)
+        else:
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor(0, 0, 0, 0))
+            painter.drawRoundedRect(rect, 14, 14)
+
+        painter.end()
+        super().paintEvent(event)
+
+    def enterEvent(self, event):
+        self._hover = True
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._hover = False
+        self.update()
+        super().leaveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            pos = event.position().toPoint() if hasattr(event, 'position') else event.pos()
-            child = self.childAt(pos)
-            if child is not self.toggle:
-                self.toggle.toggle()
+            self.toggle.toggle()
         super().mouseReleaseEvent(event)
 
     def keyPressEvent(self, event):

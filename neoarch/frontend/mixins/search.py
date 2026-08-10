@@ -151,7 +151,7 @@ class _SearchMixin:
                         self.no_results_widget.setVisible(False)
                 except Exception:
                     pass
-                self.apply_update_filters()
+                self._recompute_updates()
                 self._show_active_view()
             return
         if self.current_view == "discover":
@@ -171,6 +171,10 @@ class _SearchMixin:
             self._view_mode = "grid"
             if self.current_view == "plugins" and hasattr(self, 'plugins_view') and self.plugins_view:
                 self.plugins_view.show_grid_mode()
+            elif self.current_view == "updates" and hasattr(self, 'updates_table'):
+                self.updates_table.setVisible(False)
+                self.package_table.setVisible(False)
+                self.packages_grid.setVisible(True)
             else:
                 self.package_table.setVisible(False)
                 self.packages_grid.setVisible(True)
@@ -183,6 +187,10 @@ class _SearchMixin:
             self._view_mode = "table"
             if self.current_view == "plugins" and hasattr(self, 'plugins_view') and self.plugins_view:
                 self.plugins_view.show_table_mode()
+            elif self.current_view == "updates" and hasattr(self, 'updates_table'):
+                self.packages_grid.setVisible(False)
+                self.package_table.setVisible(False)
+                self.updates_table.setVisible(True)
             else:
                 self.packages_grid.setVisible(False)
                 self.package_table.setVisible(True)
@@ -237,7 +245,8 @@ class _SearchMixin:
                 self.apply_filters()
                 return
             elif self.current_view == "updates":
-                self.apply_update_filters()
+                self.search_results = None
+                self._recompute_updates()
                 return
             else:
                 return
@@ -246,6 +255,9 @@ class _SearchMixin:
             if hasattr(self, '_greeting_label') and self._greeting_label:
                 self._greeting_label.setVisible(False)
             self.search_discover_packages(query)
+        elif self.current_view == "updates":
+            self.search_results = None
+            self._recompute_updates()
         else:
             self.search_results = [pkg for pkg in self.all_packages if query in pkg['name'].lower()]
             self.current_page = 0
@@ -263,11 +275,19 @@ class _SearchMixin:
 
             self.package_table.setUpdatesEnabled(True)
 
-            has_more = end < len(self.search_results)
-            self.load_more_btn.setVisible(has_more)
-            if has_more:
-                remaining = len(self.search_results) - end
-                self.load_more_btn.setText(f"Load More ({remaining} remaining)")
+            if self.current_view == "updates" and hasattr(self, 'updates_table'):
+                try:
+                    self.updates_table.set_loading(False)
+                    self._sync_updates_table(self.search_results)
+                except Exception:
+                    pass
+                self.load_more_btn.setVisible(False)
+            else:
+                has_more = end < len(self.search_results)
+                self.load_more_btn.setVisible(has_more)
+                if has_more:
+                    remaining = len(self.search_results) - end
+                    self.load_more_btn.setText(f"Load More ({remaining} remaining)")
             if self.current_view == "updates":
                 try:
                     total = len(getattr(self, 'updates_all', []) or [])

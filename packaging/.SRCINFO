@@ -9,6 +9,7 @@ arch = any
 license = MIT
 depends = python-pyqt6
 depends = python-requests
+depends = python-keyring
 depends = qt6-svg
 depends = git
 depends = flatpak

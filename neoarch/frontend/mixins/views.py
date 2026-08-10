@@ -25,6 +25,7 @@ from neoarch.frontend.components.large_search_box import LargeSearchBox
 from neoarch.frontend.components.packages_grid_view import PackagesGridView
 from neoarch.frontend.components.package_detail_card import PackageDetailCard
 from neoarch.frontend.components.loading_spinner import LoadingSpinner
+from neoarch.frontend.components.updates_table import UpdatesTable
 
 from neoarch.frontend.components.source_card import SourceCard
 from neoarch.frontend.components.flow_layout import FlowLayout
@@ -32,6 +33,8 @@ from neoarch.frontend.styles import Styles
 from neoarch.backend.services import help as help_service
 from neoarch.backend.package import loader as packages_service
 from neoarch.backend.package import installer as install_service
+from neoarch.backend.package import updater as update_service
+from neoarch.backend.services import ignore as ignore_service
 
 _BASE_DIR = str(PROJECT_ROOT)
 
@@ -84,11 +87,11 @@ class _ViewsMixin:
         wrapper = QFrame()
         wrapper.setObjectName("appWindow")
 
-        glow = QGraphicsDropShadowEffect(wrapper)
-        glow.setBlurRadius(28)
-        glow.setOffset(0, 0)
-        glow.setColor(QColor(0, 191, 174, 60))
-        wrapper.setGraphicsEffect(glow)
+        # NOTE: No QGraphicsDropShadowEffect on the window wrapper.
+        # A graphics effect on a container holding the entire UI forces Qt to
+        # offscreen-render the whole widget tree on every repaint, which can
+        # abort with a QPainter conflict during expose events (Wayland/X11).
+        # The teal rim is provided by the QFrame#appWindow border instead.
 
         outer_layout.addWidget(wrapper)
 
@@ -503,13 +506,20 @@ class _ViewsMixin:
 
     def _show_active_view(self):
         self.packages_grid.setVisible(self._view_mode == "grid")
-        self.package_table.setVisible(self._view_mode == "table")
+        if self.current_view == "updates":
+            self.package_table.setVisible(False)
+            self.updates_table.setVisible(self._view_mode == "table")
+        else:
+            self.package_table.setVisible(self._view_mode == "table")
+            self.updates_table.setVisible(False)
         if self._view_mode == "grid":
             self._populate_grid()
 
     def _hide_all_package_views(self):
         self.package_table.setVisible(False)
         self.packages_grid.setVisible(False)
+        if hasattr(self, 'updates_table'):
+            self.updates_table.setVisible(False)
         if hasattr(self, 'package_detail_card'):
             self.package_detail_card.clear()
 
@@ -771,7 +781,7 @@ class _ViewsMixin:
 
         splitter.setCollapsible(0, True)
         splitter.setCollapsible(1, False)
-        splitter.setSizes([180, 1000])
+        splitter.setSizes([250, 930])
 
         layout.addWidget(splitter, 1)
 
@@ -1043,6 +1053,14 @@ class _ViewsMixin:
         self.package_table.customContextMenuRequested.connect(self._on_package_context_menu)
         table_area_layout.addWidget(self.package_table, 1)
 
+        # Redesigned updates table (hidden by default, used on the Updates page)
+        self.updates_table = UpdatesTable(self)
+        self.updates_table.setVisible(False)
+        self.updates_table.row_selected.connect(self._show_detail_for_updates)
+        self.updates_table.row_cleared.connect(lambda: self.package_detail_card.clear())
+        self.updates_table.menu_action.connect(self._on_updates_table_menu)
+        table_area_layout.addWidget(self.updates_table, 1)
+
         # Packages Grid View (hidden by default, toggled via toolbar button)
         self.packages_grid = PackagesGridView()
         self.packages_grid.setVisible(False)
@@ -1197,30 +1215,11 @@ class _ViewsMixin:
             select_all_btn.clicked.connect(self.toggle_select_all)
             layout.addWidget(select_all_btn)
 
-            update_all_btn = QPushButton("Update All")
-            update_all_btn.setMinimumHeight(36)
-            update_all_btn.setStyleSheet(Styles.get_accent_button_stylesheet())
-            update_all_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "discover", "updateall.svg"), 16))
-            update_all_btn.clicked.connect(self.perform_update_all)
-            layout.addWidget(update_all_btn)
-
             update_btn = QPushButton("Update Selected")
             update_btn.setMinimumHeight(36)
             update_btn.setStyleSheet(btn_style)
             update_btn.clicked.connect(self.update_selected)
             layout.addWidget(update_btn)
-
-            ignore_btn = QPushButton("Ignore Selected")
-            ignore_btn.setMinimumHeight(36)
-            ignore_btn.setStyleSheet(btn_style)
-            ignore_btn.clicked.connect(self.ignore_selected)
-            layout.addWidget(ignore_btn)
-
-            manage_btn = QPushButton("Manage Ignored")
-            manage_btn.setMinimumHeight(36)
-            manage_btn.setStyleSheet(btn_style)
-            manage_btn.clicked.connect(self.manage_ignored)
-            layout.addWidget(manage_btn)
 
             self._add_right_toolbar_icons(layout, show_filter=False)
 
@@ -1632,14 +1631,6 @@ class _ViewsMixin:
             except Exception:
                 pass
             if load:
-                try:
-                    self.loading_widget.set_message("Syncing package databases...")
-                    self.loading_widget.setVisible(True)
-                    self.loading_widget.start_animation()
-                    if hasattr(self, 'loading_container'):
-                        self.loading_container.setVisible(True)
-                except Exception:
-                    pass
                 self._hide_all_package_views()
                 self.load_updates()
         elif view_id == "installed":
@@ -1750,8 +1741,8 @@ class _ViewsMixin:
             self.load_more_btn.setVisible(False)
 
             # Clear any existing source cards from sources_layout
-            while self.sources_layout.count() > 1:
-                item = self.sources_layout.takeAt(1)
+            while self.sources_layout.count():
+                item = self.sources_layout.takeAt(0)
                 if item.widget():
                     item.widget().deleteLater()
 
@@ -1764,8 +1755,6 @@ class _ViewsMixin:
             # Update visibility like installed view
             self.sources_section.setVisible(True)
             self.filters_section.setVisible(True)
-            if hasattr(self, 'sources_title_label'):
-                self.sources_title_label.setVisible(False)
 
             # Add source cards like installed section
             self.update_plugins_sources()
@@ -2050,6 +2039,13 @@ class _ViewsMixin:
         except Exception:
             pass
         self._show_active_view()
+        # Sync the redesigned updates table with the loaded data
+        if self.current_view == "updates" and hasattr(self, 'updates_table'):
+            try:
+                self.updates_table.set_loading(False)
+                self._sync_updates_table()
+            except Exception:
+                pass
         # Show console toggle button for updates view like Discover
         try:
             if self.current_view in ("updates", "installed") and hasattr(self, 'console_toggle_btn'):
@@ -2082,6 +2078,12 @@ class _ViewsMixin:
         except Exception:
             pass
         self._show_active_view()
+        try:
+            if self.current_view == "updates" and hasattr(self, 'updates_table'):
+                self.updates_table.set_loading(False)
+                self._sync_updates_table()
+        except Exception:
+            pass
         try:
             if self.current_view in ("updates", "installed") and hasattr(self, 'console_toggle_btn'):
                 self.console_toggle_btn.setVisible(True)
@@ -2240,19 +2242,20 @@ class _ViewsMixin:
             else:
                 self.load_more_btn.setVisible(False)
         elif self.current_view == "updates":
-            if self.all_packages:
-                total = len(self.all_packages)
-                displayed = (self.current_page + 1) * self.packages_per_page
-                has_more = displayed < total
-                self.load_more_btn.setVisible(has_more)
-            else:
-                self.load_more_btn.setVisible(False)
+            self.load_more_btn.setVisible(False)
 
     def display_page(self):
         self.package_table.setUpdatesEnabled(False)
         start = self.current_page * self.packages_per_page
         end = start + self.packages_per_page
         page_packages = self.all_packages[start:end]
+        is_updates = self.current_view == "updates"
+
+        if is_updates:
+            # The redesigned updates table shows everything in one scrollable list
+            page_packages = self.all_packages
+            if len(self.all_packages) > self.packages_per_page:
+                self.packages_per_page = max(10, len(self.all_packages))
 
         for pkg in page_packages:
             if self.current_view == "installed":
@@ -2272,15 +2275,20 @@ class _ViewsMixin:
             pass
 
         has_more = end < len(self.all_packages)
+        if is_updates:
+            has_more = False
         self.load_more_btn.setVisible(has_more)
         if has_more:
             remaining = len(self.all_packages) - end
             self.load_more_btn.setText(f"Load More ({remaining} remaining)")
         # Keep header subtitle accurate for Updates
         if self.current_view == "updates":
+            self._sync_updates_table()
             self.update_updates_header_counts()
 
     def load_more_packages(self):
+        if self.current_view == "updates":
+            return
         self.current_page += 1
         start = self.current_page * self.packages_per_page
         end = start + self.packages_per_page
@@ -2471,6 +2479,82 @@ class _ViewsMixin:
         version = version_item.text().strip() if version_item else ""
         source = self.get_source_text(row, vid)
         return {"name": name, "id": name, "version": version, "source": source}
+
+    # ── redesigned updates table ─────────────────────────────────────────
+
+    def _sync_updates_table(self, dataset=None):
+        """Push the current updates dataset into the redesigned table."""
+        if not (self.current_view == "updates" and hasattr(self, 'updates_table')):
+            return
+        try:
+            if dataset is None:
+                dataset = self.search_results if getattr(self, 'search_results', None) else self.all_packages
+            self.updates_table.set_packages(dataset or [])
+            self.updates_table.set_loading(False)
+        except Exception:
+            pass
+
+    def _show_detail_for_updates(self, pkg):
+        try:
+            if pkg is None:
+                self.package_detail_card.clear()
+                return
+            pkg_data = {
+                'name': pkg.get('name') or pkg.get('id') or '',
+                'id': pkg.get('id') or pkg.get('name') or '',
+                'version': pkg.get('version') or '',
+                'new_version': pkg.get('new_version') or '',
+                'source': pkg.get('source') or 'pacman',
+                'installed': True,
+                'has_update': True,
+                'description': pkg.get('description') or '',
+                '_view': 'updates',
+            }
+            self.package_detail_card.show_package(pkg_data)
+        except Exception:
+            self.package_detail_card.clear()
+
+    def _on_updates_table_menu(self, action, pkg):
+        name = (pkg.get('name') or '').strip()
+        source = pkg.get('source') or 'pacman'
+        if action == "update":
+            if not name:
+                return
+            self.log(f"Updating {name} ({source})")
+            self.installation_progress.emit("start", False)
+            update_service.update_packages(self, {source: [name]})
+        elif action == "ignore":
+            if not name:
+                return
+            ignore_service.ignore_one(self, name)
+        elif action == "details":
+            self._show_detail_for_updates(pkg)
+        elif action == "browser":
+            self._open_package_page(pkg)
+        elif action == "copy":
+            if name:
+                QApplication.clipboard().setText(name)
+                self.log(f"Copied '{name}' to clipboard")
+
+    def _open_package_page(self, pkg):
+        name = (pkg.get('name') or '').strip()
+        source = pkg.get('source') or 'pacman'
+        if not name:
+            return
+        urls = {
+            "pacman": f"https://archlinux.org/packages/?q={name}",
+            "AUR": f"https://aur.archlinux.org/packages/{name}",
+            "Flatpak": f"https://flathub.org/apps/{name}",
+            "npm": f"https://www.npmjs.com/package/{name}",
+        }
+        url = urls.get(source)
+        if not url:
+            url = f"https://www.google.com/search?q={name}+update"
+        import webbrowser
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
 
     # ── package context menu (downgrade / marks / install reason) ────────
 

@@ -136,6 +136,13 @@ class _OperationsMixin:
 
     def toggle_select_all(self):
         """Toggle all checkboxes: if all checked, uncheck all; otherwise check all."""
+        if self.current_view == "updates" and hasattr(self, 'updates_table'):
+            try:
+                if self.updates_table.row_count():
+                    self.updates_table.toggle_select_all()
+            except Exception:
+                pass
+            return
         total = self.package_table.rowCount()
         checked = 0
         for row in range(total):
@@ -184,6 +191,9 @@ class _OperationsMixin:
             self.log(f"Pacman cache clean failed: {e}")
 
     def update_selected(self):
+        if self.current_view == "updates" and hasattr(self, 'updates_table'):
+            self._update_selected_updates_table()
+            return
         packages_by_source = {}
         for row in range(self.package_table.rowCount()):
             checkbox = self.get_row_checkbox(row)
@@ -205,6 +215,22 @@ class _OperationsMixin:
                     packages_by_source[source] = []
                 token = pkg_name if source == 'Flatpak' else pkg_name
                 packages_by_source[source].append(token)
+        if not packages_by_source:
+            self.log("No packages selected for update")
+            return
+        self.log(f"Selected packages for update: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
+        self.installation_progress.emit("start", True)
+        update_service.update_packages(self, packages_by_source)
+
+    def _update_selected_updates_table(self):
+        """Update the packages checked in the redesigned updates table."""
+        packages_by_source = {}
+        for pkg in self.updates_table.checked_packages():
+            source = pkg.get('source') or 'pacman'
+            name = (pkg.get('name') or '').strip()
+            if not name:
+                continue
+            packages_by_source.setdefault(source, []).append(name)
         if not packages_by_source:
             self.log("No packages selected for update")
             return

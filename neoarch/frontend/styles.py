@@ -276,6 +276,13 @@ QTableWidget::item:selected {{
     color: {_TEXT};
 }}
 
+/* Redesigned Updates table: frosted glass panel with a rounded hairline frame */
+QTableView#updatesTable {{
+    background-color: rgba(14, 14, 16, 130);
+    border: 1px solid rgba(255, 255, 255, 15);
+    border-radius: 14px;
+}}
+
 QHeaderView::section {{
     background-color: rgba(14, 14, 16, 0.8);
     color: {_TEXT_SEC};
