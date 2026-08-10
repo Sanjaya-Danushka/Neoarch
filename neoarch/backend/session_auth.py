@@ -13,6 +13,7 @@ import atexit
 import ctypes
 import importlib.util
 import shutil
+from functools import lru_cache
 from pathlib import Path
 from neoarch.resources.paths import APP_NAME, CONFIG_DIR, PROJECT_ROOT
 
@@ -20,20 +21,14 @@ _session_askpass_script: str | None = None
 _session_active: bool = False
 _atexit_registered: bool = False
 
-_keyring_available: bool | None = None
 
-
+@lru_cache(maxsize=1)
 def _load_keyring():
     """Lazily import and cache the keyring module if available.
 
     Returns the keyring module, or None if it is not installed.
     """
-    global _keyring_available
-    if _keyring_available is False:
-        return None
-    if _keyring_available is None:
-        _keyring_available = importlib.util.find_spec("keyring") is not None
-    if not _keyring_available:
+    if importlib.util.find_spec("keyring") is None:
         return None
     import keyring
     return keyring
