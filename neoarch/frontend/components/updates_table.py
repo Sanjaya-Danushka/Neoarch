@@ -11,6 +11,7 @@ surfaces and muted secondary text. The widget owns its data model and
 delegate, and talks to the rest of the app through signals.
 """
 
+import json
 import re
 import subprocess
 from threading import Thread
@@ -187,6 +188,25 @@ class _EnrichWorker(QObject):
                         parts = ln.split("\t")
                         if len(parts) >= 2:
                             meta.setdefault(parts[0].strip(), {})["description"] = parts[1].strip()
+            except Exception:
+                pass
+
+        npm_names = [p.get("name", "") for p in self._packages if p.get("source") == "npm"]
+        if npm_names:
+            try:
+                r = subprocess.run(
+                    ["npm", "view"] + npm_names + ["dist.unpackedSize", "--json"],
+                    capture_output=True, text=True, timeout=120,
+                )
+                if r.returncode == 0 and r.stdout.strip():
+                    data = json.loads(r.stdout)
+                    entries = data.items() if isinstance(data, dict) else []
+                    for name, val in entries:
+                        if isinstance(val, (str, int, float)):
+                            try:
+                                meta.setdefault(name, {})["download_size"] = f"{int(float(val))} B"
+                            except (TypeError, ValueError):
+                                pass
             except Exception:
                 pass
 
@@ -779,18 +799,18 @@ class UpdatesTable(QTableView):
             pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
             idx = self.indexAt(pos)
             col = idx.column() if idx.isValid() else -1
-            if col == 0:
-                self._toggle_check(idx.row(), pos)
-                return
             if col == 6:
                 self._open_row_menu(idx.row(), pos)
+                return
+            if idx.isValid():
+                self._toggle_check(idx.row(), pos)
                 return
         super().mousePressEvent(event)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Space:
             current = self.currentIndex()
-            if current.isValid() and current.column() == 0:
+            if current.isValid():
                 self._toggle_check(current.row(), None)
                 return
         super().keyPressEvent(event)
@@ -854,7 +874,22 @@ class UpdatesTable(QTableView):
 
         def _finish(meta):
             self.model.set_metadata(meta)
+            self.model._apply_sort()
             self._loading_enrich = False
+            app = getattr(self, "_app", None)
+            if app is not None:
+                try:
+                    base = getattr(app, "updates_all", None)
+                    if base:
+                        for pkg in base:
+                            entry = meta.get(pkg.get("name")) or meta.get(pkg.get("id"))
+                            if entry and entry.get("download_size"):
+                                pkg["download_size"] = entry["download_size"]
+                    refresh = getattr(app, "_refresh_updates_summary", None)
+                    if refresh:
+                        refresh()
+                except Exception:
+                    pass
 
         worker.finished.connect(_finish)
 

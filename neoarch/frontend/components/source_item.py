@@ -61,6 +61,8 @@ class ToggleSwitch(QWidget):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.toggle()
+            event.accept()
+            return
         super().mouseReleaseEvent(event)
 
     def paintEvent(self, event):

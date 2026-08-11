@@ -519,6 +519,7 @@ class SourceCard(QWidget):
         self.sort_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.sort_btn.setFixedHeight(26)
         self.sort_btn.setStyleSheet(self._sort_btn_style())
+        self.sort_btn.clicked.connect(self._open_sort_menu)
         sort_layout.addWidget(self.sort_btn)
 
         self.sort_menu = QMenu(self)
@@ -549,23 +550,29 @@ class SourceCard(QWidget):
                 margin: 4px 8px;
             }
         """)
+        self._sort_methods = [
+            ("name", True, "Name A-Z"),
+            ("name", False, "Name Z-A"),
+            ("size", True, "Size (Smallest)"),
+            ("size", False, "Size (Largest)"),
+            ("version", True, "Version (Oldest)"),
+            ("version", False, "Version (Latest)"),
+            ("status", True, "Type A-Z"),
+            ("status", False, "Type Z-A"),
+            ("source", True, "Source A-Z"),
+            ("source", False, "Source Z-A"),
+        ]
         self._sort_actions = {}
-        sort_fields = [("name", "Name"), ("size", "Size"), ("version", "Version"), ("status", "Type")]
-        for sort_id, sort_text in sort_fields:
-            act = self.sort_menu.addAction(sort_text)
+        last_field = None
+        for field, asc, text in self._sort_methods:
+            if last_field is not None and field != last_field:
+                self.sort_menu.addSeparator()
+            last_field = field
+            act = self.sort_menu.addAction(text)
             act.setCheckable(True)
-            act.setChecked(sort_id == self.sort_field)
-            act.triggered.connect(lambda checked=False, s=sort_id: self._on_sort_menu(s))
-            self._sort_actions[sort_id] = act
-        self.sort_menu.addSeparator()
-        self.sort_asc_act = self.sort_menu.addAction("Ascending")
-        self.sort_asc_act.setCheckable(True)
-        self.sort_asc_act.setChecked(self.sort_asc)
-        self.sort_asc_act.triggered.connect(self._on_sort_dir_menu)
-        self.sort_desc_act = self.sort_menu.addAction("Descending")
-        self.sort_desc_act.setCheckable(True)
-        self.sort_desc_act.setChecked(not self.sort_asc)
-        self.sort_desc_act.triggered.connect(self._on_sort_dir_menu)
+            act.setChecked(field == self.sort_field and asc == self.sort_asc)
+            act.triggered.connect(lambda checked=False, f=field, a=asc: self._on_sort_menu(f, a))
+            self._sort_actions[(field, asc)] = act
 
         self._update_sort_btn_text()
         self.sort_widget.setStyleSheet(self._section_stylesheet())
@@ -591,32 +598,30 @@ class SourceCard(QWidget):
             }
         """
 
-    def _sort_label(self, field):
-        return {"name": "Name", "size": "Size", "version": "Version", "status": "Type"}.get(field, "Name")
+    def _sort_label(self, field, asc):
+        for f, a, text in self._sort_methods:
+            if f == field and a == asc:
+                return text
+        return "Name A-Z"
 
     def _update_sort_btn_text(self):
-        arrow = "\u2191" if self.sort_asc else "\u2193"
-        self.sort_btn.setText(f"Sort: {self._sort_label(self.sort_field)} {arrow}")
+        self.sort_btn.setText(f"Sort: {self._sort_label(self.sort_field, self.sort_asc)} \u25be")
 
-    def _on_sort_menu(self, sort_id):
-        self.sort_field = sort_id
-        for sid, act in self._sort_actions.items():
+    def _open_sort_menu(self):
+        pos = self.sort_btn.mapToGlobal(self.sort_btn.rect().bottomLeft())
+        self.sort_menu.setUpdatesEnabled(False)
+        self.sort_menu.popup(pos)
+        self.sort_menu.setUpdatesEnabled(True)
+
+    def _on_sort_menu(self, field, asc):
+        self.sort_field = field
+        self.sort_asc = asc
+        for (f, a), act in self._sort_actions.items():
             act.blockSignals(True)
-            act.setChecked(sid == sort_id)
+            act.setChecked(f == field and a == asc)
             act.blockSignals(False)
         self._update_sort_btn_text()
-        self.sort_changed.emit(sort_id)
-
-    def _on_sort_dir_menu(self):
-        self.sort_asc = self.sort_asc_act.isChecked()
-        self.sort_asc_act.blockSignals(True)
-        self.sort_asc_act.setChecked(self.sort_asc)
-        self.sort_asc_act.blockSignals(False)
-        self.sort_desc_act.blockSignals(True)
-        self.sort_desc_act.setChecked(not self.sort_asc)
-        self.sort_desc_act.blockSignals(False)
-        self._update_sort_btn_text()
-        self.sort_changed.emit(self.sort_field)
+        self.sort_changed.emit(field)
 
     def _build_actions(self, layout):
         self.actions_widget = QWidget()
@@ -755,26 +760,23 @@ class SourceCard(QWidget):
                 pass
             self.action_manage_btn.clicked.connect(manage_ignored)
 
-    def set_summary(self, count, size_text):
+    def set_summary(self, count, size_text=None):
         if count is None:
             self.summary_widget.setVisible(False)
             return
         self.summary_widget.setVisible(True)
-        self.summary_label.setText(f"{count} updates available \u00B7 {size_text}")
+        if size_text:
+            self.summary_label.setText(f"{count} updates available \u00B7 {size_text}")
+        else:
+            self.summary_label.setText(f"{count} updates available")
 
     def set_sort(self, field, ascending=True):
         self.sort_field = field
         self.sort_asc = ascending
-        for sid, act in self._sort_actions.items():
+        for (f, a), act in self._sort_actions.items():
             act.blockSignals(True)
-            act.setChecked(sid == field)
+            act.setChecked(f == field and a == ascending)
             act.blockSignals(False)
-        self.sort_asc_act.blockSignals(True)
-        self.sort_asc_act.setChecked(ascending)
-        self.sort_asc_act.blockSignals(False)
-        self.sort_desc_act.blockSignals(True)
-        self.sort_desc_act.setChecked(not ascending)
-        self.sort_desc_act.blockSignals(False)
         self._update_sort_btn_text()
 
     def get_sort(self):

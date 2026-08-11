@@ -454,6 +454,8 @@ class _FiltersMixin:
                 def key(p): return (_parse_version(p.get('version')), _parse_version(p.get('new_version')))
             elif field == 'status':
                 def key(p): return classify_update(p.get('version'), p.get('new_version'))
+            elif field == 'source':
+                def key(p): return (p.get('source') or '').lower()
             else:
                 def key(p): return (p.get('name') or '').lower()
             return sorted(dataset, key=key, reverse=not asc)
@@ -479,8 +481,13 @@ class _FiltersMixin:
         except Exception:
             pass
         total_b = sum(per[s][1] for s in per)
+        known = sum(1 for p in base if _parse_size(p.get('download_size') or '') > 0)
+        size_text = ""
+        if total_b > 0:
+            prefix = "~" if known < len(base) else ""
+            size_text = f"{prefix}{_fmt_size(total_b)}"
         try:
-            self.source_card.set_summary(len(base), _fmt_size(total_b))
+            self.source_card.set_summary(len(base), size_text)
         except Exception:
             pass
 
@@ -528,7 +535,7 @@ class _FiltersMixin:
         except Exception:
             pass
         try:
-            col_map = {"name": 1, "size": 3, "version": 2, "status": 5}
+            col_map = {"name": 1, "size": 3, "version": 2, "status": 5, "source": 4}
             self.updates_table.sort_by_column(col_map.get(field, 1), asc)
         except Exception:
             pass
