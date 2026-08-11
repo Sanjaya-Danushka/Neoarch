@@ -1062,8 +1062,10 @@ class _ViewsMixin:
         table_area_layout.addWidget(self.updates_table, 1)
 
         # Packages Grid View (hidden by default, toggled via toolbar button)
-        self.packages_grid = PackagesGridView()
+        self.packages_grid = PackagesGridView(self)
         self.packages_grid.setVisible(False)
+        self.packages_grid.card_selected.connect(self._show_detail_for_grid)
+        self.packages_grid.card_cleared.connect(lambda: self.package_detail_card.clear())
         table_area_layout.addWidget(self.packages_grid, 1)
 
         self.load_more_btn = QPushButton("Load More Packages")
@@ -2523,6 +2525,35 @@ class _ViewsMixin:
                 'has_update': True,
                 'description': pkg.get('description') or '',
                 '_view': 'updates',
+            }
+            self.package_detail_card.show_package(pkg_data)
+        except Exception:
+            self.package_detail_card.clear()
+
+    def _show_detail_for_grid(self, pkg):
+        """Open the right-side detail card for a grid card, like the table."""
+        try:
+            if pkg is None:
+                self.package_detail_card.clear()
+                return
+            name = pkg.get('name') or pkg.get('id') or ''
+            installed = bool(pkg.get('installed') or pkg.get('_installed'))
+            has_update = bool(pkg.get('new_version')) and pkg.get('new_version') != pkg.get('version')
+            view = ''
+            if self.current_view == 'updates':
+                view = 'updates'
+            elif self.current_view == 'discover':
+                view = 'discover'
+            pkg_data = {
+                'name': name,
+                'id': pkg.get('id') or name,
+                'version': pkg.get('version') or '',
+                'new_version': pkg.get('new_version') or '',
+                'source': pkg.get('source') or 'pacman',
+                'installed': installed,
+                'has_update': has_update,
+                'description': pkg.get('description') or '',
+                '_view': view,
             }
             self.package_detail_card.show_package(pkg_data)
         except Exception:

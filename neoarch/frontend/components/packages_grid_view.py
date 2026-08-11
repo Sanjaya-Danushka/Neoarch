@@ -11,9 +11,10 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame,
     QScrollArea, QGridLayout, QSizePolicy,
 )
-from PyQt6.QtCore import Qt, QRectF, QPointF, pyqtSignal
+from PyQt6.QtCore import Qt, QRectF, QPointF, QSize, pyqtSignal
 from PyQt6.QtGui import (
-    QColor, QFont, QFontMetrics, QPainter, QPainterPath, QPen, QLinearGradient,
+    QColor, QFont, QFontMetrics, QPainter, QPainterPath, QPen,
+    QLinearGradient, QRadialGradient, QPixmap,
 )
 
 # ── theme (matches updates_table.py) ──────────────────────────────────
@@ -40,6 +41,70 @@ _STATUS_COLORS = {
     "Installed": QColor(93, 199, 139),
     "Available": QColor(163, 166, 176),
 }
+
+
+def _card_qss(checked: bool) -> str:
+    """Dark black glass gradient, matching the updates table glass
+    (#16171A → #0D0D0F). Rendered by Qt's style engine (safe with
+    translucent colors, unlike QPainter gradient fills)."""
+    if checked:
+        body = """
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(24, 45, 45, 0.96),
+        stop:0.5 rgba(17, 34, 36, 0.94),
+        stop:1 rgba(12, 20, 24, 0.97));
+    border: 1px solid rgba(0, 191, 174, 0.5);
+    border-top: 1px solid rgba(0, 191, 174, 0.72);"""
+        hover = """
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(29, 53, 53, 0.97),
+        stop:0.5 rgba(21, 41, 43, 0.95),
+        stop:1 rgba(15, 24, 29, 0.97));
+    border: 1px solid rgba(0, 191, 174, 0.68);
+    border-top: 1px solid rgba(0, 191, 174, 0.9);"""
+    else:
+        body = """
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(24, 25, 29, 0.94),
+        stop:0.5 rgba(18, 19, 22, 0.92),
+        stop:1 rgba(12, 13, 15, 0.96));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.14);"""
+        hover = """
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(31, 33, 38, 0.96),
+        stop:0.5 rgba(23, 24, 28, 0.94),
+        stop:1 rgba(15, 16, 19, 0.97));
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-top: 1px solid rgba(255, 255, 255, 0.26);"""
+    return f"""
+QFrame#packageCard {{
+{body}
+    border-radius: 18px;
+}}
+QFrame#packageCard:hover {{
+{hover}
+    border-radius: 18px;
+}}
+"""
+
+
+def _make_glow_pixmap(size: QSize) -> QPixmap:
+    """Soft blue ambient glow from the upper-left corner, pre-rendered so the
+    live paint path only ever blits a pixmap (avoids the translucent-gradient
+    QPainter fill crash seen with custom paintEvent fills)."""
+    pm = QPixmap(size.width(), size.height())
+    pm.fill(Qt.GlobalColor.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    w, h = size.width(), size.height()
+    g = QRadialGradient(w * 0.08, h * 0.06, max(w, h) * 0.7)
+    g.setColorAt(0.0, QColor(59, 130, 246, 42))
+    g.setColorAt(0.5, QColor(59, 130, 246, 8))
+    g.setColorAt(1.0, QColor(59, 130, 246, 0))
+    p.fillRect(0, 0, w, h, g)
+    p.end()
+    return pm
 
 
 def _fallback_description(pkg):
@@ -126,30 +191,45 @@ class _CheckBox(QWidget):
         p.end()
 
 
-class _SourceTile(QWidget):
-    """Rounded tile with the source color and a white letter."""
+class _SourceLogo(QWidget):
+    """Real source logo (pacman/AUR/flatpak/npm SVG) with letter fallback."""
 
-    def __init__(self, source, parent=None):
+    def __init__(self, app, source, size=30, parent=None):
         super().__init__(parent)
-        self.setFixedSize(24, 24)
-        color = _SOURCE_COLORS.get(source, _TEXT_MUTED)
-        self._c = color
-        self._letter = (source or "?")[0].upper()
+        self.setFixedSize(size, size)
+        self._app = app
+        self._source = source
+        self._size = size
+        self._pm = None
+        if app is not None:
+            try:
+                icon = app.get_source_icon(source, size)
+                if icon and not icon.isNull():
+                    self._pm = icon.pixmap(size, size)
+            except Exception:
+                self._pm = None
         self.setToolTip(source)
 
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        if self._pm is not None and not self._pm.isNull():
+            p.drawPixmap((self.width() - self._pm.width()) // 2,
+                         (self.height() - self._pm.height()) // 2, self._pm)
+            p.end()
+            return
         r = QRectF(self.rect())
+        c = _SOURCE_COLORS.get(self._source, _TEXT_MUTED)
         grad = QLinearGradient(r.topLeft(), r.bottomRight())
-        grad.setColorAt(0.0, self._c.lighter(115))
-        grad.setColorAt(1.0, self._c.darker(110))
+        grad.setColorAt(0.0, c.lighter(115))
+        grad.setColorAt(1.0, c.darker(110))
         path = QPainterPath()
-        path.addRoundedRect(r, 7, 7)
+        path.addRoundedRect(r, r.width() / 4, r.width() / 4)
         p.fillPath(path, grad)
-        p.setFont(_small_font(9, QFont.Weight.Bold))
+        p.setFont(_small_font(int(self._size / 2.6), QFont.Weight.Bold))
         p.setPen(QColor(12, 12, 14))
-        p.drawText(r, Qt.AlignmentFlag.AlignCenter, self._letter)
+        p.drawText(r, Qt.AlignmentFlag.AlignCenter, (self._source or "?")[0].upper())
         p.end()
 
 
@@ -210,7 +290,7 @@ class _SmallLabel(QLabel):
 
 def _small_font(pt, weight):
     f = QFont()
-    f.setPointSize(pt)
+    f.setPointSizeF(pt)
     f.setWeight(weight)
     return f
 
@@ -219,15 +299,17 @@ class PackageCard(QFrame):
     """A single package card matching the UpdatesTable design language."""
 
     toggled = pyqtSignal(int, bool)
+    clicked = pyqtSignal(int, object)
 
     CARD_W = 268
-    CARD_H = 152
+    CARD_H = 148
 
-    def __init__(self, pkg: dict, row: int, parent=None):
+    def __init__(self, pkg: dict, row: int, app=None, parent=None):
         super().__init__(parent)
         self.row = row
         self.pkg = pkg
-        self._hover = False
+        self._app = app
+        self._glow = None
         self.setObjectName("packageCard")
         self.setFixedSize(self.CARD_W, self.CARD_H)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -236,15 +318,15 @@ class PackageCard(QFrame):
 
     def _build(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(14, 12, 14, 10)
-        layout.setSpacing(4)
+        layout.setContentsMargins(14, 10, 14, 9)
+        layout.setSpacing(3)
 
-        # ── top: tile + name + checkbox ────────────────────────────────
+        # ── top: logo + name + checkbox ────────────────────────────────
         top = QHBoxLayout()
-        top.setSpacing(8)
+        top.setSpacing(9)
 
-        self.tile = _SourceTile(self.pkg.get("source", ""))
-        top.addWidget(self.tile)
+        self.logo = _SourceLogo(self._app, self.pkg.get("source", ""), 26)
+        top.addWidget(self.logo)
 
         self.name_label = _SmallLabel(
             self.pkg.get("name") or self.pkg.get("id") or "",
@@ -264,30 +346,39 @@ class PackageCard(QFrame):
         self.desc_label.setToolTip(desc)
         layout.addWidget(self.desc_label)
 
+        # ── extra detail: tags (AUR keywords) ──────────────────────────
+        tags = self.pkg.get("tags") or ""
+        self.tags_label = None
+        if tags:
+            self.tags_label = _SmallLabel(tags, 7, QFont.Weight.Normal, "#5C5E66")
+            self.tags_label.setToolTip(tags)
+            layout.addWidget(self.tags_label)
+
         layout.addStretch()
 
-        # ── bottom: version stack + size + status chip ─────────────────
+        # ── bottom: version transition + size + status chip ────────────
         bottom = QHBoxLayout()
-        bottom.setSpacing(8)
-
-        self.version_box = QWidget()
-        vbox = QVBoxLayout(self.version_box)
-        vbox.setContentsMargins(0, 0, 0, 0)
-        vbox.setSpacing(1)
+        bottom.setSpacing(7)
 
         current = self.pkg.get("version") or ""
         new = self.pkg.get("new_version") or current
+        has_update = bool(new) and new != current
 
-        self.cur_label = _SmallLabel(current or "\u2014", 8, QFont.Weight.Normal, "#5C5E66")
-        vbox.addWidget(self.cur_label)
+        self.cur_label = _SmallLabel(current or "\u2014", 8.5, QFont.Weight.Normal, "#9AA0AB")
+        bottom.addWidget(self.cur_label)
 
-        if new and new != current:
-            self.new_label = _SmallLabel(f"\u2191 {new}", 8, QFont.Weight.DemiBold, "#58CA8D")
-            vbox.addWidget(self.new_label)
+        self.arrow_label = None
+        self.new_label = None
+        if has_update:
+            self.arrow_label = _SmallLabel("\u2192", 8.5, QFont.Weight.Normal, "#5C5E66")
+            bottom.addWidget(self.arrow_label)
+            self.new_label = _SmallLabel(new, 8.5, QFont.Weight.DemiBold, "#58CA8D")
+            self.new_label.setToolTip(new)
+            bottom.addWidget(self.new_label)
         else:
             self.new_label = None
-        vbox.addStretch()
-        bottom.addWidget(self.version_box, 1)
+
+        bottom.addStretch(1)
 
         self.size_label = _SmallLabel(self.pkg.get("download_size") or "",
                                       8, QFont.Weight.Normal, "#8B8D97")
@@ -295,7 +386,7 @@ class PackageCard(QFrame):
         self.size_label.setVisible(bool(self.pkg.get("download_size")))
         bottom.addWidget(self.size_label)
 
-        if new and new != current:
+        if has_update:
             status = self.pkg.get("status") or classify_update(current, new)
         elif self.pkg.get("installed") or self.pkg.get("_installed"):
             status = "Installed"
@@ -307,35 +398,33 @@ class PackageCard(QFrame):
         layout.addLayout(bottom)
 
     def _apply_style(self):
-        self.setStyleSheet("""
-            QFrame#packageCard {
-                background: transparent;
-                border: none;
-            }
-        """)
+        self.setStyleSheet(_card_qss(False))
 
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
-        path = QPainterPath()
-        path.addRoundedRect(rect, 14, 14)
 
-        # glass surface
-        grad = QLinearGradient(rect.topLeft(), rect.bottomLeft())
-        grad.setColorAt(0.0, QColor(24, 26, 31))
-        grad.setColorAt(1.0, QColor(15, 16, 19))
-        p.fillPath(path, grad)
+        # pre-rendered ambient glow (pixmap blit is safe)
+        if self._glow is None or self._glow.size() != self.size():
+            self._glow = _make_glow_pixmap(self.size())
+        p.drawPixmap(0, 0, self._glow)
 
-        # border
-        checked = self.checkbox.isChecked()
-        border = QColor(0, 191, 174, 140) if checked else (
-            QColor(255, 255, 255, 26) if self._hover else QColor(255, 255, 255, 14))
-        p.setPen(QPen(border, 1))
-        p.drawPath(path)
+        rect = QRectF(self.rect()).adjusted(1.5, 1.5, -1.5, -1.5)
 
-        # checked accent bar (like the table row)
-        if checked:
+        # glass top reflection, clipped to the rounded card
+        p.save()
+        card_path = QPainterPath()
+        card_path.addRoundedRect(rect, 18, 18)
+        reflect = QPainterPath()
+        reflect.addRect(QRectF(rect.left(), rect.top(), rect.width(), 9))
+        p.setClipPath(card_path.intersected(reflect))
+        p.setPen(QPen(QColor(255, 255, 255, 30), 1))
+        p.drawLine(QPointF(rect.left() + 16, rect.top() + 1),
+                   QPointF(rect.right() - 16, rect.top() + 1))
+        p.restore()
+
+        # selected: accent bar like the table's selected row
+        if self.checkbox.isChecked():
             bar = QRectF(rect.left() + 2, rect.top() + 7, 3, rect.height() - 14)
             bar_path = QPainterPath()
             bar_path.addRoundedRect(bar, 1.5, 1.5)
@@ -343,25 +432,16 @@ class PackageCard(QFrame):
             p.fillPath(bar_path, _ACCENT)
 
         p.end()
-        super().paintEvent(event)
 
     def _on_check(self, state):
+        self.setStyleSheet(_card_qss(bool(state)))
         self.update()
         self.toggled.emit(self.row, state)
-
-    def enterEvent(self, event):
-        self._hover = True
-        self.update()
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        self._hover = False
-        self.update()
-        super().leaveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.checkbox.toggle()
+            self.clicked.emit(self.row, self.pkg)
             event.accept()
             return
         super().mouseReleaseEvent(event)
@@ -376,8 +456,13 @@ class PackageCard(QFrame):
 class PackagesGridView(QScrollArea):
     """Scrollable grid of package cards."""
 
-    def __init__(self, parent=None):
+    card_selected = pyqtSignal(object)
+    card_cleared = pyqtSignal()
+
+    def __init__(self, app=None, parent=None):
         super().__init__(parent)
+        self._app = app
+        self._selected_row = -1
         self.setWidgetResizable(True)
         self.setVisible(False)
         self.setFrameShape(QFrame.Shape.NoFrame)
@@ -413,14 +498,12 @@ class PackagesGridView(QScrollArea):
         self._cols = 3
 
     def resizeEvent(self, e):
-        w = self.viewport().width() - 12
-        card_w = PackageCard.CARD_W
-        spacing = 14
-        self._cols = max(2, (w + spacing) // (card_w + spacing))
         self._relayout()
         super().resizeEvent(e)
 
     def clear(self):
+        self._selected_row = -1
+        self.card_cleared.emit()
         for i in reversed(range(self._grid.count())):
             item = self._grid.takeAt(i)
             if item.widget():
@@ -428,19 +511,38 @@ class PackagesGridView(QScrollArea):
         self._cards.clear()
 
     def add_package(self, pkg: dict, row: int):
-        card = PackageCard(pkg, row)
+        card = PackageCard(pkg, row, self._app)
         card.toggled.connect(self._on_card_toggled)
+        card.clicked.connect(self._on_card_clicked)
         self._cards.append(card)
 
     def _on_card_toggled(self, row: int, state: int):
         pass
 
+    def _on_card_clicked(self, row: int, pkg: dict):
+        if row == self._selected_row:
+            self._selected_row = -1
+            self.card_cleared.emit()
+        else:
+            self._selected_row = row
+            self.card_selected.emit(pkg)
+
     def _relayout(self):
         for i in reversed(range(self._grid.count())):
             item = self._grid.takeAt(i)
-        if not self._cards:
+        n = len(self._cards)
+        if not n:
             return
+        vw = self.viewport().width() - 20
+        spacing = self._grid.spacing()
+        min_w = 210
+        self._cols = 3
+        while self._cols > 1 and vw < self._cols * min_w + (self._cols - 1) * spacing:
+            self._cols -= 1
+        avail = max(1, vw - (self._cols - 1) * spacing)
+        card_w = max(min_w, avail // self._cols)
         for i, card in enumerate(self._cards):
+            card.setFixedWidth(card_w)
             r, c = divmod(i, self._cols)
             self._grid.addWidget(card, r, c)
 
