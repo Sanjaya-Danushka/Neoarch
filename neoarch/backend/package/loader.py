@@ -10,6 +10,7 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
 
+from neoarch.backend import session_auth
 from neoarch.backend.auth import get_askpass_env
 from neoarch.backend.workers import CommandWorker
 
@@ -185,6 +186,9 @@ def _check_npm_updates():
 
 
 def _sync_pacman_db(app):
+    if not session_auth.is_session_active():
+        app.log("Skipping database sync: not authenticated in this session")
+        return []
     try:
         app.log("Syncing package database...")
         worker = CommandWorker(
