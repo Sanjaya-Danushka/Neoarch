@@ -1181,7 +1181,8 @@ class _ViewsMixin:
         self._greeting_label = None
 
         if self.current_view == "updates":
-            layout = FlowLayout(h_spacing=12, v_spacing=8)
+            layout = QHBoxLayout()
+            layout.setSpacing(12)
 
             btn_style = f"""
                 QPushButton {{
@@ -1202,25 +1203,38 @@ class _ViewsMixin:
                 }}
             """
 
-            refresh_btn = QPushButton("Check for Updates")
+            refresh_btn = QPushButton(" Check for Updates")
             refresh_btn.setMinimumHeight(36)
             refresh_btn.setStyleSheet(btn_style)
-            refresh_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "discover", "refresh.svg"), 16))
+            refresh_icon = self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "discover", "refresh.svg"), 16)
+            refresh_btn.setIcon(refresh_icon)
+            refresh_btn.setIconSize(QSize(16, 16))
             refresh_btn.clicked.connect(self.load_updates)
             layout.addWidget(refresh_btn)
 
-            select_all_btn = QPushButton("Select All")
-            select_all_btn.setMinimumHeight(36)
-            select_all_btn.setStyleSheet(btn_style)
-            select_all_btn.clicked.connect(self.toggle_select_all)
-            layout.addWidget(select_all_btn)
+            update_all_btn = QPushButton("Update All")
+            update_all_btn.setMinimumHeight(36)
+            update_all_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #3B82F6;
+                    color: #FFFFFF;
+                    border: 1px solid rgba(59, 130, 246, 0.4);
+                    border-radius: 10px;
+                    padding: 8px 18px;
+                    font-size: 13px;
+                    font-weight: 600;
+                }
+                QPushButton:hover {
+                    background-color: #2563EB;
+                }
+                QPushButton:pressed {
+                    background-color: #1D4ED8;
+                }
+            """)
+            update_all_btn.clicked.connect(self.perform_update_all)
+            layout.addWidget(update_all_btn)
 
-            update_btn = QPushButton("Update Selected")
-            update_btn.setMinimumHeight(36)
-            update_btn.setStyleSheet(btn_style)
-            update_btn.clicked.connect(self.update_selected)
-            layout.addWidget(update_btn)
-
+            layout.addStretch()
             self._add_right_toolbar_icons(layout, show_filter=False)
 
             self.toolbar_layout.addLayout(layout)
