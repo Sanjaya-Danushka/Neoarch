@@ -277,7 +277,14 @@ def load_updates(app):
                 fut_npm = ex.submit(_check_npm_updates)
                 fut_sync = ex.submit(_sync_pacman_db, app)
 
-                for fut in as_completed([fut_pacman, fut_aur, fut_flatpak, fut_npm, fut_sync]):
+                # Wait for the database sync to finish first so the update
+                # checks run against fresh data instead of a stale DB.
+                try:
+                    fut_sync.result()
+                except Exception:
+                    pass
+
+                for fut in as_completed([fut_pacman, fut_aur, fut_flatpak, fut_npm]):
                     try:
                         packages.extend(fut.result() or [])
                     except Exception:
