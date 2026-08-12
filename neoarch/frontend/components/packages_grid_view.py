@@ -17,6 +17,8 @@ from PyQt6.QtGui import (
     QLinearGradient, QRadialGradient, QPixmap,
 )
 
+from neoarch.frontend.components.updates_table import _EmptyOverlay
+
 # ── theme (matches updates_table.py) ──────────────────────────────────
 _ACCENT = QColor(0, 191, 174)
 _TEXT = QColor(238, 240, 244)
@@ -497,8 +499,14 @@ class PackagesGridView(QScrollArea):
         self._cards: list[PackageCard] = []
         self._cols = 3
 
+        # "All caught up" empty state, same overlay as the updates table
+        self._empty = _EmptyOverlay(self.viewport())
+        self._empty.setGeometry(self.viewport().rect())
+        self._empty.setVisible(False)
+
     def resizeEvent(self, e):
         self._relayout()
+        self._sync_empty()
         super().resizeEvent(e)
 
     def clear(self):
@@ -509,6 +517,7 @@ class PackagesGridView(QScrollArea):
             if item.widget():
                 item.widget().deleteLater()
         self._cards.clear()
+        self._sync_empty()
 
     def add_package(self, pkg: dict, row: int):
         card = PackageCard(pkg, row, self._app)
@@ -551,6 +560,13 @@ class PackagesGridView(QScrollArea):
         for i, pkg in enumerate(packages):
             self.add_package(pkg, i)
         self._relayout()
+        self._sync_empty()
+
+    def _sync_empty(self):
+        if not hasattr(self, "_empty"):
+            return
+        self._empty.setGeometry(self.viewport().rect())
+        self._empty.setVisible(len(self._cards) == 0)
 
     def get_checked_rows(self) -> list[int]:
         return [c.row for c in self._cards if c.is_checked()]

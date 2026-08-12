@@ -192,7 +192,26 @@ class _ViewsMixin:
         footer.setContentsMargins(0, 0, 8, 0)
         footer.setSpacing(2)
 
-        # User avatar / login button
+        about_btn = QPushButton()
+        about_btn.setObjectName("sidebarBtn")
+        about_btn.setFixedHeight(48)
+        about_btn.setToolTip("About")
+        about_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        icon_label = QLabel()
+        icon_label.setObjectName("sidebarNavIcon")
+        icon_label.setFixedSize(48, 48)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        about_icon_path = os.path.join(_BASE_DIR, "assets", "icons", "about.svg")
+        icon = self.get_svg_icon(about_icon_path, 24)
+        if not icon.isNull():
+            icon_label.setPixmap(icon.pixmap(24, 24))
+        about_btn_layout = QHBoxLayout(about_btn)
+        about_btn_layout.setContentsMargins(0, 0, 0, 0)
+        about_btn_layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignCenter)
+        about_btn.clicked.connect(self.show_about)
+        footer.addWidget(about_btn)
+
+        # User avatar / login button (very bottom)
         self.user_avatar_btn = QPushButton()
         self.user_avatar_btn.setObjectName("sidebarBtn")
         self.user_avatar_btn.setFixedHeight(48)
@@ -213,24 +232,6 @@ class _ViewsMixin:
         self.user_avatar_btn.clicked.connect(self._on_avatar_clicked)
         footer.addWidget(self.user_avatar_btn)
 
-        about_btn = QPushButton()
-        about_btn.setObjectName("sidebarBtn")
-        about_btn.setFixedHeight(48)
-        about_btn.setToolTip("About")
-        about_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        icon_label = QLabel()
-        icon_label.setObjectName("sidebarNavIcon")
-        icon_label.setFixedSize(48, 48)
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        about_icon_path = os.path.join(_BASE_DIR, "assets", "icons", "about.svg")
-        icon = self.get_svg_icon(about_icon_path, 24)
-        if not icon.isNull():
-            icon_label.setPixmap(icon.pixmap(24, 24))
-        about_btn_layout = QHBoxLayout(about_btn)
-        about_btn_layout.setContentsMargins(0, 0, 0, 0)
-        about_btn_layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignCenter)
-        about_btn.clicked.connect(self.show_about)
-        footer.addWidget(about_btn)
         layout.addLayout(footer)
 
         return sidebar
@@ -1218,19 +1219,19 @@ class _ViewsMixin:
             update_all_btn.setMinimumHeight(36)
             update_all_btn.setStyleSheet("""
                 QPushButton {
-                    background-color: #3B82F6;
-                    color: #FFFFFF;
-                    border: 1px solid rgba(59, 130, 246, 0.4);
+                    background-color: #FFFFFF;
+                    color: #0C0C0E;
+                    border: 1px solid rgba(255, 255, 255, 0.9);
                     border-radius: 10px;
                     padding: 8px 18px;
                     font-size: 13px;
                     font-weight: 600;
                 }
                 QPushButton:hover {
-                    background-color: #2563EB;
+                    background-color: #E8EAF0;
                 }
                 QPushButton:pressed {
-                    background-color: #1D4ED8;
+                    background-color: #D3D6DE;
                 }
             """)
             update_all_btn.clicked.connect(self.perform_update_all)
