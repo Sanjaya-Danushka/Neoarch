@@ -25,7 +25,8 @@ from neoarch.frontend.components.large_search_box import LargeSearchBox
 from neoarch.frontend.components.packages_grid_view import PackagesGridView
 from neoarch.frontend.components.package_detail_card import PackageDetailCard
 from neoarch.frontend.components.loading_spinner import LoadingSpinner
-from neoarch.frontend.components.updates_table import UpdatesTable
+from neoarch.frontend.components.updates_table import UpdatesTable, _parse_size
+from neoarch.frontend.components.toast import Toast
 from neoarch.frontend.components.installed_table import HoverTableWidget
 
 from neoarch.frontend.components.source_card import SourceCard
@@ -1071,6 +1072,7 @@ class _ViewsMixin:
         self.updates_table.row_selected.connect(self._show_detail_for_updates)
         self.updates_table.row_cleared.connect(lambda: self.package_detail_card.clear())
         self.updates_table.menu_action.connect(self._on_updates_table_menu)
+        self.updates_table.checks_changed.connect(self._on_table_checks_changed)
         table_area_layout.addWidget(self.updates_table, 1)
 
         # Packages Grid View (hidden by default, toggled via toolbar button)
@@ -1194,6 +1196,10 @@ class _ViewsMixin:
         self._bundle_save_cloud_btn = None
         self._sudo_btn = None
         self._greeting_label = None
+        self._selection_summary_label = None
+        self._updates_selected_btn = None
+        self._installed_update_btn = None
+        self._installed_uninstall_btn = None
 
         if self.current_view == "updates":
             layout = QHBoxLayout()
@@ -1249,10 +1255,47 @@ class _ViewsMixin:
             update_all_btn.clicked.connect(self.perform_update_all)
             layout.addWidget(update_all_btn)
 
+            update_selected_btn = QPushButton("Update Selected")
+            update_selected_btn.setMinimumHeight(36)
+            update_selected_btn.setEnabled(False)
+            update_selected_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: rgba(255, 255, 255, 0.06);
+                    color: #EDEDEF;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 10px;
+                    padding: 8px 18px;
+                    font-size: 13px;
+                    font-weight: 500;
+                }
+                QPushButton:hover {
+                    background-color: rgba(255, 255, 255, 0.1);
+                    border-color: rgba(0, 191, 174, 0.4);
+                }
+                QPushButton:disabled {
+                    color: #5C5E66;
+                    background-color: rgba(255, 255, 255, 0.03);
+                    border-color: rgba(255, 255, 255, 0.04);
+                }
+            """)
+            update_selected_btn.clicked.connect(self.update_selected)
+            self._updates_selected_btn = update_selected_btn
+            layout.addWidget(update_selected_btn)
+
+            self._selection_summary_label = QLabel("")
+            self._selection_summary_label.setStyleSheet(
+                "color: #8B8D97; font-size: 12px; font-weight: 500;"
+                "background: transparent; border: none; padding: 0 6px;")
+            layout.addWidget(self._selection_summary_label)
+
             layout.addStretch()
             self._add_right_toolbar_icons(layout, show_filter=False)
 
             self.toolbar_layout.addLayout(layout)
+            try:
+                self._on_table_checks_changed(0, self.updates_table.row_count())
+            except Exception:
+                pass
         elif self.current_view == "installed":
             layout = QHBoxLayout()
             layout.setSpacing(12)
@@ -1280,6 +1323,7 @@ class _ViewsMixin:
                 """
             )
             update_btn.clicked.connect(self.update_selected)
+            self._installed_update_btn = update_btn
             layout.addWidget(update_btn)
 
             uninstall_btn = QPushButton("Uninstall Selected")
@@ -1304,12 +1348,23 @@ class _ViewsMixin:
                 """
             )
             uninstall_btn.clicked.connect(self.uninstall_selected)
+            self._installed_uninstall_btn = uninstall_btn
             layout.addWidget(uninstall_btn)
+
+            self._selection_summary_label = QLabel("")
+            self._selection_summary_label.setStyleSheet(
+                "color: #8B8D97; font-size: 12px; font-weight: 500;"
+                "background: transparent; border: none; padding: 0 6px;")
+            layout.addWidget(self._selection_summary_label)
 
             layout.addStretch()
             self._add_right_toolbar_icons(layout, show_filter=False)
 
             self.toolbar_layout.addLayout(layout)
+            try:
+                self._on_table_checks_changed(0, self.updates_table.row_count())
+            except Exception:
+                pass
         elif self.current_view == "discover":
             layout = QHBoxLayout()
             layout.setSpacing(8)  # Tighter spacing
@@ -2089,6 +2144,10 @@ class _ViewsMixin:
             except Exception:
                 pass
             self.update_updates_header_counts()
+            try:
+                self._notify_updates_available(len(self.updates_all or []))
+            except Exception:
+                pass
         elif self.current_view == "installed":
             self.update_installed_header_counts()
         elif getattr(self, 'updates_all', None) is not None:
@@ -2174,6 +2233,14 @@ class _ViewsMixin:
             self._install_succeeded = True
             self.loading_widget.set_message("Success")
             self.cancel_install_btn.setVisible(False)
+            op = getattr(self, '_last_operation', 'install') or 'install'
+            labels = {
+                'install': ("Install", "Installation complete."),
+                'update': ("Update", "Update complete."),
+                'uninstall': ("Uninstall", "Uninstall complete."),
+            }
+            ntitle, ntext = labels.get(op, ("Operation", "Operation complete."))
+            self._notify(ntitle, ntext, level="success", event="install")
             # Keep spinner visible briefly to show success, then hide
             QTimer.singleShot(1500, lambda: self.finish_installation_progress())
         elif status == "failed":
@@ -2192,6 +2259,7 @@ class _ViewsMixin:
             else:
                 self.loading_widget.set_message("Install failed")
             self.cancel_install_btn.setVisible(False)
+            self._notify("Installation failed", "See console output for details.", level="error", event="errors")
             # Keep spinner visible briefly, then hide
             QTimer.singleShot(2000, lambda: self.finish_installation_progress())
         elif status == "cancelled":
@@ -2201,6 +2269,7 @@ class _ViewsMixin:
                 pass
             self.loading_widget.set_message("Installation cancelled")
             self.cancel_install_btn.setVisible(False)
+            self._notify("Installation cancelled", "The operation was cancelled.", level="warning", event="errors")
             # Keep spinner visible briefly to show cancellation, then hide
             QTimer.singleShot(1500, lambda: self.finish_installation_progress())
 
@@ -3037,6 +3106,109 @@ class _ViewsMixin:
 
     def _show_message(self, title, text):
         self.log(f"{title}: {text}")
+
+    # ── notification dispatch (desktop + in-app toast channels) ────────
+
+    def _notify(self, title, text, level="info", event="install"):
+        """Dispatch a notification through the configured channels.
+
+        Args:
+            title: Notification title (desktop channel).
+            text: Short message body.
+            level: info / success / error / warning (drives the toast dot).
+            event: install / updates / errors — selects the settings gate.
+        """
+        try:
+            settings = getattr(self, 'settings', None) or {}
+            event_keys = {"install": "notify_on_install",
+                          "updates": "notify_on_updates",
+                          "errors": "notify_on_errors"}
+            key = event_keys.get(event, "notify_on_install")
+            if not settings.get(key, True):
+                return
+            if settings.get('notify_desktop', True):
+                try:
+                    self._desktop_notify(title, text)
+                except Exception:
+                    pass
+            if settings.get('notify_inapp', True):
+                try:
+                    self._toast_notify(text, level)
+                except Exception:
+                    pass
+            if settings.get('notify_sound', False):
+                try:
+                    QApplication.beep()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    def _desktop_notify(self, title, text):
+        try:
+            import shutil
+            if shutil.which("notify-send") is None:
+                return
+            cmd = ["notify-send", "-a", "Neoarch"]
+            icon = os.path.join(_BASE_DIR, "assets", "icons", "discover.svg")
+            if os.path.exists(icon):
+                cmd += ["-i", icon]
+            cmd += [title, text]
+            subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception:
+            pass
+
+    def _toast_notify(self, text, level="info"):
+        if not hasattr(self, '_toast') or self._toast is None:
+            self._toast = Toast(self)
+        self._toast.show_toast(text, level)
+
+    def _notify_updates_available(self, count):
+        """Fire a one-shot 'updates available' notification when the count changes."""
+        if count <= 0:
+            return
+        last = getattr(self, '_updates_notified_count', 0)
+        if count == last:
+            return
+        self._updates_notified_count = count
+        noun = "update is" if count == 1 else "updates are"
+        self._notify(f"{count} {noun} available", "Software updates are ready to install.",
+                     level="info", event="updates")
+
+    # ── live selection summary (Updates / Installed toolbars) ──────────
+
+    def _on_table_checks_changed(self, checked, total):
+        label = getattr(self, '_selection_summary_label', None)
+        if label is not None:
+            if checked:
+                if self.current_view == "updates":
+                    size = self._checked_download_size()
+                    size_text = f" \u00B7 {_fmt_size(size)} to download" if size else ""
+                    label.setText(f"{checked} of {total} selected{size_text}")
+                else:
+                    label.setText(f"{checked} of {total} selected")
+            elif self.current_view == "updates":
+                label.setText(f"{total} updates available")
+            else:
+                label.setText("")
+        btn = getattr(self, '_updates_selected_btn', None)
+        if btn is not None:
+            btn.setEnabled(checked > 0)
+        btn_i = getattr(self, '_installed_update_btn', None)
+        if btn_i is not None:
+            btn_i.setEnabled(checked > 0)
+        btn_u = getattr(self, '_installed_uninstall_btn', None)
+        if btn_u is not None:
+            btn_u.setEnabled(checked > 0)
+
+    def _checked_download_size(self):
+        total = 0
+        try:
+            for pkg in self.updates_table.checked_packages():
+                total += _parse_size(pkg.get('download_size') or '')
+        except Exception:
+            pass
+        return total
 
     def display_message(self, title, text):
         """Public method to show a message in the console"""
