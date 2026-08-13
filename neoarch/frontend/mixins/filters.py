@@ -187,7 +187,8 @@ class _FiltersMixin:
 
     def create_filters_panel(self):
         self.filters_panel = QFrame()
-        self.filters_panel.setMinimumWidth(260)
+        self.filters_panel.setMinimumWidth(250)
+        self.filters_panel.setMaximumWidth(268)
         self.filters_panel.setStyleSheet("""
             QFrame {
                 background-color: #0C0C0E;

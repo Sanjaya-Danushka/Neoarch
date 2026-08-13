@@ -793,7 +793,7 @@ class _ViewsMixin:
 
         splitter.setCollapsible(0, True)
         splitter.setCollapsible(1, False)
-        splitter.setSizes([250, 930])
+        splitter.setSizes([250, 960])
 
         layout.addWidget(splitter, 1)
 
