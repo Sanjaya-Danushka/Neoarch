@@ -14,6 +14,7 @@ delegate, and talks to the rest of the app through signals.
 import json
 import re
 import subprocess
+from datetime import datetime
 from threading import Thread
 
 from PyQt6.QtCore import (
@@ -101,9 +102,10 @@ _STATUS_COLORS = {
     "Maintenance": QColor(163, 166, 176),
     "Downloading": QColor(251, 191, 36),
     "Installed": QColor(93, 199, 139),
+    "Update": QColor(255, 179, 71),
 }
 
-_HEADERS = ["", "Package", "Version", "Size", "Source", "Status", ""]
+_HEADERS = ["", "Package", "Version", "Size", "Source", "Status", "Installed", ""]
 
 
 def _parse_version(value):
@@ -140,6 +142,16 @@ def _parse_size(text):
     num = float(m.group(1))
     mult = {"": 1, "K": 1024, "M": 1024 ** 2, "G": 1024 ** 3, "T": 1024 ** 4}
     return int(num * mult.get(m.group(2).upper(), 1))
+
+
+def _fmt_date(ts):
+    """Format an install timestamp as a short date (or a dash when unknown)."""
+    if not ts:
+        return "\u2014"
+    try:
+        return datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
+    except Exception:
+        return "\u2014"
 
 
 class _EnrichWorker(QObject):
@@ -229,7 +241,7 @@ class _EnrichWorker(QObject):
 class UpdatesModel(QAbstractTableModel):
     """Flat model over a list of update package dicts."""
 
-    COLUMNS = 7
+    COLUMNS = 8
     checked_changed = pyqtSignal(int, int)
 
     def __init__(self, parent=None):
@@ -300,10 +312,12 @@ class UpdatesModel(QAbstractTableModel):
             if status:
                 return status
             return classify_update(pkg.get("version"), pkg.get("new_version"))
+        if col == 6:
+            return pkg.get("installed_date") or 0
         return (pkg.get("name") or "").lower()
 
     def _apply_sort(self):
-        if self._sort_col in (0, 6):
+        if self._sort_col in (0, 7):
             return
         self._pkgs.sort(key=lambda p: self._sort_key(p, self._sort_col), reverse=not self._sort_asc)
         if self.rowCount():
@@ -597,6 +611,7 @@ class UpdatesTable(QTableView):
         self._loading = False
         self._loading_enrich = False
         self._enrich = True
+        self._installed_mode = False
 
         self.model = UpdatesModel(self)
         self.setModel(self.model)
@@ -623,14 +638,18 @@ class UpdatesTable(QTableView):
                           (3, QHeaderView.ResizeMode.Fixed),
                           (4, QHeaderView.ResizeMode.Fixed),
                           (5, QHeaderView.ResizeMode.Fixed),
-                          (6, QHeaderView.ResizeMode.Fixed)):
+                          (6, QHeaderView.ResizeMode.Fixed),
+                          (7, QHeaderView.ResizeMode.Fixed)):
             header.setSectionResizeMode(col, mode)
         self.setColumnWidth(0, 46)
         self.setColumnWidth(2, 190)
         self.setColumnWidth(3, 96)
         self.setColumnWidth(4, 110)
         self.setColumnWidth(5, 104)
-        self.setColumnWidth(6, 44)
+        self.setColumnWidth(6, 100)
+        self.setColumnWidth(7, 44)
+        # The "Installed" date column is only shown by the Installed view.
+        self.setColumnHidden(6, True)
 
         header.select_all_changed.connect(self._on_header_select_all)
         header.sort_requested.connect(self._on_sort_requested)
@@ -686,6 +705,16 @@ class UpdatesTable(QTableView):
     def set_empty_text(self, title, subtitle, hint=None):
         """Override the empty-state message (Installed vs Updates wording)."""
         self._empty.set_text(title, subtitle, hint)
+
+    def show_installed_date(self, visible):
+        """Show/hide the "Installed" date column (Installed view only)."""
+        self.setColumnHidden(6, not visible)
+        self.viewport().update()
+
+    def set_installed_mode(self, installed):
+        """Switch the row menu to Installed-view behaviour (Update only when
+        available, plus an Uninstall action)."""
+        self._installed_mode = bool(installed)
 
     def _header_sync(self):
         header = self.horizontalHeader()
@@ -795,7 +824,7 @@ class UpdatesTable(QTableView):
             self._hover_row = row
             self._arrow.set_hover(row)
             self.viewport().update()
-        new_menu_row = row if col == 6 else -1
+        new_menu_row = row if col == 7 else -1
         if new_menu_row != self._menu_hover_row:
             self._menu_hover_row = new_menu_row
             self.viewport().update()
@@ -813,7 +842,7 @@ class UpdatesTable(QTableView):
             pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
             idx = self.indexAt(pos)
             col = idx.column() if idx.isValid() else -1
-            if col == 6:
+            if col == 7:
                 self._open_row_menu(idx.row(), pos)
                 return
             if idx.isValid():
@@ -846,6 +875,9 @@ class UpdatesTable(QTableView):
         if not checked:
             self.setCurrentIndex(idx)
 
+    def _row_has_update(self, pkg):
+        return bool(pkg.get("new_version")) and pkg.get("new_version") != pkg.get("version")
+
     def _open_row_menu(self, row, pos):
         if row < 0:
             return
@@ -860,17 +892,34 @@ class UpdatesTable(QTableView):
             QMenu::item:selected { background-color: rgba(47, 129, 247, 0.28); color: #fff; }
             QMenu::separator { height: 1px; background: rgba(255, 255, 255, 0.10); margin: 4px 8px; }
         """)
-        act_update = menu.addAction("Update")
-        act_update.triggered.connect(lambda: self.menu_action.emit("update", pkg))
-        act_details = menu.addAction("View Details")
-        act_details.triggered.connect(lambda: self.menu_action.emit("details", pkg))
-        menu.addSeparator()
-        act_ignore = menu.addAction("Ignore update")
-        act_ignore.triggered.connect(lambda: self.menu_action.emit("ignore", pkg))
-        act_browser = menu.addAction("View in browser")
-        act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
-        act_copy = menu.addAction("Copy name")
-        act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
+        if self._installed_mode:
+            if self._row_has_update(pkg):
+                act_update = menu.addAction("Update")
+                act_update.triggered.connect(lambda: self.menu_action.emit("update", pkg))
+            act_uninstall = menu.addAction("Uninstall")
+            act_uninstall.triggered.connect(lambda: self.menu_action.emit("uninstall", pkg))
+            act_details = menu.addAction("View Details")
+            act_details.triggered.connect(lambda: self.menu_action.emit("details", pkg))
+            menu.addSeparator()
+            if self._row_has_update(pkg):
+                act_ignore = menu.addAction("Ignore update")
+                act_ignore.triggered.connect(lambda: self.menu_action.emit("ignore", pkg))
+            act_browser = menu.addAction("View in browser")
+            act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
+            act_copy = menu.addAction("Copy name")
+            act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
+        else:
+            act_update = menu.addAction("Update")
+            act_update.triggered.connect(lambda: self.menu_action.emit("update", pkg))
+            act_details = menu.addAction("View Details")
+            act_details.triggered.connect(lambda: self.menu_action.emit("details", pkg))
+            menu.addSeparator()
+            act_ignore = menu.addAction("Ignore update")
+            act_ignore.triggered.connect(lambda: self.menu_action.emit("ignore", pkg))
+            act_browser = menu.addAction("View in browser")
+            act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
+            act_copy = menu.addAction("Copy name")
+            act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
         global_pos = self.viewport().mapToGlobal(pos if pos is not None else QPoint(10, 10))
         menu.exec(global_pos)
 
@@ -986,6 +1035,8 @@ class UpdatesRowDelegate(QStyledItemDelegate):
             status = pkg.get("status") or classify_update(pkg.get("version"), pkg.get("new_version"))
             self._paint_chip(painter, rect, status, _STATUS_COLORS.get(status, _TEXT_MUTED))
         elif col == 6:
+            self._paint_date(painter, rect, pkg)
+        elif col == 7:
             self._paint_menu(painter, rect, row)
         painter.restore()
         painter.restore()
@@ -1143,6 +1194,16 @@ class UpdatesRowDelegate(QStyledItemDelegate):
                          Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft | Qt.TextFlag.TextSingleLine,
                          el)
 
+    def _paint_date(self, painter, rect, pkg):
+        text = _fmt_date(pkg.get("installed_date"))
+        fm = QFontMetrics(self._ver_font)
+        el = fm.elidedText(text, Qt.TextElideMode.ElideLeft, int(max(12, rect.width() - 10)))
+        painter.setFont(self._ver_font)
+        painter.setPen(_TEXT_SEC)
+        painter.drawText(QRectF(rect.left() + 4, rect.top(), rect.width() - 10, rect.height()),
+                         Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft | Qt.TextFlag.TextSingleLine,
+                         el)
+
     def _paint_chip(self, painter, rect, text, color):
         fm = QFontMetrics(self._badge_font)
         avail = max(24, rect.width() - 12)
@@ -1248,7 +1309,7 @@ class _SkeletonOverlay(QWidget):
         try:
             count = table.model.columnCount()
             cols = [(table.columnViewportPosition(c), table.columnWidth(c))
-                    for c in range(count)]
+                    for c in range(count) if not table.isColumnHidden(c)]
             if cols:
                 return cols
         except Exception:

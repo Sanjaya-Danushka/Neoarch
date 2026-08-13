@@ -388,7 +388,9 @@ class PackageCard(QFrame):
         self.size_label.setVisible(bool(self.pkg.get("download_size")))
         bottom.addWidget(self.size_label)
 
-        if has_update:
+        if self.pkg.get("has_update"):
+            status = "Update"
+        elif has_update:
             status = self.pkg.get("status") or classify_update(current, new)
         elif self.pkg.get("installed") or self.pkg.get("_installed"):
             status = "Installed"

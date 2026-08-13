@@ -65,6 +65,7 @@ def install_packages(app, packages_by_source: dict):
         packages_by_source: Dict mapping source names to package name lists.
     """
     def install():
+        app._last_operation = "install"
         app.install_cancel_event = Event()
         app.installation_progress.emit("start", True)
         app.log_signal.emit("Installation thread started")

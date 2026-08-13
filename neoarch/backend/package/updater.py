@@ -31,6 +31,7 @@ def update_packages(app, packages_by_source: dict):
 
     def update():
         try:
+            app._last_operation = "update"
             overall_success = True
             lock_detected = False
             lock_details = ""

@@ -538,6 +538,8 @@ class _FiltersMixin:
                 def key(p): return (_parse_version(p.get('version')), _parse_version(p.get('new_version')))
             elif field == 'status':
                 def key(p): return classify_update(p.get('version'), p.get('new_version'))
+            elif field == 'date':
+                def key(p): return p.get('installed_date') or 0
             elif field == 'source':
                 def key(p): return (p.get('source') or '').lower()
             else:

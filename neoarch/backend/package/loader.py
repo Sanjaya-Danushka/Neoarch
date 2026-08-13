@@ -26,6 +26,15 @@ def _run_cmd(cmd, timeout=60, env=None):
         return None
 
 
+def _installed_ts(name, version):
+    """Best-effort install/last-upgrade timestamp for a pacman-installed package
+    from its local database entry directory mtime."""
+    try:
+        return os.path.getmtime(os.path.join("/var/lib/pacman/local", f"{name}-{version}"))
+    except Exception:
+        return 0
+
+
 def _check_pacman_updates():
     result = _run_cmd(["pacman", "-Qu"], timeout=60)
     packages = []
@@ -607,6 +616,10 @@ def load_installed_packages(app):
                             pkg['has_update'] = False
             except Exception:
                 pass
+
+            for pkg in packages:
+                if pkg.get('source') in ('pacman', 'AUR'):
+                    pkg['installed_date'] = _installed_ts(pkg.get('name') or '', pkg.get('version') or '')
 
             app.packages_ready.emit(packages)
         except Exception as e:

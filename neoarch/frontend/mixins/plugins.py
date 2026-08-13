@@ -126,12 +126,19 @@ def on_startup(app):
 
 def _on_status(app, status):
     try:
+        op = getattr(app, '_last_operation', 'install')
+        labels = {
+            'install': ('Install', 'Installation'),
+            'update': ('Update', 'Update'),
+            'uninstall': ('Uninstall', 'Uninstall'),
+        }
+        title, verb = labels.get(op, ('Operation', 'Operation'))
         if status == "success":
-            QMessageBox.information(app, "Install", "Installation complete.")
+            QMessageBox.information(app, title, f"{verb} complete.")
         elif status == "failed":
-            QMessageBox.warning(app, "Install", "Installation failed. See console for details.")
+            QMessageBox.warning(app, title, f"{verb} failed. See console for details.")
         elif status == "cancelled":
-            QMessageBox.information(app, "Install", "Installation cancelled.")
+            QMessageBox.information(app, title, f"{verb} cancelled.")
     except Exception:
         try:
             app._show_message("Install", status)

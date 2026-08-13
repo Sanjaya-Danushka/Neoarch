@@ -22,6 +22,8 @@ def _sort_installed(dataset, field, asc, sizes):
             def key(p): return (p.get("source") or "").lower()
         elif field == "status":
             def key(p): return (0 if p.get("has_update") else 1)
+        elif field == "date":
+            def key(p): return p.get("installed_date") or 0
         else:
             def key(p): return (p.get("name") or "").lower()
         return sorted(dataset, key=key, reverse=not asc)
@@ -59,6 +61,14 @@ def apply_filters(app):
                 final.append(pkg)
         else:
             final.append(pkg)
+    try:
+        query = (app.search_input.text() or '').strip().lower()
+    except Exception:
+        query = ''
+    if query:
+        final = [p for p in final
+                 if query in (p.get('name') or '').lower()
+                 or query in (p.get('id') or '').lower()]
     field, asc = 'name', True
     try:
         if hasattr(app, 'source_card') and app.source_card:
@@ -75,6 +85,11 @@ def apply_filters(app):
         app._sync_installed_table()
     else:
         app.display_page()
+    try:
+        if getattr(app, '_view_mode', 'table') == 'grid' and hasattr(app, '_populate_grid'):
+            app._populate_grid()
+    except Exception:
+        pass
 
 
 def apply_update_filters(app):

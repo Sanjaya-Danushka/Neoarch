@@ -751,6 +751,8 @@ class SourceCard(QWidget):
             ("version", False, "Version (Latest)"),
             ("status", True, "Type A-Z"),
             ("status", False, "Type Z-A"),
+            ("date", False, "Date Installed (Newest)"),
+            ("date", True, "Date Installed (Oldest)"),
             ("source", True, "Source A-Z"),
             ("source", False, "Source Z-A"),
         ]

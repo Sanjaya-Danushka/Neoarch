@@ -143,6 +143,7 @@ class _SearchMixin:
                         self.no_results_widget.setVisible(False)
                 except Exception:
                     pass
+                self.search_results = None
                 self.apply_filters()
                 self._show_active_view()
             elif self.current_view == "updates":
@@ -242,6 +243,7 @@ class _SearchMixin:
                 self.header_info.setText("Search and discover new packages to install")
                 self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
             elif self.current_view == "installed":
+                self.search_results = None
                 self.apply_filters()
                 return
             elif self.current_view == "updates":
@@ -258,6 +260,24 @@ class _SearchMixin:
         elif self.current_view == "updates":
             self.search_results = None
             self._recompute_updates()
+        elif self.current_view == "installed":
+            self.search_results = [
+                pkg for pkg in self.all_packages
+                if query in (pkg.get('name') or '').lower()
+                or query in (pkg.get('id') or '').lower()
+            ]
+            self.current_page = 0
+            self.all_packages = self.search_results
+            try:
+                self.load_more_btn.setVisible(False)
+            except Exception:
+                pass
+            try:
+                self.updates_table.set_loading(False)
+            except Exception:
+                pass
+            self._sync_installed_table(self.search_results)
+            self._show_active_view()
         else:
             self.search_results = [pkg for pkg in self.all_packages if query in pkg['name'].lower()]
             self.current_page = 0
@@ -268,33 +288,15 @@ class _SearchMixin:
             start = 0
             end = min(10, len(self.search_results))
             for pkg in self.search_results[start:end]:
-                if self.current_view == "installed":
-                    self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'), pkg)
-                else:
-                    self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'))
+                self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'))
 
             self.package_table.setUpdatesEnabled(True)
 
-            if self.current_view == "updates" and hasattr(self, 'updates_table'):
-                try:
-                    self.updates_table.set_loading(False)
-                    self._sync_updates_table(self.search_results)
-                except Exception:
-                    pass
-                self.load_more_btn.setVisible(False)
-            else:
-                has_more = end < len(self.search_results)
-                self.load_more_btn.setVisible(has_more)
-                if has_more:
-                    remaining = len(self.search_results) - end
-                    self.load_more_btn.setText(f"Load More ({remaining} remaining)")
-            if self.current_view == "updates":
-                try:
-                    total = len(getattr(self, 'updates_all', []) or [])
-                    matched = len(self.search_results or [])
-                    self.header_info.setText(f"{total} packages were found, {matched} of which match the specified filters")
-                except Exception:
-                    pass
+            has_more = end < len(self.search_results)
+            self.load_more_btn.setVisible(has_more)
+            if has_more:
+                remaining = len(self.search_results) - end
+                self.load_more_btn.setText(f"Load More ({remaining} remaining)")
 
     def search_discover_packages(self, query):
         self.package_table.setRowCount(0)

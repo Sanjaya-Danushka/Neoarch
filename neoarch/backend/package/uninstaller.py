@@ -22,6 +22,7 @@ def uninstall_packages(app, packages_by_source: dict):
         packages_by_source: Dict mapping source names to package name lists.
     """
     def uninstall():
+        app._last_operation = "uninstall"
         app.log("Uninstallation thread started")
         total = sum(len(pkgs) for pkgs in packages_by_source.values())
         done = 0

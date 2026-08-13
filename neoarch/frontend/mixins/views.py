@@ -35,6 +35,7 @@ from neoarch.backend.services import help as help_service
 from neoarch.backend.package import loader as packages_service
 from neoarch.backend.package import installer as install_service
 from neoarch.backend.package import updater as update_service
+from neoarch.backend.package import uninstaller as uninstall_service
 from neoarch.backend.services import ignore as ignore_service
 
 _BASE_DIR = str(PROJECT_ROOT)
@@ -2524,6 +2525,8 @@ class _ViewsMixin:
             self.updates_table.set_empty_text(
                 "All caught up", "Your system is up to date",
                 "Updates will appear here automatically when available")
+            self.updates_table.show_installed_date(False)
+            self.updates_table.set_installed_mode(False)
             self.updates_table.set_packages(dataset or [])
             self.updates_table.set_loading(False)
         except Exception:
@@ -2548,10 +2551,10 @@ class _ViewsMixin:
             'source': pkg.get('source') or 'pacman',
             'description': pkg.get('description') or '',
             'download_size': size_text,
+            'installed_date': pkg.get('installed_date') or 0,
             # Up-to-date rows reuse the Updates table's "Installed" status
-            # chip; rows with a pending update use the same Security/Feature/
-            # Bug Fix / Maintenance classification as the Updates table.
-            'status': None if has_update else 'Installed',
+            # chip; rows with a pending update show a clear "Update" flag.
+            'status': 'Update' if has_update else 'Installed',
             '_src': pkg,
         }
 
@@ -2562,6 +2565,8 @@ class _ViewsMixin:
         try:
             if dataset is None:
                 dataset = self.all_packages
+            self.updates_table.show_installed_date(True)
+            self.updates_table.set_installed_mode(True)
             mapped = [self._map_installed_pkg(p) for p in (dataset or [])]
             self.updates_table.set_enrich(False)
             if not mapped and getattr(self, '_installed_loading', False):
@@ -2570,12 +2575,20 @@ class _ViewsMixin:
                 return
             self.updates_table.set_empty_text(
                 "No installed packages", "Packages installed on this system will appear here")
+            if not mapped:
+                try:
+                    q = (self.search_input.text() or '').strip()
+                except Exception:
+                    q = ''
+                if q:
+                    self.updates_table.set_empty_text(
+                        f"No packages found matching '{q}'.", "Try a different search term")
             self.updates_table.set_packages(mapped)
             self.updates_table.set_loading(False)
             try:
                 field = self.source_card.get_sort() if hasattr(self, 'source_card') and self.source_card else 'name'
                 asc = self.source_card.get_sort_asc() if hasattr(self, 'source_card') and self.source_card else True
-                col_map = {"name": 1, "size": 3, "version": 2, "status": 5, "source": 4}
+                col_map = {"name": 1, "size": 3, "version": 2, "status": 5, "source": 4, "date": 6}
                 self.updates_table.sort_by_column(col_map.get(field, 1), asc)
             except Exception:
                 pass
@@ -2659,6 +2672,12 @@ class _ViewsMixin:
             self.log(f"Updating {name} ({source})")
             self.installation_progress.emit("start", False)
             update_service.update_packages(self, {source: [name]})
+        elif action == "uninstall":
+            if not name:
+                return
+            self.log(f"Uninstalling {name} ({source})")
+            self.installation_progress.emit("start", False)
+            uninstall_service.uninstall_packages(self, {source: [name]})
         elif action == "ignore":
             if not name:
                 return
