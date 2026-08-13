@@ -136,7 +136,7 @@ class _OperationsMixin:
 
     def toggle_select_all(self):
         """Toggle all checkboxes: if all checked, uncheck all; otherwise check all."""
-        if self.current_view == "updates" and hasattr(self, 'updates_table'):
+        if self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
             try:
                 if self.updates_table.row_count():
                     self.updates_table.toggle_select_all()
@@ -191,7 +191,7 @@ class _OperationsMixin:
             self.log(f"Pacman cache clean failed: {e}")
 
     def update_selected(self):
-        if self.current_view == "updates" and hasattr(self, 'updates_table'):
+        if self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
             self._update_selected_updates_table()
             return
         packages_by_source = {}
@@ -202,11 +202,6 @@ class _OperationsMixin:
                 # Source column: Updates has Source at col 4; Installed at col 3
                 source_col = 4 if self.current_view == "updates" else 3
                 source_item = self.package_table.item(row, source_col)
-                # On Installed view, only update rows that actually have an update available
-                if self.current_view == "installed":
-                    status_item = self.package_table.item(row, 4)
-                    if not status_item or "Update" not in (status_item.text() or ""):
-                        continue
                 if not name_item:
                     continue
                 pkg_name = name_item.text().strip()
@@ -230,6 +225,12 @@ class _OperationsMixin:
             name = (pkg.get('name') or '').strip()
             if not name:
                 continue
+            # On the installed page only update rows that actually have an update
+            if self.current_view == "installed":
+                if pkg.get('status') == 'Installed':
+                    continue
+                if not pkg.get('new_version') or pkg.get('new_version') == pkg.get('version'):
+                    continue
             packages_by_source.setdefault(source, []).append(name)
         if not packages_by_source:
             self.log("No packages selected for update")
@@ -485,25 +486,38 @@ class _OperationsMixin:
             pass
     
     def uninstall_selected(self):
-        selected_rows = self.package_table.selectionModel().selectedRows()
-        if not selected_rows:
-            self.log("No packages selected for uninstallation")
-            return
-        
-        # Group selections by source
-        packages_by_source = {}
-        for model_index in selected_rows:
-            row = model_index.row()
-            name_item = self.package_table.item(row, 1)
-            source_item = self.package_table.item(row, 3)
-            if not name_item or not source_item:
-                continue
-            name = (name_item.text() or "").strip()
-            source = (source_item.text() or "pacman").strip()
-            if source not in packages_by_source:
-                packages_by_source[source] = []
-            token = name if source == 'Flatpak' else name
-            packages_by_source[source].append(token)
+        if self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
+            checked = self.updates_table.checked_packages()
+            if not checked:
+                self.log("No packages selected for uninstallation")
+                return
+            packages_by_source = {}
+            for pkg in checked:
+                name = (pkg.get('name') or '').strip()
+                source = (pkg.get('source') or 'pacman').strip()
+                if not name:
+                    continue
+                packages_by_source.setdefault(source, []).append(name)
+        else:
+            selected_rows = self.package_table.selectionModel().selectedRows()
+            if not selected_rows:
+                self.log("No packages selected for uninstallation")
+                return
+
+            # Group selections by source
+            packages_by_source = {}
+            for model_index in selected_rows:
+                row = model_index.row()
+                name_item = self.package_table.item(row, 1)
+                source_item = self.package_table.item(row, 3)
+                if not name_item or not source_item:
+                    continue
+                name = (name_item.text() or "").strip()
+                source = (source_item.text() or "pacman").strip()
+                if source not in packages_by_source:
+                    packages_by_source[source] = []
+                token = name if source == 'Flatpak' else name
+                packages_by_source[source].append(token)
         
         flat_summary = ', '.join([f"{pkg} ({src})" for src, pkgs in packages_by_source.items() for pkg in pkgs])
         self.log(f"Selected for uninstallation: {flat_summary}")

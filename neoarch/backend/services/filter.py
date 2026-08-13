@@ -71,7 +71,10 @@ def apply_filters(app):
     app.all_packages = final
     app.current_page = 0
     app.package_table.setRowCount(0)
-    app.display_page()
+    if hasattr(app, '_sync_installed_table'):
+        app._sync_installed_table()
+    else:
+        app.display_page()
 
 
 def apply_update_filters(app):

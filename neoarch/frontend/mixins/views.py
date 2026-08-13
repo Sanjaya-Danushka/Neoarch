@@ -26,12 +26,7 @@ from neoarch.frontend.components.packages_grid_view import PackagesGridView
 from neoarch.frontend.components.package_detail_card import PackageDetailCard
 from neoarch.frontend.components.loading_spinner import LoadingSpinner
 from neoarch.frontend.components.updates_table import UpdatesTable
-from neoarch.frontend.components.installed_table import (
-    HoverTableWidget,
-    InstalledRowDelegate,
-    ROLE_IS_DEP,
-    ROLE_HAS_UPDATE,
-)
+from neoarch.frontend.components.installed_table import HoverTableWidget
 
 from neoarch.frontend.components.source_card import SourceCard
 from neoarch.frontend.components.flow_layout import FlowLayout
@@ -523,7 +518,7 @@ class _ViewsMixin:
 
     def _show_active_view(self):
         self.packages_grid.setVisible(self._view_mode == "grid")
-        if self.current_view == "updates":
+        if self.current_view in ("updates", "installed"):
             self.package_table.setVisible(False)
             self.updates_table.setVisible(self._view_mode == "table")
         else:
@@ -535,6 +530,11 @@ class _ViewsMixin:
     def _hide_all_package_views(self):
         self.package_table.setVisible(False)
         self.packages_grid.setVisible(False)
+        if hasattr(self, 'package_table'):
+            try:
+                self.package_table.set_loading(False)
+            except Exception:
+                pass
         if hasattr(self, 'updates_table'):
             self.updates_table.setVisible(False)
         if hasattr(self, 'package_detail_card'):
@@ -1262,24 +1262,6 @@ class _ViewsMixin:
             layout = QHBoxLayout()
             layout.setSpacing(12)
 
-            select_all_btn = QPushButton("Select All")
-            select_all_btn.setMinimumHeight(36)
-            select_all_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: transparent;
-                    color: #F0F0F0;
-                    border: 1px solid rgba(0, 191, 174, 0.3);
-                    border-radius: 6px;
-                    padding: 6px 12px;
-                    font-size: 12px;
-                    font-weight: 500;
-                }
-                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
-                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
-            """)
-            select_all_btn.clicked.connect(self.toggle_select_all)
-            layout.addWidget(select_all_btn)
-
             update_btn = QPushButton("Update Selected")
             update_btn.setMinimumHeight(36)
             update_btn.setStyleSheet(
@@ -1677,15 +1659,12 @@ class _ViewsMixin:
             except Exception:
                 pass
             try:
-                self.loading_widget.set_message("Loading installed packages...")
-                self.loading_widget.setVisible(True)
-                self.loading_widget.start_animation()
-                if hasattr(self, 'loading_container'):
-                    self.loading_container.setVisible(True)
-            except Exception:
-                pass
-            try:
                 self._hide_all_package_views()
+                # Match the Updates page: same table widget, checkbox design and
+                # skeleton loading state inside the table
+                self._installed_loading = True
+                self.updates_table.setVisible(True)
+                self.updates_table.set_loading(True)
             except Exception:
                 pass
             self.load_installed_packages()
@@ -1970,38 +1949,17 @@ class _ViewsMixin:
             self.package_table.setItemDelegate(default_delegate)
         self.package_table.viewport().setMouseTracking(False)
 
-    def _install_installed_delegate(self):
-        if not hasattr(self, "_installed_delegate") or self._installed_delegate is None:
-            self._installed_delegate = InstalledRowDelegate(self.package_table, self)
-        self.package_table.setItemDelegate(self._installed_delegate)
-        self.package_table.setAlternatingRowColors(False)
-        self.package_table.setWordWrap(False)
-        self.package_table.setMouseTracking(True)
-        self.package_table.viewport().setMouseTracking(True)
-        self.package_table.verticalHeader().setDefaultSectionSize(52)
-
     def update_table_columns(self, view_id):
-        self._apply_common_table_style()
+        # The Installed page renders through the shared updates_table widget,
+        # so package_table is never configured for it.
         if view_id == "installed":
-            self.package_table.setColumnCount(6)
-            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "Source", "Status", "Size"])
-            self.package_table.setObjectName("")
-            self.package_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-            self.package_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-            self.package_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
-            self.package_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
-            self.package_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
-            self.package_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Interactive)
-            self.package_table.setColumnWidth(0, 48)
-            self.package_table.setColumnWidth(2, 140)
-            self.package_table.setColumnWidth(3, 120)
-            self.package_table.setColumnWidth(4, 120)
-            self.package_table.setColumnWidth(5, 100)
-            self._install_installed_delegate()
-        elif view_id == "bundles":
+            return
+        self._apply_common_table_style()
+        if view_id == "bundles":
             self.package_table.setColumnCount(4)
             self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "Source"])
             self.package_table.setObjectName("bundlesTable")
+            self.package_table.setColumnHidden(0, False)
             header = self.package_table.horizontalHeader()
             header.setStretchLastSection(False)
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
@@ -2015,6 +1973,7 @@ class _ViewsMixin:
             self.package_table.setColumnCount(4)
             self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "Source"])
             self.package_table.setObjectName("discoverTable")
+            self.package_table.setColumnHidden(0, False)
             header = self.package_table.horizontalHeader()
             header.setStretchLastSection(False)
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
@@ -2028,6 +1987,7 @@ class _ViewsMixin:
             self.package_table.setColumnCount(5)
             self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "New Version", "Source"])
             self.package_table.setObjectName("")
+            self.package_table.setColumnHidden(0, False)
             header = self.package_table.horizontalHeader()
             header.setStretchLastSection(False)
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
@@ -2064,10 +2024,14 @@ class _ViewsMixin:
             self._do_update_all()
         elif self.current_view == "installed":
             self.installed_all = packages
+            self._installed_loading = False
         self.current_page = 0
         self.packages_per_page = 10
         self.package_table.setRowCount(0)
-        self.display_page()
+        if self.current_view == "installed":
+            self._sync_installed_table()
+        else:
+            self.display_page()
         if self.current_view == "updates" and hasattr(self, 'source_card') and self.source_card:
             try:
                 states = self.source_card.get_selected_sources()
@@ -2100,6 +2064,11 @@ class _ViewsMixin:
             try:
                 self.updates_table.set_loading(False)
                 self._sync_updates_table()
+            except Exception:
+                pass
+        elif self.current_view == "installed":
+            try:
+                self.updates_table.set_loading(False)
             except Exception:
                 pass
         # Show console toggle button for updates view like Discover
@@ -2138,6 +2107,11 @@ class _ViewsMixin:
             if self.current_view == "updates" and hasattr(self, 'updates_table'):
                 self.updates_table.set_loading(False)
                 self._sync_updates_table()
+        except Exception:
+            pass
+        try:
+            if self.current_view == "installed":
+                self.updates_table.set_loading(False)
         except Exception:
             pass
         try:
@@ -2290,13 +2264,7 @@ class _ViewsMixin:
             else:
                 self.load_more_btn.setVisible(False)
         elif self.current_view == "installed":
-            if self.all_packages:
-                total = len(self.all_packages)
-                displayed = (self.current_page + 1) * self.packages_per_page
-                has_more = displayed < total
-                self.load_more_btn.setVisible(has_more)
-            else:
-                self.load_more_btn.setVisible(False)
+            self.load_more_btn.setVisible(False)
         elif self.current_view == "updates":
             self.load_more_btn.setVisible(False)
 
@@ -2305,18 +2273,17 @@ class _ViewsMixin:
         start = self.current_page * self.packages_per_page
         end = start + self.packages_per_page
         page_packages = self.all_packages[start:end]
-        is_updates = self.current_view == "updates"
+        # The redesigned updates table shows everything in one scrollable list
+        # (no pagination / Load More button)
+        show_all = self.current_view == "updates"
 
-        if is_updates:
-            # The redesigned updates table shows everything in one scrollable list
+        if show_all:
             page_packages = self.all_packages
             if len(self.all_packages) > self.packages_per_page:
                 self.packages_per_page = max(10, len(self.all_packages))
 
         for pkg in page_packages:
-            if self.current_view == "installed":
-                self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'), pkg)
-            elif self.current_view == "discover":
+            if self.current_view == "discover":
                 self.add_discover_row(pkg)
             else:
                 self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'))
@@ -2331,7 +2298,7 @@ class _ViewsMixin:
             pass
 
         has_more = end < len(self.all_packages)
-        if is_updates:
+        if show_all:
             has_more = False
         self.load_more_btn.setVisible(has_more)
         if has_more:
@@ -2365,9 +2332,7 @@ class _ViewsMixin:
 
         self.package_table.setUpdatesEnabled(False)
         for pkg in page_packages:
-            if self.current_view == "installed":
-                self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'), pkg)
-            elif self.current_view == "discover":
+            if self.current_view == "discover":
                 self.add_discover_row(pkg)
             else:
                 self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'))
@@ -2479,24 +2444,7 @@ class _ViewsMixin:
         ver_item.setIcon(self._discover_version_icon)
         self.package_table.setItem(row, 2, ver_item)
 
-        if self.current_view == "installed" and pkg_data:
-            self.package_table.setItem(row, 3, QTableWidgetItem(pkg_data.get('source', 'pacman')))
-            has_update = bool(pkg_data.get('has_update'))
-            status_item = QTableWidgetItem("Update available" if has_update else "Up to date")
-            status_item.setData(ROLE_HAS_UPDATE, has_update)
-            self.package_table.setItem(row, 4, status_item)
-
-            explicit_set = getattr(self, '_explicit_packages', None)
-            if explicit_set is not None and pkg_data.get('source') == 'pacman' and pkg_data.get('name') not in explicit_set:
-                name_item.setData(ROLE_IS_DEP, True)
-
-            installed_sizes = getattr(self, '_installed_sizes', None) or {}
-            size_b = installed_sizes.get(pkg_data.get('name'), 0)
-            size_item = QTableWidgetItem(_fmt_size(size_b) if size_b else "—")
-            size_item.setForeground(QColor(139, 141, 151))
-            size_item.setToolTip(f"{size_b:,} bytes on disk" if size_b else "Size not known")
-            self.package_table.setItem(row, 5, size_item)
-        elif self.package_table.columnCount() > 3:
+        if self.package_table.columnCount() > 3:
             new_version_item = QTableWidgetItem(new_version)
             if self.current_view == "updates":
                 new_version_item.setForeground(QColor(16, 185, 129))
@@ -2528,9 +2476,6 @@ class _ViewsMixin:
             elif vid == "updates":
                 itm = self.package_table.item(row, 4)
                 return itm.text() if itm else ""
-            elif vid == "installed":
-                itm = self.package_table.item(row, 3)
-                return itm.text() if itm else ""
         except Exception:
             return ""
         return ""
@@ -2553,8 +2498,64 @@ class _ViewsMixin:
         try:
             if dataset is None:
                 dataset = self.search_results if getattr(self, 'search_results', None) else self.all_packages
+            self.updates_table.set_empty_text(
+                "All caught up", "Your system is up to date",
+                "Updates will appear here automatically when available")
             self.updates_table.set_packages(dataset or [])
             self.updates_table.set_loading(False)
+        except Exception:
+            pass
+
+    def _map_installed_pkg(self, pkg):
+        """Map an installed package dict to the shared updates-table contract."""
+        name = pkg.get('name') or pkg.get('id') or ''
+        has_update = bool(pkg.get('has_update'))
+        version = pkg.get('version') or ''
+        new_version = pkg.get('new_version') or version
+        if not has_update:
+            new_version = version
+        sizes = getattr(self, '_installed_sizes', None) or {}
+        size_b = sizes.get(name, 0)
+        size_text = _fmt_size(size_b) if size_b else (pkg.get('download_size') or "—")
+        return {
+            'name': name,
+            'id': pkg.get('id') or name,
+            'version': version,
+            'new_version': new_version,
+            'source': pkg.get('source') or 'pacman',
+            'description': pkg.get('description') or '',
+            'download_size': size_text,
+            # Up-to-date rows reuse the Updates table's "Installed" status
+            # chip; rows with a pending update use the same Security/Feature/
+            # Bug Fix / Maintenance classification as the Updates table.
+            'status': None if has_update else 'Installed',
+            '_src': pkg,
+        }
+
+    def _sync_installed_table(self, dataset=None):
+        """Push the current installed dataset into the shared redesigned table."""
+        if not (self.current_view == "installed" and hasattr(self, 'updates_table')):
+            return
+        try:
+            if dataset is None:
+                dataset = self.all_packages
+            mapped = [self._map_installed_pkg(p) for p in (dataset or [])]
+            self.updates_table.set_enrich(False)
+            if not mapped and getattr(self, '_installed_loading', False):
+                # Initial load still in flight - keep the skeleton instead of
+                # flashing an empty state that claims nothing is installed.
+                return
+            self.updates_table.set_empty_text(
+                "No installed packages", "Packages installed on this system will appear here")
+            self.updates_table.set_packages(mapped)
+            self.updates_table.set_loading(False)
+            try:
+                field = self.source_card.get_sort() if hasattr(self, 'source_card') and self.source_card else 'name'
+                asc = self.source_card.get_sort_asc() if hasattr(self, 'source_card') and self.source_card else True
+                col_map = {"name": 1, "size": 3, "version": 2, "status": 5, "source": 4}
+                self.updates_table.sort_by_column(col_map.get(field, 1), asc)
+            except Exception:
+                pass
         except Exception:
             pass
 
@@ -2562,6 +2563,25 @@ class _ViewsMixin:
         try:
             if pkg is None:
                 self.package_detail_card.clear()
+                return
+            if self.current_view == "installed":
+                src = pkg.get('_src') or {}
+                has_update = pkg.get('status') != 'Installed' or bool(
+                    pkg.get('new_version') and pkg.get('new_version') != pkg.get('version'))
+                pkg_data = {
+                    'name': pkg.get('name') or pkg.get('id') or '',
+                    'id': pkg.get('id') or pkg.get('name') or '',
+                    'version': pkg.get('version') or '',
+                    'new_version': pkg.get('new_version') or '',
+                    'source': pkg.get('source') or 'pacman',
+                    'installed': True,
+                    'has_update': has_update,
+                    'description': src.get('description') or pkg.get('description') or '',
+                    '_view': 'installed',
+                }
+                self.package_detail_card.show_package(pkg_data)
+                if pkg_data.get('source', '').lower() in ("pacman", "aur"):
+                    self._enrich_installed_detail(pkg_data['name'])
                 return
             pkg_data = {
                 'name': pkg.get('name') or pkg.get('id') or '',
@@ -2823,16 +2843,7 @@ class _ViewsMixin:
             installed = False
             description = stored.get('description', '')
 
-            if self.current_view == "installed":
-                source_item = self.package_table.item(row, 3)
-                source = source_item.text() if source_item else 'pacman'
-                status_item = self.package_table.item(row, 4)
-                if status_item:
-                    has_update = 'Update' in status_item.text()
-                installed = True
-                installed_sizes = getattr(self, '_installed_sizes', None) or {}
-                size_b = installed_sizes.get(name, 0)
-            elif self.current_view == "updates":
+            if self.current_view == "updates":
                 source_item = self.package_table.item(row, 4)
                 source = source_item.text() if source_item else 'pacman'
                 nv_item = self.package_table.item(row, 3)
@@ -2853,12 +2864,10 @@ class _ViewsMixin:
                 'installed': installed,
                 'has_update': has_update,
                 'description': description,
-                'installed_size': size_b if self.current_view == "installed" else 0,
+                'installed_size': 0,
                 '_view': self.current_view,
             }
             self.package_detail_card.show_package(pkg_data)
-            if self.current_view == "installed" and source.lower() in ("pacman", "aur"):
-                self._enrich_installed_detail(name)
         except Exception:
             self.package_detail_card.clear()
 

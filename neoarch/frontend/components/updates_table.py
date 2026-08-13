@@ -296,6 +296,9 @@ class UpdatesModel(QAbstractTableModel):
         if col == 4:
             return (pkg.get("source") or "").lower()
         if col == 5:
+            status = pkg.get("status")
+            if status:
+                return status
             return classify_update(pkg.get("version"), pkg.get("new_version"))
         return (pkg.get("name") or "").lower()
 
@@ -593,6 +596,7 @@ class UpdatesTable(QTableView):
         self._menu_hover_row = -1
         self._loading = False
         self._loading_enrich = False
+        self._enrich = True
 
         self.model = UpdatesModel(self)
         self.setModel(self.model)
@@ -675,10 +679,20 @@ class UpdatesTable(QTableView):
         return self.model.package_at(row)
 
     # ── internals ─────────────────────────────────────────────────────
+    def set_enrich(self, enabled):
+        """Toggle background metadata enrichment (descriptions / download sizes)."""
+        self._enrich = bool(enabled)
+
+    def set_empty_text(self, title, subtitle, hint=None):
+        """Override the empty-state message (Installed vs Updates wording)."""
+        self._empty.set_text(title, subtitle, hint)
+
     def _header_sync(self):
         header = self.horizontalHeader()
         if hasattr(header, "set_select_all_state"):
-            header.set_select_all_state(self.model.is_all_checked(), False)
+            checked = self.model.is_all_checked()
+            indeterminate = len(self.model._checked) > 0 and not checked
+            header.set_select_all_state(checked, indeterminate)
 
     def _on_header_select_all(self, state):
         self.set_all_checked(state)
@@ -862,7 +876,7 @@ class UpdatesTable(QTableView):
 
     # ── enrichment ────────────────────────────────────────────────────
     def _start_enrich(self):
-        if self._loading_enrich:
+        if self._loading_enrich or not self._enrich:
             return
         self._loading_enrich = True
         packages = [p for p in self.model._pkgs if p.get("source") in ("pacman", "Flatpak")]
@@ -1353,3 +1367,13 @@ class _EmptyOverlay(QWidget):
         layout.addWidget(self._hint)
 
         layout.addStretch()
+
+    def set_text(self, title, subtitle, hint=None):
+        """Change the empty-state wording; pass hint=None to hide that line."""
+        self._title.setText(title)
+        self._sub.setText(subtitle)
+        if hint is None:
+            self._hint.hide()
+        else:
+            self._hint.setText(hint)
+            self._hint.show()
