@@ -460,6 +460,7 @@ class PackagesGridView(QScrollArea):
 
     card_selected = pyqtSignal(object)
     card_cleared = pyqtSignal()
+    load_more_requested = pyqtSignal()
 
     def __init__(self, app=None, parent=None):
         super().__init__(parent)
@@ -468,6 +469,8 @@ class PackagesGridView(QScrollArea):
         self.setWidgetResizable(True)
         self.setVisible(False)
         self.setFrameShape(QFrame.Shape.NoFrame)
+        self.verticalScrollBar().valueChanged.connect(self._on_scroll)
+        self._loading_more = False
         self.setStyleSheet("""
             QScrollArea { background: transparent; border: none; }
             QScrollBar:vertical {
@@ -509,8 +512,19 @@ class PackagesGridView(QScrollArea):
         self._sync_empty()
         super().resizeEvent(e)
 
+    def _on_scroll(self, value):
+        bar = self.verticalScrollBar()
+        if bar.maximum() > 0 and value >= bar.maximum() - 10:
+            if not self._loading_more:
+                self._loading_more = True
+                self.load_more_requested.emit()
+
+    def set_loading_more(self, loading: bool):
+        self._loading_more = loading
+
     def clear(self):
         self._selected_row = -1
+        self._loading_more = False
         self.card_cleared.emit()
         for i in reversed(range(self._grid.count())):
             item = self._grid.takeAt(i)

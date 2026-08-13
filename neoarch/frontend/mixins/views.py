@@ -1077,6 +1077,7 @@ class _ViewsMixin:
         self.packages_grid.setVisible(False)
         self.packages_grid.card_selected.connect(self._show_detail_for_grid)
         self.packages_grid.card_cleared.connect(lambda: self.package_detail_card.clear())
+        self.packages_grid.load_more_requested.connect(self._on_grid_load_more)
         table_area_layout.addWidget(self.packages_grid, 1)
 
         self.load_more_btn = QPushButton("Load More Packages")
@@ -2356,6 +2357,26 @@ class _ViewsMixin:
             checkbox = self.get_row_checkbox(i)
             if checkbox is not None:
                 checkbox.setChecked(False)
+
+    def _on_grid_load_more(self):
+        """Load the next page of cards when the grid is scrolled to the bottom."""
+        try:
+            if self.current_view == "updates":
+                return
+            dataset = self.all_packages
+            if self.current_view == "discover":
+                if hasattr(self, 'filtered_results') and self.filtered_results:
+                    dataset = self.filtered_results
+                else:
+                    dataset = self.search_results
+            dataset = dataset or []
+            total = len(dataset)
+            if (self.current_page + 1) * self.packages_per_page >= total:
+                return
+            self.current_page += 1
+            self._populate_grid()
+        finally:
+            self.packages_grid.set_loading_more(False)
 
     def add_discover_row(self, pkg):
         row = self.package_table.rowCount()

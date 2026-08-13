@@ -171,7 +171,7 @@ class _SearchMixin:
             self._view_mode = "grid"
             if self.current_view == "plugins" and hasattr(self, 'plugins_view') and self.plugins_view:
                 self.plugins_view.show_grid_mode()
-            elif self.current_view == "updates" and hasattr(self, 'updates_table'):
+            elif self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
                 self.updates_table.setVisible(False)
                 self.package_table.setVisible(False)
                 self.packages_grid.setVisible(True)
@@ -187,7 +187,7 @@ class _SearchMixin:
             self._view_mode = "table"
             if self.current_view == "plugins" and hasattr(self, 'plugins_view') and self.plugins_view:
                 self.plugins_view.show_table_mode()
-            elif self.current_view == "updates" and hasattr(self, 'updates_table'):
+            elif self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
                 self.packages_grid.setVisible(False)
                 self.package_table.setVisible(False)
                 self.updates_table.setVisible(True)
