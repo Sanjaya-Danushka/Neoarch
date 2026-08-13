@@ -272,7 +272,7 @@ class SourceItem(QWidget):
                     border-radius: 14px;
                 }
                 QLabel#sourceItemName {
-                    color: #F5F6FA;
+                    color: #EDEDEF;
                     font-size: 12px;
                     font-weight: 600;
                     background: transparent;
@@ -286,7 +286,7 @@ class SourceItem(QWidget):
                     border: none;
                 }
                 QLabel#sourceItemCount {
-                    color: #F5F6FA;
+                    color: #EDEDEF;
                     font-size: 10px;
                     font-weight: 600;
                     background: rgba(255, 255, 255, 0.08);
@@ -303,7 +303,7 @@ class SourceItem(QWidget):
                     border-radius: 14px;
                 }
                 QLabel#sourceItemName {
-                    color: #A7B1C2;
+                    color: #8B8D97;
                     font-size: 12px;
                     font-weight: 500;
                     background: transparent;
@@ -317,7 +317,7 @@ class SourceItem(QWidget):
                     border: none;
                 }
                 QLabel#sourceItemCount {
-                    color: #A7B1C2;
+                    color: #8B8D97;
                     font-size: 10px;
                     font-weight: 600;
                     background: rgba(255, 255, 255, 0.04);
@@ -337,15 +337,15 @@ class SourceItem(QWidget):
         if self._checked:
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QColor(0, 0, 0, 0))
-            painter.drawRoundedRect(rect, 14, 14)
+            painter.drawRoundedRect(rect, 12, 12)
         elif self._hover:
             painter.setPen(QPen(QColor(255, 255, 255, 10), 1))
             painter.setBrush(QColor("#202733"))
-            painter.drawRoundedRect(rect, 14, 14)
+            painter.drawRoundedRect(rect, 12, 12)
         else:
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QColor(0, 0, 0, 0))
-            painter.drawRoundedRect(rect, 14, 14)
+            painter.drawRoundedRect(rect, 12, 12)
 
         painter.end()
         super().paintEvent(event)

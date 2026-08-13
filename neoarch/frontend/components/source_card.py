@@ -4,19 +4,18 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QMenu, QSizePolicy,
 )
 from PyQt6.QtCore import pyqtSignal, Qt, QRectF, QSize, QPropertyAnimation, QEasingCurve, pyqtProperty
-from PyQt6.QtGui import QColor, QPainter, QPen, QFont, QFontMetrics, QPalette
+from PyQt6.QtGui import QColor, QPainter, QPen, QFont, QFontMetrics, QLinearGradient, QRadialGradient
 from neoarch.frontend.components.source_item import SourceItem
 from neoarch.frontend.components.flow_layout import FlowLayout
 
-# ── macOS design tokens ─────────────────────────────────────────────
-_WINDOW = "#0E1116"
-_CARD = (12, 12, 14)  # app "black glass" color rgba(12,12,14,0.75)
-_RAISED = "#202733"
-_HOVER = "#252D3B"
-_BLUE = "#3B82F6"
-_TEXT = "#F5F6FA"
-_SECONDARY = "#A7B1C2"
-_BORDER = "rgba(255, 255, 255, 0.05)"
+# ── app theme design tokens ─────────────────────────────────────────
+_RAISED = "#22242A"
+_HOVER = "#24262C"
+_ACCENT = "#3B82F6"
+_TEXT = "#EDEDEF"
+_SECONDARY = "#8B8D97"
+_MUTED = "#5C5E66"
+_BORDER = "rgba(255, 255, 255, 0.06)"
 
 
 class _RadioRow(QWidget):
@@ -79,7 +78,7 @@ class _RadioRow(QWidget):
         cy = (h - cs) // 2
 
         if self._progress > 0.01:
-            painter.setPen(QPen(QColor(_BLUE), 2))
+            painter.setPen(QPen(QColor(_ACCENT), 2))
         else:
             painter.setPen(QPen(QColor(255, 255, 255, 55), 2))
         painter.setBrush(Qt.BrushStyle.NoBrush)
@@ -88,7 +87,7 @@ class _RadioRow(QWidget):
         dot = 3.5 * self._progress
         if dot > 0.2:
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor(_BLUE))
+            painter.setBrush(QColor(_ACCENT))
             center = cs / 2.0
             painter.drawEllipse(QRectF(cx + center - dot, cy + center - dot, dot * 2, dot * 2))
 
@@ -310,6 +309,52 @@ class _HealthRow(QWidget):
         super().leaveEvent(event)
 
 
+class _HealthRing(QWidget):
+    """Compact circular health gauge: dim track + colored progress arc + score."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._score = 100
+        self.setFixedSize(58, 58)
+
+    def set_score(self, score):
+        self._score = max(0, min(100, int(score)))
+        self.update()
+
+    def _color(self):
+        if self._score >= 85:
+            return QColor("#22C55E")
+        if self._score >= 60:
+            return QColor("#F59E0B")
+        return QColor("#EF4444")
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        w, h = self.width(), self.height()
+        pen_w = 5
+        rect = QRectF(pen_w / 2 + 1, pen_w / 2 + 1, w - pen_w - 2, h - pen_w - 2)
+
+        painter.setPen(QPen(QColor(255, 255, 255, 22), pen_w))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawEllipse(rect)
+
+        color = self._color()
+        pen = QPen(color, pen_w)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
+        span = -360.0 * (self._score / 100.0)
+        painter.drawArc(rect, 90 * 16, int(span * 16))
+
+        font = painter.font()
+        font.setPixelSize(15)
+        font.setWeight(QFont.Weight.Bold)
+        painter.setFont(font)
+        painter.setPen(color.lighter(120))
+        painter.drawText(QRectF(0, 0, w, h), Qt.AlignmentFlag.AlignCenter, str(self._score))
+        painter.end()
+
+
 class _DistributionBar(QWidget):
     """Thin proportional bar showing the per-source package share."""
 
@@ -463,10 +508,7 @@ class SourceCard(QWidget):
         self.setObjectName("SourceCard")
         self.setMinimumWidth(200)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        pal = self.palette()
-        pal.setColor(QPalette.ColorRole.Window, QColor(*_CARD))
-        self.setPalette(pal)
-        self.setAutoFillBackground(True)
+        self.setAutoFillBackground(False)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -478,11 +520,28 @@ class SourceCard(QWidget):
         self._build_status_filter(layout)
         self._build_sort(layout)
         self._build_actions(layout)
+        layout.addStretch(1)
         self._build_summary(layout)
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.fillRect(self.rect(), QColor(*_CARD))
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        r = self.rect()
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(9, 9, 10))
+        painter.drawRect(r)
+        glow = QRadialGradient(r.width() / 2.0, 0, r.width() * 0.9)
+        glow.setColorAt(0.0, QColor(124, 58, 237, 16))
+        glow.setColorAt(0.5, QColor(88, 40, 160, 8))
+        glow.setColorAt(1.0, QColor(88, 40, 160, 0))
+        painter.setBrush(glow)
+        painter.drawRect(r)
+        painter.setPen(QPen(QColor(255, 255, 255, 6), 1))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRect(QRectF(r).adjusted(0.5, 0.5, -0.5, -0.5))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(168, 85, 247, 8))
+        painter.drawRect(QRectF(0, 0, r.width(), 1))
         painter.end()
         super().paintEvent(event)
 
@@ -495,7 +554,7 @@ class SourceCard(QWidget):
         title.setObjectName("sourceCardTitle")
         title.setStyleSheet("""
             QLabel#sourceCardTitle {
-                color: #F5F6FA;
+                color: #EDEDEF;
                 font-size: 15px;
                 font-weight: 700;
                 background: transparent;
@@ -556,7 +615,7 @@ class SourceCard(QWidget):
         label.setCursor(Qt.CursorShape.ArrowCursor)
         label.setStyleSheet("""
             QLabel#sectionHeaderLabel {
-                color: #38BDF8;
+                color: #3B82F6;
                 font-size: 11px;
                 font-weight: 600;
                 letter-spacing: 1.0px;
@@ -580,10 +639,43 @@ class SourceCard(QWidget):
         self.health_widget = QWidget()
         self.health_widget.setObjectName("healthWidget")
         health_layout = QVBoxLayout(self.health_widget)
-        health_layout.setContentsMargins(16, 6, 16, 7)
-        health_layout.setSpacing(3)
+        health_layout.setContentsMargins(16, 10, 16, 8)
+        health_layout.setSpacing(6)
 
         health_layout.addWidget(self._section_header("System Health"))
+
+        top = QHBoxLayout()
+        top.setSpacing(12)
+
+        self.health_ring = _HealthRing()
+        top.addWidget(self.health_ring, 0, Qt.AlignmentFlag.AlignVCenter)
+
+        status_col = QVBoxLayout()
+        status_col.setSpacing(2)
+        self.health_status_title = QLabel("System Healthy")
+        self.health_status_title.setStyleSheet("""
+            color: #22C55E;
+            font-size: 13px;
+            font-weight: 700;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+        self.health_status_subtitle = QLabel("All checks passed")
+        self.health_status_subtitle.setStyleSheet("""
+            color: #6B7280;
+            font-size: 11px;
+            font-weight: 400;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+        status_col.addWidget(self.health_status_title)
+        status_col.addWidget(self.health_status_subtitle)
+        status_col.addStretch()
+        top.addLayout(status_col, 1)
+
+        health_layout.addLayout(top)
 
         self.distribution_bar = _DistributionBar()
         health_layout.addWidget(self.distribution_bar)
@@ -605,9 +697,37 @@ class SourceCard(QWidget):
         layout.addWidget(self.health_widget)
 
     def set_health(self, orphans=0, pacnew=0, outdated=0):
+        orphans = int(orphans or 0)
+        pacnew = int(pacnew or 0)
+        outdated = int(outdated or 0)
         self._health_rows["orphans"].set_count(orphans)
         self._health_rows["pacnew"].set_count(pacnew)
         self._health_rows["outdated"].set_count(outdated)
+        issues = orphans + pacnew + outdated
+        score = max(0, 100 - (orphans * 8 + pacnew * 6 + outdated * 3))
+        self.health_ring.set_score(score)
+        if issues == 0:
+            self.health_status_title.setText("System Healthy")
+            self.health_status_title.setStyleSheet(self._health_title_style("#22C55E"))
+            self.health_status_subtitle.setText("All checks passed")
+        elif score >= 60:
+            self.health_status_title.setText("Needs Attention")
+            self.health_status_title.setStyleSheet(self._health_title_style("#F59E0B"))
+            self.health_status_subtitle.setText(f"{issues} item{'s' if issues != 1 else ''} found")
+        else:
+            self.health_status_title.setText("Action Recommended")
+            self.health_status_title.setStyleSheet(self._health_title_style("#EF4444"))
+            self.health_status_subtitle.setText(f"{issues} issues need resolving")
+
+    def _health_title_style(self, color):
+        return f"""
+            color: {color};
+            font-size: 13px;
+            font-weight: 700;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """
 
     def set_distribution(self, counts):
         self.distribution_bar.set_counts(counts)
@@ -639,31 +759,96 @@ class SourceCard(QWidget):
     def _build_summary(self, layout):
         self.summary_widget = QWidget()
         self.summary_widget.setObjectName("summaryWidget")
+        self.summary_widget.setMinimumHeight(50)
         s_layout = QHBoxLayout(self.summary_widget)
-        s_layout.setContentsMargins(16, 6, 16, 7)
-        s_layout.setSpacing(6)
+        s_layout.setContentsMargins(16, 8, 16, 8)
+        s_layout.setSpacing(0)
 
-        self.summary_label = QLabel("")
-        self.summary_label.setObjectName("summaryLabel")
-        self.summary_label.setStyleSheet("""
-            QLabel#summaryLabel {
-                color: #A7B1C2;
-                font-size: 11px;
-                font-weight: 500;
-                background: transparent;
-                border: none;
-                padding: 0;
-            }
+        self.summary_count_label = QLabel("0")
+        self.summary_count_label.setStyleSheet("""
+            color: #EDEDEF;
+            font-size: 17px;
+            font-weight: 700;
+            background: transparent;
+            border: none;
+            padding: 0;
         """)
-        s_layout.addWidget(self.summary_label)
+        self.summary_count_caption = QLabel("")
+        self.summary_count_caption.setStyleSheet("""
+            color: #6B7280;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+        self.summary_count_caption.setMinimumWidth(0)
+
+        count_col = QVBoxLayout()
+        count_col.setSpacing(1)
+        count_col.setContentsMargins(0, 0, 0, 0)
+        count_col.addWidget(self.summary_count_label)
+        count_col.addWidget(self.summary_count_caption)
+        s_layout.addLayout(count_col)
+
         s_layout.addStretch()
+
+        self.summary_size_label = QLabel("")
+        self.summary_size_label.setStyleSheet("""
+            color: #3B82F6;
+            font-size: 17px;
+            font-weight: 700;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+        self.summary_size_caption = QLabel("")
+        self.summary_size_caption.setStyleSheet("""
+            color: #6B7280;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+        self.summary_size_caption.setMinimumWidth(0)
+
+        size_col = QVBoxLayout()
+        size_col.setSpacing(1)
+        size_col.setContentsMargins(0, 0, 0, 0)
+        size_col.addWidget(self.summary_size_label, 0, Qt.AlignmentFlag.AlignRight)
+        size_col.addWidget(self.summary_size_caption, 0, Qt.AlignmentFlag.AlignRight)
+        s_layout.addLayout(size_col)
+
         self.summary_widget.setStyleSheet("""
             QWidget#summaryWidget {
-                border-top: 1px solid rgba(255, 255, 255, 0.03);
+                border-top: 1px solid rgba(255, 255, 255, 0.04);
+                background: rgba(255, 255, 255, 0.02);
             }
         """)
         self.summary_widget.setVisible(False)
         layout.addWidget(self.summary_widget)
+
+    def set_summary(self, count, size_text=None, noun="updates available", size_label=None):
+        if count is None:
+            self.summary_widget.setVisible(False)
+            return
+        self.summary_widget.setVisible(True)
+        if isinstance(count, (int, float)):
+            self.summary_count_label.setText(f"{int(count):,}")
+        else:
+            self.summary_count_label.setText(str(count))
+        self.summary_count_caption.setText((noun or "").upper())
+        if size_text:
+            self.summary_size_label.setText(str(size_text))
+            self.summary_size_caption.setText((size_label or "download size").upper())
+            self.summary_size_label.setVisible(True)
+            self.summary_size_caption.setVisible(True)
+        else:
+            self.summary_size_label.setVisible(False)
+            self.summary_size_caption.setVisible(False)
 
     def _build_status_filter(self, layout):
         self.status_widget = QWidget()
@@ -727,7 +912,7 @@ class SourceCard(QWidget):
                 padding: 8px 14px;
                 border-radius: 6px;
                 margin: 1px 0;
-                color: #F5F6FA;
+                color: #EDEDEF;
                 font-size: 12px;
                 font-weight: 500;
                 background: transparent;
@@ -788,7 +973,7 @@ class SourceCard(QWidget):
             QPushButton#sortBtn:hover {
                 background: rgba(255, 255, 255, 0.07);
                 border-color: rgba(59, 130, 246, 0.30);
-                color: #F5F6FA;
+                color: #EDEDEF;
             }
         """
 
@@ -866,7 +1051,7 @@ class SourceCard(QWidget):
             }
             QPushButton:hover {
                 background-color: rgba(255, 255, 255, 0.07);
-                color: #F5F6FA;
+                color: #EDEDEF;
             }
             QPushButton:pressed {
                 background-color: rgba(255, 255, 255, 0.03);
@@ -889,7 +1074,7 @@ class SourceCard(QWidget):
             }
             QPushButton:hover {
                 background-color: rgba(255, 255, 255, 0.07);
-                color: #F5F6FA;
+                color: #EDEDEF;
             }
             QPushButton:pressed {
                 background-color: rgba(255, 255, 255, 0.03);
@@ -953,16 +1138,6 @@ class SourceCard(QWidget):
             except Exception:
                 pass
             self.action_manage_btn.clicked.connect(manage_ignored)
-
-    def set_summary(self, count, size_text=None, noun="updates available"):
-        if count is None:
-            self.summary_widget.setVisible(False)
-            return
-        self.summary_widget.setVisible(True)
-        if size_text:
-            self.summary_label.setText(f"{count} {noun} \u00B7 {size_text}")
-        else:
-            self.summary_label.setText(f"{count} {noun}")
 
     def set_sort(self, field, ascending=True):
         self.sort_field = field

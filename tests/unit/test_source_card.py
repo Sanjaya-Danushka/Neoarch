@@ -55,8 +55,13 @@ def test_source_card_initialization(qapp):
     assert card.sort_widget.isHidden() is False
     assert card.actions_widget.isHidden() is False
 
-    card.set_summary(5, "120 MB")
-    assert "5 updates" in card.summary_label.text()
+    card.set_summary(5, "120 MB", noun="updates available", size_label="to download")
+    assert card.summary_count_label.text() == "5"
+    assert "UPDATES AVAILABLE" == card.summary_count_caption.text()
+    assert "120 MB" == card.summary_size_label.text()
+    assert "TO DOWNLOAD" == card.summary_size_caption.text()
+    card.set_summary(None)
+    assert card.summary_widget.isHidden() is True
 
     card.set_sort("size", False)
     assert card.get_sort() == "size"

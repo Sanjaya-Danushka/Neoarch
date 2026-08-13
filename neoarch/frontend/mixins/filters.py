@@ -214,7 +214,7 @@ class _FiltersMixin:
 
         self.sources_section = QWidget()
         self.sources_layout = QVBoxLayout(self.sources_section)
-        self.sources_layout.setContentsMargins(12, 0, 12, 0)
+        self.sources_layout.setContentsMargins(0, 0, 0, 0)
         self.sources_layout.setSpacing(0)
 
         layout.addWidget(self.sources_section, 1)
@@ -438,7 +438,7 @@ class _FiltersMixin:
         outdated = sum(1 for p in base if p.get('has_update'))
         sizes = getattr(self, '_installed_sizes', None) or {}
         total_b = sum(sizes.values())
-        size_text = f"{_fmt_size(total_b)} on disk" if total_b > 0 else ""
+        size_text = f"{_fmt_size(total_b)}" if total_b > 0 else ""
         try:
             self.source_card.set_health(
                 orphans=len(getattr(self, '_orphans_list', None) or []),
@@ -448,7 +448,7 @@ class _FiltersMixin:
         except Exception:
             pass
         try:
-            self.source_card.set_summary(len(base), size_text, noun="packages installed")
+            self.source_card.set_summary(len(base), size_text, noun="packages installed", size_label="on disk")
         except Exception:
             pass
 
@@ -573,7 +573,7 @@ class _FiltersMixin:
             prefix = "~" if known < len(base) else ""
             size_text = f"{prefix}{_fmt_size(total_b)}"
         try:
-            self.source_card.set_summary(len(base), size_text)
+            self.source_card.set_summary(len(base), size_text, noun="updates available", size_label="to download")
         except Exception:
             pass
 
