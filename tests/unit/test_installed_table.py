@@ -1,4 +1,4 @@
-"""Unit tests for the Installed packages table delegate."""
+"""Unit tests for the Installed packages table (HoverTableWidget + delegate)."""
 
 import pytest
 from PyQt6.QtCore import Qt
@@ -22,13 +22,13 @@ def qapp():
 def _make_table():
     from neoarch.frontend.components.installed_table import (
         HoverTableWidget,
-        InstalledTableDelegate,
+        InstalledRowDelegate,
         ROLE_IS_DEP,
         ROLE_HAS_UPDATE,
     )
 
     table = HoverTableWidget(4, 6)
-    delegate = InstalledTableDelegate(table)
+    delegate = InstalledRowDelegate(table)
     table.setItemDelegate(delegate)
     for c in range(6):
         table.setColumnWidth(c, 140)
@@ -36,6 +36,7 @@ def _make_table():
     for r in range(4):
         name = QTableWidgetItem(f"pkg-{r}")
         name.setData(ROLE_IS_DEP, r == 1)
+        name.setData(Qt.ItemDataRole.UserRole, {"id": f"pkg-{r}", "description": "A test package"})
         table.setItem(r, 1, name)
         table.setItem(r, 2, QTableWidgetItem(f"1.{r}.0-1"))
         table.setItem(r, 3, QTableWidgetItem(["pacman", "AUR", "Flatpak", "pacman"][r]))
@@ -50,7 +51,8 @@ def _make_table():
 def test_delegate_installs_and_size(qapp):
     table, delegate = _make_table()
     assert table.itemDelegate() is delegate
-    assert delegate.sizeHint(None, None).height() == 56
+    assert isinstance(delegate, __import__("neoarch.frontend.components.updates_table", fromlist=["UpdatesRowDelegate"]).UpdatesRowDelegate)
+    assert delegate.sizeHint(None, None).height() == 52
 
 
 def test_paint_all_cells_no_crash(qapp):
@@ -69,12 +71,25 @@ def test_paint_all_cells_no_crash(qapp):
                 opt.initFrom(table)
                 opt.index = idx
                 opt.rect = table.visualRect(idx)
-                opt.rect.setHeight(56)
+                opt.rect.setHeight(52)
                 if r == 2:
                     opt.state |= QStyle.StateFlag.State_Selected
                 delegate.paint(painter, opt, idx)  # should not raise
     finally:
         painter.end()
+
+
+def test_pkg_at_builds_package_dict(qapp):
+    table, delegate = _make_table()
+    pkg = delegate.pkg_at(0)
+    assert pkg["name"] == "pkg-0"
+    assert pkg["version"] == "1.0.0-1"
+    assert pkg["source"] == "pacman"
+    assert pkg["has_update"] is False
+    assert pkg["download_size"] == "12.4 MB"
+    dep = delegate.pkg_at(1)
+    assert dep["_dependency"] is True
+    assert delegate.pkg_at(99) is None
 
 
 def test_dependency_and_update_roles(qapp):
@@ -87,10 +102,8 @@ def test_dependency_and_update_roles(qapp):
 
 def test_hover_table_tracks_rows(qapp):
     table, delegate = _make_table()
-    assert table.hover_row() == -1
+    assert table.hovered_row() == -1
     table.set_hover_row(3)
-    assert table.hover_row() == 3
-    assert delegate._table_hover_row() == 3
+    assert table.hovered_row() == 3
     table.set_hover_row(-1)
-    assert table.hover_row() == -1
-    assert delegate._table_hover_row() == -1
+    assert table.hovered_row() == -1

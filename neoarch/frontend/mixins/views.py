@@ -28,7 +28,7 @@ from neoarch.frontend.components.loading_spinner import LoadingSpinner
 from neoarch.frontend.components.updates_table import UpdatesTable
 from neoarch.frontend.components.installed_table import (
     HoverTableWidget,
-    InstalledTableDelegate,
+    InstalledRowDelegate,
     ROLE_IS_DEP,
     ROLE_HAS_UPDATE,
 )
@@ -1972,12 +1972,13 @@ class _ViewsMixin:
 
     def _install_installed_delegate(self):
         if not hasattr(self, "_installed_delegate") or self._installed_delegate is None:
-            self._installed_delegate = InstalledTableDelegate(self.package_table)
+            self._installed_delegate = InstalledRowDelegate(self.package_table, self)
         self.package_table.setItemDelegate(self._installed_delegate)
         self.package_table.setAlternatingRowColors(False)
         self.package_table.setWordWrap(False)
         self.package_table.setMouseTracking(True)
         self.package_table.viewport().setMouseTracking(True)
+        self.package_table.verticalHeader().setDefaultSectionSize(52)
 
     def update_table_columns(self, view_id):
         self._apply_common_table_style()
