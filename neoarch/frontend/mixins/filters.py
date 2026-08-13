@@ -399,7 +399,82 @@ class _FiltersMixin:
         for source_name, source_icon_path in sources:
             self.source_card.add_source(source_name, source_icon_path)
         self.sources_layout.addWidget(self.source_card)
-        self.source_card.configure_sections(show_search=False)
+        self.source_card.health_action.connect(self.on_installed_health_action)
+        self.source_card.configure_sections(
+            show_search=False, show_health=True, show_counts=True, show_summary=True,
+        )
+        self._refresh_installed_sources()
+        self._refresh_installed_health_async()
+
+    def on_installed_health_action(self, action):
+        if action == "orphans":
+            self.cleanup_orphans()
+        elif action == "pacnew":
+            self.manage_pacnew()
+        elif action == "outdated":
+            self.switch_view("updates")
+
+    def _refresh_installed_sources(self):
+        """Populate the installed source card: counts, distribution, health, summary."""
+        if self.current_view != "installed" or not getattr(self, 'source_card', None):
+            return
+        base = getattr(self, 'installed_all', None) or []
+        per = {}
+        for pkg in base:
+            s = pkg.get('source')
+            if s not in per:
+                per[s] = 0
+            per[s] += 1
+        try:
+            for name, item in self.source_card.sources.items():
+                item.set_count(per.get(name, 0))
+        except Exception:
+            pass
+        try:
+            self.source_card.set_distribution(per)
+        except Exception:
+            pass
+        outdated = sum(1 for p in base if p.get('has_update'))
+        sizes = getattr(self, '_installed_sizes', None) or {}
+        total_b = sum(sizes.values())
+        size_text = f"{_fmt_size(total_b)} on disk" if total_b > 0 else ""
+        try:
+            self.source_card.set_health(
+                orphans=len(getattr(self, '_orphans_list', None) or []),
+                pacnew=len(getattr(self, '_pacnew_list', None) or []),
+                outdated=outdated,
+            )
+        except Exception:
+            pass
+        try:
+            self.source_card.set_summary(len(base), size_text, noun="packages installed")
+        except Exception:
+            pass
+
+    def _refresh_installed_health_async(self):
+        """Fetch orphans, .pacnew files, and installed sizes in the background."""
+        try:
+            def _run():
+                try:
+                    from neoarch.backend.services.hygiene import list_orphans, list_pacnew, list_installed_sizes
+                    orphans = list_orphans()
+                    pacnew = list_pacnew()
+                    sizes = list_installed_sizes()
+                except Exception:
+                    orphans, pacnew, sizes = [], [], {}
+                self.ui_call.emit(lambda: self._apply_installed_health(orphans, pacnew, sizes))
+            from threading import Thread
+            Thread(target=_run, daemon=True).start()
+        except Exception:
+            pass
+
+    def _apply_installed_health(self, orphans, pacnew, sizes):
+        if self.current_view != "installed" or not getattr(self, 'source_card', None):
+            return
+        self._orphans_list = orphans or []
+        self._pacnew_list = pacnew or []
+        self._installed_sizes = sizes or {}
+        self._refresh_installed_sources()
 
     def update_plugins_sources(self):
         """Update plugins sources using the same SourceCard component as installed section"""

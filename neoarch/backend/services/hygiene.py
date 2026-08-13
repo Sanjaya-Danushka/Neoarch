@@ -21,6 +21,7 @@ __all__ = [
     "list_orphans", "remove_orphans",
     "list_pacnew", "diff_pacnew", "accept_pacnew", "delete_pacnew",
     "merge_pacnew",
+    "list_installed_sizes",
     "fetch_news", "news_cache", "news_cache_age",
     "mark_news_seen", "news_seen", "news_seen_status", "news_unseen_count",
     "list_corrupted_packages", "remove_corrupted_packages",
@@ -306,6 +307,48 @@ def _extract_base(original: str, pacnew: str, package: str) -> str:
             return f.read()
     except Exception:
         return ""
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Installed size intelligence
+# ──────────────────────────────────────────────────────────────────────────
+
+def list_installed_sizes() -> Dict[str, int]:
+    """Map each installed package name to its installed size in bytes.
+
+    Uses `pacman -Qik` which reports the on-disk size of every locally
+    installed package. Returns a dict of {name: bytes} — an empty dict on
+    failure.
+    """
+    result = _run(["pacman", "-Qik"], timeout=120)
+    if result.returncode != 0:
+        return {}
+    sizes: Dict[str, int] = {}
+    name = None
+    for line in result.stdout.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("Name"):
+            parts = stripped.split(":", 1)
+            if len(parts) == 2:
+                name = parts[1].strip()
+        elif stripped.startswith("Installed Size") and name:
+            parts = stripped.split(":", 1)
+            if len(parts) == 2:
+                value = _parse_size_text(parts[1].strip())
+                if value:
+                    sizes[name] = value
+            name = None
+    return sizes
+
+
+def _parse_size_text(text: str) -> int:
+    """Parse a human size string (e.g. '1.23 MiB') into bytes."""
+    m = re.search(r"([\d.]+)\s*([KMGT]?)i?B", str(text), re.IGNORECASE)
+    if not m:
+        return 0
+    num = float(m.group(1))
+    mult = {"": 1, "K": 1024, "M": 1024 ** 2, "G": 1024 ** 3, "T": 1024 ** 4}
+    return int(num * mult.get(m.group(2).upper(), 1))
 
 
 # ──────────────────────────────────────────────────────────────────────────

@@ -61,3 +61,34 @@ def test_source_card_initialization(qapp):
     card.set_sort("size", False)
     assert card.get_sort() == "size"
     assert card.get_sort_asc() is False
+
+
+def test_source_card_health_section(qapp):
+    from neoarch.frontend.components.source_card import SourceCard
+
+    card = SourceCard()
+    card.add_source("pacman", "/path/to/pacman.svg")
+    card.add_source("AUR", "/path/to/aur.svg")
+    card.show()
+    card.configure_sections(show_health=True, show_counts=True)
+    assert card.health_widget.isHidden() is False
+
+    card.set_health(orphans=3, pacnew=1, outdated=7)
+    assert card._health_rows["orphans"]._count == 3
+    assert card._health_rows["pacnew"]._count == 1
+    assert card._health_rows["outdated"]._count == 7
+
+    card.set_distribution({"pacman": 5, "AUR": 3})
+    assert card.distribution_bar.isVisible()
+
+
+def test_source_card_health_signal(qapp):
+    from neoarch.frontend.components.source_card import SourceCard
+
+    card = SourceCard()
+    captured = []
+    card.health_action.connect(lambda a: captured.append(a))
+    card._health_rows["orphans"].clicked.emit()
+    card._health_rows["pacnew"].clicked.emit()
+    card._health_rows["outdated"].clicked.emit()
+    assert captured == ["orphans", "pacnew", "outdated"]

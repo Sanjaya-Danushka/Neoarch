@@ -200,6 +200,160 @@ class _ActionRow(QWidget):
         super().leaveEvent(event)
 
 
+class _HealthRow(QWidget):
+    """macOS-style system health row: colored dot, title, count badge, chevron."""
+
+    clicked = pyqtSignal()
+
+    def __init__(self, title, color, parent=None):
+        super().__init__(parent)
+        self.title = title
+        self.color = QColor(color)
+        self._count = 0
+        self._hover = False
+        self.setFixedHeight(30)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setMouseTracking(True)
+
+    def set_count(self, count):
+        self._count = int(count or 0)
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        w, h = self.width(), self.height()
+
+        if self._hover:
+            painter.setPen(QPen(QColor(255, 255, 255, 8), 1))
+            painter.setBrush(QColor(_RAISED))
+            painter.drawRoundedRect(QRectF(self.rect()).adjusted(1, 1, -1, -1), 10, 10)
+
+        dot = 8
+        dot_x = 16
+        dot_y = (h - dot) / 2
+        dot_color = QColor(self.color)
+        if self._count == 0:
+            dot_color = QColor(34, 197, 94)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(dot_color)
+        painter.drawEllipse(QRectF(dot_x, dot_y, dot, dot))
+
+        font = painter.font()
+        font.setPixelSize(11)
+        font.setWeight(QFont.Weight.Medium)
+        painter.setFont(font)
+        painter.setPen(QColor(_TEXT))
+        text_x = 32
+        text_w = w - text_x - 80
+        painter.drawText(
+            QRectF(text_x, 0, text_w, h),
+            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+            self.title,
+        )
+
+        if self._count > 0:
+            badge_color = QColor(self.color)
+            badge_color.setAlpha(40)
+            border = QColor(self.color)
+            border.setAlpha(120)
+            text_color = QColor(self.color).lighter(120)
+            text = str(self._count)
+        else:
+            badge_color = QColor(34, 197, 94, 30)
+            border = QColor(34, 197, 94, 80)
+            text_color = QColor(34, 197, 94)
+            text = "0"
+
+        font.setPixelSize(10)
+        font.setWeight(QFont.Weight.Bold)
+        painter.setFont(font)
+        fm = QFontMetrics(font)
+        badge_w = fm.horizontalAdvance(text) + 14
+        badge_h = 18
+        badge_x = w - badge_w - 28
+        badge_y = (h - badge_h) / 2
+        painter.setPen(QPen(border, 1))
+        painter.setBrush(badge_color)
+        painter.drawRoundedRect(QRectF(badge_x, badge_y, badge_w, badge_h), 9, 9)
+        painter.setPen(text_color)
+        painter.drawText(
+            QRectF(badge_x, badge_y, badge_w, badge_h),
+            Qt.AlignmentFlag.AlignCenter,
+            text,
+        )
+
+        font.setPixelSize(15)
+        painter.setFont(font)
+        painter.setPen(QColor(255, 255, 255, 40))
+        painter.drawText(
+            QRectF(w - 21, 0, 13, h),
+            Qt.AlignmentFlag.AlignCenter,
+            "\u203A",
+        )
+
+        painter.end()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
+
+    def enterEvent(self, event):
+        self._hover = True
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._hover = False
+        self.update()
+        super().leaveEvent(event)
+
+
+class _DistributionBar(QWidget):
+    """Thin proportional bar showing the per-source package share."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._counts = {}
+        self._colors = {
+            "pacman": QColor("#3B82F6"),
+            "AUR": QColor("#F59E0B"),
+            "Flatpak": QColor("#10B981"),
+            "npm": QColor("#EF4444"),
+        }
+        self.setFixedHeight(6)
+        self.setMinimumWidth(0)
+
+    def set_counts(self, counts):
+        self._counts = {k: max(int(v or 0), 0) for k, v in (counts or {}).items()}
+        self.setVisible(bool(self._counts))
+        self.update()
+
+    def paintEvent(self, event):
+        total = sum(self._counts.values())
+        if total <= 0:
+            return
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        w = self.width()
+        h = self.height()
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(255, 255, 255, 12))
+        painter.drawRoundedRect(QRectF(0, 0, w, h), h / 2, h / 2)
+        x = 0.0
+        for name, count in self._counts.items():
+            if count <= 0:
+                continue
+            seg_w = w * count / total
+            if seg_w <= 0:
+                continue
+            painter.setBrush(self._colors.get(name, QColor("#6B7280")))
+            painter.drawRect(QRectF(x + 1, 0, max(seg_w - 2, 1), h))
+            x += seg_w
+        painter.end()
+
+
 class _StatusChip(QPushButton):
     """Refined update-type toggle pill: colored status dot + label.
 
@@ -289,6 +443,7 @@ class SourceCard(QWidget):
     search_mode_changed = pyqtSignal(str)
     status_filter_changed = pyqtSignal(list)
     sort_changed = pyqtSignal(str)
+    health_action = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -318,6 +473,7 @@ class SourceCard(QWidget):
 
         self._build_header(layout)
         self._build_sources_container(layout)
+        self._build_health(layout)
         self._build_search_mode(layout)
         self._build_status_filter(layout)
         self._build_sort(layout)
@@ -419,6 +575,42 @@ class SourceCard(QWidget):
         self.sources_layout.setContentsMargins(12, 2, 12, 5)
         self.sources_layout.setSpacing(4)
         layout.addWidget(self.sources_container)
+
+    def _build_health(self, layout):
+        self.health_widget = QWidget()
+        self.health_widget.setObjectName("healthWidget")
+        health_layout = QVBoxLayout(self.health_widget)
+        health_layout.setContentsMargins(16, 6, 16, 7)
+        health_layout.setSpacing(3)
+
+        health_layout.addWidget(self._section_header("System Health"))
+
+        self.distribution_bar = _DistributionBar()
+        health_layout.addWidget(self.distribution_bar)
+
+        self._health_rows = {}
+        row_defs = [
+            ("orphans", "Orphaned Packages", "#F59E0B"),
+            ("pacnew", "Config Files (.pacnew)", "#FB923C"),
+            ("outdated", "Outdated Packages", "#3B82F6"),
+        ]
+        for key, title, color in row_defs:
+            row = _HealthRow(title, color)
+            row.clicked.connect(lambda k=key: self.health_action.emit(k))
+            health_layout.addWidget(row)
+            self._health_rows[key] = row
+
+        self.health_widget.setStyleSheet(self._section_stylesheet())
+        self.health_widget.setVisible(False)
+        layout.addWidget(self.health_widget)
+
+    def set_health(self, orphans=0, pacnew=0, outdated=0):
+        self._health_rows["orphans"].set_count(orphans)
+        self._health_rows["pacnew"].set_count(pacnew)
+        self._health_rows["outdated"].set_count(outdated)
+
+    def set_distribution(self, counts):
+        self.distribution_bar.set_counts(counts)
 
     def _build_search_mode(self, layout):
         self.search_mode_widget = QWidget()
@@ -720,7 +912,7 @@ class SourceCard(QWidget):
 
     def _section_stylesheet(self):
         return """
-            QWidget#statusWidget, QWidget#sortWidget, QWidget#actionsWidget, QWidget#summaryWidget {
+            QWidget#statusWidget, QWidget#sortWidget, QWidget#actionsWidget, QWidget#summaryWidget, QWidget#healthWidget {
                 border-top: 1px solid rgba(255, 255, 255, 0.03);
             }
         """
@@ -760,15 +952,15 @@ class SourceCard(QWidget):
                 pass
             self.action_manage_btn.clicked.connect(manage_ignored)
 
-    def set_summary(self, count, size_text=None):
+    def set_summary(self, count, size_text=None, noun="updates available"):
         if count is None:
             self.summary_widget.setVisible(False)
             return
         self.summary_widget.setVisible(True)
         if size_text:
-            self.summary_label.setText(f"{count} updates available \u00B7 {size_text}")
+            self.summary_label.setText(f"{count} {noun} \u00B7 {size_text}")
         else:
-            self.summary_label.setText(f"{count} updates available")
+            self.summary_label.setText(f"{count} {noun}")
 
     def set_sort(self, field, ascending=True):
         self.sort_field = field
@@ -789,12 +981,14 @@ class SourceCard(QWidget):
         return set(self._active_statuses)
 
     def configure_sections(self, show_status=False, show_sort=False, show_actions=False,
-                           show_summary=False, show_search=True, show_counts=False):
+                           show_summary=False, show_search=True, show_counts=False,
+                           show_health=False):
         self.status_widget.setVisible(show_status)
         self.sort_widget.setVisible(show_sort)
         self.actions_widget.setVisible(show_actions)
         self.summary_widget.setVisible(show_summary)
         self.search_mode_widget.setVisible(show_search)
+        self.health_widget.setVisible(show_health)
         if not show_counts:
             for item in self.sources.values():
                 item.count_label.setVisible(False)

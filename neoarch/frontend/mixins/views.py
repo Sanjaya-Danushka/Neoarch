@@ -2045,6 +2045,10 @@ class _ViewsMixin:
                 self.on_installed_source_changed(states)
             except Exception:
                 pass
+            try:
+                self._refresh_installed_sources()
+            except Exception:
+                pass
 
 
         # Hide loading spinner, stop animation, and show packages
