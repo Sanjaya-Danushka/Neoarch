@@ -9,7 +9,9 @@ Modern Package Manager for Arch Linux
 
 [Features](#features) • [Installation](#installation) • [Usage](#usage) • [Contributing](#contributing) • [License](#license)
 
-<img width="1213" height="816" alt="home" src="https://github.com/user-attachments/assets/f942c09c-9551-4461-a42f-5b11ca77c2bf" />
+<!-- <img width="1213" height="816" alt="home" src="https://github.com/user-attachments/assets/f942c09c-9551-4461-a42f-5b11ca77c2bf" /> -->
+<img width="1211" height="811" alt="Screenshot_20260813_222846" src="https://github.com/user-attachments/assets/73c76c21-6652-4007-8e93-4a1b9768beb9" />
+
 
 
 ---
@@ -121,10 +123,10 @@ Mark specific packages to ignore during updates. Persisted to `~/.config/neoarch
 
 ## Screenshots
 
-![Search Packages](https://github.com/user-attachments/assets/eedc4d2f-c806-4089-9842-695d04fbd7df)
+<img width="1211" height="811" alt="Screenshot_20260813_222846" src="https://github.com/user-attachments/assets/7d63dca2-15cc-406a-bd0a-a5b60ad9d652" />
 *Search and Discover Packages*
 
-![Installed Packages](https://github.com/user-attachments/assets/b34f304e-c521-45de-8fad-2a78642d5dbc)
+<img width="1203" height="812" alt="Screenshot_20260813_222645" src="https://github.com/user-attachments/assets/d4bbb403-7a8a-4693-86e7-38e810c94b05" />
 *Installed Packages View*
 
 ## Comparison with Shelly-ALPM
