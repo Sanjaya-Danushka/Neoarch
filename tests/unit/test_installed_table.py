@@ -7,7 +7,6 @@ from PyQt6.QtWidgets import (
     QApplication,
     QStyle,
     QStyleOptionViewItem,
-    QTableWidget,
     QTableWidgetItem,
 )
 
@@ -22,12 +21,13 @@ def qapp():
 
 def _make_table():
     from neoarch.frontend.components.installed_table import (
+        HoverTableWidget,
         InstalledTableDelegate,
         ROLE_IS_DEP,
         ROLE_HAS_UPDATE,
     )
 
-    table = QTableWidget(4, 6)
+    table = HoverTableWidget(4, 6)
     delegate = InstalledTableDelegate(table)
     table.setItemDelegate(delegate)
     for c in range(6):
@@ -56,7 +56,7 @@ def test_delegate_installs_and_size(qapp):
 def test_paint_all_cells_no_crash(qapp):
     table, delegate = _make_table()
     table.selectRow(2)
-    delegate._hover_row = 1
+    table.set_hover_row(1)
 
     pix = QPixmap(900, 600)
     pix.fill(QColor(18, 19, 22))
@@ -85,8 +85,12 @@ def test_dependency_and_update_roles(qapp):
     assert bool(table.item(0, 4).data(Qt.ItemDataRole.UserRole + 2)) is False
 
 
-def test_hover_event_filter_tracks_rows(qapp):
+def test_hover_table_tracks_rows(qapp):
     table, delegate = _make_table()
-    assert delegate.hovered_row() == -1
-    delegate._hover_row = 3
-    assert delegate.hovered_row() == 3
+    assert table.hover_row() == -1
+    table.set_hover_row(3)
+    assert table.hover_row() == 3
+    assert delegate._table_hover_row() == 3
+    table.set_hover_row(-1)
+    assert table.hover_row() == -1
+    assert delegate._table_hover_row() == -1

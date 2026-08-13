@@ -27,6 +27,7 @@ from neoarch.frontend.components.package_detail_card import PackageDetailCard
 from neoarch.frontend.components.loading_spinner import LoadingSpinner
 from neoarch.frontend.components.updates_table import UpdatesTable
 from neoarch.frontend.components.installed_table import (
+    HoverTableWidget,
     InstalledTableDelegate,
     ROLE_IS_DEP,
     ROLE_HAS_UPDATE,
@@ -1045,7 +1046,7 @@ class _ViewsMixin:
         table_area_layout.setSpacing(8)
 
         # Packages Table
-        self.package_table = QTableWidget()
+        self.package_table = HoverTableWidget()
         self.package_table.setColumnCount(5)
         self.package_table.setHorizontalHeaderLabels(
             ["", "Package Name", "Version", "New Version", "Source"]

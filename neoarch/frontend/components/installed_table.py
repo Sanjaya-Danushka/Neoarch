@@ -9,7 +9,7 @@ The delegate is only installed while the Installed view is active; other
 views reuse the default QTableWidget rendering.
 """
 
-from PyQt6.QtCore import QEvent, QPointF, QRectF, QSize, Qt
+from PyQt6.QtCore import QPointF, QRectF, QSize, Qt
 from PyQt6.QtGui import (
     QColor,
     QFont,
@@ -18,7 +18,7 @@ from PyQt6.QtGui import (
     QPainterPath,
     QPen,
 )
-from PyQt6.QtWidgets import QStyledItemDelegate, QStyle
+from PyQt6.QtWidgets import QStyledItemDelegate, QStyle, QTableWidget
 
 # theme constants shared with the updates table design
 from neoarch.frontend.components.updates_table import (
@@ -47,14 +47,46 @@ def _source_color(source):
         return _FALLBACK_SOURCE
 
 
+class HoverTableWidget(QTableWidget):
+    """QTableWidget that tracks the hovered row for custom row painting.
+
+    Uses event overrides (mouseMoveEvent / leaveEvent) instead of an event
+    filter so hover tracking is safe at app shutdown - event filters get
+    invoked for every event, including internal ones during widget
+    destruction, which can abort a PyQt app at exit.
+    """
+
+    def __init__(self, rows=0, columns=0, parent=None):
+        super().__init__(rows, columns, parent)
+        self._hover_row = -1
+        self.setMouseTracking(True)
+
+    def hover_row(self):
+        return self._hover_row
+
+    def set_hover_row(self, row):
+        if row != self._hover_row:
+            self._hover_row = row
+            viewport = self.viewport()
+            if viewport is not None:
+                viewport.update()
+
+    def mouseMoveEvent(self, event):
+        pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
+        self.set_hover_row(self.indexAt(pos).row())
+        super().mouseMoveEvent(event)
+
+    def leaveEvent(self, event):
+        self.set_hover_row(-1)
+        super().leaveEvent(event)
+
+
 class InstalledTableDelegate(QStyledItemDelegate):
     """Paints the Installed page rows in the app's premium row language."""
 
     def __init__(self, table):
         super().__init__(table)
         self._table = table
-        self._hover_row = -1
-        table.viewport().installEventFilter(self)
 
         self._name_font = QFont()
         self._name_font.setPointSize(10)
@@ -70,23 +102,12 @@ class InstalledTableDelegate(QStyledItemDelegate):
         self._chip_font.setPointSize(8)
         self._chip_font.setWeight(QFont.Weight.DemiBold)
 
-    # ── hover tracking (event filter on the table viewport) ──────────
-    def eventFilter(self, obj, event):
-        if obj is self._table.viewport():
-            if event.type() == QEvent.Type.MouseMove:
-                pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
-                row = self._table.indexAt(pos).row()
-                if row != self._hover_row:
-                    self._hover_row = row
-                    self._table.viewport().update()
-            elif event.type() == QEvent.Type.Leave:
-                if self._hover_row != -1:
-                    self._hover_row = -1
-                    self._table.viewport().update()
-        return super().eventFilter(obj, event)
-
-    def hovered_row(self):
-        return self._hover_row
+    def _table_hover_row(self):
+        try:
+            hover_row = self._table.hover_row()
+        except AttributeError:
+            return -1
+        return hover_row
 
     def sizeHint(self, option, index):
         return QSize(0, ROW_HEIGHT)
@@ -132,7 +153,7 @@ class InstalledTableDelegate(QStyledItemDelegate):
 
     def _paint_row_band(self, painter, rect, option):
         selected = bool(option.state & QStyle.StateFlag.State_Selected)
-        hovered = self.hovered_row() == option.index.row()
+        hovered = self._table_hover_row() == option.index.row()
 
         if selected:
             band = QRectF(rect.left() + 2, rect.top() + 1, rect.width() - 4, rect.height() - 2)
