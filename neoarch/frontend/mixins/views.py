@@ -26,6 +26,11 @@ from neoarch.frontend.components.packages_grid_view import PackagesGridView
 from neoarch.frontend.components.package_detail_card import PackageDetailCard
 from neoarch.frontend.components.loading_spinner import LoadingSpinner
 from neoarch.frontend.components.updates_table import UpdatesTable
+from neoarch.frontend.components.installed_table import (
+    InstalledTableDelegate,
+    ROLE_IS_DEP,
+    ROLE_HAS_UPDATE,
+)
 
 from neoarch.frontend.components.source_card import SourceCard
 from neoarch.frontend.components.flow_layout import FlowLayout
@@ -1062,6 +1067,7 @@ class _ViewsMixin:
         self.package_table.verticalHeader().setDefaultSectionSize(56)
         self.package_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.package_table.customContextMenuRequested.connect(self._on_package_context_menu)
+        self._default_item_delegate = self.package_table.itemDelegate()
         table_area_layout.addWidget(self.package_table, 1)
 
         # Redesigned updates table (hidden by default, used on the Updates page)
@@ -1957,6 +1963,20 @@ class _ViewsMixin:
         self.package_table.setWordWrap(True)
         self.package_table.verticalHeader().setDefaultSectionSize(56)
         self.package_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.package_table.setAlternatingRowColors(True)
+        default_delegate = getattr(self, "_default_item_delegate", None)
+        if default_delegate is not None:
+            self.package_table.setItemDelegate(default_delegate)
+        self.package_table.viewport().setMouseTracking(False)
+
+    def _install_installed_delegate(self):
+        if not hasattr(self, "_installed_delegate") or self._installed_delegate is None:
+            self._installed_delegate = InstalledTableDelegate(self.package_table)
+        self.package_table.setItemDelegate(self._installed_delegate)
+        self.package_table.setAlternatingRowColors(False)
+        self.package_table.setWordWrap(False)
+        self.package_table.setMouseTracking(True)
+        self.package_table.viewport().setMouseTracking(True)
 
     def update_table_columns(self, view_id):
         self._apply_common_table_style()
@@ -1975,6 +1995,7 @@ class _ViewsMixin:
             self.package_table.setColumnWidth(3, 120)
             self.package_table.setColumnWidth(4, 120)
             self.package_table.setColumnWidth(5, 100)
+            self._install_installed_delegate()
         elif view_id == "bundles":
             self.package_table.setColumnCount(4)
             self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "Source"])
@@ -2458,16 +2479,14 @@ class _ViewsMixin:
 
         if self.current_view == "installed" and pkg_data:
             self.package_table.setItem(row, 3, QTableWidgetItem(pkg_data.get('source', 'pacman')))
-            status = "⬆️ Update available" if pkg_data.get('has_update') else "✓ Up to date"
+            has_update = bool(pkg_data.get('has_update'))
+            status_item = QTableWidgetItem("Update available" if has_update else "Up to date")
+            status_item.setData(ROLE_HAS_UPDATE, has_update)
+            self.package_table.setItem(row, 4, status_item)
+
             explicit_set = getattr(self, '_explicit_packages', None)
             if explicit_set is not None and pkg_data.get('source') == 'pacman' and pkg_data.get('name') not in explicit_set:
-                status += " · dependency"
-            status_item = QTableWidgetItem(status)
-            if pkg_data.get('has_update'):
-                status_item.setForeground(QColor(255, 165, 0))
-            else:
-                status_item.setForeground(QColor(16, 185, 129))
-            self.package_table.setItem(row, 4, status_item)
+                name_item.setData(ROLE_IS_DEP, True)
 
             installed_sizes = getattr(self, '_installed_sizes', None) or {}
             size_b = installed_sizes.get(pkg_data.get('name'), 0)
