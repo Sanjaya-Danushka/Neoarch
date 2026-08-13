@@ -222,14 +222,10 @@ QLabel#sidebarLogo {{
 
 /* ── Nav badge (updates count) ──────────────────────────────────── */
 QLabel#navBadge {{
-    background-color: {_ACCENT};
-    color: #0C0C0E;
-    border-radius: 8px;
-    padding: 0 6px;
-    font-size: 10px;
+    color: {_ACCENT};
+    background: transparent;
+    font-size: 11px;
     font-weight: 700;
-    min-width: 16px;
-    min-height: 16px;
 }}
 
 /* ── Header ─────────────────────────────────────────────────────── */

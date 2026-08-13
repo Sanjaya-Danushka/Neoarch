@@ -268,25 +268,15 @@ class _ViewsMixin:
             icon_label.setPixmap(icon.pixmap(24, 24))
         lay.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignCenter)
 
-        # Badge for Updates (overlay, top-right)
+        # Badge for Updates (plain count text, anchored to the icon's top-right)
         if view_id == "updates":
             badge = QLabel(btn)
             badge.setObjectName("navBadge")
             badge.setFixedHeight(16)
             badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
             badge.setVisible(False)
-            badge.setStyleSheet(f"""
-                QLabel#navBadge {{
-                    background-color: {_C['accent']};
-                    color: #0C0C0E;
-                    border-radius: 7px;
-                    font-size: 9px;
-                    font-weight: 700;
-                    padding: 0 5px;
-                    min-width: 12px;
-                }}
-            """)
-            badge.move(28, 2)
+            badge.move(52, 2)
+            self.nav_badges[view_id] = badge
 
         btn.clicked.connect(lambda checked=False, v=view_id: self._handle_nav(v))
         self._nav_tooltips[view_id] = text
@@ -317,14 +307,17 @@ class _ViewsMixin:
                 if n > 0:
                     text = str(n)
                     badge.setText(text)
-                    # Dynamically size the badge to fit the text
-                    fm = badge.fontMetrics()
-                    w = max(18, fm.horizontalAdvance(text) + 8)
-                    badge.setFixedSize(w, 18)
-                    # Anchor to top-right of icon container
+                    badge.adjustSize()
+                    badge.setFixedHeight(16)
+                    # Anchor to the top-right corner of the icon tile
                     parent = badge.parentWidget()
                     if parent is not None:
-                        badge.move(max(0, parent.width() - badge.width()), 0)
+                        icon_lbl = parent.findChild(QLabel, "sidebarNavIcon")
+                        if icon_lbl is not None:
+                            g = icon_lbl.geometry()
+                            badge.move(g.right() - badge.width(), g.top() + 2)
+                        else:
+                            badge.move(max(0, parent.width() - badge.width() - 4), 2)
                     badge.setVisible(True)
                 else:
                     badge.setVisible(False)
@@ -1267,16 +1260,21 @@ class _ViewsMixin:
             update_btn.setStyleSheet(
                 """
                 QPushButton {
-                    background-color: transparent;
-                    color: #F0F0F0;
-                    border: 1px solid rgba(0, 191, 174, 0.3);
-                    border-radius: 6px;
-                    padding: 6px 12px;
-                    font-size: 12px;
+                    background-color: rgba(28, 30, 36, 0.75);
+                    color: #EDEDEF;
+                    border: 1px solid rgba(255,255,255,0.06);
+                    border-radius: 10px;
+                    padding: 8px 18px;
+                    font-size: 13px;
                     font-weight: 500;
                 }
-                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
-                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
+                QPushButton:hover {
+                    background-color: rgba(34, 36, 42, 0.85);
+                    border-color: rgba(255,255,255,0.12);
+                }
+                QPushButton:pressed {
+                    background-color: rgba(38, 40, 48, 0.9);
+                }
                 """
             )
             update_btn.clicked.connect(self.update_selected)
@@ -1287,23 +1285,27 @@ class _ViewsMixin:
             uninstall_btn.setStyleSheet(
                 """
                 QPushButton {
-                    background-color: transparent;
-                    color: #F0F0F0;
-                    border: 1px solid rgba(0, 191, 174, 0.3);
-                    border-radius: 6px;
-                    padding: 6px 12px;
-                    font-size: 12px;
-                    font-weight: 500;
+                    background-color: #FFFFFF;
+                    color: #0C0C0E;
+                    border: 1px solid rgba(255, 255, 255, 0.9);
+                    border-radius: 10px;
+                    padding: 8px 18px;
+                    font-size: 13px;
+                    font-weight: 600;
                 }
-                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
-                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
+                QPushButton:hover {
+                    background-color: #E8EAF0;
+                }
+                QPushButton:pressed {
+                    background-color: #D3D6DE;
+                }
                 """
             )
             uninstall_btn.clicked.connect(self.uninstall_selected)
             layout.addWidget(uninstall_btn)
 
             layout.addStretch()
-            self._add_right_toolbar_icons(layout, show_install_file=True, show_sudo=True)
+            self._add_right_toolbar_icons(layout, show_filter=False)
 
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "discover":

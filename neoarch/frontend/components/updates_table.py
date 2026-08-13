@@ -1242,6 +1242,31 @@ class _SkeletonOverlay(QWidget):
         self._phase = (self._phase + 1) % 60
         self.update()
 
+    def _columns(self):
+        """(x, width) for each table column, mirroring the real row layout."""
+        table = self.parentWidget()
+        try:
+            count = table.model.columnCount()
+            cols = [(table.columnViewportPosition(c), table.columnWidth(c))
+                    for c in range(count)]
+            if cols:
+                return cols
+        except Exception:
+            pass
+        return [(0, self.rect().width())]
+
+    def _bar(self, painter, r, radius, color):
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(color)
+        path = QPainterPath()
+        path.addRoundedRect(r, radius, radius)
+        painter.drawPath(path)
+
+    def _dot(self, painter, r, color):
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(color)
+        painter.drawEllipse(r)
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -1252,18 +1277,21 @@ class _SkeletonOverlay(QWidget):
         grad.setColorAt(1.0, _GLASS_BOTTOM)
         painter.fillRect(rect, grad)
 
+        cols = self._columns()
+
         rows = []
-        rh = 60
+        rh = 56
         for i in range(max(1, rect.height() // rh)):
             rows.append(QRectF(5, i * rh + 2, rect.width() - 10, rh - 4))
 
         gradient = QLinearGradient(0, 0, rect.width(), 0)
         x = (self._phase / 60.0) * (rect.width() + 200) - 100
         gradient.setColorAt(0.0, QColor(255, 255, 255, 0))
-        gradient.setColorAt(0.45, QColor(255, 255, 255, 16))
-        gradient.setColorAt(0.55, QColor(255, 255, 255, 26))
+        gradient.setColorAt(0.45, QColor(255, 255, 255, 14))
+        gradient.setColorAt(0.55, QColor(255, 255, 255, 24))
         gradient.setColorAt(1.0, QColor(255, 255, 255, 0))
 
+        bar = QColor(255, 255, 255, 30)
         for i, row in enumerate(rows):
             path = QPainterPath()
             path.addRoundedRect(row, 9, 9)
@@ -1278,18 +1306,48 @@ class _SkeletonOverlay(QWidget):
             painter.setPen(sep_pen)
             painter.drawLine(QPointF(row.left() + 5, row.bottom()), QPointF(row.right() - 5, row.bottom()))
 
-            if i >= 8:
+            if i >= 8 or len(cols) < 7:
                 continue
-            # checkbox
-            painter.setBrush(QColor(255, 255, 255, 16))
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.drawRoundedRect(QRectF(row.left() + 14, row.center().y() - 9, 18, 18), 5, 5)
-            # tile
-            painter.drawRoundedRect(QRectF(row.left() + 52, row.top() + 12, 36, 36), 9, 9)
-            # name bar
-            painter.drawRoundedRect(QRectF(row.left() + 98, row.top() + 15, 180, 10), 5, 5)
-            # desc bar
-            painter.drawRoundedRect(QRectF(row.left() + 98, row.top() + 33, 260, 8), 4, 4)
+
+            cy = row.center().y()
+            x0, w0 = cols[0]
+            x1, w1 = cols[1]
+            x2, w2 = cols[2]
+            x3, w3 = cols[3]
+            x4, w4 = cols[4]
+            x5, w5 = cols[5]
+            x6, w6 = cols[6]
+
+            # column 0: checkbox placeholder
+            self._bar(painter, QRectF(x0 + (w0 - 18) / 2, cy - 9, 18, 18), 5, bar)
+
+            # column 1: source icon tile + name/description bars
+            ix = x1 + 12
+            self._bar(painter, QRectF(ix, cy - 9, 18, 18), 5, bar)
+            avail_w = max(20, (x1 + w1) - (ix + 18 + 10))
+            name_w = avail_w * (0.45 + 0.1 * ((i * 7) % 5) / 4.0)
+            self._bar(painter, QRectF(ix + 18 + 10, row.top() + 8, name_w, 13), 4, bar)
+            desc_w = avail_w * (0.6 + 0.08 * ((i * 3) % 4) / 3.0)
+            self._bar(painter, QRectF(ix + 18 + 10, row.top() + 27, desc_w, 8), 4, bar)
+
+            # column 2: version bar
+            vw = w2 * (0.5 + 0.08 * ((i * 5) % 3) / 2.0)
+            self._bar(painter, QRectF(x2 + 6, cy - 6, vw, 12), 4, bar)
+
+            # column 3: size bar (right aligned like the real cells)
+            sw = w3 * 0.5
+            self._bar(painter, QRectF(x3 + w3 - sw - 10, cy - 5, sw, 10), 4, bar)
+
+            # column 4: source chip placeholder
+            self._bar(painter, QRectF(x4 + 12, cy - 9, max(34, w4 - 24), 18), 9, bar)
+
+            # column 5: status chip placeholder
+            self._bar(painter, QRectF(x5 + 12, cy - 9, max(34, w5 - 24), 18), 9, bar)
+
+            # column 6: action dots placeholder
+            for k in range(3):
+                self._dot(painter, QRectF(x6 + (w6 - 12) / 2 + k * 5, cy - 1.5, 3, 3), bar)
+
 
 
 class _EmptyBadge(QWidget):

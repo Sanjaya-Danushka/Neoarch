@@ -89,3 +89,25 @@ def test_empty_state_hidden_while_loading(qapp):
     table.set_loading(False)
     assert table._skeleton.isHidden() is True
     assert table._empty.isHidden() is False
+
+
+def test_skeleton_mirrors_table_columns_and_paints(qapp):
+    from PyQt6.QtGui import QPixmap
+
+    table = _make_table()
+    table.resize(980, 560)
+    table.show()
+    table.set_loading(True)
+    qapp.processEvents()
+
+    cols = table._skeleton._columns()
+    assert len(cols) == table.model.columnCount()
+    assert cols[0] == (0, 46)
+    assert cols[6][1] == 44
+
+    for phase in (5, 30):
+        table._skeleton._phase = phase
+        pix = QPixmap(table.size())
+        table.render(pix)
+        assert not pix.isNull()
+
