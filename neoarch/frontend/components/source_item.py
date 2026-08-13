@@ -151,7 +151,7 @@ class SourceItem(QWidget):
         self.init_ui(count, size)
 
     def init_ui(self, count=None, size=None):
-        self.setFixedHeight(40)
+        self.setFixedHeight(30)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(12, 4, 12, 4)

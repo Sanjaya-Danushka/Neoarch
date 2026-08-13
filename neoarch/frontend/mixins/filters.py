@@ -202,8 +202,29 @@ class _FiltersMixin:
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         scroll.setStyleSheet("""
             QScrollArea { background: transparent; border: none; }
+            QScrollArea > QWidget > QWidget { background: transparent; }
+            QScrollBar:vertical {
+                background: transparent;
+                width: 6px;
+                margin: 0;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255, 255, 255, 0.10);
+                min-height: 30px;
+                border-radius: 3px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: rgba(255, 255, 255, 0.18);
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: transparent;
+            }
         """)
 
         container = QWidget()
@@ -401,11 +422,71 @@ class _FiltersMixin:
         self.sources_layout.addWidget(self.source_card)
         self.source_card.health_action.connect(self.on_installed_health_action)
         self.source_card.sort_changed.connect(self.apply_filters)
+        self.source_card.maintenance_action.connect(self.on_installed_maintenance_action)
         self.source_card.configure_sections(
             show_search=False, show_health=True, show_counts=True, show_summary=True, show_sort=True,
+            show_quick_actions=True,
         )
         self._refresh_installed_sources()
         self._refresh_installed_health_async()
+
+    def on_installed_maintenance_action(self, action):
+        if action == "purge_cache":
+            def _run():
+                try:
+                    from neoarch.backend.services.hygiene import purge_cache
+                    ok = purge_cache(retain=3)
+                except Exception:
+                    ok = False
+                self.ui_call.emit(lambda: self._on_cache_cleared(ok))
+            try:
+                from threading import Thread
+                Thread(target=_run, daemon=True).start()
+            except Exception:
+                pass
+        elif action == "update_all":
+            try:
+                self.perform_update_all()
+            except Exception:
+                pass
+        elif action == "clean_orphans":
+            try:
+                self.cleanup_orphans()
+            except Exception:
+                pass
+
+    def _on_cache_cleared(self, ok):
+        if ok:
+            self._notify("Cache cleared", "Old package versions were removed from the cache.",
+                         level="success", event="install")
+        else:
+            self._notify("Cache clear failed", "Could not trim the package cache.",
+                         level="error", event="errors")
+        self._refresh_installed_storage_async()
+
+    def _refresh_installed_storage_async(self):
+        """Fetch disk usage and cache size in the background."""
+        try:
+            def _run():
+                try:
+                    from neoarch.backend.services.hygiene import disk_usage, package_cache_size
+                    disk = disk_usage("/")
+                    cache = package_cache_size()
+                except Exception:
+                    disk, cache = {}, 0
+                self.ui_call.emit(lambda: self._apply_installed_storage(disk, cache))
+            from threading import Thread
+            Thread(target=_run, daemon=True).start()
+        except Exception:
+            pass
+
+    def _apply_installed_storage(self, disk, cache):
+        if self.current_view != "installed" or not getattr(self, 'source_card', None):
+            return
+        try:
+            self.source_card.set_storage(disk=disk, cache_size=cache)
+        except Exception:
+            pass
 
     def on_installed_health_action(self, action):
         if action == "orphans":
@@ -457,21 +538,21 @@ class _FiltersMixin:
         try:
             def _run_counts():
                 try:
-                    from neoarch.backend.services.hygiene import list_orphans, list_pacnew
+                    from neoarch.backend.services.hygiene import list_orphans, list_pacnew, list_explicit_packages
                     orphans = list_orphans()
                     pacnew = list_pacnew()
+                    explicit = list_explicit_packages()
                 except Exception:
-                    orphans, pacnew = [], []
-                self.ui_call.emit(lambda: self._apply_installed_counts(orphans, pacnew))
+                    orphans, pacnew, explicit = [], [], set()
+                self.ui_call.emit(lambda: self._apply_installed_counts(orphans, pacnew, explicit))
 
             def _run_sizes():
                 try:
-                    from neoarch.backend.services.hygiene import list_installed_sizes, list_explicit_packages
+                    from neoarch.backend.services.hygiene import list_installed_sizes
                     sizes = list_installed_sizes()
-                    explicit = list_explicit_packages()
                 except Exception:
-                    sizes, explicit = {}, set()
-                self.ui_call.emit(lambda: self._apply_installed_sizes(sizes, explicit))
+                    sizes = {}
+                self.ui_call.emit(lambda: self._apply_installed_sizes(sizes))
 
             from threading import Thread
             Thread(target=_run_counts, daemon=True).start()
@@ -479,25 +560,20 @@ class _FiltersMixin:
         except Exception:
             pass
 
-    def _apply_installed_counts(self, orphans, pacnew):
+    def _apply_installed_counts(self, orphans, pacnew, explicit=None):
         if self.current_view != "installed" or not getattr(self, 'source_card', None):
             return
         self._orphans_list = orphans or []
         self._pacnew_list = pacnew or []
-        self._refresh_installed_sources()
-
-    def _apply_installed_sizes(self, sizes, explicit=None):
-        if self.current_view != "installed" or not getattr(self, 'source_card', None):
-            return
-        self._installed_sizes = sizes or {}
         if explicit is not None:
             self._explicit_packages = explicit
         self._refresh_installed_sources()
-        if explicit is not None:
-            try:
-                self.apply_filters()
-            except Exception:
-                pass
+
+    def _apply_installed_sizes(self, sizes=None):
+        if self.current_view != "installed" or not getattr(self, 'source_card', None):
+            return
+        self._installed_sizes = sizes or {}
+        self._refresh_installed_sources()
 
     def update_plugins_sources(self):
         """Update plugins sources using the same SourceCard component as installed section"""

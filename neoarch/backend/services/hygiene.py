@@ -27,6 +27,7 @@ __all__ = [
     "mark_news_seen", "news_seen", "news_seen_status", "news_unseen_count",
     "list_corrupted_packages", "remove_corrupted_packages",
     "purge_cache", "purge_flatpak_unused",
+    "disk_usage", "package_cache_size",
 ]
 
 NEWS_URL = "https://archlinux.org/feeds/news/"
@@ -463,6 +464,32 @@ def purge_cache(retain: int = 3) -> bool:
         return False
     result = _run_sudo(["paccache", "-r", "-k", str(retain)], timeout=900)
     return result.returncode == 0
+
+
+def disk_usage(path: str = "/") -> Dict[str, int]:
+    """Filesystem usage for a mount point as {total, used, free} bytes."""
+    try:
+        import shutil
+        u = shutil.disk_usage(path)
+        return {"total": u.total, "used": u.used, "free": u.free}
+    except Exception:
+        return {}
+
+
+def package_cache_size() -> int:
+    """Total size of the pacman package cache in bytes (0 on failure)."""
+    total = 0
+    cache_dir = "/var/cache/pacman/pkg"
+    try:
+        for root, _, files in os.walk(cache_dir):
+            for f in files:
+                try:
+                    total += os.path.getsize(os.path.join(root, f))
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return total
 
 
 def purge_flatpak_unused(progress_cb=None, finished_cb=None) -> bool:

@@ -18,6 +18,49 @@ _MUTED = "#5C5E66"
 _BORDER = "rgba(255, 255, 255, 0.06)"
 
 
+def _fmt_bytes(b):
+    try:
+        b = int(b or 0)
+        if b >= 1024 ** 4:
+            return f"{b / 1024 ** 4:.2f} TiB"
+        if b >= 1024 ** 3:
+            return f"{b / 1024 ** 3:.1f} GiB"
+        if b >= 1024 ** 2:
+            return f"{b / 1024 ** 2:.0f} MiB"
+        if b >= 1024:
+            return f"{b / 1024:.0f} KiB"
+        return f"{b} B"
+    except Exception:
+        return "0 B"
+
+
+class _DiskBar(QWidget):
+    """Thin usage bar that fills proportionally to the stored fraction."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._percent = 0.0
+
+    def set_percent(self, percent):
+        self._percent = max(0.0, min(1.0, float(percent)))
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        w, h = self.width(), self.height()
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(255, 255, 255, 12))
+        painter.drawRoundedRect(QRectF(0, 0, w, h), h / 2, h / 2)
+        fill = max(self._percent, 0.0)
+        if fill > 0:
+            color = QColor("#22C55E") if fill < 0.7 else (QColor("#F59E0B") if fill < 0.9 else QColor("#EF4444"))
+            painter.setBrush(color)
+            painter.drawRoundedRect(QRectF(0, 0, max(w * fill, h), h), h / 2, h / 2)
+        painter.end()
+        super().paintEvent(event)
+
+
 class _RadioRow(QWidget):
     """macOS preference-style radio selection row with smooth animation.
 
@@ -210,7 +253,7 @@ class _HealthRow(QWidget):
         self.color = QColor(color)
         self._count = 0
         self._hover = False
-        self.setFixedHeight(30)
+        self.setFixedHeight(22)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setMouseTracking(True)
 
@@ -315,7 +358,7 @@ class _HealthRing(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._score = 100
-        self.setFixedSize(58, 58)
+        self.setFixedSize(44, 44)
 
     def set_score(self, score):
         self._score = max(0, min(100, int(score)))
@@ -489,6 +532,7 @@ class SourceCard(QWidget):
     status_filter_changed = pyqtSignal(list)
     sort_changed = pyqtSignal(str)
     health_action = pyqtSignal(str)
+    maintenance_action = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -511,17 +555,35 @@ class SourceCard(QWidget):
         self.setAutoFillBackground(False)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout.setSpacing(10)
 
         self._build_header(layout)
+        layout.addStretch(1)
         self._build_sources_container(layout)
+        layout.addStretch(1)
         self._build_health(layout)
+        layout.addStretch(1)
         self._build_search_mode(layout)
+        layout.addStretch(1)
         self._build_status_filter(layout)
+        layout.addStretch(1)
         self._build_sort(layout)
+        layout.addStretch(1)
+        self._build_storage(layout)
+        layout.addStretch(1)
+        self._build_stats(layout)
+        layout.addStretch(1)
+        self._build_quick_actions(layout)
+        layout.addStretch(1)
         self._build_actions(layout)
         layout.addStretch(1)
         self._build_summary(layout)
+
+        for w in (self.sources_container, self.health_widget, self.search_mode_widget,
+                  self.status_widget, self.sort_widget, self.storage_widget,
+                  self.stats_widget, self.quick_actions_widget, self.actions_widget,
+                  self.summary_widget):
+            w.setSizePolicy(w.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Maximum)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -631,7 +693,7 @@ class SourceCard(QWidget):
         self.sources_container = QWidget()
         self.sources_container.setObjectName("sourcesContainer")
         self.sources_layout = QVBoxLayout(self.sources_container)
-        self.sources_layout.setContentsMargins(12, 2, 12, 5)
+        self.sources_layout.setContentsMargins(12, 4, 12, 6)
         self.sources_layout.setSpacing(4)
         layout.addWidget(self.sources_container)
 
@@ -645,13 +707,13 @@ class SourceCard(QWidget):
         health_layout.addWidget(self._section_header("System Health"))
 
         top = QHBoxLayout()
-        top.setSpacing(12)
+        top.setSpacing(14)
 
         self.health_ring = _HealthRing()
         top.addWidget(self.health_ring, 0, Qt.AlignmentFlag.AlignVCenter)
 
         status_col = QVBoxLayout()
-        status_col.setSpacing(2)
+        status_col.setSpacing(4)
         self.health_status_title = QLabel("System Healthy")
         self.health_status_title.setStyleSheet("""
             color: #22C55E;
@@ -672,7 +734,6 @@ class SourceCard(QWidget):
         """)
         status_col.addWidget(self.health_status_title)
         status_col.addWidget(self.health_status_subtitle)
-        status_col.addStretch()
         top.addLayout(status_col, 1)
 
         health_layout.addLayout(top)
@@ -736,7 +797,7 @@ class SourceCard(QWidget):
         self.search_mode_widget = QWidget()
         self.search_mode_widget.setObjectName("searchModeWidget")
         search_layout = QVBoxLayout(self.search_mode_widget)
-        search_layout.setContentsMargins(16, 6, 16, 5)
+        search_layout.setContentsMargins(16, 6, 16, 4)
         search_layout.setSpacing(1)
 
         search_layout.addWidget(self._section_header("Search Mode"))
@@ -759,7 +820,7 @@ class SourceCard(QWidget):
     def _build_summary(self, layout):
         self.summary_widget = QWidget()
         self.summary_widget.setObjectName("summaryWidget")
-        self.summary_widget.setMinimumHeight(50)
+        self.summary_widget.setMinimumHeight(44)
         s_layout = QHBoxLayout(self.summary_widget)
         s_layout.setContentsMargins(16, 8, 16, 8)
         s_layout.setSpacing(0)
@@ -854,7 +915,7 @@ class SourceCard(QWidget):
         self.status_widget = QWidget()
         self.status_widget.setObjectName("statusWidget")
         status_layout = QVBoxLayout(self.status_widget)
-        status_layout.setContentsMargins(16, 6, 16, 5)
+        status_layout.setContentsMargins(16, 6, 16, 4)
         status_layout.setSpacing(4)
 
         status_layout.addWidget(self._section_header("Update Type"))
@@ -886,15 +947,15 @@ class SourceCard(QWidget):
         self.sort_widget = QWidget()
         self.sort_widget.setObjectName("sortWidget")
         sort_layout = QVBoxLayout(self.sort_widget)
-        sort_layout.setContentsMargins(16, 6, 16, 5)
-        sort_layout.setSpacing(4)
+        sort_layout.setContentsMargins(16, 6, 16, 4)
+        sort_layout.setSpacing(6)
 
         sort_layout.addWidget(self._section_header("Sort By"))
 
         self.sort_btn = QPushButton()
         self.sort_btn.setObjectName("sortBtn")
         self.sort_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.sort_btn.setFixedHeight(26)
+        self.sort_btn.setFixedHeight(24)
         self.sort_btn.setStyleSheet(self._sort_btn_style())
         self.sort_btn.clicked.connect(self._open_sort_menu)
         sort_layout.addWidget(self.sort_btn)
@@ -958,6 +1019,186 @@ class SourceCard(QWidget):
         self.sort_widget.setVisible(False)
         layout.addWidget(self.sort_widget)
 
+    def _build_storage(self, layout):
+        self.storage_widget = QWidget()
+        self.storage_widget.setObjectName("storageWidget")
+        storage_layout = QVBoxLayout(self.storage_widget)
+        storage_layout.setContentsMargins(16, 8, 16, 6)
+        storage_layout.setSpacing(4)
+
+        storage_layout.addWidget(self._section_header("Storage"))
+
+        self.disk_row = QHBoxLayout()
+        self.disk_row.setSpacing(8)
+        disk_label = QLabel("Root Filesystem")
+        disk_label.setStyleSheet("""
+            color: #EDEDEF;
+            font-size: 12px;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+        self.disk_used_label = QLabel("")
+        self.disk_used_label.setStyleSheet("""
+            color: #A7B1C2;
+            font-size: 11px;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+        self.disk_used_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.disk_row.addWidget(disk_label, 1)
+        self.disk_row.addWidget(self.disk_used_label, 0)
+        storage_layout.addLayout(self.disk_row)
+
+        self.disk_bar = _DiskBar()
+        self.disk_bar.setFixedHeight(6)
+        self.disk_bar.setObjectName("diskBar")
+        self._disk_percent = 0.0
+        storage_layout.addWidget(self.disk_bar)
+
+        cache_row = QHBoxLayout()
+        cache_row.setSpacing(8)
+        cache_label = QLabel("Package Cache")
+        cache_label.setStyleSheet("""
+            color: #EDEDEF;
+            font-size: 12px;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+        self.cache_size_label = QLabel("")
+        self.cache_size_label.setStyleSheet("""
+            color: #3B82F6;
+            font-size: 11px;
+            font-weight: 600;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+        self.clear_cache_btn = QPushButton("Clear")
+        self.clear_cache_btn.setObjectName("clearCacheBtn")
+        self.clear_cache_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.clear_cache_btn.setFixedHeight(22)
+        self.clear_cache_btn.setStyleSheet("""
+            QPushButton#clearCacheBtn {
+                color: #3B82F6;
+                background: rgba(59, 130, 246, 0.10);
+                border: 1px solid rgba(59, 130, 246, 0.25);
+                border-radius: 11px;
+                font-size: 10px;
+                font-weight: 600;
+                padding: 0 10px;
+            }
+            QPushButton#clearCacheBtn:hover {
+                background: rgba(59, 130, 246, 0.20);
+                border-color: rgba(59, 130, 246, 0.40);
+            }
+        """)
+        self.clear_cache_btn.clicked.connect(lambda: self.maintenance_action.emit("purge_cache"))
+        cache_row.addWidget(cache_label, 1)
+        cache_row.addWidget(self.cache_size_label, 0)
+        cache_row.addWidget(self.clear_cache_btn, 0)
+        storage_layout.addLayout(cache_row)
+
+        self.storage_widget.setStyleSheet(self._section_stylesheet())
+        self.storage_widget.setVisible(False)
+        layout.addWidget(self.storage_widget)
+
+    def set_storage(self, disk=None, cache_size=None):
+        if disk and disk.get('total'):
+            total = disk['total']
+            used = min(disk.get('used', 0), total)
+            self._disk_percent = used / total
+            self.disk_used_label.setText(
+                f"{_fmt_bytes(used)} / {_fmt_bytes(total)}")
+            self.disk_used_label.setVisible(True)
+        else:
+            self._disk_percent = 0.0
+            self.disk_used_label.setText("")
+            self.disk_used_label.setVisible(False)
+        if cache_size is not None:
+            self.cache_size_label.setText(_fmt_bytes(cache_size) if cache_size else "0 B")
+            self.cache_size_label.setVisible(True)
+        else:
+            self.cache_size_label.setText("")
+            self.cache_size_label.setVisible(False)
+        self.disk_bar.set_percent(self._disk_percent)
+
+    def _build_stats(self, layout):
+        self.stats_widget = QWidget()
+        self.stats_widget.setObjectName("statsWidget")
+        st_layout = QVBoxLayout(self.stats_widget)
+        st_layout.setContentsMargins(16, 8, 16, 6)
+        st_layout.setSpacing(2)
+
+        st_layout.addWidget(self._section_header("Package Stats"))
+
+        self._stat_labels = {}
+        defs = [
+            ("explicit", "Explicit"),
+            ("deps", "Dependencies"),
+            ("outdated", "Updates Available"),
+        ]
+        for key, title in defs:
+            row = QHBoxLayout()
+            row.setSpacing(8)
+            lbl = QLabel(title)
+            lbl.setStyleSheet("color: #A7B1C2; font-size: 11px; font-weight: 500;"
+                              "background: transparent; border: none; padding: 0;")
+            val = QLabel("0")
+            val.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            val.setStyleSheet("color: #EDEDEF; font-size: 12px; font-weight: 600;"
+                              "background: transparent; border: none; padding: 0;")
+            row.addWidget(lbl, 1)
+            row.addWidget(val, 0)
+            st_layout.addLayout(row)
+            self._stat_labels[key] = val
+
+        self.stats_widget.setStyleSheet(self._section_stylesheet())
+        self.stats_widget.setVisible(False)
+        layout.addWidget(self.stats_widget)
+
+    def set_stats(self, explicit=None, deps=None, outdated=None):
+        if explicit is not None:
+            self._stat_labels["explicit"].setText(f"{int(explicit):,}")
+        if deps is not None:
+            self._stat_labels["deps"].setText(f"{int(deps):,}")
+        if outdated is not None:
+            label = self._stat_labels["outdated"]
+            label.setText(f"{int(outdated):,}")
+            label.setStyleSheet(
+                "color: #60A5FA; font-size: 12px; font-weight: 700;"
+                "background: transparent; border: none; padding: 0;"
+            )
+
+    def _build_quick_actions(self, layout):
+        self.quick_actions_widget = QWidget()
+        self.quick_actions_widget.setObjectName("quickActionsWidget")
+        qa_layout = QVBoxLayout(self.quick_actions_widget)
+        qa_layout.setContentsMargins(16, 8, 16, 6)
+        qa_layout.setSpacing(4)
+
+        qa_layout.addWidget(self._section_header("Quick Actions"))
+
+        self._quick_action_rows = {}
+        defs = [
+            ("update_all", "Update All", "\u21BB"),
+            ("clean_orphans", "Clean Orphans", "\u232B"),
+        ]
+        for key, title, icon in defs:
+            row = _ActionRow(title, icon)
+            row.clicked.connect(lambda k=key: self.maintenance_action.emit(k))
+            qa_layout.addWidget(row)
+            self._quick_action_rows[key] = row
+
+        self.quick_actions_widget.setStyleSheet(self._section_stylesheet())
+        self.quick_actions_widget.setVisible(False)
+        layout.addWidget(self.quick_actions_widget)
+
     def _sort_btn_style(self):
         return """
             QPushButton#sortBtn {
@@ -1006,7 +1247,7 @@ class SourceCard(QWidget):
         self.actions_widget = QWidget()
         self.actions_widget.setObjectName("actionsWidget")
         actions_layout = QVBoxLayout(self.actions_widget)
-        actions_layout.setContentsMargins(16, 6, 16, 7)
+        actions_layout.setContentsMargins(16, 6, 16, 4)
         actions_layout.setSpacing(1)
 
         actions_layout.addWidget(self._section_header("Actions"))
@@ -1159,16 +1400,47 @@ class SourceCard(QWidget):
 
     def configure_sections(self, show_status=False, show_sort=False, show_actions=False,
                            show_summary=False, show_search=True, show_counts=False,
-                           show_health=False):
+                           show_health=False, show_storage=False, show_quick_actions=False,
+                           show_stats=False):
         self.status_widget.setVisible(show_status)
         self.sort_widget.setVisible(show_sort)
         self.actions_widget.setVisible(show_actions)
         self.summary_widget.setVisible(show_summary)
         self.search_mode_widget.setVisible(show_search)
         self.health_widget.setVisible(show_health)
+        self.storage_widget.setVisible(show_storage)
+        self.quick_actions_widget.setVisible(show_quick_actions)
+        self.stats_widget.setVisible(show_stats)
+        self._balance_sections()
         if not show_counts:
             for item in self.sources.values():
                 item.count_label.setVisible(False)
+
+    def _balance_sections(self):
+        """Distribute leftover vertical space evenly between visible sections."""
+        layout = self.layout()
+        layout_order = []
+        for i in range(layout.count()):
+            item = layout.itemAt(i)
+            if item.widget() is not None:
+                layout_order.append((i, "widget", item.widget()))
+            elif item.spacerItem() is not None:
+                layout_order.append((i, "spacer", None))
+        for idx, _, _ in layout_order:
+            layout.setStretch(idx, 0)
+        visible = [w for _, kind, w in layout_order if kind == "widget" and w.isVisible()]
+        if len(visible) < 2:
+            return
+        for idx, kind, w in layout_order:
+            if kind != "widget" or w is not visible[-1]:
+                continue
+            for j in range(idx + 1, layout.count()):
+                item = layout.itemAt(j)
+                if item.widget() is not None:
+                    break
+                if item.spacerItem() is not None:
+                    layout.setStretch(j, 1)
+                    break
 
     def _on_radio_clicked(self, radio_id):
         for rid, row in self._radio_rows:
