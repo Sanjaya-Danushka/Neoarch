@@ -704,7 +704,7 @@ class SourceCard(QWidget):
         self._health_rows["pacnew"].set_count(pacnew)
         self._health_rows["outdated"].set_count(outdated)
         issues = orphans + pacnew + outdated
-        score = max(0, 100 - (orphans * 8 + pacnew * 6 + outdated * 3))
+        score = max(10, 100 - round(issues * 100 / 150))
         self.health_ring.set_score(score)
         if issues == 0:
             self.health_status_title.setText("System Healthy")

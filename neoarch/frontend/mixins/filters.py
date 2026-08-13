@@ -453,28 +453,42 @@ class _FiltersMixin:
             pass
 
     def _refresh_installed_health_async(self):
-        """Fetch orphans, .pacnew files, installed sizes, and explicit set in background."""
+        """Fetch orphan/pacnew counts first (fast), then sizes (slow) in background."""
         try:
-            def _run():
+            def _run_counts():
                 try:
-                    from neoarch.backend.services.hygiene import list_orphans, list_pacnew, list_installed_sizes, list_explicit_packages
+                    from neoarch.backend.services.hygiene import list_orphans, list_pacnew
                     orphans = list_orphans()
                     pacnew = list_pacnew()
+                except Exception:
+                    orphans, pacnew = [], []
+                self.ui_call.emit(lambda: self._apply_installed_counts(orphans, pacnew))
+
+            def _run_sizes():
+                try:
+                    from neoarch.backend.services.hygiene import list_installed_sizes, list_explicit_packages
                     sizes = list_installed_sizes()
                     explicit = list_explicit_packages()
                 except Exception:
-                    orphans, pacnew, sizes, explicit = [], [], {}, set()
-                self.ui_call.emit(lambda: self._apply_installed_health(orphans, pacnew, sizes, explicit))
+                    sizes, explicit = {}, set()
+                self.ui_call.emit(lambda: self._apply_installed_sizes(sizes, explicit))
+
             from threading import Thread
-            Thread(target=_run, daemon=True).start()
+            Thread(target=_run_counts, daemon=True).start()
+            Thread(target=_run_sizes, daemon=True).start()
         except Exception:
             pass
 
-    def _apply_installed_health(self, orphans, pacnew, sizes, explicit=None):
+    def _apply_installed_counts(self, orphans, pacnew):
         if self.current_view != "installed" or not getattr(self, 'source_card', None):
             return
         self._orphans_list = orphans or []
         self._pacnew_list = pacnew or []
+        self._refresh_installed_sources()
+
+    def _apply_installed_sizes(self, sizes, explicit=None):
+        if self.current_view != "installed" or not getattr(self, 'source_card', None):
+            return
         self._installed_sizes = sizes or {}
         if explicit is not None:
             self._explicit_packages = explicit
