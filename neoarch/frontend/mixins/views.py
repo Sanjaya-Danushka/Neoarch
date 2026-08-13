@@ -45,6 +45,16 @@ _C = {
 }
 
 
+def _fmt_size(b):
+    try:
+        mb = float(b) / (1024 * 1024)
+        if mb >= 1024:
+            return f"{mb / 1024:.2f} GiB"
+        return f"{mb:.1f} MiB"
+    except Exception:
+        return "—"
+
+
 class _ViewsMixin:
     """Mixin providing view/display/navigation methods for the main window."""
 
@@ -1951,18 +1961,20 @@ class _ViewsMixin:
     def update_table_columns(self, view_id):
         self._apply_common_table_style()
         if view_id == "installed":
-            self.package_table.setColumnCount(5)
-            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "Source", "Status"])
+            self.package_table.setColumnCount(6)
+            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "Source", "Status", "Size"])
             self.package_table.setObjectName("")
             self.package_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
             self.package_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
             self.package_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
             self.package_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
             self.package_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
+            self.package_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Interactive)
             self.package_table.setColumnWidth(0, 48)
             self.package_table.setColumnWidth(2, 140)
             self.package_table.setColumnWidth(3, 120)
             self.package_table.setColumnWidth(4, 120)
+            self.package_table.setColumnWidth(5, 100)
         elif view_id == "bundles":
             self.package_table.setColumnCount(4)
             self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "Source"])
@@ -2447,12 +2459,22 @@ class _ViewsMixin:
         if self.current_view == "installed" and pkg_data:
             self.package_table.setItem(row, 3, QTableWidgetItem(pkg_data.get('source', 'pacman')))
             status = "⬆️ Update available" if pkg_data.get('has_update') else "✓ Up to date"
+            explicit_set = getattr(self, '_explicit_packages', None)
+            if explicit_set is not None and pkg_data.get('source') == 'pacman' and pkg_data.get('name') not in explicit_set:
+                status += " · dependency"
             status_item = QTableWidgetItem(status)
             if pkg_data.get('has_update'):
                 status_item.setForeground(QColor(255, 165, 0))
             else:
                 status_item.setForeground(QColor(16, 185, 129))
             self.package_table.setItem(row, 4, status_item)
+
+            installed_sizes = getattr(self, '_installed_sizes', None) or {}
+            size_b = installed_sizes.get(pkg_data.get('name'), 0)
+            size_item = QTableWidgetItem(_fmt_size(size_b) if size_b else "—")
+            size_item.setForeground(QColor(139, 141, 151))
+            size_item.setToolTip(f"{size_b:,} bytes on disk" if size_b else "Size not known")
+            self.package_table.setItem(row, 5, size_item)
         elif self.package_table.columnCount() > 3:
             new_version_item = QTableWidgetItem(new_version)
             if self.current_view == "updates":
@@ -2787,6 +2809,8 @@ class _ViewsMixin:
                 if status_item:
                     has_update = 'Update' in status_item.text()
                 installed = True
+                installed_sizes = getattr(self, '_installed_sizes', None) or {}
+                size_b = installed_sizes.get(name, 0)
             elif self.current_view == "updates":
                 source_item = self.package_table.item(row, 4)
                 source = source_item.text() if source_item else 'pacman'
@@ -2808,11 +2832,37 @@ class _ViewsMixin:
                 'installed': installed,
                 'has_update': has_update,
                 'description': description,
+                'installed_size': size_b if self.current_view == "installed" else 0,
                 '_view': self.current_view,
             }
             self.package_detail_card.show_package(pkg_data)
+            if self.current_view == "installed" and source.lower() in ("pacman", "aur"):
+                self._enrich_installed_detail(name)
         except Exception:
             self.package_detail_card.clear()
+
+    def _enrich_installed_detail(self, name):
+        """Fetch install reason + reverse deps for an installed package off the UI thread."""
+
+        def _run():
+            try:
+                from neoarch.backend.services.hygiene import package_info
+                info = package_info(name)
+            except Exception:
+                info = {}
+            self.ui_call.emit(lambda: self._apply_installed_detail(name, info))
+
+        Thread(target=_run, daemon=True).start()
+
+    def _apply_installed_detail(self, name, info):
+        try:
+            card = self.package_detail_card
+            current = card._pkg_data or {}
+            if current.get('name') != name:
+                return
+            card.set_extra_info(info)
+        except Exception:
+            pass
 
     def _check_updates_for_detail(self):
         pkg = getattr(self.package_detail_card, '_pkg_data', None)

@@ -137,6 +137,16 @@ SOURCE_COLORS = {
 }
 
 
+def _fmt_size(b):
+    try:
+        mb = float(b) / (1024 * 1024)
+        if mb >= 1024:
+            return f"{mb / 1024:.2f} GiB"
+        return f"{mb:.1f} MiB"
+    except Exception:
+        return "—"
+
+
 class PackageDetailCard(QFrame):
     install_requested = pyqtSignal()
     update_requested = pyqtSignal()
@@ -248,6 +258,35 @@ class PackageDetailCard(QFrame):
         content.addWidget(self.source_row)
         self.id_row = _detail_row("ID", "")
         content.addWidget(self.id_row)
+
+        self.reason_row = _detail_row("Reason", "")
+        self.reason_row.setVisible(False)
+        content.addWidget(self.reason_row)
+
+        self.size_row = _detail_row("Size", "")
+        self.size_row.setVisible(False)
+        content.addWidget(self.size_row)
+
+        # ── Reverse dependencies ──
+        self.revdeps_widget = QWidget()
+        self.revdeps_widget.setStyleSheet("background: transparent;")
+        self.revdeps_layout = QVBoxLayout(self.revdeps_widget)
+        self.revdeps_layout.setContentsMargins(0, 0, 0, 0)
+        self.revdeps_layout.setSpacing(0)
+
+        content.addSpacing(12)
+        content.addWidget(_make_sep())
+        content.addSpacing(10)
+        content.addWidget(_section_title("Required By"))
+        content.addSpacing(6)
+        self.revdeps_label = QLabel()
+        self.revdeps_label.setStyleSheet(
+            f"color: {_C['text_sec']}; font-size: 12px; background: transparent;"
+        )
+        self.revdeps_label.setWordWrap(True)
+        self.revdeps_label.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.revdeps_layout.addWidget(self.revdeps_label)
+        content.addWidget(self.revdeps_widget)
 
         # ── Description ──
         content.addSpacing(12)
@@ -385,6 +424,28 @@ class PackageDetailCard(QFrame):
         else:
             self.desc_label.setText("No description available.")
 
+        # Installed-only extras: install reason, size, reverse dependencies
+        install_reason = pkg_data.get("install_reason", "")
+        installed_size = pkg_data.get("installed_size")
+        required_by = pkg_data.get("required_by") or []
+        is_pacman_managed = source in ("pacman", "AUR", "")
+        show_installed_extra = installed and is_pacman_managed
+
+        self.reason_row.setVisible(show_installed_extra)
+        self.size_row.setVisible(show_installed_extra)
+        self.revdeps_widget.setVisible(show_installed_extra)
+
+        if show_installed_extra:
+            self._set_row_text(self.reason_row, install_reason or "Explicitly installed")
+            if installed_size:
+                self._set_row_text(self.size_row, _fmt_size(installed_size))
+            else:
+                self._set_row_text(self.size_row, "—")
+            if required_by:
+                self.revdeps_label.setText(", ".join(required_by))
+            else:
+                self.revdeps_label.setText("Nothing depends on this package (it is not needed by anything installed).")
+
         if view == "updates":
             self.install_btn.setVisible(False)
             self.update_btn.setVisible(True)
@@ -428,6 +489,28 @@ class PackageDetailCard(QFrame):
             if isinstance(w, QLabel) and i == 1:
                 w.setText(value)
                 break
+
+    def set_extra_info(self, info: dict):
+        """Populate async-loaded installed-only extras (reason, size, reverse deps)."""
+        if not self._pkg_data:
+            return
+        source = (self._pkg_data.get("source") or "").lower()
+        if source not in ("pacman", "aur"):
+            return
+        install_reason = info.get("install_reason") or ""
+        installed_size = info.get("installed_size")
+        required_by = info.get("required_by") or []
+
+        self.reason_row.setVisible(True)
+        self._set_row_text(self.reason_row, install_reason or "Explicitly installed")
+
+        if installed_size:
+            self.size_row.setVisible(True)
+            self._set_row_text(self.size_row, _fmt_size(installed_size))
+
+        if required_by:
+            self.revdeps_widget.setVisible(True)
+            self.revdeps_label.setText(", ".join(required_by))
 
     def clear(self):
         self._pkg_data = None

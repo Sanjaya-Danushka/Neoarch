@@ -3,7 +3,30 @@
 Provides source and status filtering for the installed and updates views.
 """
 
+import re
+
 __all__ = ["apply_filters", "apply_update_filters"]
+
+
+def _version_key(text):
+    return [int(p) for p in re.findall(r"\d+", str(text))] or [0]
+
+
+def _sort_installed(dataset, field, asc, sizes):
+    try:
+        if field == "size":
+            def key(p): return sizes.get(p.get("name"), 0)
+        elif field == "version":
+            def key(p): return _version_key(p.get("version"))
+        elif field == "source":
+            def key(p): return (p.get("source") or "").lower()
+        elif field == "status":
+            def key(p): return (0 if p.get("has_update") else 1)
+        else:
+            def key(p): return (p.get("name") or "").lower()
+        return sorted(dataset, key=key, reverse=not asc)
+    except Exception:
+        return dataset
 
 
 def apply_filters(app):
@@ -36,6 +59,15 @@ def apply_filters(app):
                 final.append(pkg)
         else:
             final.append(pkg)
+    field, asc = 'name', True
+    try:
+        if hasattr(app, 'source_card') and app.source_card:
+            field = app.source_card.get_sort()
+            asc = app.source_card.get_sort_asc()
+    except Exception:
+        pass
+    sizes = getattr(app, '_installed_sizes', None) or {}
+    final = _sort_installed(final, field, asc, sizes)
     app.all_packages = final
     app.current_page = 0
     app.package_table.setRowCount(0)

@@ -22,6 +22,7 @@ __all__ = [
     "list_pacnew", "diff_pacnew", "accept_pacnew", "delete_pacnew",
     "merge_pacnew",
     "list_installed_sizes",
+    "list_explicit_packages", "package_info",
     "fetch_news", "news_cache", "news_cache_age",
     "mark_news_seen", "news_seen", "news_seen_status", "news_unseen_count",
     "list_corrupted_packages", "remove_corrupted_packages",
@@ -321,7 +322,7 @@ def list_installed_sizes() -> Dict[str, int]:
     failure.
     """
     result = _run(["pacman", "-Qik"], timeout=120)
-    if result.returncode != 0:
+    if result.returncode != 0 and not result.stdout.strip():
         return {}
     sizes: Dict[str, int] = {}
     name = None
@@ -349,6 +350,42 @@ def _parse_size_text(text: str) -> int:
     num = float(m.group(1))
     mult = {"": 1, "K": 1024, "M": 1024 ** 2, "G": 1024 ** 3, "T": 1024 ** 4}
     return int(num * mult.get(m.group(2).upper(), 1))
+
+
+def list_explicit_packages() -> set:
+    """Names of packages installed as explicit (not pulled in as a dependency)."""
+    result = _run(["pacman", "-Qe"])
+    if result.returncode != 0:
+        return set()
+    return {line.split()[0] for line in result.stdout.splitlines() if line.split()}
+
+
+def package_info(name: str) -> Dict:
+    """Detailed metadata for one installed package via `pacman -Qi`.
+
+    Returns a dict with install reason, required-by (reverse dependencies),
+    description, and installed size. Empty dict on failure or unknown pkg.
+    """
+    result = _run(["pacman", "-Qi", name], timeout=30)
+    if result.returncode != 0:
+        return {}
+    info: Dict = {}
+    for line in result.stdout.splitlines():
+        stripped = line.strip()
+        if ":" not in stripped:
+            continue
+        key, _, value = stripped.partition(":")
+        key = key.strip()
+        value = value.strip()
+        if key == "Description":
+            info["description"] = value
+        elif key == "Install Reason":
+            info["install_reason"] = value
+        elif key == "Required By":
+            info["required_by"] = [x for x in value.split() if x and x != "None"]
+        elif key == "Installed Size":
+            info["installed_size"] = _parse_size_text(value)
+    return info
 
 
 # ──────────────────────────────────────────────────────────────────────────

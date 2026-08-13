@@ -400,8 +400,9 @@ class _FiltersMixin:
             self.source_card.add_source(source_name, source_icon_path)
         self.sources_layout.addWidget(self.source_card)
         self.source_card.health_action.connect(self.on_installed_health_action)
+        self.source_card.sort_changed.connect(self.apply_filters)
         self.source_card.configure_sections(
-            show_search=False, show_health=True, show_counts=True, show_summary=True,
+            show_search=False, show_health=True, show_counts=True, show_summary=True, show_sort=True,
         )
         self._refresh_installed_sources()
         self._refresh_installed_health_async()
@@ -452,29 +453,37 @@ class _FiltersMixin:
             pass
 
     def _refresh_installed_health_async(self):
-        """Fetch orphans, .pacnew files, and installed sizes in the background."""
+        """Fetch orphans, .pacnew files, installed sizes, and explicit set in background."""
         try:
             def _run():
                 try:
-                    from neoarch.backend.services.hygiene import list_orphans, list_pacnew, list_installed_sizes
+                    from neoarch.backend.services.hygiene import list_orphans, list_pacnew, list_installed_sizes, list_explicit_packages
                     orphans = list_orphans()
                     pacnew = list_pacnew()
                     sizes = list_installed_sizes()
+                    explicit = list_explicit_packages()
                 except Exception:
-                    orphans, pacnew, sizes = [], [], {}
-                self.ui_call.emit(lambda: self._apply_installed_health(orphans, pacnew, sizes))
+                    orphans, pacnew, sizes, explicit = [], [], {}, set()
+                self.ui_call.emit(lambda: self._apply_installed_health(orphans, pacnew, sizes, explicit))
             from threading import Thread
             Thread(target=_run, daemon=True).start()
         except Exception:
             pass
 
-    def _apply_installed_health(self, orphans, pacnew, sizes):
+    def _apply_installed_health(self, orphans, pacnew, sizes, explicit=None):
         if self.current_view != "installed" or not getattr(self, 'source_card', None):
             return
         self._orphans_list = orphans or []
         self._pacnew_list = pacnew or []
         self._installed_sizes = sizes or {}
+        if explicit is not None:
+            self._explicit_packages = explicit
         self._refresh_installed_sources()
+        if explicit is not None:
+            try:
+                self.apply_filters()
+            except Exception:
+                pass
 
     def update_plugins_sources(self):
         """Update plugins sources using the same SourceCard component as installed section"""
