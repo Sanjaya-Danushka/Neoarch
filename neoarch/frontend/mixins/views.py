@@ -1601,13 +1601,16 @@ class _ViewsMixin:
             _installing = False
         if not _installing:
             self.console.clear()
-        # Stop any spinners and cancel background loads when switching views
+        # Stop any spinners and cancel background loads when switching views.
+        # During an active install the operation spinner and cancel button
+        # must stay visible (they are owned by the operation, not the view).
         try:
-            self.loading_widget.stop_animation()
-            self.loading_widget.setVisible(False)
-            if hasattr(self, 'loading_container'):
-                self.loading_container.setVisible(False)
-            self.cancel_install_btn.setVisible(False)
+            if not _installing:
+                self.loading_widget.stop_animation()
+                self.loading_widget.setVisible(False)
+                if hasattr(self, 'loading_container'):
+                    self.loading_container.setVisible(False)
+                self.cancel_install_btn.setVisible(False)
             self.settings_container.setVisible(False)
             if hasattr(self, 'plugins_view') and self.plugins_view:
                 self.plugins_view.setVisible(False)
@@ -1705,7 +1708,7 @@ class _ViewsMixin:
                     self.console_toggle_btn.setToolTip("Show Console")
             except Exception:
                 pass
-            if load:
+            if load and not _installing:
                 self._hide_all_package_views()
                 self.load_updates()
         elif view_id == "installed":

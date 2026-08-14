@@ -46,6 +46,7 @@ class Toast(QWidget):
         self._timer = QTimer(self)
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._dismiss)
+        self._fade.finished.connect(self._on_faded_out)
 
     def show_toast(self, text, level="info", duration=4000):
         self._text = text
@@ -85,7 +86,6 @@ class Toast(QWidget):
         self._fade.stop()
         self._fade.setStartValue(self.windowOpacity())
         self._fade.setEndValue(0.0)
-        self._fade.finished.connect(self._on_faded_out, Qt.ConnectionType.UniqueConnection)
         self._fade.start()
 
     def _on_faded_out(self):

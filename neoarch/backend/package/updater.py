@@ -6,6 +6,7 @@ with appropriate privilege elevation.
 
 import os
 import json
+import re
 import subprocess
 from threading import Thread
 from PyQt6.QtCore import QTimer
@@ -18,6 +19,23 @@ __all__ = [
     "update_packages", "update_core_tools",
     "_update_system_packages", "_update_flatpak", "_update_npm", "_update_aur",
 ]
+
+
+def _clean_pacman_cache(app):
+    """Remove freshly downloaded pacman cache after a cancelled operation.
+
+    A cancelled update/install leaves downloaded packages in the pacman
+    cache that are no longer needed, so scrub them before the operation
+    reports "cancelled".
+    """
+    try:
+        env = get_askpass_env()
+        subprocess.run(
+            ["sudo", "-A", "pacman", "-Sc", "--noconfirm"],
+            capture_output=True, text=True, timeout=120, env=env,
+        )
+    except Exception:
+        pass
 
 
 def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
@@ -44,6 +62,13 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
             cancelled = False
             failed_sources = []
 
+            # Base percent offset of each source within the overall update.
+            source_offsets = {}
+            _acc = 0
+            for source, pkgs in packages_by_source.items():
+                source_offsets[source] = (_acc, len(pkgs))
+                _acc += len(pkgs)
+
             def emit_progress(msg, inc=None):
                 nonlocal updated_pkgs
                 if inc:
@@ -53,6 +78,31 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                     app.progress_update.emit(msg, pct)
                 except Exception:
                     pass
+
+            def pacman_progress_parser(source):
+                """Yield per-package progress from pacman (X/Y) counters."""
+                start, count = source_offsets.get(source, (0, 0))
+                last = -1
+                def _on_line(line):
+                    nonlocal last
+                    if not line:
+                        return
+                    m = re.search(r'\(\s*(\d+)\s*/\s*(\d+)\s*\)', line)
+                    if not m or count <= 0:
+                        return
+                    x, y = int(m.group(1)), int(m.group(2))
+                    if y <= 0:
+                        return
+                    frac = min(1.0, x / y)
+                    pct = int(((start + frac * count) / total_pkgs) * 100) if total_pkgs else -1
+                    pct = max(0, min(99, pct))
+                    if pct != last:
+                        last = pct
+                        try:
+                            app.progress_update.emit(f"Updating {source}: {x}/{y}", pct)
+                        except Exception:
+                            pass
+                return _on_line
 
             for source, pkgs in packages_by_source.items():
                 if app.install_cancel_event.is_set():
@@ -69,6 +119,8 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                     worker = CommandWorker(cmd, sudo=True, cancel_event=app.install_cancel_event)
                     worker.output.connect(app.log)
                     worker.line_update.connect(app.log_line_update)
+                    worker.output.connect(pacman_progress_parser('pacman'))
+                    worker.line_update.connect(pacman_progress_parser('pacman'))
                     def _on_err(msg):
                         nonlocal overall_success, lock_detected, lock_details, failed_sources
                         app.log(msg)
@@ -237,6 +289,12 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
             if cancelled:
                 try:
                     app.installation_progress.emit("cancelled", False)
+                except Exception:
+                    pass
+                # Tell the UI first, then scrub the freshly downloaded cache
+                # (the worker thread blocking on pacman -Sc must not delay it).
+                try:
+                    _clean_pacman_cache(app)
                 except Exception:
                     pass
             elif lock_detected:
