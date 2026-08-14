@@ -36,9 +36,22 @@ def _installed_ts(name, version):
 
 
 def _check_pacman_updates():
-    result = _run_cmd(["pacman", "-Qu"], timeout=60)
+    """List available pacman updates.
+
+    Prefers `checkupdates` (pacman-contrib), which syncs the package database
+    into a temporary directory with fakeroot, so checking for updates works
+    without root and without asking for the sudo password. Falls back to the
+    local `pacman -Qu` (which reflects the last synced DB) when unavailable.
+    """
+    import shutil
+    cmd = ["pacman", "-Qu"]
+    timeout = 60
+    if shutil.which("checkupdates") and shutil.which("fakeroot"):
+        cmd = ["checkupdates", "--nocolor"]
+        timeout = 180
+    result = _run_cmd(cmd, timeout=timeout)
     packages = []
-    if result and result.returncode == 0 and result.stdout:
+    if result and result.returncode in (0, 2) and result.stdout:
         for line in result.stdout.strip().split('\n'):
             if line.strip() and ' -> ' in line:
                 parts = line.split(' -> ')
@@ -201,7 +214,7 @@ def _sync_pacman_db(app):
     try:
         app.log("Syncing package database...")
         worker = CommandWorker(
-            ["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
+            ["sudo", "-A", "pacman", "-Syy", "--noconfirm"],
             sudo=False,
             env=get_askpass_env(),
         )
@@ -284,14 +297,19 @@ def load_updates(app):
                 fut_aur = ex.submit(_check_aur_updates)
                 fut_flatpak = ex.submit(_check_flatpak_updates)
                 fut_npm = ex.submit(_check_npm_updates)
-                fut_sync = ex.submit(_sync_pacman_db, app)
+                # A rootless fresh sync (checkupdates) already refreshes the
+                # data; only sync the real database when that is unavailable.
+                import shutil as _sh
+                use_rooted_sync = not (_sh.which("checkupdates") and _sh.which("fakeroot"))
+                fut_sync = ex.submit(_sync_pacman_db, app) if use_rooted_sync else None
 
                 # Wait for the database sync to finish first so the update
                 # checks run against fresh data instead of a stale DB.
-                try:
-                    fut_sync.result()
-                except Exception:
-                    pass
+                if fut_sync is not None:
+                    try:
+                        fut_sync.result()
+                    except Exception:
+                        pass
 
                 for fut in as_completed([fut_pacman, fut_aur, fut_flatpak, fut_npm]):
                     try:

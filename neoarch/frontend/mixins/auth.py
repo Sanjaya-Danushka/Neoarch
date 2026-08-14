@@ -154,7 +154,29 @@ class _AuthMixin:
     def _finish_startup_no_auth(self):
         self.switch_view("updates")
 
+    def ensure_session_auth(self) -> bool:
+        """Lazily ensure an authenticated session exists.
+
+        Returns True if a credential cache is already active, otherwise shows
+        the authentication dialog once and returns its result. Use this right
+        before any privileged operation so the password is only asked when it
+        is actually needed.
+        """
+        from neoarch.backend.session_auth import setup_session_auth, is_session_active
+        if is_session_active():
+            return True
+        self.log("Authentication required for this operation.")
+        success = setup_session_auth(self)
+        if success:
+            self.log("Session authentication established")
+        else:
+            self.log("Session authentication declined or failed")
+        return success
+
     def update_core_tools(self):
+        if not self.ensure_session_auth():
+            self.log("Tools update cancelled: authentication required.")
+            return
         return update_core_tools(self)
 
     def get_sudo_askpass(self):
@@ -294,6 +316,9 @@ class _AuthMixin:
             QMessageBox.StandardButton.No)
         if reply != QMessageBox.StandardButton.Yes:
             return
+        if not self.ensure_session_auth():
+            self.log("Orphan cleanup cancelled: authentication required.")
+            return
         self.log(f"Removing {len(orphans)} orphaned package(s)...")
 
         def on_done(ok):
@@ -360,6 +385,9 @@ class _AuthMixin:
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No)
             if reply != QMessageBox.StandardButton.Yes:
+                return
+            if not self.ensure_session_auth():
+                self.log("Config update cancelled: authentication required.")
                 return
             if accept_pacnew(path):
                 list_widget.takeItem(list_widget.row(item))

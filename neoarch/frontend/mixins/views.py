@@ -2738,11 +2738,17 @@ class _ViewsMixin:
         if action == "update":
             if not name:
                 return
+            if not self.ensure_session_auth():
+                self.log("Update cancelled: authentication required.")
+                return
             self.log(f"Updating {name} ({source})")
             self.installation_progress.emit("start", False)
             update_service.update_packages(self, {source: [name]})
         elif action == "uninstall":
             if not name:
+                return
+            if not self.ensure_session_auth():
+                self.log("Uninstall cancelled: authentication required.")
                 return
             self.log(f"Uninstalling {name} ({source})")
             self.installation_progress.emit("start", False)

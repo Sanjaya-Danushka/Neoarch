@@ -20,12 +20,16 @@ __all__ = [
 ]
 
 
-def update_packages(app, packages_by_source: dict):
-    """Update specific packages organized by source.
+def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
+    """Update packages organized by source.
 
     Args:
         app: Main window instance (provides signals and UI state).
         packages_by_source: Dict mapping source names to package name lists.
+        upgrade_all: When True (Update All), run a full system upgrade
+            (pacman -Syu). When False, only the named targets are upgraded
+            (pacman -Sy <targets>) so a single-app update does not touch the
+            rest of the system.
     """
     app.install_cancel_event = __import__('threading').Event()
 
@@ -58,7 +62,10 @@ def update_packages(app, packages_by_source: dict):
                 emit_progress(f"Updating {source} packages...")
                 source_count = len(pkgs)
                 if source == 'pacman':
-                    cmd = ["pacman", "-S", "--noconfirm"] + pkgs
+                    if upgrade_all:
+                        cmd = ["pacman", "-Syu", "--noconfirm"]
+                    else:
+                        cmd = ["pacman", "-Sy", "--noconfirm"] + pkgs
                     worker = CommandWorker(cmd, sudo=True, cancel_event=app.install_cancel_event)
                     worker.output.connect(app.log)
                     worker.line_update.connect(app.log_line_update)

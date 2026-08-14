@@ -1,29 +1,44 @@
 #!/usr/bin/env python3
 """
-Minimal script to retrieve cached sudo password from keyring.
-Called by SUDO_ASKPASS when session is active.
-No secrets stored on disk — only keyring access.
+Minimal script to retrieve the cached sudo password for the session.
+
+Called by SUDO_ASKPASS when the session is active. Reads the credential from
+the system keyring first, then falls back to the 0600 session credential file,
+so passwordless sudo works even without a keyring daemon.
 """
 import sys
 import os
 from pathlib import Path
 
-try:
-    import keyring
-    CACHE_DIR = Path.home() / ".cache" / "neoarch"
-    SERVICE_NAME = "NeoArch"
-    USERNAME = "sudo_credential"
 
-    # Check session lock exists (prevents unauthorized retrieval)
-    LOCK_FILE = os.path.expanduser(CACHE_DIR / "session.lock")
-    if not os.path.exists(LOCK_FILE):
-        sys.exit(1)
+def _get_credential():
+    """Return the cached sudo password, or None if unavailable."""
+    # Guard: only return credentials while this session lock is present
+    lock_file = Path.home() / ".cache" / "neoarch" / "session.lock"
+    if not lock_file.exists():
+        return None
 
-    pw = keyring.get_password(SERVICE_NAME, USERNAME)
+    pw = None
+    try:
+        import keyring
+        pw = keyring.get_password("NeoArch", "sudo_credential")
+    except Exception:
+        pw = None
     if pw:
-        print(pw, end='')
-        sys.exit(0)
+        return pw
 
-    sys.exit(1)
-except Exception:
+    try:
+        cred_file = Path.home() / ".cache" / "neoarch" / "sudo_credential"
+        if cred_file.exists():
+            return cred_file.read_text('utf-8').strip()
+    except Exception:
+        pass
+    return None
+
+
+if __name__ == "__main__":
+    credential = _get_credential()
+    if credential:
+        print(credential, end='')
+        sys.exit(0)
     sys.exit(1)

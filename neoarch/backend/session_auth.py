@@ -20,6 +20,7 @@ from neoarch.resources.paths import APP_NAME, CONFIG_DIR, PROJECT_ROOT
 _session_askpass_script: str | None = None
 _session_active: bool = False
 _atexit_registered: bool = False
+_CRED_FILE = Path.home() / ".cache" / "neoarch" / "sudo_credential"
 
 
 @lru_cache(maxsize=1)
@@ -546,11 +547,10 @@ def setup_session_auth(parent_widget=None) -> bool:
     helper_dir = CONFIG_DIR
     helper_dir.mkdir(parents=True, exist_ok=True)
 
-    # Copy helper from resources if not already present
+    # Copy helper from resources so it always matches the current version
     source_helper = PROJECT_ROOT / "neoarch" / "resources" / "askpass_helper.py"
     target_helper = helper_dir / "askpass_helper.py"
-    if not target_helper.exists():
-        shutil.copy2(source_helper, target_helper)
+    shutil.copy2(source_helper, target_helper)
     os.chmod(str(target_helper), stat.S_IRWXU)  # 700
 
     cache_dir = Path.home() / ".cache" / "neoarch"
@@ -627,6 +627,8 @@ def cleanup_session():
         except Exception:
             pass
 
+    _delete_cred_file()
+
     helper_path = CONFIG_DIR / "askpass_helper.py"
     if helper_path.exists(): helper_path.unlink()
     os.environ.pop("SUDO_ASKPASS", None)
@@ -634,39 +636,81 @@ def cleanup_session():
     _session_active = False
 
 def get_sudo_password() -> 'SecureBytes | None':
-    """Retrieve cached sudo password from keyring"""
+    """Retrieve cached sudo password from keyring, falling back to the session file."""
+    pw = None
     try:
         kr = _load_keyring()
-        if kr is None:
-            return None
-        pw = kr.get_password(APP_NAME, "sudo_credential")
+        if kr is not None:
+            pw = kr.get_password(APP_NAME, "sudo_credential")
     except Exception:
-        return None
+        pw = None
+    if not pw:
+        pw = _read_cred_file()
     if pw is None:
         return None
     return secure_string(pw)
 
 
 def store_sudo_password(pw_text: 'SecureBytes') -> bool:
-    """Store sudo password in keyring"""
+    """Store sudo password in keyring, falling back to a 0600 session file.
+
+    Returns True if the credential could be persisted through at least one
+    backend, so the session cache always works even without a keyring daemon.
+    """
+    stored = False
     try:
         kr = _load_keyring()
-        if kr is None:
+        if kr is not None:
+            kr.set_password(APP_NAME, "sudo_credential", pw_text.get_bytes().decode('utf-8'))
+            stored = True
+    except Exception:
+        pass
+    if not _write_cred_file(pw_text.get_bytes()):
+        if not stored:
             return False
-        kr.set_password(APP_NAME, "sudo_credential", pw_text.get_bytes().decode('utf-8'))
-        pw_text.zero()
+    else:
+        stored = True
+    pw_text.zero()
+    return stored
+
+
+def delete_sudo_password() -> None:
+    """Remove stored password from keyring and the session file."""
+    try:
+        kr = _load_keyring()
+        if kr is not None:
+            kr.delete_password(APP_NAME, "sudo_credential")
+    except Exception:
+        pass
+    _delete_cred_file()
+
+
+def _read_cred_file():
+    try:
+        if not _CRED_FILE.exists():
+            return None
+        with open(_CRED_FILE, 'rb') as f:
+            return f.read().decode('utf-8')
+    except Exception:
+        return None
+
+
+def _write_cred_file(data: bytes) -> bool:
+    try:
+        _CRED_FILE.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(_CRED_FILE), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, 'wb') as f:
+            f.write(data)
+        os.chmod(str(_CRED_FILE), 0o600)
         return True
     except Exception:
         return False
 
 
-def delete_sudo_password() -> None:
-    """Remove stored password"""
+def _delete_cred_file() -> None:
     try:
-        kr = _load_keyring()
-        if kr is None:
-            return
-        kr.delete_password(APP_NAME, "sudo_credential")
+        if _CRED_FILE.exists():
+            _CRED_FILE.unlink()
     except Exception:
         pass
 

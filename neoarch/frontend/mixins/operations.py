@@ -91,6 +91,9 @@ class _OperationsMixin:
         )
         if reply != QMessageBox.StandardButton.Yes:
             return
+        if not self.ensure_session_auth():
+            self.log_signal.emit("Install cancelled: authentication required.")
+            return
         try:
             self.force_sudo_install = True
         except Exception:
@@ -104,6 +107,9 @@ class _OperationsMixin:
         upgrades = getattr(self, 'updates_all', None)
         if upgrades is not None and len(upgrades) == 0:
             self.log("No updates available.")
+            return
+        if not self.ensure_session_auth():
+            self.log("Update cancelled: authentication required.")
             return
         self.log("Updating all packages\u2026")
         if upgrades:
@@ -130,9 +136,12 @@ class _OperationsMixin:
         if not packages_by_source:
             self.log("No packages to update.")
             return
+        if not self.ensure_session_auth():
+            self.log("Update cancelled: authentication required.")
+            return
         self.log(f"Updating all packages: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
         self.installation_progress.emit("start", True)
-        update_service.update_packages(self, packages_by_source)
+        update_service.update_packages(self, packages_by_source, upgrade_all=True)
 
     def toggle_select_all(self):
         """Toggle all checkboxes: if all checked, uncheck all; otherwise check all."""
@@ -157,6 +166,9 @@ class _OperationsMixin:
 
     def clean_cache(self):
         """Clean package and system cache (BleachBit + pacman)."""
+        if not self.ensure_session_auth():
+            self.log("Cache clean cancelled: authentication required.")
+            return
         self.log("Cleaning package cache\u2026")
         # BleachBit system cache cleaning
         try:
@@ -213,6 +225,9 @@ class _OperationsMixin:
         if not packages_by_source:
             self.log("No packages selected for update")
             return
+        if not self.ensure_session_auth():
+            self.log("Update cancelled: authentication required.")
+            return
         self.log(f"Selected packages for update: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
         self.installation_progress.emit("start", True)
         update_service.update_packages(self, packages_by_source)
@@ -234,6 +249,9 @@ class _OperationsMixin:
             packages_by_source.setdefault(source, []).append(name)
         if not packages_by_source:
             self.log("No packages selected for update")
+            return
+        if not self.ensure_session_auth():
+            self.log("Update cancelled: authentication required.")
             return
         self.log(f"Selected packages for update: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
         self.installation_progress.emit("start", True)
@@ -409,6 +427,9 @@ class _OperationsMixin:
         if not to_install:
             self.log_signal.emit("All selected packages are already installed")
             return
+        if not self.ensure_session_auth():
+            self.log_signal.emit("Install cancelled: authentication required.")
+            return
         self.log_signal.emit(f"Selected packages: {', '.join([f'{pkg} ({source})' for source, pkgs in to_install.items() for pkg in pkgs])}")
         self.log_signal.emit(f"Proceeding with installation...")
         self._pending_install_packages = to_install
@@ -520,6 +541,9 @@ class _OperationsMixin:
                 packages_by_source[source].append(token)
         
         flat_summary = ', '.join([f"{pkg} ({src})" for src, pkgs in packages_by_source.items() for pkg in pkgs])
+        if not self.ensure_session_auth():
+            self.log("Uninstall cancelled: authentication required.")
+            return
         self.log(f"Selected for uninstallation: {flat_summary}")
         self.installation_progress.emit("start", False)
         uninstall_service.uninstall_packages(self, packages_by_source)
@@ -527,6 +551,9 @@ class _OperationsMixin:
     def install_from_detail(self):
         pkg = getattr(self.package_detail_card, '_pkg_data', None)
         if not pkg:
+            return
+        if not self.ensure_session_auth():
+            self.log("Install cancelled: authentication required.")
             return
         source = pkg.get('source', 'pacman')
         name = (pkg.get('id') or '').strip() if source == 'Flatpak' else (pkg.get('name') or '').strip()
@@ -540,6 +567,9 @@ class _OperationsMixin:
         pkg = getattr(self.package_detail_card, '_pkg_data', None)
         if not pkg:
             return
+        if not self.ensure_session_auth():
+            self.log("Update cancelled: authentication required.")
+            return
         source = pkg.get('source', 'pacman')
         self.installation_progress.emit("start", False)
         update_service.update_packages(self, {source: [pkg['name']]})
@@ -547,6 +577,9 @@ class _OperationsMixin:
     def uninstall_from_detail(self):
         pkg = getattr(self.package_detail_card, '_pkg_data', None)
         if not pkg:
+            return
+        if not self.ensure_session_auth():
+            self.log("Uninstall cancelled: authentication required.")
             return
         source = pkg.get('source', 'pacman')
         uninstall_service.uninstall_packages(self, {source: [pkg['name']]})

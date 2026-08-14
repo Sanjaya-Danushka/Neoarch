@@ -433,6 +433,10 @@ class _FiltersMixin:
 
     def on_installed_maintenance_action(self, action):
         if action == "purge_cache":
+            if not self.ensure_session_auth():
+                self.log("Cache purge cancelled: authentication required.")
+                return
+
             def _run():
                 try:
                     from neoarch.backend.services.hygiene import purge_cache
