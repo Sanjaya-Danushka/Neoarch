@@ -84,30 +84,32 @@ def test_empty_state_hidden_while_loading(qapp):
     table = _make_table()
     table.set_packages([])
     table.set_loading(True)
-    assert table._skeleton.isHidden() is False
-    assert table._empty.isHidden() is True
-    table.set_loading(False)
-    assert table._skeleton.isHidden() is True
     assert table._empty.isHidden() is False
+    assert table._empty._progress.isHidden() is False
+    table.set_loading(False)
+    assert table._empty.isHidden() is False
+    assert table._empty._progress.isHidden() is True
 
 
-def test_skeleton_mirrors_table_columns_and_paints(qapp):
-    from PyQt6.QtGui import QPixmap
-
+def test_loading_clears_stale_rows(qapp):
     table = _make_table()
-    table.resize(980, 560)
-    table.show()
+    assert table.row_count() == 4
     table.set_loading(True)
-    qapp.processEvents()
+    assert table.row_count() == 0
+    assert table.model._checked == set()
+    table.set_packages([
+        {"name": "pkg-a", "id": "pkg-a", "version": "1.0",
+         "new_version": "1.0", "source": "pacman"}
+    ])
+    assert table.row_count() == 1
+    assert table._loading is False
 
-    cols = table._skeleton._columns()
-    assert len(cols) == table.model.columnCount()
-    assert cols[0] == (0, 46)
-    assert cols[6][1] == 44
 
-    for phase in (5, 30):
-        table._skeleton._phase = phase
-        pix = QPixmap(table.size())
-        table.render(pix)
-        assert not pix.isNull()
+def test_loading_state_shows_loading_text_and_message(qapp):
+    table = _make_table()
+    table.set_loading(True, "Loading updates\u2026")
+    assert table._empty._title.text() == "Loading updates\u2026"
+    assert table._empty._progress.isHidden() is False
+    table.set_loading(True)
+    assert table._empty._title.text() == "Loading updates\u2026"
 

@@ -10,13 +10,11 @@ for every event, including internal ones during widget destruction, which can
 abort a PyQt app at exit.
 """
 
-from PyQt6.QtCore import QRect
 from PyQt6.QtWidgets import QTableWidget
 
 from neoarch.frontend.components.updates_table import (
     _SOURCE_COLORS,
     _TEXT_SEC,
-    _SkeletonOverlay,
     _make_fallback_pixmap,
 )
 
@@ -28,24 +26,10 @@ class HoverTableWidget(QTableWidget):
         super().__init__(rows, columns, parent)
         self._hover_row = -1
         self.setMouseTracking(True)
-        self._skeleton = _SkeletonOverlay(self)
-        self._skeleton.setVisible(False)
         self._loading = False
 
     def set_loading(self, loading):
         self._loading = bool(loading)
-        self._sync_skeleton()
-
-    def _sync_skeleton(self):
-        viewport = self.viewport()
-        geom = viewport.geometry() if viewport is not None else QRect()
-        self._skeleton.setGeometry(geom)
-        self._skeleton.setVisible(self._loading)
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        if self._loading:
-            self._sync_skeleton()
 
     def hovered_row(self):
         return self._hover_row

@@ -1721,7 +1721,7 @@ class _ViewsMixin:
                 # skeleton loading state inside the table
                 self._installed_loading = True
                 self.updates_table.setVisible(True)
-                self.updates_table.set_loading(True)
+                self.updates_table.set_loading(True, "Loading packages\u2026")
             except Exception:
                 pass
             self.load_installed_packages()
@@ -2063,32 +2063,69 @@ class _ViewsMixin:
     def load_installed_packages(self):
         return packages_service.load_installed_packages(self)
 
-    def on_packages_loaded(self, packages):
+    def on_packages_loaded(self, packages, load_id=None, is_final=False):
         # Ignore results if user has navigated away from the originating view
         if self.loading_context != self.current_view and not getattr(self, '_pending_update_all', False):
             return
         if self.current_view not in ("updates", "installed") and not getattr(self, '_pending_update_all', False):
             return
+        # Drop results from a superseded load (left the page and came back
+        # while the earlier thread was still running) so a stale render never
+        # flashes away the loading indicator.
+        if load_id is not None:
+            if self.loading_context == "updates" and getattr(self, '_updates_load_id', None) != load_id:
+                return
+            if self.loading_context == "installed" and getattr(self, '_installed_load_id', None) != load_id:
+                return
         self.all_packages = packages
         if self.current_view == "updates":
             self.updates_all = packages
-            if getattr(self, '_pending_update_all', False):
-                self._pending_update_all = False
-                self._do_update_all()
-        elif getattr(self, '_pending_update_all', False):
-            self.updates_all = packages
-            self._pending_update_all = False
-            self._do_update_all()
         elif self.current_view == "installed":
             self.installed_all = packages
             self._installed_loading = False
+
+        # Update-all only starts once the full data set has arrived, so a
+        # fast partial paint can never trigger it with incomplete packages.
+        if getattr(self, '_pending_update_all', False) and is_final:
+            self._pending_update_all = False
+            self._do_update_all()
+
+        # Hide loading spinner and paint the redesigned table as soon as any
+        # results arrive so the loading indicator never lingers through the
+        # slow first database sync; the final emit then completes the legacy
+        # package table, source filters, counts, and notifications.
+        self.loading_widget.setVisible(False)
+        self.loading_widget.stop_animation()
+        try:
+            if hasattr(self, 'loading_container'):
+                self.loading_container.setVisible(False)
+        except Exception:
+            pass
+        self._show_active_view()
+        if self.current_view == "updates" and hasattr(self, 'updates_table'):
+            try:
+                self.updates_table.set_loading(False)
+                self._sync_updates_table()
+            except Exception:
+                pass
+        elif self.current_view == "installed":
+            try:
+                self.updates_table.set_loading(False)
+            except Exception:
+                pass
+        if not is_final:
+            return
+
         self.current_page = 0
         self.packages_per_page = 10
         self.package_table.setRowCount(0)
         if self.current_view == "installed":
             self._sync_installed_table()
         else:
-            self.display_page()
+            try:
+                self.display_page()
+            except Exception:
+                pass
         if self.current_view == "updates" and hasattr(self, 'source_card') and self.source_card:
             try:
                 states = self.source_card.get_selected_sources()
@@ -2103,29 +2140,6 @@ class _ViewsMixin:
                 pass
             try:
                 self._refresh_installed_sources()
-            except Exception:
-                pass
-
-
-        # Hide loading spinner, stop animation, and show packages
-        self.loading_widget.setVisible(False)
-        self.loading_widget.stop_animation()
-        try:
-            if hasattr(self, 'loading_container'):
-                self.loading_container.setVisible(False)
-        except Exception:
-            pass
-        self._show_active_view()
-        # Sync the redesigned updates table with the loaded data
-        if self.current_view == "updates" and hasattr(self, 'updates_table'):
-            try:
-                self.updates_table.set_loading(False)
-                self._sync_updates_table()
-            except Exception:
-                pass
-        elif self.current_view == "installed":
-            try:
-                self.updates_table.set_loading(False)
             except Exception:
                 pass
         # Show console toggle button for updates view like Discover

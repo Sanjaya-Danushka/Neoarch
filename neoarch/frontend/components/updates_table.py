@@ -4,7 +4,7 @@ A fully custom QTableView replacement for the Updates page: dark, high
 row-density, rounded hover/selected rows, package tiles, animated version
 arrow, source and status badges, per-row overflow menu, sorting, zebra
 stripes, multi-select checkboxes, sticky header with select-all checkbox,
-skeleton loading rows and an empty state overlay.
+a loading indicator and an empty state overlay.
 
 Design follows the app theme (styles.py): accent #00BFAE, near-black
 surfaces and muted secondary text. The widget owns its data model and
@@ -50,6 +50,7 @@ from PyQt6.QtWidgets import (
     QHeaderView,
     QLabel,
     QMenu,
+    QProgressBar,
     QStyle,
     QStyledItemDelegate,
     QTableView,
@@ -62,6 +63,7 @@ _ACCENT = QColor(0, 191, 174)              # app accent #00BFAE
 _TEXT = QColor(238, 240, 244)
 _TEXT_SEC = QColor(139, 141, 151)           # app _TEXT_SEC #8B8D97
 _TEXT_MUTED = QColor(92, 94, 102)           # app _TEXT_MUTED #5C5E66
+_DEFAULT_LOADING_MESSAGE = "Loading\u2026"
 
 _SOURCE_COLORS = {
     "pacman": QColor(79, 195, 247),
@@ -73,8 +75,6 @@ _SOURCE_COLORS = {
 }
 _GREEN = QColor(88, 202, 143)
 
-_GLASS_TOP = QColor(22, 23, 26)
-_GLASS_BOTTOM = QColor(13, 13, 15)
 _PANEL_RADIUS = 14
 
 _VIEWPORT_GLASS = """
@@ -612,6 +612,7 @@ class UpdatesTable(QTableView):
         self._loading_enrich = False
         self._enrich = True
         self._installed_mode = False
+        self._loading_message = _DEFAULT_LOADING_MESSAGE
 
         self.model = UpdatesModel(self)
         self.setModel(self.model)
@@ -659,8 +660,6 @@ class UpdatesTable(QTableView):
 
         self._arrow = _ArrowAnimator(self, self)
 
-        self._skeleton = _SkeletonOverlay(self)
-        self._skeleton.setVisible(False)
         self._empty = _EmptyOverlay(self)
         self._empty.setVisible(False)
         self._fade = _BottomFade(self)
@@ -677,8 +676,17 @@ class UpdatesTable(QTableView):
         self._start_enrich()
         self._sync_overlays()
 
-    def set_loading(self, loading):
+    def set_loading(self, loading, message=None):
         self._loading = bool(loading)
+        if message:
+            self._loading_message = message
+        if loading:
+            # Drop stale rows from the previous visit so the loading state
+            # renders over a clean empty table instead of on top of the old
+            # page's items.
+            self.model.set_packages([])
+            self._header_sync()
+            self.scrollToTop()
         self._sync_overlays()
 
     def row_count(self):
@@ -757,7 +765,6 @@ class UpdatesTable(QTableView):
 
     def _sync_overlays(self):
         geom = self.viewport().geometry()
-        self._skeleton.setGeometry(geom)
         self._empty.setGeometry(geom)
 
         # Bottom fade: soften a partially visible row instead of hard-clipping it
@@ -770,13 +777,13 @@ class UpdatesTable(QTableView):
             self._fade.raise_()
 
         if self._loading:
-            self._skeleton.setVisible(True)
-            self._empty.setVisible(False)
+            self._empty.set_loading(True, self._loading_message)
+            self._empty.setVisible(True)
         elif self.model.rowCount() == 0:
-            self._skeleton.setVisible(False)
+            self._empty.set_loading(False)
             self._empty.setVisible(True)
         else:
-            self._skeleton.setVisible(False)
+            self._empty.set_loading(False)
             self._empty.setVisible(False)
 
     def resizeEvent(self, event):
@@ -1280,137 +1287,6 @@ class _BottomFade(QWidget):
         painter.fillRect(r, grad)
 
 
-class _SkeletonOverlay(QWidget):
-    """Animated shimmering placeholder rows while updates load."""
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._phase = 0
-        self._timer = QTimer(self)
-        self._timer.setInterval(40)
-        self._timer.timeout.connect(self._tick)
-        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-
-    def showEvent(self, event):
-        super().showEvent(event)
-        self._timer.start()
-
-    def hideEvent(self, event):
-        super().hideEvent(event)
-        self._timer.stop()
-
-    def _tick(self):
-        self._phase = (self._phase + 1) % 60
-        self.update()
-
-    def _columns(self):
-        """(x, width) for each table column, mirroring the real row layout."""
-        table = self.parentWidget()
-        try:
-            count = table.model.columnCount()
-            cols = [(table.columnViewportPosition(c), table.columnWidth(c))
-                    for c in range(count) if not table.isColumnHidden(c)]
-            if cols:
-                return cols
-        except Exception:
-            pass
-        return [(0, self.rect().width())]
-
-    def _bar(self, painter, r, radius, color):
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(color)
-        path = QPainterPath()
-        path.addRoundedRect(r, radius, radius)
-        painter.drawPath(path)
-
-    def _dot(self, painter, r, color):
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(color)
-        painter.drawEllipse(r)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = self.rect()
-
-        grad = QLinearGradient(0, 0, 0, rect.height())
-        grad.setColorAt(0.0, _GLASS_TOP)
-        grad.setColorAt(1.0, _GLASS_BOTTOM)
-        painter.fillRect(rect, grad)
-
-        cols = self._columns()
-
-        rows = []
-        rh = 56
-        for i in range(max(1, rect.height() // rh)):
-            rows.append(QRectF(5, i * rh + 2, rect.width() - 10, rh - 4))
-
-        gradient = QLinearGradient(0, 0, rect.width(), 0)
-        x = (self._phase / 60.0) * (rect.width() + 200) - 100
-        gradient.setColorAt(0.0, QColor(255, 255, 255, 0))
-        gradient.setColorAt(0.45, QColor(255, 255, 255, 14))
-        gradient.setColorAt(0.55, QColor(255, 255, 255, 24))
-        gradient.setColorAt(1.0, QColor(255, 255, 255, 0))
-
-        bar = QColor(255, 255, 255, 30)
-        for i, row in enumerate(rows):
-            path = QPainterPath()
-            path.addRoundedRect(row, 9, 9)
-            painter.fillPath(path, QColor(255, 255, 255, 8))
-            painter.save()
-            painter.setClipPath(path)
-            painter.fillRect(row, gradient)
-            painter.restore()
-
-            sep_pen = QPen(_SEPARATOR)
-            sep_pen.setWidthF(1)
-            painter.setPen(sep_pen)
-            painter.drawLine(QPointF(row.left() + 5, row.bottom()), QPointF(row.right() - 5, row.bottom()))
-
-            if i >= 8 or len(cols) < 7:
-                continue
-
-            cy = row.center().y()
-            x0, w0 = cols[0]
-            x1, w1 = cols[1]
-            x2, w2 = cols[2]
-            x3, w3 = cols[3]
-            x4, w4 = cols[4]
-            x5, w5 = cols[5]
-            x6, w6 = cols[6]
-
-            # column 0: checkbox placeholder
-            self._bar(painter, QRectF(x0 + (w0 - 18) / 2, cy - 9, 18, 18), 5, bar)
-
-            # column 1: source icon tile + name/description bars
-            ix = x1 + 12
-            self._bar(painter, QRectF(ix, cy - 9, 18, 18), 5, bar)
-            avail_w = max(20, (x1 + w1) - (ix + 18 + 10))
-            name_w = avail_w * (0.45 + 0.1 * ((i * 7) % 5) / 4.0)
-            self._bar(painter, QRectF(ix + 18 + 10, row.top() + 8, name_w, 13), 4, bar)
-            desc_w = avail_w * (0.6 + 0.08 * ((i * 3) % 4) / 3.0)
-            self._bar(painter, QRectF(ix + 18 + 10, row.top() + 27, desc_w, 8), 4, bar)
-
-            # column 2: version bar
-            vw = w2 * (0.5 + 0.08 * ((i * 5) % 3) / 2.0)
-            self._bar(painter, QRectF(x2 + 6, cy - 6, vw, 12), 4, bar)
-
-            # column 3: size bar (right aligned like the real cells)
-            sw = w3 * 0.5
-            self._bar(painter, QRectF(x3 + w3 - sw - 10, cy - 5, sw, 10), 4, bar)
-
-            # column 4: source chip placeholder
-            self._bar(painter, QRectF(x4 + 12, cy - 9, max(34, w4 - 24), 18), 9, bar)
-
-            # column 5: status chip placeholder
-            self._bar(painter, QRectF(x5 + 12, cy - 9, max(34, w5 - 24), 18), 9, bar)
-
-            # column 6: action dots placeholder
-            for k in range(3):
-                self._dot(painter, QRectF(x6 + (w6 - 12) / 2 + k * 5, cy - 1.5, 3, 3), bar)
-
-
-
 class _EmptyBadge(QWidget):
     """Circular mint-glow badge with a white checkmark."""
 
@@ -1454,7 +1330,7 @@ class _EmptyBadge(QWidget):
 
 
 class _EmptyOverlay(QWidget):
-    """Centered empty state shown when there are no updates."""
+    """Centered empty state shown while loading or when there are no rows."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1485,6 +1361,19 @@ class _EmptyOverlay(QWidget):
         self._hint.setStyleSheet("color: #5C5E66; background: transparent; border: none;")
         layout.addWidget(self._hint)
 
+        self._progress = QProgressBar()
+        self._progress.setRange(0, 0)
+        self._progress.setFixedWidth(240)
+        self._progress.setFixedHeight(6)
+        self._progress.setTextVisible(False)
+        self._progress.setVisible(False)
+        self._progress.setStyleSheet(
+            "QProgressBar { border: none; border-radius: 3px;"
+            " background: rgba(255,255,255,0.07); }"
+            " QProgressBar::chunk { background: #00BFAE; border-radius: 3px; }")
+        layout.addSpacing(6)
+        layout.addWidget(self._progress, alignment=Qt.AlignmentFlag.AlignHCenter)
+
         layout.addStretch()
 
     def set_text(self, title, subtitle, hint=None):
@@ -1496,3 +1385,13 @@ class _EmptyOverlay(QWidget):
         else:
             self._hint.setText(hint)
             self._hint.show()
+
+    def set_loading(self, loading, message=None):
+        """Switch between the loading and the finished empty state."""
+        if loading:
+            self._title.setText(message or "Loading\u2026")
+            self._sub.setText("Please wait, fetching package data")
+            self._hint.hide()
+            self._progress.show()
+        else:
+            self._progress.hide()

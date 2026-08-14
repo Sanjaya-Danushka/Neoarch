@@ -33,16 +33,13 @@ def test_hover_table_tracks_rows(qapp):
     assert table.hovered_row() == -1
 
 
-def test_loading_skeleton_toggle(qapp):
+def test_loading_toggle(qapp):
     table = _make_table()
     assert table._loading is False
-    assert table._skeleton.isHidden() is True
     table.set_loading(True)
     assert table._loading is True
-    assert table._skeleton.isHidden() is False
     table.set_loading(False)
     assert table._loading is False
-    assert table._skeleton.isHidden() is True
 
 
 def test_source_pixmap_fallback(qapp):

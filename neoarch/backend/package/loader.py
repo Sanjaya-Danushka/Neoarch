@@ -251,6 +251,8 @@ def load_updates(app):
     app.current_page = 0
     app.cancel_update_load = False
     app.loading_context = "updates"
+    app._updates_load_id = getattr(app, '_updates_load_id', 0) + 1
+    load_id = app._updates_load_id
 
     # While an install/update is running the operation spinner and the cancel
     # button must not be hidden by a background refresh.
@@ -271,7 +273,7 @@ def load_updates(app):
     if not installing:
         if use_skeleton:
             try:
-                app.updates_table.set_loading(True)
+                app.updates_table.set_loading(True, "Loading updates\u2026")
                 app.updates_table.setVisible(True)
                 app.loading_widget.stop_animation()
                 app.loading_widget.setVisible(False)
@@ -299,8 +301,6 @@ def load_updates(app):
 
     def load_in_thread():
         try:
-            packages = []
-
             with ThreadPoolExecutor(max_workers=5) as ex:
                 fut_pacman = ex.submit(_check_pacman_updates)
                 fut_aur = ex.submit(_check_aur_updates)
@@ -320,65 +320,102 @@ def load_updates(app):
                     except Exception:
                         pass
 
-                for fut in as_completed([fut_pacman, fut_aur, fut_flatpak, fut_npm]):
+                def finalize(pkgs, add_local=True):
+                    """Merge local update entries, drop ignored ones, and dedupe."""
+                    out = list(pkgs or [])
+                    if add_local:
+                        try:
+                            entries = app.load_local_update_entries()
+                            for e in entries:
+                                name = (e.get('name') or '').strip()
+                                if not name:
+                                    continue
+                                installed = (e.get('installed_version') or '').strip()
+                                if not installed and e.get('installed_version_cmd'):
+                                    try:
+                                        r = subprocess.run(["bash", "-lc", e['installed_version_cmd']], capture_output=True, text=True, timeout=30)
+                                        if r.returncode == 0:
+                                            installed = (r.stdout or '').strip().splitlines()[0].strip()
+                                    except Exception:
+                                        installed = ''
+                                latest = (e.get('latest_version') or '').strip()
+                                if not latest and e.get('latest_version_cmd'):
+                                    try:
+                                        r = subprocess.run(["bash", "-lc", e['latest_version_cmd']], capture_output=True, text=True, timeout=30)
+                                        if r.returncode == 0:
+                                            latest = (r.stdout or '').strip().splitlines()[0].strip()
+                                    except Exception:
+                                        latest = ''
+                                if installed and latest and installed != latest:
+                                    out.append({
+                                        'name': name,
+                                        'version': installed,
+                                        'new_version': latest,
+                                        'id': (e.get('id') or name),
+                                        'source': 'Local'
+                                    })
+                        except Exception:
+                            pass
+                    try:
+                        ignored = app.load_ignored_updates()
+                        if ignored:
+                            out = [p for p in out if p.get('name') not in ignored]
+                    except Exception:
+                        pass
+                    seen = set()
+                    deduped = []
+                    for p in out:
+                        key = p.get('id') or p.get('name')
+                        if key and key in seen:
+                            continue
+                        seen.add(key)
+                        deduped.append(p)
+                    return deduped
+
+                def is_stale():
+                    return (app.cancel_update_load
+                            or app.loading_context != 'updates'
+                            or app.current_view != 'updates'
+                            or getattr(app, '_updates_load_id', 0) != load_id)
+
+                # First paint: pacman updates land as soon as their check
+                # finishes (the first-run DB sync is the slow part), so the
+                # table shows data immediately instead of a long loading
+                # animation. AUR/Flatpak/npm results follow in the final emit.
+                initial = []
+                try:
+                    initial = finalize(fut_pacman.result() or [])
+                except Exception:
+                    initial = []
+                if not is_stale():
+                    try:
+                        app._updates_loading = False
+                    except Exception:
+                        pass
+                    app.packages_ready.emit(initial, load_id, False)
+
+                packages = list(initial)
+                for fut in as_completed([fut_aur, fut_flatpak, fut_npm]):
                     try:
                         packages.extend(fut.result() or [])
                     except Exception:
                         pass
+                packages = finalize(packages, add_local=False)
 
-            try:
-                entries = app.load_local_update_entries()
-                for e in entries:
-                    name = (e.get('name') or '').strip()
-                    if not name:
-                        continue
-                    installed = (e.get('installed_version') or '').strip()
-                    if not installed and e.get('installed_version_cmd'):
-                        try:
-                            r = subprocess.run(["bash", "-lc", e['installed_version_cmd']], capture_output=True, text=True, timeout=30)
-                            if r.returncode == 0:
-                                installed = (r.stdout or '').strip().splitlines()[0].strip()
-                        except Exception:
-                            installed = ''
-                    latest = (e.get('latest_version') or '').strip()
-                    if not latest and e.get('latest_version_cmd'):
-                        try:
-                            r = subprocess.run(["bash", "-lc", e['latest_version_cmd']], capture_output=True, text=True, timeout=30)
-                            if r.returncode == 0:
-                                latest = (r.stdout or '').strip().splitlines()[0].strip()
-                        except Exception:
-                            latest = ''
-                    if installed and latest and installed != latest:
-                        packages.append({
-                            'name': name,
-                            'version': installed,
-                            'new_version': latest,
-                            'id': (e.get('id') or name),
-                            'source': 'Local'
-                        })
-            except Exception:
-                pass
-
-            try:
-                ignored = app.load_ignored_updates()
-                if ignored:
-                    packages = [p for p in packages if p.get('name') not in ignored]
-            except Exception:
-                pass
-
-            if not app.cancel_update_load and app.loading_context == 'updates' and app.current_view == 'updates':
+            if not is_stale():
                 try:
                     app._updates_loading = False
                 except Exception:
                     pass
-                app.packages_ready.emit(packages)
+                app.packages_ready.emit(packages, load_id, True)
         except Exception as e:
             app.log(f"Error: {str(e)}")
             try:
                 app._updates_loading = False
             except Exception:
                 pass
-            app.load_error.emit()
+            if getattr(app, '_updates_load_id', 0) == load_id:
+                app.load_error.emit()
 
     Thread(target=load_in_thread, daemon=True).start()
 
@@ -388,6 +425,8 @@ def load_installed_packages(app):
     app.all_packages = []
     app.current_page = 0
     app.loading_context = "installed"
+    app._installed_load_id = getattr(app, '_installed_load_id', 0) + 1
+    load_id = app._installed_load_id
 
     def load_in_thread():
         try:
@@ -648,9 +687,10 @@ def load_installed_packages(app):
                 if pkg.get('source') in ('pacman', 'AUR'):
                     pkg['installed_date'] = _installed_ts(pkg.get('name') or '', pkg.get('version') or '')
 
-            app.packages_ready.emit(packages)
+            app.packages_ready.emit(packages, load_id, True)
         except Exception as e:
             app.log(f"Error: {str(e)}")
-            app.load_error.emit()
+            if getattr(app, '_installed_load_id', 0) == load_id:
+                app.load_error.emit()
 
     Thread(target=load_in_thread, daemon=True).start()

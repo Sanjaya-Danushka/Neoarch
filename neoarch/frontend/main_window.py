@@ -27,7 +27,7 @@ _BASE_DIR = str(PROJECT_ROOT)
 _DISCOVER_ICON_DIR = os.path.join(_BASE_DIR, "assets", "icons", "discover")
 
 class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _SearchMixin, _FiltersMixin, _PluginsMixin, _SettingsMixin, _AuthMixin, _IconsMixin, QMainWindow):
-    packages_ready = pyqtSignal(list)
+    packages_ready = pyqtSignal(list, object, bool)  # packages, load_id, is_final
     discover_results_ready = pyqtSignal(list)
     show_message = pyqtSignal(str, str)
     log_signal = pyqtSignal(str)
