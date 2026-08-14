@@ -14,7 +14,6 @@ from threading import Thread
 from typing import List, Dict, Optional
 
 from neoarch.backend.auth import get_auth_command
-from neoarch.backend.workers import CommandWorker
 from neoarch.resources.paths import APP_VERSION
 
 __all__ = [

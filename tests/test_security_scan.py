@@ -5,7 +5,6 @@ import os
 import pytest
 
 from neoarch.backend.services.security_scan import (
-    _is_binary,
     _parse_install_scriptlets,
     _parse_pkgbuild_sources,
     findings_for_file,
@@ -123,12 +122,6 @@ def test_binary_elf_source(tmp_path):
     f = scan_pkgbuild("pkgname=x\nsource=('evil_bin')\n", base_dir=str(tmp_path))
     assert "local binary source" in find_rules(f)
     assert any(x["severity"] == "critical" for x in f)
-
-
-def test_source_is_binary_util():
-    assert _is_binary(b"\x7fELF\x00")
-    assert _is_binary("text\x00with null")
-    assert not _is_binary("plain text source")
 
 
 # ── scriptlet extraction and scanning ─────────────────────────────────────

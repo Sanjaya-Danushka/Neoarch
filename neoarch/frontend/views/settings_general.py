@@ -1,9 +1,8 @@
 import os
 from typing import Any
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QCheckBox, QLineEdit, QPushButton, QFileDialog, QComboBox,
                              QFrame)
-from PyQt6.QtCore import Qt
 
 from neoarch.backend import sys_utils
 

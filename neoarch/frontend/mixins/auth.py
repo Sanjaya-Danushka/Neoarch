@@ -1,6 +1,5 @@
 """Authentication, first-run setup, and system utility mixin."""
 
-import os
 import subprocess
 import tempfile
 import shutil
@@ -331,7 +330,7 @@ class _AuthMixin:
     def manage_pacnew(self):
         """Show the .pacnew file manager dialog."""
         from neoarch.backend.services.hygiene import list_pacnew, diff_pacnew, accept_pacnew, delete_pacnew
-        from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
+        from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLabel,
                                      QListWidget, QListWidgetItem, QDialogButtonBox,
                                      QPlainTextEdit, QMessageBox)
         files = list_pacnew()

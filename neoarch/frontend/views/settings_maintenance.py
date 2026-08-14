@@ -1,7 +1,6 @@
 from typing import Any
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
                              QLabel, QPushButton, QSpinBox)
-from PyQt6.QtCore import Qt
 
 _CARD = """
     QFrame#settingsCard {

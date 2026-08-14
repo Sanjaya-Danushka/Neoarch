@@ -117,8 +117,3 @@ def search_live_packages(query: str, limit: int = 8) -> List[Dict]:
         return []
     specs = search_pacman(query, limit)
     return merge_results(specs, search_aur(query, limit))
-
-
-def _icon_for(pkg: str) -> str:
-    """Best-effort icon path (returns empty; UI falls back to default)."""
-    return ""

@@ -2,11 +2,10 @@
 
 import os
 
-from PyQt6.QtWidgets import QFrame, QVBoxLayout, QLabel, QWidget, QCheckBox, QRadioButton, QScrollArea
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget, QCheckBox, QScrollArea
 from PyQt6.QtCore import Qt
 
 from neoarch.resources.paths import PROJECT_ROOT
-from neoarch.frontend.styles import Styles
 from neoarch.frontend.components.source_card import SourceCard
 
 from neoarch.frontend.components.plugins_sidebar import PluginsSidebar

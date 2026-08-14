@@ -9,7 +9,6 @@ import json
 import re
 import subprocess
 from threading import Thread
-from PyQt6.QtCore import QTimer
 
 from neoarch.backend.workers import CommandWorker
 from neoarch.backend.auth import get_askpass_env
@@ -19,6 +18,58 @@ __all__ = [
     "update_packages", "update_core_tools",
     "_update_system_packages", "_update_flatpak", "_update_npm", "_update_aur",
 ]
+
+
+_AUR_ERROR_HINTS = [
+    (re.compile(r'no such file or directory'), "a build tool is missing (install base-devel)"),
+    (re.compile(r'could not satisfy dependencies'), "there is a dependency conflict"),
+    (re.compile(r'A failure occurred in build'), "a package failed to build"),
+    (re.compile(r'exit status \d+'), "a package failed to build"),
+    (re.compile(r'not found in remote repositories'), "a package was not found in the AUR"),
+]
+
+
+def _classify_aur_hint(msg):
+    """Return a short human-readable hint for an AUR helper failure blob."""
+    for pattern, label in _AUR_ERROR_HINTS:
+        if pattern.search(msg or ''):
+            return label
+    return None
+
+
+def parse_aur_failures(msg):
+    """Parse AUR helper stderr into failed packages and a reason hint.
+
+    Handles yay ("error making: <pkg>: <reason>") and paru ("Failed to
+    install ... <pkg> - <reason>") output. Returns (failed, hint) where
+    failed maps package names to their failure reasons.
+    """
+    failed = {}
+    if not msg:
+        return failed, None
+    in_failed_section = False
+    for line in msg.splitlines():
+        text = line.strip()
+        if not text:
+            continue
+        if 'manual intervention is required' in text.lower():
+            in_failed_section = True
+            continue
+        m = re.search(r'error making:\s*(.+?):\s*(.*)$', text)
+        if m:
+            failed[m.group(1).strip()] = m.group(2).strip() or 'package failed to build'
+            continue
+        if in_failed_section:
+            pkg = reason = None
+            if ' - ' in text:
+                pkg, _, reason = text.partition(' - ')
+            else:
+                sep = text.find(': ')
+                if sep > 0:
+                    pkg, reason = text[:sep], text[sep + 2:]
+            if pkg and reason:
+                failed[pkg.strip()] = reason.strip()
+    return failed, _classify_aur_hint(msg)
 
 
 def _clean_pacman_cache(app):
@@ -61,6 +112,8 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
             updated_pkgs = 0
             cancelled = False
             failed_sources = []
+            aur_failures = {}
+            aur_hint = None
 
             # Base percent offset of each source within the overall update.
             source_offsets = {}
@@ -151,11 +204,15 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                     worker.output.connect(app.log)
                     worker.line_update.connect(app.log_line_update)
                     def _on_err_aur(msg):
-                        nonlocal overall_success, failed_sources
+                        nonlocal overall_success, failed_sources, aur_failures, aur_hint
                         app.log(msg)
                         overall_success = False
                         if 'AUR' not in failed_sources:
                             failed_sources.append('AUR')
+                        failed, hint = parse_aur_failures(msg)
+                        aur_failures.update(failed)
+                        if hint and not aur_hint:
+                            aur_hint = hint
                     worker.error.connect(_on_err_aur)
                     worker.run()
                     emit_progress(f"Completed {source} packages", source_count)
@@ -316,12 +373,18 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                 failed_msg = "Some updates failed"
                 if failed_sources:
                     failed_msg += f" ({', '.join(failed_sources)})"
-                failed_msg += ". See console for details."
+                if aur_failures:
+                    failed_msg += ": " + ", ".join(aur_failures.keys())
+                if aur_hint:
+                    failed_msg += f". {aur_hint.capitalize()}."
+                failed_msg += " See console for details."
                 try:
                     app.progress_update.emit(failed_msg, -1)
                 except Exception:
                     pass
                 app.show_message.emit("Update Partial", failed_msg)
+                for name, reason in aur_failures.items():
+                    app.log(f"  Failed AUR package: {name}: {reason}")
                 try:
                     app.installation_progress.emit("failed", False)
                 except Exception:

@@ -7,7 +7,6 @@ the system keyring first, then falls back to the 0600 session credential file,
 so passwordless sudo works even without a keyring daemon.
 """
 import sys
-import os
 from pathlib import Path
 
 

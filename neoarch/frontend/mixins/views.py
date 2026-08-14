@@ -28,13 +28,8 @@ from neoarch.frontend.components.loading_spinner import LoadingSpinner
 from neoarch.frontend.components.updates_table import UpdatesTable, _parse_size
 from neoarch.frontend.components.toast import Toast
 from neoarch.frontend.components.installed_table import HoverTableWidget
-
-from neoarch.frontend.components.source_card import SourceCard
-from neoarch.frontend.components.flow_layout import FlowLayout
-from neoarch.frontend.styles import Styles
 from neoarch.backend.services import help as help_service
 from neoarch.backend.package import loader as packages_service
-from neoarch.backend.package import installer as install_service
 from neoarch.backend.package import updater as update_service
 from neoarch.backend.package import uninstaller as uninstall_service
 from neoarch.backend.services import ignore as ignore_service
@@ -2745,7 +2740,7 @@ class _ViewsMixin:
                 self.log("Update cancelled: authentication required.")
                 return
             self.log(f"Updating {name} ({source})")
-            self.installation_progress.emit("start", False)
+            self.installation_progress.emit("start", True)
             update_service.update_packages(self, {source: [name]})
         elif action == "uninstall":
             if not name:
@@ -3331,13 +3326,11 @@ class _ViewsMixin:
             self._cloud_login()
 
     def _cloud_login(self):
-        from neoarch.backend.cloud_auth import CloudAuthManager
         cm = getattr(self, '_cloud_auth', None)
         if cm:
             cm.start_login()
 
     def _cloud_logout(self):
-        from neoarch.backend.cloud_auth import CloudAuthManager
         cm = getattr(self, '_cloud_auth', None)
         if cm:
             cm.logout()

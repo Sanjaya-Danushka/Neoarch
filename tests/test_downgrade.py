@@ -156,12 +156,3 @@ def test_add_to_ignorepkg_already_present(monkeypatch):
 
 def test_ignorepkg_shell_injection_rejected():
     assert downgrade.add_to_ignorepkg("foo; rm -rf /") is False
-
-
-def test_ignorepkg_entries_parse_delegates(monkeypatch):
-    from neoarch.backend.services import marks
-
-    monkeypatch.setattr(marks, "get_ignorepkg",
-                        lambda: ["firefox", "vim", "neovim"])
-    entries = downgrade._ignorepkg_entries()
-    assert entries == ["firefox", "vim", "neovim"]

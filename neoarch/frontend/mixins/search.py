@@ -5,9 +5,6 @@ import json
 import subprocess
 from threading import Thread
 
-from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QWidget, QTableWidgetItem, QHeaderView
-from PyQt6.QtCore import Qt
-
 from neoarch.resources.paths import PROJECT_ROOT
 
 

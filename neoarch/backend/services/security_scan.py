@@ -186,14 +186,6 @@ def _finding(severity: str, rule: str, detail: str,
 # Line-based scanning
 # ──────────────────────────────────────────────────────────────────────────
 
-def _is_binary(text) -> bool:
-    """Return True if a local source file looks like binary content."""
-    head = text[:1024]
-    if isinstance(text, bytes):
-        return head.startswith(b"\x7fELF") or b"\x00" in head
-    return head.startswith("\x7fELF") or "\x00" in head
-
-
 def scan_text(text: str, context: str = "", base_dir: str = "",
               source_files: Optional[List[str]] = None,
               src_line: int = 0) -> List[Dict]:

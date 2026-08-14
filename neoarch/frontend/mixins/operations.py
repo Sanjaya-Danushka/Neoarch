@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
 
 from PyQt6.QtWidgets import QMessageBox, QLabel
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import QTimer
 from PyQt6.QtGui import QColor
 
 from neoarch.backend.package import installer as install_service
@@ -165,42 +165,46 @@ class _OperationsMixin:
                 checkbox.setChecked(new_state)
 
     def clean_cache(self):
-        """Clean package and system cache (BleachBit + pacman)."""
+        """Clean package and system cache (BleachBit + pacman) in a background thread."""
         if not self.ensure_session_auth():
             self.log("Cache clean cancelled: authentication required.")
             return
-        self.log("Cleaning package cache\u2026")
-        # BleachBit system cache cleaning
-        try:
-            r = subprocess.run(["which", "bleachbit"], capture_output=True, text=True, timeout=5)
-            if r.returncode == 0:
-                self.log("Running BleachBit cache cleaner\u2026")
-                bb = subprocess.run(
-                    ["bleachbit", "--clean", "system.cache", "system.tmp", "system.trash",
-                     "system.recent_documents", "system.clipboard"],
-                    capture_output=True, text=True, timeout=120,
-                )
-                if bb.returncode == 0:
-                    self.log("BleachBit cleaned successfully.")
+
+        def _run():
+            self.log("Cleaning package cache\u2026")
+            # BleachBit system cache cleaning
+            try:
+                r = subprocess.run(["which", "bleachbit"], capture_output=True, text=True, timeout=5)
+                if r.returncode == 0:
+                    self.log("Running BleachBit cache cleaner\u2026")
+                    bb = subprocess.run(
+                        ["bleachbit", "--clean", "system.cache", "system.tmp", "system.trash",
+                         "system.recent_documents", "system.clipboard"],
+                        capture_output=True, text=True, timeout=120,
+                    )
+                    if bb.returncode == 0:
+                        self.log("BleachBit cleaned successfully.")
+                    else:
+                        self.log(f"BleachBit: {bb.stderr.strip() or 'completed with warnings'}")
                 else:
-                    self.log(f"BleachBit: {bb.stderr.strip() or 'completed with warnings'}")
-            else:
-                self.log("BleachBit not installed, skipping.")
-        except Exception as e:
-            self.log(f"BleachBit skipped: {e}")
-        # Pacman package cache clean
-        try:
-            env = self.get_askpass_env()
-            result = subprocess.run(
-                ["sudo", "-A", "pacman", "-Sc", "--noconfirm"],
-                capture_output=True, text=True, timeout=60, env=env,
-            )
-            if result.returncode == 0:
-                self.log("Pacman cache cleaned successfully.")
-            else:
-                self.log(f"Pacman cache clean: {result.stderr.strip()}")
-        except Exception as e:
-            self.log(f"Pacman cache clean failed: {e}")
+                    self.log("BleachBit not installed, skipping.")
+            except Exception as e:
+                self.log(f"BleachBit skipped: {e}")
+            # Pacman package cache clean
+            try:
+                env = self.get_askpass_env()
+                result = subprocess.run(
+                    ["sudo", "-A", "pacman", "-Sc", "--noconfirm"],
+                    capture_output=True, text=True, timeout=60, env=env,
+                )
+                if result.returncode == 0:
+                    self.log("Pacman cache cleaned successfully.")
+                else:
+                    self.log(f"Pacman cache clean: {result.stderr.strip()}")
+            except Exception as e:
+                self.log(f"Pacman cache clean failed: {e}")
+
+        Thread(target=_run, daemon=True).start()
 
     def update_selected(self):
         if self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
@@ -571,7 +575,7 @@ class _OperationsMixin:
             self.log("Update cancelled: authentication required.")
             return
         source = pkg.get('source', 'pacman')
-        self.installation_progress.emit("start", False)
+        self.installation_progress.emit("start", True)
         update_service.update_packages(self, {source: [pkg['name']]})
 
     def uninstall_from_detail(self):

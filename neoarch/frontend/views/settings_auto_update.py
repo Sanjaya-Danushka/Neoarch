@@ -1,7 +1,7 @@
 from typing import Any
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
                              QLabel, QCheckBox, QSpinBox, QPushButton, QTimeEdit)
-from PyQt6.QtCore import Qt, QTime
+from PyQt6.QtCore import QTime
 
 _CARD = """
     QFrame#settingsCard {

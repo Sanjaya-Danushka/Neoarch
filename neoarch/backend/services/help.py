@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap
 
-from neoarch.resources.paths import ASSETS_DIR, PROJECT_ROOT, APP_VERSION
+from neoarch.resources.paths import ASSETS_DIR, APP_VERSION
 
 __all__ = ["_make_text_tab", "show_help", "show_about"]
 

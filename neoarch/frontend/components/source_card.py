@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QMenu, QSizePolicy,
 )
 from PyQt6.QtCore import pyqtSignal, Qt, QRectF, QSize, QPropertyAnimation, QEasingCurve, pyqtProperty
-from PyQt6.QtGui import QColor, QPainter, QPen, QFont, QFontMetrics, QLinearGradient, QRadialGradient
+from PyQt6.QtGui import QColor, QPainter, QPen, QFont, QFontMetrics, QRadialGradient
 from neoarch.frontend.components.source_item import SourceItem
 from neoarch.frontend.components.flow_layout import FlowLayout
 

@@ -242,19 +242,7 @@ def install_version(pkg: str, version: Optional[str] = None, path: Optional[str]
     return _do()
 
 
-def _ignorepkg_entries() -> List[str]:
-    """Current IgnorePkg package names (delegates to the marks service)."""
-    from neoarch.backend.services import marks
-    return marks.get_ignorepkg()
-
-
 def add_to_ignorepkg(pkg: str) -> bool:
     """Append `pkg` to IgnorePkg in /etc/pacman.conf (needs root)."""
     from neoarch.backend.services import marks
     return marks.add_ignorepkg(pkg)
-
-
-def remove_from_ignorepkg(pkg: str) -> bool:
-    """Remove `pkg` from IgnorePkg in /etc/pacman.conf (needs root)."""
-    from neoarch.backend.services import marks
-    return marks.remove_ignorepkg(pkg)

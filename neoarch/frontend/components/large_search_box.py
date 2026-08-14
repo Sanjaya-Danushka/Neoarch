@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from threading import Thread
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit,
@@ -31,17 +32,12 @@ _C = {
 }
 
 
-def _hex_to_rgba(hex_color: str, alpha: float) -> str:
-    h = hex_color.lstrip("#")
-    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-    return f"rgba({r}, {g}, {b}, {alpha})"
-
-
 class LargeSearchBox(QWidget):
     """Premium dashboard home for NeoArch with search, stat cards, and actions."""
 
     search_requested = pyqtSignal(str)
     search_submitted = pyqtSignal(str)
+    counts_ready = pyqtSignal(int, int, int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -57,6 +53,7 @@ class LargeSearchBox(QWidget):
         self.dashboard_timer = QTimer()
         self.dashboard_timer.setInterval(30000)
         self.dashboard_timer.timeout.connect(self._load_system_counts)
+        self.counts_ready.connect(self.refresh_counts)
 
         self.hero_container: QFrame | None = None
         self._focused = False
@@ -362,41 +359,42 @@ class LargeSearchBox(QWidget):
         """)
 
     def _load_system_counts(self):
-        installed_count = 0
-        try:
-            r = subprocess.run(["pacman", "-Q"], capture_output=True, text=True, timeout=3)
-            if r.returncode == 0:
-                installed_count = len([l for l in r.stdout.strip().split("\n") if l.strip()])
-        except Exception:
-            pass
-
-        updates_count = 0
         app = self.window() if hasattr(self, 'window') else None
-        if app and hasattr(app, 'updates_all') and app.updates_all:
-            updates_count = len(app.updates_all)
-        else:
+        cached_updates = getattr(app, 'updates_all', None) if app is not None else None
+
+        def _run():
+            installed_count = 0
             try:
-                r = subprocess.run(["checkupdates"], capture_output=True, text=True, timeout=5)
-                if r.returncode == 0 and r.stdout.strip():
-                    updates_count = len(r.stdout.strip().split("\n"))
+                r = subprocess.run(["pacman", "-Q"], capture_output=True, text=True, timeout=3)
+                if r.returncode == 0:
+                    installed_count = len([l for l in r.stdout.strip().split("\n") if l.strip()])
             except Exception:
                 pass
 
-        sources_count = 1
-        for cmd in (["which", "yay", "paru"], ["flatpak", "list"],
-                    ["which", "npm"], ["which", "docker"]):
-            try:
-                r = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
-                if r.returncode == 0 and r.stdout.strip():
-                    sources_count += 1
-            except Exception:
-                pass
+            updates_count = 0
+            if cached_updates:
+                updates_count = len(cached_updates)
+            else:
+                try:
+                    r = subprocess.run(["checkupdates"], capture_output=True, text=True, timeout=5)
+                    if r.returncode == 0 and r.stdout.strip():
+                        updates_count = len(r.stdout.strip().split("\n"))
+                except Exception:
+                    pass
 
-        self.refresh_counts(
-            installed=installed_count,
-            updates=updates_count,
-            sources=sources_count,
-        )
+            sources_count = 1
+            for cmd in (["which", "yay", "paru"], ["flatpak", "list"],
+                        ["which", "npm"], ["which", "docker"]):
+                try:
+                    r = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
+                    if r.returncode == 0 and r.stdout.strip():
+                        sources_count += 1
+                except Exception:
+                    pass
+
+            self.counts_ready.emit(installed_count, updates_count, sources_count)
+
+        Thread(target=_run, daemon=True).start()
 
     # ── Actions ─────────────────────────────────────────────────────
     def _on_update_all(self):
