@@ -174,10 +174,10 @@ def accept_pacnew(path: str) -> bool:
     backup = info["original"] + ".pacsave"
     try:
         if os.path.exists(info["original"]):
-            shutil_copy(info["original"], backup)
+            _run_sudo(["cp", "-a", info["original"], backup])
         result = _run_sudo(["cp", path, info["original"]])
         if result.returncode == 0:
-            os.remove(path)
+            _run_sudo(["rm", "-f", path])
             return True
     except Exception:
         pass
@@ -185,17 +185,15 @@ def accept_pacnew(path: str) -> bool:
 
 
 def delete_pacnew(path: str) -> bool:
-    """Delete a .pacnew file without touching the original."""
+    """Delete a .pacnew file without touching the original (needs root)."""
+    result = _run_sudo(["rm", "-f", path])
+    if result.returncode == 0 and not os.path.exists(path):
+        return True
     try:
         os.remove(path)
         return True
     except Exception:
         return False
-
-
-def shutil_copy(src: str, dst: str):
-    import shutil
-    shutil.copy2(src, dst)
 
 
 def merge_pacnew(path: str, accept: bool = False) -> Dict:
@@ -253,9 +251,9 @@ def merge_pacnew(path: str, accept: bool = False) -> Dict:
             backup = original + ".pacsave"
             try:
                 if os.path.exists(original):
-                    shutil_copy(original, backup)
+                    _run_sudo(["cp", "-a", original, backup])
                 if _run_sudo(["cp", path, original]).returncode == 0:
-                    os.remove(path)
+                    _run_sudo(["rm", "-f", path])
                     return {"merged": original, "conflicts": False, "backup": backup}
             except Exception:
                 pass

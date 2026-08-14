@@ -324,6 +324,10 @@ class _AuthMixin:
             self.show_message.emit(
                 "Cleanup",
                 "Orphaned packages removed." if ok else "Failed to remove orphaned packages.")
+            try:
+                self._refresh_installed_health_async()
+            except Exception:
+                pass
 
         remove_orphans(progress_cb=self.log, finished_cb=on_done)
 
@@ -392,6 +396,10 @@ class _AuthMixin:
                 list_widget.takeItem(list_widget.row(item))
                 diff_view.clear()
                 self.show_message.emit("Config Files", "Config updated.")
+                try:
+                    self._refresh_installed_health_async()
+                except Exception:
+                    pass
             else:
                 self.show_message.emit("Config Files", "Failed to apply .pacnew file.")
 
@@ -411,6 +419,10 @@ class _AuthMixin:
                 list_widget.takeItem(list_widget.row(item))
                 diff_view.clear()
                 self.show_message.emit("Config Files", ".pacnew file deleted.")
+                try:
+                    self._refresh_installed_health_async()
+                except Exception:
+                    pass
             else:
                 self.show_message.emit("Config Files", "Failed to delete .pacnew file.")
 

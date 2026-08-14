@@ -59,7 +59,12 @@ def test_accept_pacnew_copies_and_removes(monkeypatch, tmp_path):
     def fake_sudo(cmd, timeout=600):
         import shutil
         if cmd[0] == "cp":
-            shutil.copy2(cmd[1], cmd[2])
+            if cmd[1] == "-a":
+                shutil.copy2(cmd[2], cmd[3])
+            else:
+                shutil.copy2(cmd[1], cmd[2])
+        elif cmd[0] == "rm":
+            os.remove(cmd[-1])
         return subprocess.CompletedProcess(cmd, 0, "", "")
 
     monkeypatch.setattr(hygiene, "_run_sudo", fake_sudo)
@@ -69,10 +74,54 @@ def test_accept_pacnew_copies_and_removes(monkeypatch, tmp_path):
     assert (tmp_path / "foo.conf.pacsave").exists()
 
 
+def test_accept_pacnew_backup_uses_sudo(monkeypatch, tmp_path):
+    """Backup must be created via sudo since /etc is root-owned."""
+    original = tmp_path / "foo.conf"
+    original.write_text("old")
+    pacnew = tmp_path / "foo.conf.pacnew"
+    pacnew.write_text("new")
+    calls = []
+
+    def fake_sudo(cmd, timeout=600):
+        import shutil
+        calls.append(cmd)
+        if cmd[0] == "cp" and cmd[1] != "-a":
+            shutil.copy2(cmd[1], cmd[2])
+        elif cmd[0] == "cp":
+            shutil.copy2(cmd[2], cmd[3])
+        elif cmd[0] == "rm":
+            pacnew.unlink()
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(hygiene, "_run_sudo", fake_sudo)
+    assert hygiene.accept_pacnew(str(pacnew)) is True
+    assert calls[0] == ["cp", "-a", str(original), str(tmp_path / "foo.conf.pacsave")]
+    assert calls[1] == ["cp", str(pacnew), str(original)]
+    assert calls[2] == ["rm", "-f", str(pacnew)]
+
+
 def test_delete_pacnew(tmp_path):
     pacnew = tmp_path / "foo.conf.pacnew"
     pacnew.write_text("x")
     assert hygiene.delete_pacnew(str(pacnew)) is True
+    assert not pacnew.exists()
+
+
+def test_delete_pacnew_root_owned_uses_sudo(monkeypatch, tmp_path):
+    """Root-owned /etc files must be removed via sudo, not plain os.remove."""
+    pacnew = tmp_path / "foo.conf.pacnew"
+    pacnew.write_text("x")
+    calls = []
+
+    def fake_sudo(cmd, timeout=600):
+        calls.append(cmd)
+        if cmd[0] == "rm":
+            pacnew.unlink()
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(hygiene, "_run_sudo", fake_sudo)
+    assert hygiene.delete_pacnew(str(pacnew)) is True
+    assert calls == [["rm", "-f", str(pacnew)]]
     assert not pacnew.exists()
 
 
@@ -173,6 +222,8 @@ def test_merge_pacnew_clean_accept(monkeypatch, tmp_path):
     def fake_sudo(cmd, **k):
         if cmd and cmd[0] == "cp":
             shutil.copy(cmd[-2], cmd[-1])
+        elif cmd and cmd[0] == "rm":
+            os.remove(cmd[-1])
         return subprocess.CompletedProcess(cmd, 0, "", "")
 
     monkeypatch.setattr(hygiene, "_run_sudo", fake_sudo)
