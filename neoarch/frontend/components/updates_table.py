@@ -13,6 +13,7 @@ delegate, and talks to the rest of the app through signals.
 
 import json
 import re
+import shutil
 import subprocess
 import urllib.parse
 from datetime import datetime
@@ -196,7 +197,7 @@ class _EnrichWorker(QObject):
             try:
                 r = subprocess.run(
                     ["flatpak", "list", "--columns=application,description"],
-                    capture_output=True, text=True, timeout=60,
+                    capture_output=True, text=True, timeout=60, check=False,
                 )
                 if r.returncode == 0 and r.stdout:
                     for ln in r.stdout.splitlines():
@@ -211,7 +212,7 @@ class _EnrichWorker(QObject):
             try:
                 r = subprocess.run(
                     ["npm", "view"] + npm_names + ["dist.unpackedSize", "--json"],
-                    capture_output=True, text=True, timeout=120,
+                    capture_output=True, text=True, timeout=120, check=False,
                 )
                 if r.returncode == 0 and r.stdout.strip():
                     data = json.loads(r.stdout)
@@ -228,20 +229,22 @@ class _EnrichWorker(QObject):
         aur_names = [p.get("name", "") for p in self._packages if p.get("source") == "AUR"]
         if aur_names:
             try:
-                for i in range(0, len(aur_names), 100):
-                    batch = aur_names[i:i + 100]
-                    args = "&".join("arg[]=" + urllib.parse.quote(n) for n in batch)
-                    r = subprocess.run(
-                        ["curl", "-s", f"https://aur.archlinux.org/rpc/?v=5&type=info&{args}"],
-                        capture_output=True, text=True, timeout=30,
-                    )
-                    if r.returncode == 0 and r.stdout.strip():
-                        data = json.loads(r.stdout)
-                        for res in data.get("results", []):
-                            name = res.get("Name", "")
-                            size = res.get("Size")
-                            if name and size:
-                                meta.setdefault(name, {})["download_size"] = f"{int(size)} B"
+                curl = shutil.which("curl")
+                if curl:
+                    for i in range(0, len(aur_names), 100):
+                        batch = aur_names[i:i + 100]
+                        args = "&".join("arg[]=" + urllib.parse.quote(n) for n in batch)
+                        r = subprocess.run(
+                            [curl, "-s", f"https://aur.archlinux.org/rpc/?v=5&type=info&{args}"],
+                            capture_output=True, text=True, timeout=30, check=False,
+                        )
+                        if r.returncode == 0 and r.stdout.strip():
+                            data = json.loads(r.stdout)
+                            for res in data.get("results", []):
+                                name = res.get("Name", "")
+                                size = res.get("Size")
+                                if name and size:
+                                    meta.setdefault(name, {})["download_size"] = f"{int(size)} B"
             except Exception:
                 pass
 
