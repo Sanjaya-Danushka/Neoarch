@@ -122,6 +122,11 @@ class _SearchMixin:
                 if hasattr(self, 'no_results_widget'):
                     self.no_results_widget.setVisible(False)
                 self.package_table.setRowCount(0)
+                try:
+                    if hasattr(self, 'updates_table') and self.updates_table:
+                        self.updates_table.set_discover_mode(False)
+                except Exception:
+                    pass
                 self.header_info.setText("Search and discover new packages to install")
                 btn = getattr(self, 'discover_select_all_btn', None)
                 if btn is not None:
@@ -179,7 +184,7 @@ class _SearchMixin:
             self._view_mode = "grid"
             if self.current_view == "plugins" and hasattr(self, 'plugins_view') and self.plugins_view:
                 self.plugins_view.show_grid_mode()
-            elif self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
+            elif self.current_view in ("updates", "installed", "discover") and hasattr(self, 'updates_table'):
                 self.updates_table.setVisible(False)
                 self.package_table.setVisible(False)
                 self.packages_grid.setVisible(True)
@@ -195,7 +200,7 @@ class _SearchMixin:
             self._view_mode = "table"
             if self.current_view == "plugins" and hasattr(self, 'plugins_view') and self.plugins_view:
                 self.plugins_view.show_table_mode()
-            elif self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
+            elif self.current_view in ("updates", "installed", "discover") and hasattr(self, 'updates_table'):
                 self.packages_grid.setVisible(False)
                 self.package_table.setVisible(False)
                 self.updates_table.setVisible(True)
@@ -247,6 +252,11 @@ class _SearchMixin:
                 if hasattr(self, 'no_results_widget'):
                     self.no_results_widget.setVisible(False)
                 self.package_table.setRowCount(0)
+                try:
+                    if hasattr(self, 'updates_table') and self.updates_table:
+                        self.updates_table.set_discover_mode(False)
+                except Exception:
+                    pass
                 self.header_info.setText("Search and discover new packages to install")
                 try:
                     if hasattr(self, 'source_card') and self.source_card:
@@ -334,16 +344,23 @@ class _SearchMixin:
         show_flatpak = bool(_src.get("Flatpak", True))
         show_npm = bool(_src.get("npm", True))
 
-        # Show loading spinner
-        self.loading_widget.setVisible(True)
-        self.loading_widget.set_message("Searching packages...")
-        self.loading_widget.start_animation()
-        self._hide_all_package_views()
-        try:
-            if hasattr(self, 'loading_container'):
-                self.loading_container.setVisible(True)
-        except Exception:
-            pass
+        # Show loading. Table mode uses the same in-table loading overlay as
+        # the Updates/Installed pages; grid mode falls back to the spinner.
+        if self._view_mode == "table":
+            self._show_active_view()
+            if hasattr(self, 'updates_table') and self.updates_table:
+                self.updates_table.set_discover_mode(True)
+                self.updates_table.set_loading(True, "Searching packages...")
+        else:
+            self.loading_widget.setVisible(True)
+            self.loading_widget.set_message("Searching packages...")
+            self.loading_widget.start_animation()
+            self._hide_all_package_views()
+            try:
+                if hasattr(self, 'loading_container'):
+                    self.loading_container.setVisible(True)
+            except Exception:
+                pass
         try:
             if hasattr(self, 'console_toggle_btn'):
                 self.console_toggle_btn.setVisible(False)
@@ -570,21 +587,29 @@ class _SearchMixin:
         self.current_page = 0
         query = self.search_input.text().strip()
         self._update_discover_card_results(filtered, query)
-
-        self.package_table.setUpdatesEnabled(False)
-        self.package_table.setRowCount(0)
         self._ensure_installed_index_async(selected_sources)
+
+        # Discover renders through the same redesigned table as Updates/Installed.
+        try:
+            if hasattr(self, 'updates_table') and self.updates_table:
+                self.updates_table.set_discover_mode(True)
+                self.updates_table.show_installed_date(False)
+                self.updates_table.set_installed_mode(False)
+                self.updates_table.set_enrich(True)
+                if not filtered:
+                    self.updates_table.set_empty_text(
+                        f"No packages found matching '{query}'.", "Try a different search term")
+                else:
+                    self.updates_table.set_empty_text(
+                        "No packages found", "Try a different search term")
+                page = filtered[:self.packages_per_page]
+                mapped = [self._map_discover_pkg(p) for p in page]
+                self.updates_table.set_packages(mapped)
+        except Exception:
+            pass
 
         start = 0
         end = min(self.packages_per_page, len(filtered))
-        for pkg in filtered[start:end]:
-            if self.current_view == "discover":
-                self.add_discover_row(pkg)
-            else:
-                self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg['version'], pkg['source'])
-
-        self.package_table.setUpdatesEnabled(True)
-
         has_more = end < len(filtered)
         self.load_more_btn.setVisible(has_more)
         if has_more:
@@ -593,10 +618,10 @@ class _SearchMixin:
 
         if not filtered:
             self.header_info.setText(f"No packages found matching '{query}'.")
-            self._hide_all_package_views()
             if hasattr(self, 'no_results_widget'):
-                self.no_results_desc.setText(f"No packages found matching '{query}'.")
-                self.no_results_widget.setVisible(True)
+                self.no_results_widget.setVisible(False)
+            # Keep the shared table visible so its empty-state overlay shows.
+            self._show_active_view()
         else:
             count = len(filtered)
             self.header_info.setText(f"{count} packages were found, {count} of which match the specified filters")

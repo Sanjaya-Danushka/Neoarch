@@ -265,6 +265,16 @@ class UpdatesModel(QAbstractTableModel):
             return self._pkgs[row]
         return None
 
+    def append_packages(self, packages):
+        """Extend the model with more rows (Discover pagination)."""
+        if not packages:
+            return
+        start = len(self._pkgs)
+        self.beginInsertRows(QModelIndex(), start, start + len(packages) - 1)
+        self._pkgs.extend(dict(p) for p in packages)
+        self.endInsertRows()
+        self._apply_sort()
+
     def checked_packages(self):
         return [p for p in self._pkgs if p.get("name") in self._checked]
 
@@ -274,7 +284,10 @@ class UpdatesModel(QAbstractTableModel):
     def set_all_checked(self, state):
         if not self._pkgs:
             return
-        self._checked = set(p.get("name") for p in self._pkgs) if state else set()
+        if state:
+            self._checked = set(p.get("name") for p in self._pkgs if not p.get("_installed"))
+        else:
+            self._checked = set()
         if self.rowCount():
             self.dataChanged.emit(
                 self.index(0, 0),
@@ -358,6 +371,8 @@ class UpdatesModel(QAbstractTableModel):
                 return False
             name = pkg.get("name")
             if value in (Qt.CheckState.Checked, Qt.CheckState.PartiallyChecked) or value is True:
+                if pkg.get("_installed"):
+                    return False
                 self._checked.add(name)
             else:
                 self._checked.discard(name)
@@ -612,6 +627,7 @@ class UpdatesTable(QTableView):
         self._loading_enrich = False
         self._enrich = True
         self._installed_mode = False
+        self._discover_mode = False
         self._loading_message = _DEFAULT_LOADING_MESSAGE
 
         self.model = UpdatesModel(self)
@@ -723,6 +739,56 @@ class UpdatesTable(QTableView):
         """Switch the row menu to Installed-view behaviour (Update only when
         available, plus an Uninstall action)."""
         self._installed_mode = bool(installed)
+
+    def set_discover_mode(self, discover):
+        """Configure the shared table for the Discover results view.
+
+        Reuses the exact Updates/Installed rendering, loading overlay, header
+        and empty state; only the visible columns, widths and row menu change.
+        """
+        self._discover_mode = bool(discover)
+        # Hide the updates-only columns (Size / Status / Installed date).
+        for col in (3, 5, 6):
+            self.setColumnHidden(col, discover)
+        if discover:
+            self.setColumnWidth(2, 160)
+            self.setColumnWidth(4, 140)
+        else:
+            self.setColumnWidth(2, 190)
+            self.setColumnWidth(4, 96)
+        self.viewport().update()
+
+    def append_packages(self, packages):
+        """Append more rows without resetting the model (Discover 'Load More')."""
+        if not packages:
+            return
+        self.model.append_packages(packages)
+        self._header_sync()
+        self._sync_overlays()
+
+    def refresh(self):
+        """Repaint rows after in-place metadata changes (e.g. installed marking)."""
+        if self.model.rowCount():
+            self.model.dataChanged.emit(
+                self.model.index(0, 0),
+                self.model.index(self.model.rowCount() - 1, self.model.columnCount() - 1),
+            )
+        self._sync_overlays()
+
+    def mark_installed(self, is_installed):
+        """Set the '_installed' flag on rows in place (Discover)."""
+        changed = False
+        for pkg in self.model._pkgs:
+            flag = False
+            try:
+                flag = bool(is_installed(pkg))
+            except Exception:
+                flag = False
+            if bool(pkg.get("_installed")) != flag:
+                pkg["_installed"] = flag
+                changed = True
+        if changed:
+            self.refresh()
 
     def _header_sync(self):
         header = self.horizontalHeader()
@@ -871,6 +937,8 @@ class UpdatesTable(QTableView):
         pkg = self.model.package_at(row)
         if pkg is None:
             return
+        if pkg.get("_installed"):
+            return
         name = pkg.get("name")
         idx = self.model.index(row, 0)
         checked = name in self.model._checked
@@ -899,7 +967,19 @@ class UpdatesTable(QTableView):
             QMenu::item:selected { background-color: rgba(47, 129, 247, 0.28); color: #fff; }
             QMenu::separator { height: 1px; background: rgba(255, 255, 255, 0.10); margin: 4px 8px; }
         """)
-        if self._installed_mode:
+        if self._discover_mode:
+            installed = bool(pkg.get("_installed"))
+            if not installed:
+                act_install = menu.addAction("Install")
+                act_install.triggered.connect(lambda: self.menu_action.emit("install", pkg))
+            act_details = menu.addAction("View Details")
+            act_details.triggered.connect(lambda: self.menu_action.emit("details", pkg))
+            menu.addSeparator()
+            act_browser = menu.addAction("View in browser")
+            act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
+            act_copy = menu.addAction("Copy name")
+            act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
+        elif self._installed_mode:
             if self._row_has_update(pkg):
                 act_update = menu.addAction("Update")
                 act_update.triggered.connect(lambda: self.menu_action.emit("update", pkg))
@@ -1080,6 +1160,8 @@ class UpdatesRowDelegate(QStyledItemDelegate):
 
     def _paint_check(self, painter, option, index):
         rect = QRectF(option.rect)
+        pkg = self._table.model.package_at(index.row())
+        installed = bool(pkg.get("_installed")) if pkg else False
         state = index.data(Qt.ItemDataRole.CheckStateRole)
         checked = state == Qt.CheckState.Checked
         csize = 18
@@ -1088,6 +1170,14 @@ class UpdatesRowDelegate(QStyledItemDelegate):
         r = QRectF(cx, cy, csize, csize)
         path = QPainterPath()
         path.addRoundedRect(r, 5, 5)
+        if installed:
+            if checked:
+                painter.fillPath(path, QColor(255, 255, 255, 40))
+            else:
+                painter.setPen(QPen(QColor(255, 255, 255, 40), 1.5))
+                painter.fillPath(path, QColor(255, 255, 255, 8))
+                painter.drawPath(path)
+            return
         if checked:
             painter.fillPath(path, _ACCENT)
             pen = QPen(QColor(255, 255, 255), 1.9)
@@ -1130,7 +1220,7 @@ class UpdatesRowDelegate(QStyledItemDelegate):
         name_fm = QFontMetrics(self._name_font)
         name_el = name_fm.elidedText(name, Qt.TextElideMode.ElideRight, int(avail_w))
         painter.setFont(self._name_font)
-        painter.setPen(_TEXT)
+        painter.setPen(_GREEN if pkg.get("_installed") else _TEXT)
         painter.drawText(QRectF(text_left, rect.top() + 7, avail_w, 16),
                          Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft | Qt.TextFlag.TextSingleLine,
                          name_el)

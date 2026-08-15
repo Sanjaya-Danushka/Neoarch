@@ -11,7 +11,6 @@ from threading import Thread
 
 from PyQt6.QtWidgets import QMessageBox, QLabel
 from PyQt6.QtCore import QTimer
-from PyQt6.QtGui import QColor
 
 from neoarch.backend.package import installer as install_service
 from neoarch.backend.package import updater as update_service
@@ -145,7 +144,7 @@ class _OperationsMixin:
 
     def toggle_select_all(self):
         """Toggle all checkboxes: if all checked, uncheck all; otherwise check all."""
-        if self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
+        if self.current_view in ("updates", "installed", "discover") and hasattr(self, 'updates_table'):
             try:
                 if self.updates_table.row_count():
                     self.updates_table.toggle_select_all()
@@ -389,25 +388,41 @@ class _OperationsMixin:
 
     def install_selected(self):
         packages_by_source = {}
-        for row in range(self.package_table.rowCount()):
-            checkbox = self.get_row_checkbox(row)
-            if checkbox is not None and checkbox.isChecked():
-                name_item = self.package_table.item(row, 1)
-                pkg_name = name_item.text().strip() if name_item else ''
-                if self.current_view == "discover":
-                    source = ""
-                    chip = self.package_table.cellWidget(row, 3)
-                    if chip is not None:
-                        labels = chip.findChildren(QLabel)
-                        if labels:
-                            source = labels[-1].text()
-                else:
-                    source_item = self.package_table.item(row, 4)
-                    source = source_item.text() if source_item else "pacman"
-                if source not in packages_by_source:
-                    packages_by_source[source] = []
-                install_token = pkg_name if source == 'Flatpak' else pkg_name
-                packages_by_source[source].append(install_token)
+        if self.current_view == "discover":
+            try:
+                if hasattr(self, 'updates_table') and self.updates_table:
+                    for pkg in self.updates_table.checked_packages():
+                        if pkg.get('_installed'):
+                            continue
+                        source = pkg.get('source') or 'pacman'
+                        pkg_name = (pkg.get('name') or '').strip()
+                        if not pkg_name:
+                            continue
+                        if source not in packages_by_source:
+                            packages_by_source[source] = []
+                        packages_by_source[source].append(pkg_name)
+            except Exception:
+                pass
+        else:
+            for row in range(self.package_table.rowCount()):
+                checkbox = self.get_row_checkbox(row)
+                if checkbox is not None and checkbox.isChecked():
+                    name_item = self.package_table.item(row, 1)
+                    pkg_name = name_item.text().strip() if name_item else ''
+                    if self.current_view == "discover":
+                        source = ""
+                        chip = self.package_table.cellWidget(row, 3)
+                        if chip is not None:
+                            labels = chip.findChildren(QLabel)
+                            if labels:
+                                source = labels[-1].text()
+                    else:
+                        source_item = self.package_table.item(row, 4)
+                        source = source_item.text() if source_item else "pacman"
+                    if source not in packages_by_source:
+                        packages_by_source[source] = []
+                    install_token = pkg_name if source == 'Flatpak' else pkg_name
+                    packages_by_source[source].append(install_token)
         
         if not packages_by_source:
             self.log_signal.emit("No packages selected for installation")
@@ -470,39 +485,15 @@ class _OperationsMixin:
             self._installed_index_building = False
     
     def _mark_installed_in_visible_rows(self):
+        """Mark already-installed Discover rows (green + disabled checkbox)."""
         try:
             if self.current_view != "discover" or not self.installed_index:
                 return
-            green = QColor(16, 185, 129)
-            for row in range(self.package_table.rowCount()):
-                name_item = self.package_table.item(row, 1)
-                ver_item = self.package_table.item(row, 2)
-                if not name_item or not ver_item:
-                    continue
-                chip = self.package_table.cellWidget(row, 3)
-                src = self.get_source_text(row, "discover")
-                pkg = {"name": name_item.text().strip(), "id": name_item.text().strip(), "source": src}
-                if self.is_package_installed(pkg):
-                    name_item.setForeground(green)
-                    ver_item.setForeground(green)
-                    tip = "Already installed"
-                    name_item.setToolTip(tip)
-                    ver_item.setToolTip(tip)
-                    if chip is not None:
-                        try:
-                            labels = chip.findChildren(QLabel)
-                            if labels:
-                                labels[-1].setStyleSheet("color: rgb(16,185,129);")
-                            chip.setToolTip(tip)
-                        except Exception:
-                            pass
-                    try:
-                        checkbox = self.get_row_checkbox(row)
-                        if checkbox is not None:
-                            checkbox.setEnabled(False)
-                            checkbox.setToolTip(tip)
-                    except Exception:
-                        pass
+            try:
+                if hasattr(self, 'updates_table') and self.updates_table:
+                    self.updates_table.mark_installed(self.is_package_installed)
+            except Exception:
+                pass
             try:
                 self._update_discover_install_btn_state()
             except Exception:

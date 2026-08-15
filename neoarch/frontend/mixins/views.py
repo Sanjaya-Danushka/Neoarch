@@ -508,7 +508,7 @@ class _ViewsMixin:
 
     def _show_active_view(self):
         self.packages_grid.setVisible(self._view_mode == "grid")
-        if self.current_view in ("updates", "installed"):
+        if self.current_view in ("updates", "installed", "discover"):
             self.package_table.setVisible(False)
             self.updates_table.setVisible(self._view_mode == "table")
         else:
@@ -1064,7 +1064,7 @@ class _ViewsMixin:
         # Redesigned updates table (hidden by default, used on the Updates page)
         self.updates_table = UpdatesTable(self)
         self.updates_table.setVisible(False)
-        self.updates_table.row_selected.connect(self._show_detail_for_updates)
+        self.updates_table.row_selected.connect(self._on_updates_table_row_selected)
         self.updates_table.row_cleared.connect(lambda: self.package_detail_card.clear())
         self.updates_table.menu_action.connect(self._on_updates_table_menu)
         self.updates_table.checks_changed.connect(self._on_table_checks_changed)
@@ -2011,9 +2011,9 @@ class _ViewsMixin:
         self.package_table.viewport().setMouseTracking(False)
 
     def update_table_columns(self, view_id):
-        # The Installed page renders through the shared updates_table widget,
-        # so package_table is never configured for it.
-        if view_id == "installed":
+        # The Installed and Discover pages render through the shared
+        # updates_table widget, so package_table is never configured for them.
+        if view_id in ("installed", "discover"):
             return
         self._apply_common_table_style()
         if view_id == "bundles":
@@ -2419,13 +2419,18 @@ class _ViewsMixin:
         page_packages = dataset[start:end]
         total = len(dataset)
 
-        self.package_table.setUpdatesEnabled(False)
-        for pkg in page_packages:
-            if self.current_view == "discover":
-                self.add_discover_row(pkg)
-            else:
+        if self.current_view == "discover":
+            mapped = [self._map_discover_pkg(p) for p in page_packages]
+            try:
+                if hasattr(self, 'updates_table') and self.updates_table:
+                    self.updates_table.append_packages(mapped)
+            except Exception:
+                pass
+        else:
+            self.package_table.setUpdatesEnabled(False)
+            for pkg in page_packages:
                 self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'))
-        self.package_table.setUpdatesEnabled(True)
+            self.package_table.setUpdatesEnabled(True)
         if self._view_mode == "grid":
             self._populate_grid()
 
@@ -2438,11 +2443,12 @@ class _ViewsMixin:
             self.log("All results loaded")
 
         # Uncheck the newly loaded items
-        old_count = self.package_table.rowCount() - len(page_packages)
-        for i in range(old_count, self.package_table.rowCount()):
-            checkbox = self.get_row_checkbox(i)
-            if checkbox is not None:
-                checkbox.setChecked(False)
+        if self.current_view != "discover":
+            old_count = self.package_table.rowCount() - len(page_packages)
+            for i in range(old_count, self.package_table.rowCount()):
+                checkbox = self.get_row_checkbox(i)
+                if checkbox is not None:
+                    checkbox.setChecked(False)
 
     def _on_grid_load_more(self):
         """Load the next page of cards when the grid is scrolled to the bottom."""
@@ -2622,10 +2628,33 @@ class _ViewsMixin:
                     "Updates will appear here automatically when available")
             self.updates_table.show_installed_date(False)
             self.updates_table.set_installed_mode(False)
+            self.updates_table.set_discover_mode(False)
             self.updates_table.set_packages(rows)
             self.updates_table.set_loading(False)
         except Exception:
             pass
+
+    def _map_discover_pkg(self, pkg):
+        """Map a Discover search-result dict to the shared updates-table contract."""
+        name = pkg.get('name') or pkg.get('id') or ''
+        installed = False
+        try:
+            installed = self.is_package_installed(pkg)
+        except Exception:
+            pass
+        return {
+            'name': name,
+            'id': pkg.get('id') or name,
+            'version': pkg.get('version') or '',
+            'new_version': pkg.get('version') or '',
+            'source': pkg.get('source') or 'pacman',
+            'description': pkg.get('description') or '',
+            'download_size': '',
+            'installed_date': 0,
+            'status': '',
+            '_installed': bool(installed),
+            '_src': pkg,
+        }
 
     def _map_installed_pkg(self, pkg):
         """Map an installed package dict to the shared updates-table contract."""
@@ -2662,6 +2691,7 @@ class _ViewsMixin:
                 dataset = self.all_packages
             self.updates_table.show_installed_date(True)
             self.updates_table.set_installed_mode(True)
+            self.updates_table.set_discover_mode(False)
             mapped = [self._map_installed_pkg(p) for p in (dataset or [])]
             self.updates_table.set_enrich(False)
             if not mapped and getattr(self, '_installed_loading', False):
@@ -2689,6 +2719,34 @@ class _ViewsMixin:
                 pass
         except Exception:
             pass
+
+    def _on_updates_table_row_selected(self, pkg):
+        if self.current_view == "discover":
+            self._show_detail_for_discover(pkg)
+        else:
+            self._show_detail_for_updates(pkg)
+
+    def _show_detail_for_discover(self, pkg):
+        """Open the detail card for a Discover result row."""
+        try:
+            if pkg is None:
+                self.package_detail_card.clear()
+                return
+            src = pkg.get('_src') or {}
+            pkg_data = {
+                'name': pkg.get('name') or pkg.get('id') or '',
+                'id': pkg.get('id') or pkg.get('name') or '',
+                'version': pkg.get('version') or '',
+                'new_version': '',
+                'source': pkg.get('source') or 'pacman',
+                'installed': bool(pkg.get('_installed')),
+                'has_update': False,
+                'description': src.get('description') or pkg.get('description') or '',
+                '_view': 'discover',
+            }
+            self.package_detail_card.show_package(pkg_data)
+        except Exception:
+            self.package_detail_card.clear()
 
     def _show_detail_for_updates(self, pkg):
         try:
@@ -2761,7 +2819,17 @@ class _ViewsMixin:
     def _on_updates_table_menu(self, action, pkg):
         name = (pkg.get('name') or '').strip()
         source = pkg.get('source') or 'pacman'
-        if action == "update":
+        if action == "install":
+            if not name:
+                return
+            if not self.ensure_session_auth():
+                self.log("Install cancelled: authentication required.")
+                return
+            self.log(f"Installing {name} ({source})")
+            self.installation_progress.emit("start", False)
+            from neoarch.backend.package import installer as install_service
+            install_service.install_packages(self, {source: [name]})
+        elif action == "update":
             if not name:
                 return
             if not self.ensure_session_auth():
@@ -3109,11 +3177,14 @@ class _ViewsMixin:
         if not hasattr(self, 'discover_install_btn') or self.discover_install_btn is None:
             return
         has_checked = False
-        for row in range(self.package_table.rowCount()):
-            checkbox = self.get_row_checkbox(row)
-            if checkbox is not None and checkbox.isChecked() and checkbox.isEnabled():
-                has_checked = True
-                break
+        try:
+            if hasattr(self, 'updates_table') and self.updates_table:
+                for pkg in self.updates_table.checked_packages():
+                    if not pkg.get('_installed'):
+                        has_checked = True
+                        break
+        except Exception:
+            pass
         self.discover_install_btn.setEnabled(has_checked)
 
     def on_checkbox_changed(self, row, state):
@@ -3210,6 +3281,9 @@ class _ViewsMixin:
     # ── live selection summary (Updates / Installed toolbars) ──────────
 
     def _on_table_checks_changed(self, checked, total):
+        if self.current_view == "discover":
+            self._update_discover_install_btn_state()
+            return
         label = getattr(self, '_selection_summary_label', None)
         if label is not None:
             if checked:
