@@ -9,7 +9,8 @@ Modern Package Manager for Arch Linux
 
 [Features](#features) • [Installation](#installation) • [Usage](#usage) • [Contributing](#contributing) • [License](#license)
 
-<img width="1213" height="816" alt="home" src="https://github.com/user-attachments/assets/f942c09c-9551-4461-a42f-5b11ca77c2bf" />
+<img width="1267" height="862" alt="Screenshot_20260815_092910" src="https://github.com/user-attachments/assets/20a0f2f7-4e50-4083-975b-223e2c431a69" />
+
 
 
 ---
