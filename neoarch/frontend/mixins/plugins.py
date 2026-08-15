@@ -38,9 +38,9 @@ class _PluginsMixin:
                 self.plugin_timer.start()
             except Exception:
                 pass
-            # Start session auth and update loading only if auto-check is enabled
+            # Start update loading only if auto-check is enabled (no auth prompt at startup)
             if self.settings.get('auto_check_updates', True):
-                QTimer.singleShot(0, self._startup_auth_and_sync)
+                QTimer.singleShot(0, lambda: self.switch_view("updates"))
         except Exception as e:
             self.log(f"Plugin init error: {e}")
 
@@ -126,12 +126,19 @@ def on_startup(app):
 
 def _on_status(app, status):
     try:
+        op = getattr(app, '_last_operation', 'install')
+        labels = {
+            'install': ('Install', 'Installation'),
+            'update': ('Update', 'Update'),
+            'uninstall': ('Uninstall', 'Uninstall'),
+        }
+        title, verb = labels.get(op, ('Operation', 'Operation'))
         if status == "success":
-            QMessageBox.information(app, "Install", "Installation complete.")
+            QMessageBox.information(app, title, f"{verb} complete.")
         elif status == "failed":
-            QMessageBox.warning(app, "Install", "Installation failed. See console for details.")
+            QMessageBox.warning(app, title, f"{verb} failed. See console for details.")
         elif status == "cancelled":
-            QMessageBox.information(app, "Install", "Installation cancelled.")
+            QMessageBox.information(app, title, f"{verb} cancelled.")
     except Exception:
         try:
             app._show_message("Install", status)

@@ -19,6 +19,18 @@ from neoarch.backend import sys_utils
 __all__ = ["install_packages"]
 
 
+def _clean_pacman_cache(app):
+    """Remove freshly downloaded pacman cache after a cancelled install."""
+    try:
+        env = get_askpass_env()
+        subprocess.run(
+            ["sudo", "-A", "pacman", "-Sc", "--noconfirm"],
+            capture_output=True, text=True, timeout=120, env=env,
+        )
+    except Exception:
+        pass
+
+
 def _process_pty_buf(buf, parse_output_line, worker, final=False):
     """Process PTY buffer, handling \r progress updates and \n line endings.
 
@@ -65,6 +77,7 @@ def install_packages(app, packages_by_source: dict):
         packages_by_source: Dict mapping source names to package name lists.
     """
     def install():
+        app._last_operation = "install"
         app.install_cancel_event = Event()
         app.installation_progress.emit("start", True)
         app.log_signal.emit("Installation thread started")
@@ -381,6 +394,11 @@ def install_packages(app, packages_by_source: dict):
             app.log_signal.emit(f"Error in installation thread: {str(e)}")
             app.installation_progress.emit("failed", False)
         finally:
+            try:
+                if hasattr(app, 'install_cancel_event') and app.install_cancel_event.is_set():
+                    _clean_pacman_cache(app)
+            except Exception:
+                pass
             try:
                 if hasattr(app, 'force_sudo_install'):
                     app.force_sudo_install = False

@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import os
 import subprocess
+from threading import Thread
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit,
-    QLabel, QFrame, QGraphicsDropShadowEffect,
+    QLabel, QFrame, QGraphicsDropShadowEffect, QScrollArea,
 )
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QRectF, QEvent
 from PyQt6.QtGui import QColor, QIcon, QPixmap, QPainter
@@ -31,17 +32,12 @@ _C = {
 }
 
 
-def _hex_to_rgba(hex_color: str, alpha: float) -> str:
-    h = hex_color.lstrip("#")
-    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-    return f"rgba({r}, {g}, {b}, {alpha})"
-
-
 class LargeSearchBox(QWidget):
     """Premium dashboard home for NeoArch with search, stat cards, and actions."""
 
     search_requested = pyqtSignal(str)
     search_submitted = pyqtSignal(str)
+    counts_ready = pyqtSignal(int, int, int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -57,6 +53,7 @@ class LargeSearchBox(QWidget):
         self.dashboard_timer = QTimer()
         self.dashboard_timer.setInterval(30000)
         self.dashboard_timer.timeout.connect(self._load_system_counts)
+        self.counts_ready.connect(self.refresh_counts)
 
         self.hero_container: QFrame | None = None
         self._focused = False
@@ -74,21 +71,67 @@ class LargeSearchBox(QWidget):
             self.sources_count_label.setText(str(sources))
 
     def _build(self):
-        root = QVBoxLayout(self)
-        root.setContentsMargins(48, 40, 48, 40)
-        root.setSpacing(28)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
 
+        self._scroll = QScrollArea()
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self._scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        try:
+            self._scroll.verticalScrollBar().setStyleSheet("""
+                QScrollBar:vertical { background: transparent; width: 8px; margin: 0; }
+                QScrollBar::handle:vertical { background: rgba(255,255,255,0.15);
+                    border-radius: 4px; min-height: 30px; }
+                QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+                QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
+            """)
+        except Exception:
+            pass
+
+        container = QWidget()
+        container.setObjectName("dashContainer")
+        container.setStyleSheet("QWidget#dashContainer { background: transparent; }")
+        root = QVBoxLayout(container)
+        root.setContentsMargins(48, 32, 48, 32)
+        root.setSpacing(24)
+
+        root.addLayout(self._hero_header())
         root.addLayout(self._hero_search())
         root.addLayout(self._dashboard_cards())
         root.addLayout(self._actions_row())
 
         self.recent_activity = RecentActivity()
-        root.addWidget(self.recent_activity)
+        root.addWidget(self.recent_activity, 1)
 
-        root.addStretch()
+        self._scroll.setWidget(container)
+        outer.addWidget(self._scroll)
         self.setStyleSheet(self._qss())
 
     # ── Hero Search ────────────────────────────────────────────────
+    def _hero_header(self) -> QHBoxLayout:
+        header = QHBoxLayout()
+        header.setContentsMargins(4, 0, 0, 0)
+
+        head_col = QVBoxLayout()
+        head_col.setSpacing(2)
+
+        title = QLabel("Search for packages")
+        title.setStyleSheet(
+            f"font-size: 24px; font-weight: 700; color: {_C['text']}; background: transparent;")
+        head_col.addWidget(title)
+
+        sub = QLabel("Find anything from pacman, AUR, Flatpak and npm")
+        sub.setStyleSheet(
+            f"font-size: 13px; font-weight: 400; color: {_C['text_muted']}; background: transparent;")
+        head_col.addWidget(sub)
+
+        header.addLayout(head_col)
+        header.addStretch()
+        return header
+
     def _hero_search(self) -> QHBoxLayout:
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
@@ -171,18 +214,24 @@ class LargeSearchBox(QWidget):
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(14)
         row.addWidget(self._make_card(
-            "Installed Packages", _C["accent"], "installed_count_label"), 1)
+            "Installed Packages", "installed packages.jpeg",
+            _C["accent"], "installed_count_label",
+            "across all sources"), 1)
         row.addWidget(self._make_card(
-            "Available Updates", "#FF9F43", "updates_count_label"), 1)
+            "Available Updates", "available updates.jpeg",
+            "#FF9F43", "updates_count_label",
+            "keep your system updated"), 1)
         row.addWidget(self._make_card(
-            "System Status", "#A29BFE", "sources_count_label"), 1)
+            "System Status", "system states.jpeg",
+            "#A29BFE", "sources_count_label",
+            "everything looks good"), 1)
         return row
 
-    def _make_card(self, title: str, accent: str,
-                   label_attr: str) -> QFrame:
+    def _make_card(self, title: str, icon_rel: str, accent: str,
+                   label_attr: str, subtitle: str = "") -> QFrame:
         card = QFrame()
         card.setObjectName("dashCard")
-        card.setFixedHeight(124)
+        card.setFixedHeight(140)
         card.setStyleSheet(f"""
             QFrame#dashCard {{
                 background-color: rgba(28, 30, 36, 0.85);
@@ -201,38 +250,37 @@ class LargeSearchBox(QWidget):
         self._neumorphic_shadow(card)
 
         lay = QVBoxLayout(card)
-        lay.setContentsMargins(22, 18, 22, 18)
-        lay.setSpacing(6)
+        lay.setContentsMargins(20, 16, 20, 14)
+        lay.setSpacing(4)
 
         hdr = QHBoxLayout()
         hdr.setSpacing(0)
-
-        indicator = QFrame()
-        indicator.setFixedSize(8, 8)
-        indicator.setStyleSheet(f"""
-            QFrame {{
-                background-color: {accent};
-                border-radius: 4px;
-            }}
-        """)
-        hdr.addWidget(indicator)
-        hdr.addSpacing(10)
 
         label = QLabel(title)
         label.setStyleSheet(
             f"font-size: 12px; font-weight: 500; color: {_C['text_sec']}; background: transparent; letter-spacing: 0.3px;")
         hdr.addWidget(label)
-
         hdr.addStretch()
+
+        icon = QLabel()
+        icon.setFixedSize(64, 64)
+        icon.setScaledContents(True)
+        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        icon.setStyleSheet("background: transparent; border: none;")
+        self._set_image(icon, icon_rel, 64)
+        hdr.addWidget(icon)
         lay.addLayout(hdr)
 
         val = QLabel("—")
         val.setStyleSheet(
-            f"font-size: 36px; font-weight: 700; color: {accent}; background: transparent; "
+            f"font-size: 34px; font-weight: 700; color: {accent}; background: transparent; "
             f"letter-spacing: -1px;")
         lay.addWidget(val)
 
-        lay.addStretch()
+        sub = QLabel(subtitle)
+        sub.setStyleSheet(
+            f"font-size: 11px; font-weight: 400; color: {_C['text_muted']}; background: transparent;")
+        lay.addWidget(sub)
 
         setattr(self, label_attr, val)
         return card
@@ -242,6 +290,7 @@ class LargeSearchBox(QWidget):
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(10)
+        row.addStretch()
 
         actions = [
             ("discover/updateall.svg", "Update All", self._on_update_all, True),
@@ -362,41 +411,42 @@ class LargeSearchBox(QWidget):
         """)
 
     def _load_system_counts(self):
-        installed_count = 0
-        try:
-            r = subprocess.run(["pacman", "-Q"], capture_output=True, text=True, timeout=3)
-            if r.returncode == 0:
-                installed_count = len([l for l in r.stdout.strip().split("\n") if l.strip()])
-        except Exception:
-            pass
-
-        updates_count = 0
         app = self.window() if hasattr(self, 'window') else None
-        if app and hasattr(app, 'updates_all') and app.updates_all:
-            updates_count = len(app.updates_all)
-        else:
+        cached_updates = getattr(app, 'updates_all', None) if app is not None else None
+
+        def _run():
+            installed_count = 0
             try:
-                r = subprocess.run(["checkupdates"], capture_output=True, text=True, timeout=5)
-                if r.returncode == 0 and r.stdout.strip():
-                    updates_count = len(r.stdout.strip().split("\n"))
+                r = subprocess.run(["pacman", "-Q"], capture_output=True, text=True, timeout=3)
+                if r.returncode == 0:
+                    installed_count = len([l for l in r.stdout.strip().split("\n") if l.strip()])
             except Exception:
                 pass
 
-        sources_count = 1
-        for cmd in (["which", "yay", "paru"], ["flatpak", "list"],
-                    ["which", "npm"], ["which", "docker"]):
-            try:
-                r = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
-                if r.returncode == 0 and r.stdout.strip():
-                    sources_count += 1
-            except Exception:
-                pass
+            updates_count = 0
+            if cached_updates:
+                updates_count = len(cached_updates)
+            else:
+                try:
+                    r = subprocess.run(["checkupdates"], capture_output=True, text=True, timeout=5)
+                    if r.returncode == 0 and r.stdout.strip():
+                        updates_count = len(r.stdout.strip().split("\n"))
+                except Exception:
+                    pass
 
-        self.refresh_counts(
-            installed=installed_count,
-            updates=updates_count,
-            sources=sources_count,
-        )
+            sources_count = 1
+            for cmd in (["which", "yay", "paru"], ["flatpak", "list"],
+                        ["which", "npm"], ["which", "docker"]):
+                try:
+                    r = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
+                    if r.returncode == 0 and r.stdout.strip():
+                        sources_count += 1
+                except Exception:
+                    pass
+
+            self.counts_ready.emit(installed_count, updates_count, sources_count)
+
+        Thread(target=_run, daemon=True).start()
 
     # ── Actions ─────────────────────────────────────────────────────
     def _on_update_all(self):
@@ -439,7 +489,7 @@ class LargeSearchBox(QWidget):
         s = QGraphicsDropShadowEffect()
         s.setBlurRadius(22)
         s.setColor(QColor(0, 0, 0, 130))
-        s.setOffset(4, 5)
+        s.setOffset(0, 3)
         widget.setGraphicsEffect(s)
 
     @staticmethod
@@ -464,6 +514,21 @@ class LargeSearchBox(QWidget):
                 p.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
                 p.fillRect(QRectF(0, 0, size, size), QColor(color))
                 p.end()
+                label.setPixmap(pm)
+                return
+        except Exception:
+            pass
+        label.setText("🔍")
+
+    @staticmethod
+    def _set_image(label: QLabel, rel_path: str, size: int):
+        path = os.path.join(PROJECT_ROOT, "assets", "icons", "discover", rel_path)
+        try:
+            pm = QPixmap(path)
+            if not pm.isNull():
+                pm = pm.scaled(
+                    size, size, Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation)
                 label.setPixmap(pm)
                 return
         except Exception:

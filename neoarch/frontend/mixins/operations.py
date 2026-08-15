@@ -10,8 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
 
 from PyQt6.QtWidgets import QMessageBox, QLabel
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QColor
+from PyQt6.QtCore import QTimer
 
 from neoarch.backend.package import installer as install_service
 from neoarch.backend.package import updater as update_service
@@ -68,6 +67,21 @@ class _OperationsMixin:
             self.log_signal.emit("All selected packages are already installed")
             return
         package_list = "\n".join(f"• {pkg}" for src, pkgs in to_install.items() for pkg in pkgs)
+        if 'AUR' in to_install:
+            aur_pkgs = ", ".join(to_install['AUR'])
+            warn = QMessageBox(
+                QMessageBox.Icon.Warning,
+                "AUR Security Notice",
+                f"AUR packages are built from third-party PKGBUILD scripts "
+                f"maintained by the community.\n\n{aur_pkgs}\n\n"
+                "Always review the PKGBUILD and .install scriptlet before building. "
+                "Proceeding with the AUR helper does not perform a static security scan.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                self)
+            warn.setInformativeText("Continue installing AUR packages?")
+            warn.setDefaultButton(QMessageBox.StandardButton.No)
+            if warn.exec() != QMessageBox.StandardButton.Yes:
+                return
         reply = QMessageBox.question(
             self, "Install Packages with Sudo",
             f"This will install the following packages with elevated privileges:\n\n{package_list}\n\nContinue?",
@@ -75,6 +89,9 @@ class _OperationsMixin:
             QMessageBox.StandardButton.No
         )
         if reply != QMessageBox.StandardButton.Yes:
+            return
+        if not self.ensure_session_auth():
+            self.log_signal.emit("Install cancelled: authentication required.")
             return
         try:
             self.force_sudo_install = True
@@ -89,6 +106,9 @@ class _OperationsMixin:
         upgrades = getattr(self, 'updates_all', None)
         if upgrades is not None and len(upgrades) == 0:
             self.log("No updates available.")
+            return
+        if not self.ensure_session_auth():
+            self.log("Update cancelled: authentication required.")
             return
         self.log("Updating all packages\u2026")
         if upgrades:
@@ -115,12 +135,22 @@ class _OperationsMixin:
         if not packages_by_source:
             self.log("No packages to update.")
             return
+        if not self.ensure_session_auth():
+            self.log("Update cancelled: authentication required.")
+            return
         self.log(f"Updating all packages: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
         self.installation_progress.emit("start", True)
-        update_service.update_packages(self, packages_by_source)
+        update_service.update_packages(self, packages_by_source, upgrade_all=True)
 
     def toggle_select_all(self):
         """Toggle all checkboxes: if all checked, uncheck all; otherwise check all."""
+        if self.current_view in ("updates", "installed", "discover") and hasattr(self, 'updates_table'):
+            try:
+                if self.updates_table.row_count():
+                    self.updates_table.toggle_select_all()
+            except Exception:
+                pass
+            return
         total = self.package_table.rowCount()
         checked = 0
         for row in range(total):
@@ -134,41 +164,51 @@ class _OperationsMixin:
                 checkbox.setChecked(new_state)
 
     def clean_cache(self):
-        """Clean package and system cache (BleachBit + pacman)."""
-        self.log("Cleaning package cache\u2026")
-        # BleachBit system cache cleaning
-        try:
-            r = subprocess.run(["which", "bleachbit"], capture_output=True, text=True, timeout=5)
-            if r.returncode == 0:
-                self.log("Running BleachBit cache cleaner\u2026")
-                bb = subprocess.run(
-                    ["bleachbit", "--clean", "system.cache", "system.tmp", "system.trash",
-                     "system.recent_documents", "system.clipboard"],
-                    capture_output=True, text=True, timeout=120,
-                )
-                if bb.returncode == 0:
-                    self.log("BleachBit cleaned successfully.")
+        """Clean package and system cache (BleachBit + pacman) in a background thread."""
+        if not self.ensure_session_auth():
+            self.log("Cache clean cancelled: authentication required.")
+            return
+
+        def _run():
+            self.log("Cleaning package cache\u2026")
+            # BleachBit system cache cleaning
+            try:
+                r = subprocess.run(["which", "bleachbit"], capture_output=True, text=True, timeout=5)
+                if r.returncode == 0:
+                    self.log("Running BleachBit cache cleaner\u2026")
+                    bb = subprocess.run(
+                        ["bleachbit", "--clean", "system.cache", "system.tmp", "system.trash",
+                         "system.recent_documents", "system.clipboard"],
+                        capture_output=True, text=True, timeout=120,
+                    )
+                    if bb.returncode == 0:
+                        self.log("BleachBit cleaned successfully.")
+                    else:
+                        self.log(f"BleachBit: {bb.stderr.strip() or 'completed with warnings'}")
                 else:
-                    self.log(f"BleachBit: {bb.stderr.strip() or 'completed with warnings'}")
-            else:
-                self.log("BleachBit not installed, skipping.")
-        except Exception as e:
-            self.log(f"BleachBit skipped: {e}")
-        # Pacman package cache clean
-        try:
-            env = self.get_askpass_env()
-            result = subprocess.run(
-                ["sudo", "-A", "pacman", "-Sc", "--noconfirm"],
-                capture_output=True, text=True, timeout=60, env=env,
-            )
-            if result.returncode == 0:
-                self.log("Pacman cache cleaned successfully.")
-            else:
-                self.log(f"Pacman cache clean: {result.stderr.strip()}")
-        except Exception as e:
-            self.log(f"Pacman cache clean failed: {e}")
+                    self.log("BleachBit not installed, skipping.")
+            except Exception as e:
+                self.log(f"BleachBit skipped: {e}")
+            # Pacman package cache clean
+            try:
+                env = self.get_askpass_env()
+                result = subprocess.run(
+                    ["sudo", "-A", "pacman", "-Sc", "--noconfirm"],
+                    capture_output=True, text=True, timeout=60, env=env,
+                )
+                if result.returncode == 0:
+                    self.log("Pacman cache cleaned successfully.")
+                else:
+                    self.log(f"Pacman cache clean: {result.stderr.strip()}")
+            except Exception as e:
+                self.log(f"Pacman cache clean failed: {e}")
+
+        Thread(target=_run, daemon=True).start()
 
     def update_selected(self):
+        if self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
+            self._update_selected_updates_table()
+            return
         packages_by_source = {}
         for row in range(self.package_table.rowCount()):
             checkbox = self.get_row_checkbox(row)
@@ -177,11 +217,6 @@ class _OperationsMixin:
                 # Source column: Updates has Source at col 4; Installed at col 3
                 source_col = 4 if self.current_view == "updates" else 3
                 source_item = self.package_table.item(row, source_col)
-                # On Installed view, only update rows that actually have an update available
-                if self.current_view == "installed":
-                    status_item = self.package_table.item(row, 4)
-                    if not status_item or "Update" not in (status_item.text() or ""):
-                        continue
                 if not name_item:
                     continue
                 pkg_name = name_item.text().strip()
@@ -192,6 +227,34 @@ class _OperationsMixin:
                 packages_by_source[source].append(token)
         if not packages_by_source:
             self.log("No packages selected for update")
+            return
+        if not self.ensure_session_auth():
+            self.log("Update cancelled: authentication required.")
+            return
+        self.log(f"Selected packages for update: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
+        self.installation_progress.emit("start", True)
+        update_service.update_packages(self, packages_by_source)
+
+    def _update_selected_updates_table(self):
+        """Update the packages checked in the redesigned updates table."""
+        packages_by_source = {}
+        for pkg in self.updates_table.checked_packages():
+            source = pkg.get('source') or 'pacman'
+            name = (pkg.get('name') or '').strip()
+            if not name:
+                continue
+            # On the installed page only update rows that actually have an update
+            if self.current_view == "installed":
+                if pkg.get('status') == 'Installed':
+                    continue
+                if not pkg.get('new_version') or pkg.get('new_version') == pkg.get('version'):
+                    continue
+            packages_by_source.setdefault(source, []).append(name)
+        if not packages_by_source:
+            self.log("No packages selected for update")
+            return
+        if not self.ensure_session_auth():
+            self.log("Update cancelled: authentication required.")
             return
         self.log(f"Selected packages for update: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
         self.installation_progress.emit("start", True)
@@ -325,25 +388,41 @@ class _OperationsMixin:
 
     def install_selected(self):
         packages_by_source = {}
-        for row in range(self.package_table.rowCount()):
-            checkbox = self.get_row_checkbox(row)
-            if checkbox is not None and checkbox.isChecked():
-                name_item = self.package_table.item(row, 1)
-                pkg_name = name_item.text().strip() if name_item else ''
-                if self.current_view == "discover":
-                    source = ""
-                    chip = self.package_table.cellWidget(row, 3)
-                    if chip is not None:
-                        labels = chip.findChildren(QLabel)
-                        if labels:
-                            source = labels[-1].text()
-                else:
-                    source_item = self.package_table.item(row, 4)
-                    source = source_item.text() if source_item else "pacman"
-                if source not in packages_by_source:
-                    packages_by_source[source] = []
-                install_token = pkg_name if source == 'Flatpak' else pkg_name
-                packages_by_source[source].append(install_token)
+        if self.current_view == "discover":
+            try:
+                if hasattr(self, 'updates_table') and self.updates_table:
+                    for pkg in self.updates_table.checked_packages():
+                        if pkg.get('_installed'):
+                            continue
+                        source = pkg.get('source') or 'pacman'
+                        pkg_name = (pkg.get('name') or '').strip()
+                        if not pkg_name:
+                            continue
+                        if source not in packages_by_source:
+                            packages_by_source[source] = []
+                        packages_by_source[source].append(pkg_name)
+            except Exception:
+                pass
+        else:
+            for row in range(self.package_table.rowCount()):
+                checkbox = self.get_row_checkbox(row)
+                if checkbox is not None and checkbox.isChecked():
+                    name_item = self.package_table.item(row, 1)
+                    pkg_name = name_item.text().strip() if name_item else ''
+                    if self.current_view == "discover":
+                        source = ""
+                        chip = self.package_table.cellWidget(row, 3)
+                        if chip is not None:
+                            labels = chip.findChildren(QLabel)
+                            if labels:
+                                source = labels[-1].text()
+                    else:
+                        source_item = self.package_table.item(row, 4)
+                        source = source_item.text() if source_item else "pacman"
+                    if source not in packages_by_source:
+                        packages_by_source[source] = []
+                    install_token = pkg_name if source == 'Flatpak' else pkg_name
+                    packages_by_source[source].append(install_token)
         
         if not packages_by_source:
             self.log_signal.emit("No packages selected for installation")
@@ -366,6 +445,9 @@ class _OperationsMixin:
                 to_install[source] = remaining
         if not to_install:
             self.log_signal.emit("All selected packages are already installed")
+            return
+        if not self.ensure_session_auth():
+            self.log_signal.emit("Install cancelled: authentication required.")
             return
         self.log_signal.emit(f"Selected packages: {', '.join([f'{pkg} ({source})' for source, pkgs in to_install.items() for pkg in pkgs])}")
         self.log_signal.emit(f"Proceeding with installation...")
@@ -403,39 +485,23 @@ class _OperationsMixin:
             self._installed_index_building = False
     
     def _mark_installed_in_visible_rows(self):
+        """Mark already-installed Discover rows (green + disabled checkbox)."""
         try:
             if self.current_view != "discover" or not self.installed_index:
                 return
-            green = QColor(16, 185, 129)
-            for row in range(self.package_table.rowCount()):
-                name_item = self.package_table.item(row, 1)
-                ver_item = self.package_table.item(row, 2)
-                if not name_item or not ver_item:
-                    continue
-                chip = self.package_table.cellWidget(row, 3)
-                src = self.get_source_text(row, "discover")
-                pkg = {"name": name_item.text().strip(), "id": name_item.text().strip(), "source": src}
-                if self.is_package_installed(pkg):
-                    name_item.setForeground(green)
-                    ver_item.setForeground(green)
-                    tip = "Already installed"
-                    name_item.setToolTip(tip)
-                    ver_item.setToolTip(tip)
-                    if chip is not None:
-                        try:
-                            labels = chip.findChildren(QLabel)
-                            if labels:
-                                labels[-1].setStyleSheet("color: rgb(16,185,129);")
-                            chip.setToolTip(tip)
-                        except Exception:
-                            pass
-                    try:
-                        checkbox = self.get_row_checkbox(row)
-                        if checkbox is not None:
-                            checkbox.setEnabled(False)
-                            checkbox.setToolTip(tip)
-                    except Exception:
-                        pass
+            try:
+                if hasattr(self, 'updates_table') and self.updates_table:
+                    self.updates_table.mark_installed(self.is_package_installed)
+            except Exception:
+                pass
+            try:
+                hide = False
+                if hasattr(self, 'source_card') and self.source_card:
+                    hide = self.source_card.get_hide_installed()
+                if hide and hasattr(self, '_refresh_discover_results'):
+                    self._refresh_discover_results()
+            except Exception:
+                pass
             try:
                 self._update_discover_install_btn_state()
             except Exception:
@@ -444,27 +510,43 @@ class _OperationsMixin:
             pass
     
     def uninstall_selected(self):
-        selected_rows = self.package_table.selectionModel().selectedRows()
-        if not selected_rows:
-            self.log("No packages selected for uninstallation")
-            return
-        
-        # Group selections by source
-        packages_by_source = {}
-        for model_index in selected_rows:
-            row = model_index.row()
-            name_item = self.package_table.item(row, 1)
-            source_item = self.package_table.item(row, 3)
-            if not name_item or not source_item:
-                continue
-            name = (name_item.text() or "").strip()
-            source = (source_item.text() or "pacman").strip()
-            if source not in packages_by_source:
-                packages_by_source[source] = []
-            token = name if source == 'Flatpak' else name
-            packages_by_source[source].append(token)
+        if self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
+            checked = self.updates_table.checked_packages()
+            if not checked:
+                self.log("No packages selected for uninstallation")
+                return
+            packages_by_source = {}
+            for pkg in checked:
+                name = (pkg.get('name') or '').strip()
+                source = (pkg.get('source') or 'pacman').strip()
+                if not name:
+                    continue
+                packages_by_source.setdefault(source, []).append(name)
+        else:
+            selected_rows = self.package_table.selectionModel().selectedRows()
+            if not selected_rows:
+                self.log("No packages selected for uninstallation")
+                return
+
+            # Group selections by source
+            packages_by_source = {}
+            for model_index in selected_rows:
+                row = model_index.row()
+                name_item = self.package_table.item(row, 1)
+                source_item = self.package_table.item(row, 3)
+                if not name_item or not source_item:
+                    continue
+                name = (name_item.text() or "").strip()
+                source = (source_item.text() or "pacman").strip()
+                if source not in packages_by_source:
+                    packages_by_source[source] = []
+                token = name if source == 'Flatpak' else name
+                packages_by_source[source].append(token)
         
         flat_summary = ', '.join([f"{pkg} ({src})" for src, pkgs in packages_by_source.items() for pkg in pkgs])
+        if not self.ensure_session_auth():
+            self.log("Uninstall cancelled: authentication required.")
+            return
         self.log(f"Selected for uninstallation: {flat_summary}")
         self.installation_progress.emit("start", False)
         uninstall_service.uninstall_packages(self, packages_by_source)
@@ -472,6 +554,9 @@ class _OperationsMixin:
     def install_from_detail(self):
         pkg = getattr(self.package_detail_card, '_pkg_data', None)
         if not pkg:
+            return
+        if not self.ensure_session_auth():
+            self.log("Install cancelled: authentication required.")
             return
         source = pkg.get('source', 'pacman')
         name = (pkg.get('id') or '').strip() if source == 'Flatpak' else (pkg.get('name') or '').strip()
@@ -485,13 +570,19 @@ class _OperationsMixin:
         pkg = getattr(self.package_detail_card, '_pkg_data', None)
         if not pkg:
             return
+        if not self.ensure_session_auth():
+            self.log("Update cancelled: authentication required.")
+            return
         source = pkg.get('source', 'pacman')
-        self.installation_progress.emit("start", False)
+        self.installation_progress.emit("start", True)
         update_service.update_packages(self, {source: [pkg['name']]})
 
     def uninstall_from_detail(self):
         pkg = getattr(self.package_detail_card, '_pkg_data', None)
         if not pkg:
+            return
+        if not self.ensure_session_auth():
+            self.log("Uninstall cancelled: authentication required.")
             return
         source = pkg.get('source', 'pacman')
         uninstall_service.uninstall_packages(self, {source: [pkg['name']]})

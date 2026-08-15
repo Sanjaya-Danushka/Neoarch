@@ -1,7 +1,7 @@
 from typing import Any
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
                              QLabel, QComboBox, QSpinBox, QLineEdit,
-                             QCheckBox)
+                             QCheckBox, QPushButton)
 
 _CARD = """
     QFrame#settingsCard {
@@ -217,7 +217,58 @@ class ProxySettingsWidget(QWidget):
         self.cb_parallel.toggled.connect(lambda v: self.app.update_setting('parallel_network', v))
         misc_layout.addWidget(self.cb_parallel)
 
+        dl_row = QHBoxLayout()
+        dl_row.setSpacing(12)
+        dl_label = QLabel("pacman ParallelDownloads:")
+        dl_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        dl_row.addWidget(dl_label)
+
+        self.dl_spin = QSpinBox()
+        self.dl_spin.setStyleSheet(_SPINBOX)
+        self.dl_spin.setRange(1, 32)
+        try:
+            from neoarch.backend.services.pacman_conf import get_parallel_downloads
+            current = get_parallel_downloads()
+        except Exception:
+            current = None
+        self.dl_spin.setValue(current if current else 5)
+        dl_row.addWidget(self.dl_spin)
+
+        apply_btn = QPushButton("Apply")
+        apply_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #00BFAE;
+                border: 1px solid rgba(0, 191, 174, 0.35);
+                border-radius: 8px;
+                padding: 8px 18px;
+                font-size: 13px;
+                font-weight: 600;
+            }
+            QPushButton:hover { background-color: rgba(0, 191, 174, 0.12); }
+        """)
+        apply_btn.clicked.connect(self._apply_parallel_downloads)
+        dl_row.addWidget(apply_btn)
+
+        dl_note = QLabel("Requires root; writes /etc/pacman.conf")
+        dl_note.setStyleSheet("color: #8B8D97; font-size: 11px; border: none;")
+        dl_row.addWidget(dl_note)
+        dl_row.addStretch()
+        misc_layout.addLayout(dl_row)
+
         self.layout.addWidget(misc_card)
+
+    def _apply_parallel_downloads(self):
+        from neoarch.backend.services.pacman_conf import set_parallel_downloads
+        count = self.dl_spin.value()
+        try:
+            ok_result = set_parallel_downloads(count)
+        except Exception:
+            ok_result = False
+        if ok_result:
+            self.app.show_message.emit("ParallelDownloads", f"Set pacman ParallelDownloads={count}")
+        else:
+            self.app.show_message.emit("ParallelDownloads", "Failed to apply (need root?).")
 
     def _on_type_changed(self, index):
         ptype = self.type_combo.currentData()

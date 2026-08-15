@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
 )
 
 from neoarch.backend.services import settings as settings_service
+from neoarch.resources.paths import APP_VERSION
 from neoarch.frontend.views.settings_general import GeneralSettingsWidget
 from neoarch.frontend.views.settings_auto_update import AutoUpdateSettingsWidget
 from neoarch.frontend.views.settings_notifications import NotificationsSettingsWidget
@@ -114,7 +115,7 @@ class _SettingsMixin:
 
         sidebar_layout.addStretch()
 
-        version_label = QLabel("NeoArch v2.2")
+        version_label = QLabel(f"NeoArch v{APP_VERSION}")
         version_label.setStyleSheet("""
             color: #5C5E66;
             font-size: 11px;

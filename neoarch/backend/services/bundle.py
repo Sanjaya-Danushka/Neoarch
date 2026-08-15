@@ -6,8 +6,7 @@ exported, imported, shared with the community, and installed in batches.
 
 import os
 import json
-from threading import Thread
-from PyQt6.QtWidgets import QFileDialog, QTableWidgetItem, QLabel, QInputDialog, QMessageBox
+from PyQt6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 
 from neoarch.backend.package.installer import install_packages
 

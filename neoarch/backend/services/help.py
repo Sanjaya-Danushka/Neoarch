@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap
 
-from neoarch.resources.paths import ASSETS_DIR, PROJECT_ROOT
+from neoarch.resources.paths import ASSETS_DIR, APP_VERSION
 
 __all__ = ["_make_text_tab", "show_help", "show_about"]
 
@@ -179,7 +179,7 @@ def show_about(parent):
     subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(subtitle)
 
-    version = QLabel("Version 2.1.0")
+    version = QLabel(f"Version {APP_VERSION}")
     version.setStyleSheet("font-size: 12px; color: #888;")
     version.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(version)

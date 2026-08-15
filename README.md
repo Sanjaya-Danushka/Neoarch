@@ -50,6 +50,53 @@ Sign in with Supabase via OAuth to sync bundle favorites across devices. Session
 
 Set and forget with configurable auto-update intervals (1-30 days), auto-refresh, and optional snapshot-before-update via built-in plugins.
 
+### Command-Line Interface
+
+Scriptable package management from the terminal. Search, install, remove, upgrade, list updates, read Arch news, create backups, purge orphans, and run system checks — all with `--json` output for automation. Runs headless (no GUI required).
+
+```bash
+neoarch-cli search browserpass        # search pacman + AUR
+neoarch-cli install --aur yay         # install from AUR
+neoarch-cli upgrade --all             # full system upgrade
+neoarch-cli list-updates --json       # machine-readable updates
+neoarch-cli news                      # latest Arch Linux news
+neoarch-cli doctor                    # system health check
+neoarch-cli scan ./PKGBUILD           # security scan (risky tools, elevation, homographs)
+neoarch-cli downgrade firefox -l      # list cached versions
+neoarch-cli downgrade firefox -p      # downgrade + pin to IgnorePkg
+neoarch-cli marks list                # show IgnorePkg / HoldPkg
+neoarch-cli marks hold linux          # hold a package
+neoarch-cli marks reason firefox explicit  # set install reason
+neoarch-cli appimage list             # managed AppImages
+neoarch-cli appimage add-repo Obsidian obsidianmd/obsidian-releases
+neoarch-cli appimage check --json     # check for AppImage updates
+ neoarch-cli backup -c                 # create a backup
+ neoarch-cli purge -o                  # remove orphaned packages
+ neoarch-cli keyring list              # trusted pacman keys
+ neoarch-cli keyring populate          # official Arch keyrings
+ neoarch-cli purify corrupt            # find corrupted cache archives
+ neoarch-cli purify cache --keep 2     # paccache retention
+ neoarch-cli purify flatpak            # remove unused Flatpak runtimes
+ neoarch-cli purify merge /etc/x.pacnew --accept  # three-way .pacnew merge
+ neoarch-cli restart check --json      # is a reboot recommended?
+ neoarch-cli parallel                  # show ParallelDownloads
+ neoarch-cli parallel 10               # set it in /etc/pacman.conf (root)
+ neoarch-cli schedule show             # weekly update schedule
+ neoarch-cli schedule set --days 1,3,5 --time 05:30 --enable
+ neoarch-cli recommend --limit 5       # curated package recommendations
+ neoarch-cli install-url https://host/pkg.pkg.tar.zst  # install from URL
+ neoarch-cli aur-build yay --check     # AUR build (chroot/check/commit)
+ neoarch-cli news --mark-read          # read news + mark as read
+```
+
+The `appimage` subcommands manage a NeoArch-owned AppImage store at
+`~/.local/share/neoarch/appimages`: `add` (local file), `add-url`
+(static URL), and `add-repo` (GitHub/GitLab/Codeberg/Forgejo latest
+release). Each gets a desktop entry + icon and is tracked for updates
+via `check`/`update`.
+
+The `scan` command statically reviews a PKGBUILD (and its `.install` scriptlets) without executing it, flagging risky post-install tools, privilege elevation, dynamic shell construction, local binary sources, obfuscated tool names, and Unicode homograph spoofing. It exits with code 2 if any critical finding is present, making it safe to gate scripts on.
+
 ### System Backup
 
 Create full system backups (package list + config export) with Btrfs snapshot support on Btrfs roots. Restore packages from any backup, list snapshots, and auto-prune old backups (keeps last 5).
@@ -76,10 +123,10 @@ Mark specific packages to ignore during updates. Persisted to `~/.config/neoarch
 
 ## Screenshots
 
-![Search Packages](https://github.com/user-attachments/assets/eedc4d2f-c806-4089-9842-695d04fbd7df)
+<img width="1211" height="811" alt="Screenshot_20260813_222846" src="https://github.com/user-attachments/assets/7d63dca2-15cc-406a-bd0a-a5b60ad9d652" />
 *Search and Discover Packages*
 
-![Installed Packages](https://github.com/user-attachments/assets/b34f304e-c521-45de-8fad-2a78642d5dbc)
+<img width="1203" height="812" alt="Screenshot_20260813_222645" src="https://github.com/user-attachments/assets/d4bbb403-7a8a-4693-86e7-38e810c94b05" />
 *Installed Packages View*
 
 ## Comparison with Shelly-ALPM
@@ -91,7 +138,7 @@ NeoArch compared to [Shelly-ALPM](https://github.com/Seafoam-Labs/Shelly-ALPM), 
 | **License** | GPL-3.0 (copyleft) | MIT (permissive) |
 | **Stack** | Zig + Vala + .NET, GTK4 native Wayland | Python + PyQt6 |
 | **Core package mgmt** | pacman (`libalpm`) | pacman + AUR + Flatpak + npm |
-| **CLI** | Yes (`shelly`/`shelly-cli`) | No dedicated CLI |
+| **CLI** | Yes (`shelly`/`shelly-cli`) | neoarch-cli |
 | **Flatpak** | Optional separate backend | Built-in |
 | **AUR support** | Yes | Yes (incl. live search) |
 | **Plugin system** | No | Yes (50+ built-in, Python hooks) |
@@ -168,6 +215,7 @@ chmod +x Neoarch.py && ./Neoarch.py
 | Hygiene | Remove orphaned packages, manage `.pacnew` files, read Arch news |
 | Local Files | Install `.pkg.tar.zst`, `.pacman`, `.AppImage`, `.flatpakref` files directly |
 | Cloud Sync | Sign in with Supabase to sync favorites across devices |
+| CLI | Scriptable `neoarch-cli` with `--json` output for search/install/backup/etc. |
 
 ## Development
 

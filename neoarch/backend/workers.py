@@ -16,7 +16,7 @@ _ANSI_RE = re.compile(r'\033\[[0-9;?]*[a-zA-Z]|\033\].*?(\033\\|[\a])')
 def strip_ansi(text):
     return _ANSI_RE.sub('', text)
 
-from neoarch.backend.auth import get_auth_command, get_askpass_env, prepare_askpass_env
+from neoarch.backend.auth import get_auth_command, get_askpass_env
 
 __all__ = ["PackageLoaderWorker", "CommandWorker"]
 

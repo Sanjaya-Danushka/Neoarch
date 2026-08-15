@@ -3,7 +3,32 @@
 Provides source and status filtering for the installed and updates views.
 """
 
+import re
+
 __all__ = ["apply_filters", "apply_update_filters"]
+
+
+def _version_key(text):
+    return [int(p) for p in re.findall(r"\d+", str(text))] or [0]
+
+
+def _sort_installed(dataset, field, asc, sizes):
+    try:
+        if field == "size":
+            def key(p): return sizes.get(p.get("name"), 0)
+        elif field == "version":
+            def key(p): return _version_key(p.get("version"))
+        elif field == "source":
+            def key(p): return (p.get("source") or "").lower()
+        elif field == "status":
+            def key(p): return (0 if p.get("has_update") else 1)
+        elif field == "date":
+            def key(p): return p.get("installed_date") or 0
+        else:
+            def key(p): return (p.get("name") or "").lower()
+        return sorted(dataset, key=key, reverse=not asc)
+    except Exception:
+        return dataset
 
 
 def apply_filters(app):
@@ -36,10 +61,35 @@ def apply_filters(app):
                 final.append(pkg)
         else:
             final.append(pkg)
+    try:
+        query = (app.search_input.text() or '').strip().lower()
+    except Exception:
+        query = ''
+    if query:
+        final = [p for p in final
+                 if query in (p.get('name') or '').lower()
+                 or query in (p.get('id') or '').lower()]
+    field, asc = 'name', True
+    try:
+        if hasattr(app, 'source_card') and app.source_card:
+            field = app.source_card.get_sort()
+            asc = app.source_card.get_sort_asc()
+    except Exception:
+        pass
+    sizes = getattr(app, '_installed_sizes', None) or {}
+    final = _sort_installed(final, field, asc, sizes)
     app.all_packages = final
     app.current_page = 0
     app.package_table.setRowCount(0)
-    app.display_page()
+    if hasattr(app, '_sync_installed_table'):
+        app._sync_installed_table()
+    else:
+        app.display_page()
+    try:
+        if getattr(app, '_view_mode', 'table') == 'grid' and hasattr(app, '_populate_grid'):
+            app._populate_grid()
+    except Exception:
+        pass
 
 
 def apply_update_filters(app):

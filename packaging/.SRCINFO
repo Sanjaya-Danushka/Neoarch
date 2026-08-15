@@ -1,6 +1,6 @@
 pkgbase = neoarch-git
 pkgname = neoarch-git
-pkgver = 2.2.0
+pkgver = 2.3.0
 pkgrel = 1
 pkgdesc = NeoArch Package Manager for Arch Linux
 url = https://github.com/Sanjaya-Danushka/Neoarch
@@ -9,6 +9,7 @@ arch = any
 license = MIT
 depends = python-pyqt6
 depends = python-requests
+depends = python-keyring
 depends = qt6-svg
 depends = git
 depends = flatpak

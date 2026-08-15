@@ -1,14 +1,17 @@
 """Search/discover mixin for the main window."""
 
 import os
+import re
 import json
 import subprocess
 from threading import Thread
 
-from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QWidget, QTableWidgetItem, QHeaderView
-from PyQt6.QtCore import Qt
-
 from neoarch.resources.paths import PROJECT_ROOT
+
+
+def _parse_version(value):
+    """Best-effort numeric parse of a version string for comparisons."""
+    return [int(m) for m in re.findall(r"\d+", str(value))] or [0]
 
 
 class _SearchMixin:
@@ -125,6 +128,11 @@ class _SearchMixin:
                 if hasattr(self, 'no_results_widget'):
                     self.no_results_widget.setVisible(False)
                 self.package_table.setRowCount(0)
+                try:
+                    if hasattr(self, 'updates_table') and self.updates_table:
+                        self.updates_table.set_discover_mode(False)
+                except Exception:
+                    pass
                 self.header_info.setText("Search and discover new packages to install")
                 btn = getattr(self, 'discover_select_all_btn', None)
                 if btn is not None:
@@ -136,6 +144,16 @@ class _SearchMixin:
                     tb = getattr(self, attr, None)
                     if tb is not None:
                         tb.setVisible(False)
+                try:
+                    if hasattr(self, 'source_card') and self.source_card:
+                        self.source_card.clear_results()
+                except Exception:
+                    pass
+                try:
+                    if hasattr(self, 'filters_panel') and self.filters_panel:
+                        self.filters_panel.setVisible(False)
+                except Exception:
+                    pass
                 self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
             elif self.current_view == "installed":
                 try:
@@ -143,6 +161,7 @@ class _SearchMixin:
                         self.no_results_widget.setVisible(False)
                 except Exception:
                     pass
+                self.search_results = None
                 self.apply_filters()
                 self._show_active_view()
             elif self.current_view == "updates":
@@ -151,7 +170,7 @@ class _SearchMixin:
                         self.no_results_widget.setVisible(False)
                 except Exception:
                     pass
-                self.apply_update_filters()
+                self._recompute_updates()
                 self._show_active_view()
             return
         if self.current_view == "discover":
@@ -171,6 +190,10 @@ class _SearchMixin:
             self._view_mode = "grid"
             if self.current_view == "plugins" and hasattr(self, 'plugins_view') and self.plugins_view:
                 self.plugins_view.show_grid_mode()
+            elif self.current_view in ("updates", "installed", "discover") and hasattr(self, 'updates_table'):
+                self.updates_table.setVisible(False)
+                self.package_table.setVisible(False)
+                self.packages_grid.setVisible(True)
             else:
                 self.package_table.setVisible(False)
                 self.packages_grid.setVisible(True)
@@ -183,6 +206,10 @@ class _SearchMixin:
             self._view_mode = "table"
             if self.current_view == "plugins" and hasattr(self, 'plugins_view') and self.plugins_view:
                 self.plugins_view.show_table_mode()
+            elif self.current_view in ("updates", "installed", "discover") and hasattr(self, 'updates_table'):
+                self.packages_grid.setVisible(False)
+                self.package_table.setVisible(False)
+                self.updates_table.setVisible(True)
             else:
                 self.packages_grid.setVisible(False)
                 self.package_table.setVisible(True)
@@ -212,6 +239,16 @@ class _SearchMixin:
         if current_query and self.current_view == "discover":
             self.search_discover_packages(current_query)
 
+    def on_discover_sort_changed(self, field):
+        """Re-sort the cached Discover results without re-searching."""
+        if self.current_view == "discover":
+            self._refresh_discover_results()
+
+    def on_discover_installed_filter_changed(self, hide):
+        """Show/hide already-installed packages in the Discover results."""
+        if self.current_view == "discover":
+            self._refresh_discover_results()
+
     def filter_packages(self):
         query = self.search_input.text().lower()
 
@@ -231,13 +268,30 @@ class _SearchMixin:
                 if hasattr(self, 'no_results_widget'):
                     self.no_results_widget.setVisible(False)
                 self.package_table.setRowCount(0)
+                try:
+                    if hasattr(self, 'updates_table') and self.updates_table:
+                        self.updates_table.set_discover_mode(False)
+                except Exception:
+                    pass
                 self.header_info.setText("Search and discover new packages to install")
+                try:
+                    if hasattr(self, 'source_card') and self.source_card:
+                        self.source_card.clear_results()
+                except Exception:
+                    pass
+                try:
+                    if hasattr(self, 'filters_panel') and self.filters_panel:
+                        self.filters_panel.setVisible(False)
+                except Exception:
+                    pass
                 self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
             elif self.current_view == "installed":
+                self.search_results = None
                 self.apply_filters()
                 return
             elif self.current_view == "updates":
-                self.apply_update_filters()
+                self.search_results = None
+                self._recompute_updates()
                 return
             else:
                 return
@@ -246,6 +300,27 @@ class _SearchMixin:
             if hasattr(self, '_greeting_label') and self._greeting_label:
                 self._greeting_label.setVisible(False)
             self.search_discover_packages(query)
+        elif self.current_view == "updates":
+            self.search_results = None
+            self._recompute_updates()
+        elif self.current_view == "installed":
+            self.search_results = [
+                pkg for pkg in self.all_packages
+                if query in (pkg.get('name') or '').lower()
+                or query in (pkg.get('id') or '').lower()
+            ]
+            self.current_page = 0
+            self.all_packages = self.search_results
+            try:
+                self.load_more_btn.setVisible(False)
+            except Exception:
+                pass
+            try:
+                self.updates_table.set_loading(False)
+            except Exception:
+                pass
+            self._sync_installed_table(self.search_results)
+            self._show_active_view()
         else:
             self.search_results = [pkg for pkg in self.all_packages if query in pkg['name'].lower()]
             self.current_page = 0
@@ -256,10 +331,7 @@ class _SearchMixin:
             start = 0
             end = min(10, len(self.search_results))
             for pkg in self.search_results[start:end]:
-                if self.current_view == "installed":
-                    self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'), pkg)
-                else:
-                    self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'))
+                self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg.get('new_version', pkg['version']), pkg.get('source', 'pacman'))
 
             self.package_table.setUpdatesEnabled(True)
 
@@ -268,13 +340,6 @@ class _SearchMixin:
             if has_more:
                 remaining = len(self.search_results) - end
                 self.load_more_btn.setText(f"Load More ({remaining} remaining)")
-            if self.current_view == "updates":
-                try:
-                    total = len(getattr(self, 'updates_all', []) or [])
-                    matched = len(self.search_results or [])
-                    self.header_info.setText(f"{total} packages were found, {matched} of which match the specified filters")
-                except Exception:
-                    pass
 
     def search_discover_packages(self, query):
         self.package_table.setRowCount(0)
@@ -295,16 +360,23 @@ class _SearchMixin:
         show_flatpak = bool(_src.get("Flatpak", True))
         show_npm = bool(_src.get("npm", True))
 
-        # Show loading spinner
-        self.loading_widget.setVisible(True)
-        self.loading_widget.set_message("Searching packages...")
-        self.loading_widget.start_animation()
-        self._hide_all_package_views()
-        try:
-            if hasattr(self, 'loading_container'):
-                self.loading_container.setVisible(True)
-        except Exception:
-            pass
+        # Show loading. Table mode uses the same in-table loading overlay as
+        # the Updates/Installed pages; grid mode falls back to the spinner.
+        if self._view_mode == "table":
+            self._show_active_view()
+            if hasattr(self, 'updates_table') and self.updates_table:
+                self.updates_table.set_discover_mode(True)
+                self.updates_table.set_loading(True, "Searching packages...")
+        else:
+            self.loading_widget.setVisible(True)
+            self.loading_widget.set_message("Searching packages...")
+            self.loading_widget.start_animation()
+            self._hide_all_package_views()
+            try:
+                if hasattr(self, 'loading_container'):
+                    self.loading_container.setVisible(True)
+            except Exception:
+                pass
         try:
             if hasattr(self, 'console_toggle_btn'):
                 self.console_toggle_btn.setVisible(False)
@@ -504,7 +576,6 @@ class _SearchMixin:
             return
         if packages is not None:
             self.search_results = packages
-
         # Hide loading spinner and show packages
         self.loading_widget.setVisible(False)
         self.loading_widget.stop_animation()
@@ -513,7 +584,6 @@ class _SearchMixin:
                 self.loading_container.setVisible(False)
         except Exception:
             pass
-        self._show_active_view()
         try:
             if hasattr(self, 'console_toggle_btn'):
                 self.console_toggle_btn.setVisible(True)
@@ -522,30 +592,96 @@ class _SearchMixin:
 
         if selected_sources is None:
             selected_sources = {}
-            if hasattr(self, 'source_card') and self.source_card:
-                selected_sources = self.source_card.get_selected_sources()
-            else:
+            try:
+                if hasattr(self, 'source_card') and self.source_card:
+                    selected_sources = self.source_card.get_selected_sources()
+                else:
+                    selected_sources = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True}
+            except Exception:
                 selected_sources = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True}
 
+        self._ensure_installed_index_async(selected_sources)
+        self._refresh_discover_results(selected_sources)
+
+    def _sort_discover(self, dataset, field, asc):
+        """Sort Discover result dicts by a selected field."""
+        try:
+            if field == 'version':
+                def key(p): return (_parse_version(p.get('version') or ''), (p.get('name') or '').lower())
+            elif field == 'source':
+                def key(p): return ((p.get('source') or '').lower(), (p.get('name') or '').lower())
+            elif field == 'installed':
+                def key(p): return ((not bool(self.is_package_installed(p))), (p.get('name') or '').lower())
+            else:
+                def key(p): return (p.get('name') or '').lower()
+            return sorted(dataset, key=key, reverse=not asc)
+        except Exception:
+            return dataset
+
+    def _refresh_discover_results(self, selected_sources=None):
+        """Re-apply source / hide-installed / sort filters and re-render results."""
+        if self.current_view != "discover":
+            return
+        if selected_sources is None:
+            try:
+                if hasattr(self, 'source_card') and self.source_card:
+                    selected_sources = self.source_card.get_selected_sources()
+                else:
+                    selected_sources = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True}
+            except Exception:
+                selected_sources = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True}
         filtered = self.get_filtered_discover_results(selected_sources)
+        hide = False
+        try:
+            if hasattr(self, 'source_card') and self.source_card:
+                hide = self.source_card.get_hide_installed()
+        except Exception:
+            hide = False
+        if hide:
+            filtered = [p for p in filtered if not self.is_package_installed(p)]
+        field, asc = 'relevance', True
+        try:
+            if hasattr(self, 'source_card') and self.source_card:
+                field = self.source_card.get_sort()
+                asc = self.source_card.get_sort_asc()
+        except Exception:
+            pass
+        if field != 'relevance':
+            try:
+                filtered = self._sort_discover(filtered, field, asc)
+            except Exception:
+                pass
         self.filtered_results = filtered
         self.current_page = 0
-        query = self.search_input.text().strip()
+        try:
+            query = (self.search_input.text() or '').strip()
+        except Exception:
+            query = ''
+        self._update_discover_card_results(filtered, query)
+        self._render_discover_rows(filtered, query)
 
-        self.package_table.setUpdatesEnabled(False)
-        self.package_table.setRowCount(0)
-        self._ensure_installed_index_async(selected_sources)
+    def _render_discover_rows(self, filtered, query):
+        """Render the filtered Discover result set into the shared table."""
+        try:
+            if hasattr(self, 'updates_table') and self.updates_table:
+                self.updates_table.set_discover_mode(True)
+                self.updates_table.show_installed_date(False)
+                self.updates_table.set_installed_mode(False)
+                self.updates_table.set_enrich(True)
+                if not filtered:
+                    self.updates_table.set_empty_text(
+                        f"No packages found matching '{query}'.", "Try a different search term")
+                else:
+                    self.updates_table.set_empty_text(
+                        "No packages found", "Try a different search term")
+                page = filtered[:self.packages_per_page]
+                mapped = [self._map_discover_pkg(p) for p in page]
+                self.updates_table.set_packages(mapped)
+        except Exception:
+            pass
 
         start = 0
         end = min(self.packages_per_page, len(filtered))
-        for pkg in filtered[start:end]:
-            if self.current_view == "discover":
-                self.add_discover_row(pkg)
-            else:
-                self.add_package_row(pkg['name'], pkg['id'], pkg['version'], pkg['version'], pkg['source'])
-
-        self.package_table.setUpdatesEnabled(True)
-
         has_more = end < len(filtered)
         self.load_more_btn.setVisible(has_more)
         if has_more:
@@ -554,19 +690,22 @@ class _SearchMixin:
 
         if not filtered:
             self.header_info.setText(f"No packages found matching '{query}'.")
-            self._hide_all_package_views()
-            if hasattr(self, 'no_results_widget'):
-                self.no_results_desc.setText(f"No packages found matching '{query}'.")
-                self.no_results_widget.setVisible(True)
         else:
             count = len(filtered)
             self.header_info.setText(f"{count} packages were found, {count} of which match the specified filters")
-            if hasattr(self, 'no_results_widget'):
-                self.no_results_widget.setVisible(False)
-            self._show_active_view()
+        if hasattr(self, 'no_results_widget'):
+            self.no_results_widget.setVisible(False)
+        self._show_active_view()
 
         if self.current_view == "discover":
             has_results = bool(filtered)
+            # Show the source panel only once results are displayed; hide it
+            # on the idle Discover screen or when a search finds nothing.
+            try:
+                if hasattr(self, 'filters_panel') and self.filters_panel:
+                    self.filters_panel.setVisible(has_results)
+            except Exception:
+                pass
             btn = getattr(self, 'discover_select_all_btn', None)
             if btn is not None:
                 btn.setVisible(has_results)
@@ -582,3 +721,35 @@ class _SearchMixin:
                     tb.setVisible(has_results)
             if hasattr(self, '_greeting_label') and self._greeting_label:
                 self._greeting_label.setVisible(not has_results)
+        try:
+            self._update_discover_install_btn_state()
+        except Exception:
+            pass
+
+    def _update_discover_card_results(self, filtered, query):
+        """Reflect the current Discover result set on the source card.
+
+        Shows per-source match counts, a total summary, and the per-source
+        distribution bar. Only touches the card after a search, so the idle
+        Discover screen (large search box, buttons) is left unchanged.
+        """
+        try:
+            if not hasattr(self, 'source_card') or not self.source_card:
+                return
+            per = {}
+            for pkg in filtered:
+                s = pkg.get('source')
+                if s not in per:
+                    per[s] = 0
+                per[s] += 1
+            for name, item in self.source_card.sources.items():
+                item.set_count(per.get(name, 0))
+            if not filtered:
+                self.source_card.set_summary(None)
+                self.source_card.set_summary_distribution({})
+                return
+            noun = "packages found" if query else "packages"
+            self.source_card.set_summary(len(filtered), noun=noun)
+            self.source_card.set_summary_distribution(per)
+        except Exception:
+            pass

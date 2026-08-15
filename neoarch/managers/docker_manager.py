@@ -1,8 +1,9 @@
-"""Docker container management component for NeoArch.
+"""Docker container management for NeoArch.
 
-Provides UI and backend for pulling, running, listing, stopping, and
+Provides backend logic for pulling, running, listing, stopping, and
 cleaning Docker containers with advanced options for ports, volumes,
 environment variables, GPU passthrough, and restart policies.
+The UI is provided by the DockerTab full-page component.
 """
 
 import os
@@ -10,18 +11,14 @@ import shutil
 import subprocess
 from threading import Thread
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QListWidget, QListWidgetItem, QDialog, QLineEdit, QMessageBox,
-    QPlainTextEdit, QComboBox, QCheckBox, QMenu, QAbstractItemView,
-    QScrollArea, QSizePolicy,
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QLineEdit, QMessageBox, QPlainTextEdit, QComboBox, QCheckBox, QMenu,
+    QScrollArea,
 )
-from PyQt6.QtCore import Qt, QObject, QTimer, QPoint
+from PyQt6.QtCore import Qt, QObject, QTimer, pyqtSignal
 from PyQt6.QtGui import QCursor
 
 DOCKER_PATH = shutil.which("docker") or "docker"
-
-from neoarch.resources.paths import ICONS_DIR
-from neoarch.frontend.components.feature_card import FeatureCard
 
 __all__ = ["DockerManager"]
 
@@ -29,92 +26,17 @@ __all__ = ["DockerManager"]
 class DockerManager(QObject):
     """Docker container management component for NeoArch."""
 
-    def __init__(self, log_signal, show_message_signal, sources_layout, parent=None):
-        super().__init__()
+    containers_changed = pyqtSignal()
+
+    def __init__(self, log_signal, show_message_signal, parent=None):
+        super().__init__(parent)
         self.log_signal = log_signal
         self.show_message = show_message_signal
-        self.sources_layout = sources_layout
         self.parent = parent
-        self.docker_section = None
-        self.recent_containers_label = None
-        self.recent_containers_list = None
         self._container_count = 0
-        self.create_docker_section()
-
-    def create_docker_section(self):
-        """Create and add the Docker section UI to the sources layout."""
-        self.docker_section = QWidget()
-        self.docker_section.setObjectName("dockerSectionWrapper")
-        wrapper_layout = QVBoxLayout(self.docker_section)
-        wrapper_layout.setContentsMargins(0, 6, 0, 0)
-        wrapper_layout.setSpacing(4)
-
-        self._card = FeatureCard()
-        docker_icon = os.path.join(str(ICONS_DIR), "discover", "docker.svg")
-        self._update_badge()
-        self._card.build_header(docker_icon, "Docker Containers", self._container_count or None)
-        self._card.build_primary_action("Run Container", self.install_from_docker)
-        self._card.build_action_grid([
-            ("Images", "list", self.list_docker_images),
-            ("Stop", "stop", self.show_stop_menu),
-            ("Shell", "shell", self.show_shell_menu),
-            ("Clean", "clean", self.clean_docker_containers),
-        ])
-        wrapper_layout.addWidget(self._card)
-
-        self.recent_containers_label = QLabel("Containers")
-        self.recent_containers_label.setObjectName("dockerRecentLabel")
-        self.recent_containers_label.setStyleSheet("""
-            QLabel#dockerRecentLabel {
-                color: #5C5E66;
-                font-size: 9px;
-                font-weight: 500;
-                padding: 2px 14px 0 14px;
-                background: transparent;
-                border: none;
-            }
-        """)
-        wrapper_layout.addWidget(self.recent_containers_label)
-
-        self.recent_containers_list = QListWidget()
-        self.recent_containers_list.setObjectName("dockerRecentList")
-        self.recent_containers_list.itemDoubleClicked.connect(self.open_container_logs)
-        self.recent_containers_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.recent_containers_list.customContextMenuRequested.connect(self.show_container_menu)
-        try:
-            self.recent_containers_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        except Exception:
-            pass
-        self.recent_containers_list.setVisible(False)
-        self.recent_containers_list.setStyleSheet("""
-            QListWidget#dockerRecentList {
-                background-color: transparent;
-                border: none;
-                color: #8B8D97;
-                font-size: 10px;
-                max-height: 72px;
-                padding: 0 14px 4px 14px;
-            }
-            QListWidget#dockerRecentList::item {
-                padding: 3px 6px;
-                border-radius: 4px;
-            }
-            QListWidget#dockerRecentList::item:hover {
-                background-color: rgba(255, 255, 255, 0.04);
-                color: #EDEDEF;
-            }
-            QListWidget#dockerRecentList::item:selected {
-                background-color: rgba(0, 191, 174, 0.12);
-                color: #00BFAE;
-            }
-        """)
-        wrapper_layout.addWidget(self.recent_containers_list)
-
-        self.sources_layout.addWidget(self.docker_section)
-        self.load_containers(include_all=True)
 
     def _update_badge(self):
-        """Count active containers for the header badge."""
+        """Count active containers for the status badge."""
         try:
             result = subprocess.run(
                 [DOCKER_PATH, "ps", "-q"],
@@ -126,6 +48,33 @@ class DockerManager(QObject):
                 self._container_count = 0
         except Exception:
             self._container_count = 0
+
+    def get_container_count(self):
+        """Return the number of currently running containers."""
+        return self._container_count
+
+    def load_containers(self, include_all=False):
+        """Return the list of Docker containers (all if include_all)."""
+        containers = []
+        try:
+            fmt = "{{.ID}}\\t{{.Names}}\\t{{.Image}}\\t{{.Status}}"
+            cmd = [DOCKER_PATH, "ps"] + (["-a"] if include_all else []) + ["--format", fmt]
+            result = subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=30)
+            if result.returncode == 0 and result.stdout.strip():
+                for line in result.stdout.strip().split('\n'):
+                    parts = line.split('\t')
+                    if len(parts) >= 3:
+                        containers.append({
+                            'id': parts[0],
+                            'name': parts[1],
+                            'image': parts[2],
+                            'status': parts[3] if len(parts) > 3 else ''
+                        })
+        except Exception as e:
+            self.log_signal.emit(f"Error loading containers: {e}")
+        self._update_badge()
+        self.containers_changed.emit()
+        return containers
 
     def show_shell_menu(self):
         """Show a menu to select a container and open a shell."""
@@ -747,52 +696,38 @@ class DockerManager(QObject):
         elif action == stop_all:
             self.stop_docker_containers(only_running=False)
 
-    def show_container_menu(self, pos):
-        """Show context menu for a container in the list."""
-        item = self.recent_containers_list.itemAt(pos)
-        if not item:
-            return
-        cid = item.data(Qt.ItemDataRole.UserRole)
-        menu = QMenu()
-        menu.setStyleSheet("""
-            QMenu { background-color: #2A2D33; color: #F0F0F0; border: 1px solid rgba(0,191,174,0.3); }
-            QMenu::item:selected { background-color: rgba(0,191,174,0.2); }
-        """)
-        start_action = menu.addAction("Start")
-        stop_action = menu.addAction("Stop")
-        restart_action = menu.addAction("Restart")
-        logs_action = menu.addAction("View Logs")
-        shell_action = menu.addAction("Open Shell")
-        remove_action = menu.addAction("Remove")
-        action = menu.exec(self.recent_containers_list.mapToGlobal(pos))
+    def _after_container_action(self, verb, cid, result):
+        """Shared handler for start/stop/restart/remove results."""
+        if result.returncode == 0:
+            self.log_signal.emit(f"{verb} container: {cid}")
+            self.show_message.emit("Docker", f"{verb} container {cid}")
+        else:
+            self.log_signal.emit(f"Failed to {verb.lower()} container {cid}: {(result.stderr or '').strip()}")
+        self.load_containers(include_all=True)
 
-        try:
-            if action == start_action:
-                subprocess.run([DOCKER_PATH, "start", cid], check=False, capture_output=True, text=True, timeout=30)
-                self.log_signal.emit(f"Started container: {cid}")
-                self.load_containers()
-            elif action == stop_action:
-                subprocess.run([DOCKER_PATH, "stop", cid], check=False, capture_output=True, text=True, timeout=30)
-                self.log_signal.emit(f"Stopped container: {cid}")
-                self.load_containers()
-            elif action == restart_action:
-                subprocess.run([DOCKER_PATH, "restart", cid], check=False, capture_output=True, text=True, timeout=60)
-                self.log_signal.emit(f"Restarted container: {cid}")
-                self.load_containers()
-            elif action == logs_action:
-                logs = subprocess.run([DOCKER_PATH, "logs", "--tail", "50", cid], check=False, capture_output=True, text=True, timeout=30)
-                self.log_signal.emit(f"Logs for {cid}:")
-                for line in (logs.stdout or '').strip().split('\n'):
-                    if line.strip():
-                        self.log_signal.emit(f"  {line}")
-            elif action == shell_action:
-                self.open_container_shell(cid)
-            elif action == remove_action:
-                subprocess.run([DOCKER_PATH, "rm", "-f", cid], check=False, capture_output=True, text=True, timeout=30)
-                self.log_signal.emit(f"Removed container: {cid}")
-                self.load_containers()
-        except Exception as e:
-            self.log_signal.emit(f"Error: {e}")
+    def start_container(self, cid):
+        def task():
+            result = subprocess.run([DOCKER_PATH, "start", cid], check=False, capture_output=True, text=True, timeout=30)
+            self._after_container_action("Started", cid, result)
+        Thread(target=task, daemon=True).start()
+
+    def stop_container(self, cid):
+        def task():
+            result = subprocess.run([DOCKER_PATH, "stop", cid], check=False, capture_output=True, text=True, timeout=30)
+            self._after_container_action("Stopped", cid, result)
+        Thread(target=task, daemon=True).start()
+
+    def restart_container(self, cid):
+        def task():
+            result = subprocess.run([DOCKER_PATH, "restart", cid], check=False, capture_output=True, text=True, timeout=60)
+            self._after_container_action("Restarted", cid, result)
+        Thread(target=task, daemon=True).start()
+
+    def remove_container(self, cid):
+        def task():
+            result = subprocess.run([DOCKER_PATH, "rm", "-f", cid], check=False, capture_output=True, text=True, timeout=30)
+            self._after_container_action("Removed", cid, result)
+        Thread(target=task, daemon=True).start()
 
     def open_container_shell(self, cid):
         """Open a shell in the specified container."""
@@ -816,12 +751,6 @@ class DockerManager(QObject):
                 continue
         self.log_signal.emit("Failed to open shell: no shell or terminal available")
 
-    def open_container_logs(self, item):
-        """Open logs for the container represented by the clicked item."""
-        cid = item.data(Qt.ItemDataRole.UserRole)
-        if cid:
-            self.show_container_logs(cid)
-
     def show_container_logs(self, cid):
         """Show container logs in a dialog."""
         dialog = QDialog()
@@ -844,45 +773,6 @@ class DockerManager(QObject):
             log_view.setPlainText(f"Error fetching logs: {e}")
         dialog.exec()
 
-    def load_containers(self, include_all=False):
-        """Load Docker containers into the list widget."""
-        try:
-            fmt = "{{.ID}}\\t{{.Names}}\\t{{.Image}}\\t{{.Status}}"
-            cmd = [DOCKER_PATH, "ps"] + (["-a"] if include_all else []) + ["--format", fmt]
-            result = subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=30)
-            containers = []
-            if result.returncode == 0 and result.stdout.strip():
-                for line in result.stdout.strip().split('\n'):
-                    parts = line.split('\t')
-                    if len(parts) >= 3:
-                        containers.append({
-                            'id': parts[0],
-                            'name': parts[1],
-                            'image': parts[2],
-                            'status': parts[3] if len(parts) > 3 else ''
-                        })
-            if containers and self.recent_containers_list:
-                self.recent_containers_list.clear()
-                for c in containers:
-                    item_text = f"\U0001f433 {c['name']} ({c['image']})"
-                    item = QListWidgetItem(item_text)
-                    item.setToolTip(f"ID: {c['id']}\nStatus: {c['status']}")
-                    item.setData(Qt.ItemDataRole.UserRole, c['id'])
-                    self.recent_containers_list.addItem(item)
-                if self.recent_containers_label:
-                    self.recent_containers_label.setVisible(True)
-                self.recent_containers_list.setVisible(True)
-            else:
-                if self.recent_containers_label:
-                    self.recent_containers_label.setVisible(False)
-                if self.recent_containers_list:
-                    self.recent_containers_list.setVisible(False)
-        except Exception as e:
-            self.log_signal.emit(f"Error loading containers: {e}")
-        self._update_badge()
-        if hasattr(self, '_card') and self._card is not None:
-            self._card.set_badge(self._container_count or None)
-
     def stop_docker_containers(self, only_running=True):
         """Stop Docker containers."""
         try:
@@ -902,6 +792,7 @@ class DockerManager(QObject):
                 self.log_signal.emit("No running containers to stop")
         except Exception as e:
             self.log_signal.emit(f"Error stopping containers: {str(e)}")
+        self.load_containers(include_all=True)
 
     def clean_docker_containers(self):
         """Clean up Docker resources (stopped containers, unused networks, dangling images)."""

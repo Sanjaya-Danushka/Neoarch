@@ -47,6 +47,12 @@ DEFAULT_SETTINGS = {
     'request_timeout': 30,
     'verify_ssl': True,
     'parallel_network': True,
+    # Scheduled checks (Phase 5)
+    'schedule_enabled': False,
+    'schedule_days': [0, 1, 2, 3, 4, 5, 6],
+    'schedule_time': '03:00',
+    # Localization (Phase 5)
+    'culture': 'en',
 }
 
 

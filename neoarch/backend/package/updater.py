@@ -6,9 +6,9 @@ with appropriate privilege elevation.
 
 import os
 import json
+import re
 import subprocess
 from threading import Thread
-from PyQt6.QtCore import QTimer
 
 from neoarch.backend.workers import CommandWorker
 from neoarch.backend.auth import get_askpass_env
@@ -20,17 +20,91 @@ __all__ = [
 ]
 
 
-def update_packages(app, packages_by_source: dict):
-    """Update specific packages organized by source.
+_AUR_ERROR_HINTS = [
+    (re.compile(r'no such file or directory'), "a build tool is missing (install base-devel)"),
+    (re.compile(r'could not satisfy dependencies'), "there is a dependency conflict"),
+    (re.compile(r'A failure occurred in build'), "a package failed to build"),
+    (re.compile(r'exit status \d+'), "a package failed to build"),
+    (re.compile(r'not found in remote repositories'), "a package was not found in the AUR"),
+]
+
+
+def _classify_aur_hint(msg):
+    """Return a short human-readable hint for an AUR helper failure blob."""
+    for pattern, label in _AUR_ERROR_HINTS:
+        if pattern.search(msg or ''):
+            return label
+    return None
+
+
+def parse_aur_failures(msg):
+    """Parse AUR helper stderr into failed packages and a reason hint.
+
+    Handles yay ("error making: <pkg>: <reason>") and paru ("Failed to
+    install ... <pkg> - <reason>") output. Returns (failed, hint) where
+    failed maps package names to their failure reasons.
+    """
+    failed = {}
+    if not msg:
+        return failed, None
+    in_failed_section = False
+    for line in msg.splitlines():
+        text = line.strip()
+        if not text:
+            continue
+        if 'manual intervention is required' in text.lower():
+            in_failed_section = True
+            continue
+        m = re.search(r'error making:\s*(.+?):\s*(.*)$', text)
+        if m:
+            failed[m.group(1).strip()] = m.group(2).strip() or 'package failed to build'
+            continue
+        if in_failed_section:
+            pkg = reason = None
+            if ' - ' in text:
+                pkg, _, reason = text.partition(' - ')
+            else:
+                sep = text.find(': ')
+                if sep > 0:
+                    pkg, reason = text[:sep], text[sep + 2:]
+            if pkg and reason:
+                failed[pkg.strip()] = reason.strip()
+    return failed, _classify_aur_hint(msg)
+
+
+def _clean_pacman_cache(app):
+    """Remove freshly downloaded pacman cache after a cancelled operation.
+
+    A cancelled update/install leaves downloaded packages in the pacman
+    cache that are no longer needed, so scrub them before the operation
+    reports "cancelled".
+    """
+    try:
+        env = get_askpass_env()
+        subprocess.run(
+            ["sudo", "-A", "pacman", "-Sc", "--noconfirm"],
+            capture_output=True, text=True, timeout=120, env=env,
+        )
+    except Exception:
+        pass
+
+
+def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
+    """Update packages organized by source.
 
     Args:
         app: Main window instance (provides signals and UI state).
         packages_by_source: Dict mapping source names to package name lists.
+        upgrade_all: When True (Update All), run a full system upgrade
+            (pacman -Syu). When False, only the named targets are upgraded
+            (pacman -Sy <targets>) so a single-app update does not touch the
+            rest of the system.
     """
     app.install_cancel_event = __import__('threading').Event()
 
     def update():
         try:
+            app._last_operation = "update"
             overall_success = True
             lock_detected = False
             lock_details = ""
@@ -38,6 +112,15 @@ def update_packages(app, packages_by_source: dict):
             updated_pkgs = 0
             cancelled = False
             failed_sources = []
+            aur_failures = {}
+            aur_hint = None
+
+            # Base percent offset of each source within the overall update.
+            source_offsets = {}
+            _acc = 0
+            for source, pkgs in packages_by_source.items():
+                source_offsets[source] = (_acc, len(pkgs))
+                _acc += len(pkgs)
 
             def emit_progress(msg, inc=None):
                 nonlocal updated_pkgs
@@ -49,6 +132,31 @@ def update_packages(app, packages_by_source: dict):
                 except Exception:
                     pass
 
+            def pacman_progress_parser(source):
+                """Yield per-package progress from pacman (X/Y) counters."""
+                start, count = source_offsets.get(source, (0, 0))
+                last = -1
+                def _on_line(line):
+                    nonlocal last
+                    if not line:
+                        return
+                    m = re.search(r'\(\s*(\d+)\s*/\s*(\d+)\s*\)', line)
+                    if not m or count <= 0:
+                        return
+                    x, y = int(m.group(1)), int(m.group(2))
+                    if y <= 0:
+                        return
+                    frac = min(1.0, x / y)
+                    pct = int(((start + frac * count) / total_pkgs) * 100) if total_pkgs else -1
+                    pct = max(0, min(99, pct))
+                    if pct != last:
+                        last = pct
+                        try:
+                            app.progress_update.emit(f"Updating {source}: {x}/{y}", pct)
+                        except Exception:
+                            pass
+                return _on_line
+
             for source, pkgs in packages_by_source.items():
                 if app.install_cancel_event.is_set():
                     app.log("Update cancelled by user")
@@ -57,10 +165,15 @@ def update_packages(app, packages_by_source: dict):
                 emit_progress(f"Updating {source} packages...")
                 source_count = len(pkgs)
                 if source == 'pacman':
-                    cmd = ["pacman", "-S", "--noconfirm"] + pkgs
+                    if upgrade_all:
+                        cmd = ["pacman", "-Syu", "--noconfirm"]
+                    else:
+                        cmd = ["pacman", "-Sy", "--noconfirm"] + pkgs
                     worker = CommandWorker(cmd, sudo=True, cancel_event=app.install_cancel_event)
                     worker.output.connect(app.log)
                     worker.line_update.connect(app.log_line_update)
+                    worker.output.connect(pacman_progress_parser('pacman'))
+                    worker.line_update.connect(pacman_progress_parser('pacman'))
                     def _on_err(msg):
                         nonlocal overall_success, lock_detected, lock_details, failed_sources
                         app.log(msg)
@@ -91,11 +204,15 @@ def update_packages(app, packages_by_source: dict):
                     worker.output.connect(app.log)
                     worker.line_update.connect(app.log_line_update)
                     def _on_err_aur(msg):
-                        nonlocal overall_success, failed_sources
+                        nonlocal overall_success, failed_sources, aur_failures, aur_hint
                         app.log(msg)
                         overall_success = False
                         if 'AUR' not in failed_sources:
                             failed_sources.append('AUR')
+                        failed, hint = parse_aur_failures(msg)
+                        aur_failures.update(failed)
+                        if hint and not aur_hint:
+                            aur_hint = hint
                     worker.error.connect(_on_err_aur)
                     worker.run()
                     emit_progress(f"Completed {source} packages", source_count)
@@ -231,6 +348,12 @@ def update_packages(app, packages_by_source: dict):
                     app.installation_progress.emit("cancelled", False)
                 except Exception:
                     pass
+                # Tell the UI first, then scrub the freshly downloaded cache
+                # (the worker thread blocking on pacman -Sc must not delay it).
+                try:
+                    _clean_pacman_cache(app)
+                except Exception:
+                    pass
             elif lock_detected:
                 try:
                     app.ui_call.emit(lambda: app.show_busy_pm_warning(lock_details, retry_action=lambda: update_packages(app, packages_by_source)))
@@ -250,12 +373,18 @@ def update_packages(app, packages_by_source: dict):
                 failed_msg = "Some updates failed"
                 if failed_sources:
                     failed_msg += f" ({', '.join(failed_sources)})"
-                failed_msg += ". See console for details."
+                if aur_failures:
+                    failed_msg += ": " + ", ".join(aur_failures.keys())
+                if aur_hint:
+                    failed_msg += f". {aur_hint.capitalize()}."
+                failed_msg += " See console for details."
                 try:
                     app.progress_update.emit(failed_msg, -1)
                 except Exception:
                     pass
                 app.show_message.emit("Update Partial", failed_msg)
+                for name, reason in aur_failures.items():
+                    app.log(f"  Failed AUR package: {name}: {reason}")
                 try:
                     app.installation_progress.emit("failed", False)
                 except Exception:

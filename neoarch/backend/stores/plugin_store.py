@@ -8,7 +8,7 @@ import os
 import json
 import shutil
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 try:
     import requests

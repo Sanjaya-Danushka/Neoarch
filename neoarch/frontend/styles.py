@@ -222,14 +222,10 @@ QLabel#sidebarLogo {{
 
 /* ── Nav badge (updates count) ──────────────────────────────────── */
 QLabel#navBadge {{
-    background-color: {_ACCENT};
-    color: #0C0C0E;
-    border-radius: 8px;
-    padding: 0 6px;
-    font-size: 10px;
+    color: {_ACCENT};
+    background: transparent;
+    font-size: 11px;
     font-weight: 700;
-    min-width: 16px;
-    min-height: 16px;
 }}
 
 /* ── Header ─────────────────────────────────────────────────────── */
@@ -274,6 +270,13 @@ QTableWidget::item:hover {{
 QTableWidget::item:selected {{
     background-color: {_ACCENT_SOFT};
     color: {_TEXT};
+}}
+
+/* Redesigned Updates table: frosted glass panel with a rounded hairline frame */
+QTableView#updatesTable {{
+    background-color: rgba(14, 14, 16, 130);
+    border: 1px solid rgba(255, 255, 255, 15);
+    border-radius: 14px;
 }}
 
 QHeaderView::section {{

@@ -69,12 +69,15 @@ class IgnoredMetaWorker(QObject):
 def ignore_selected(app):
     """Add selected packages from the package table to the ignore list."""
     items = []
-    for row in range(app.package_table.rowCount()):
-        checkbox = app.get_row_checkbox(row)
-        if checkbox is not None and checkbox.isChecked():
-            name_item = app.package_table.item(row, 1)
-            if name_item:
-                items.append(name_item.text().strip())
+    if getattr(app, 'current_view', '') == "updates" and hasattr(app, 'updates_table'):
+        items = [p.get('name', '').strip() for p in app.updates_table.checked_packages() if p.get('name')]
+    else:
+        for row in range(app.package_table.rowCount()):
+            checkbox = app.get_row_checkbox(row)
+            if checkbox is not None and checkbox.isChecked():
+                name_item = app.package_table.item(row, 1)
+                if name_item:
+                    items.append(name_item.text().strip())
     if not items:
         app.log("No packages selected to ignore")
         return
@@ -83,6 +86,18 @@ def ignore_selected(app):
         ignored.add(n)
     save_ignored_updates(ignored)
     app.log(f"Ignored {len(items)} package(s)")
+    if app.current_view == "updates":
+        app.load_updates()
+
+
+def ignore_one(app, name):
+    """Ignore a single package's update notifications."""
+    if not name:
+        return
+    ignored = load_ignored_updates()
+    ignored.add(name)
+    save_ignored_updates(ignored)
+    app.log(f"Ignored '{name}'")
     if app.current_view == "updates":
         app.load_updates()
 

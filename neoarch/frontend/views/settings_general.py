@@ -1,9 +1,8 @@
 import os
 from typing import Any
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QCheckBox, QLineEdit, QPushButton, QFileDialog, QComboBox,
                              QFrame)
-from PyQt6.QtCore import Qt
 
 from neoarch.backend import sys_utils
 
@@ -197,6 +196,37 @@ class GeneralSettingsWidget(QWidget):
         aur_row.addStretch()
 
         basic_layout.addLayout(aur_row)
+
+        culture_row = QHBoxLayout()
+        culture_row.setSpacing(12)
+        culture_label = QLabel("Language / Culture:")
+        culture_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        culture_row.addWidget(culture_label)
+
+        self.culture_combo = QComboBox()
+        self.culture_combo.setStyleSheet(_COMBO)
+        try:
+            from neoarch.backend.services.i18n import available_languages
+            langs = available_languages()
+        except Exception:
+            langs = []
+        for lang in ["en"] + langs:
+            label = {"en": "English", "si": "සිංහල (Sinhala)", "es": "Español (Spanish)"}.get(lang, lang)
+            self.culture_combo.addItem(label, lang)
+
+        current_culture = self.app.settings.get('culture', 'en')
+        index = self.culture_combo.findData(current_culture)
+        if index >= 0:
+            self.culture_combo.setCurrentIndex(index)
+        self.culture_combo.currentIndexChanged.connect(self.on_culture_changed)
+        culture_row.addWidget(self.culture_combo)
+
+        culture_note = QLabel("Affects the CLI translation catalog; the GUI ships in English.")
+        culture_note.setStyleSheet("color: #8B8D97; font-size: 11px; border: none;")
+        culture_row.addWidget(culture_note)
+        culture_row.addStretch()
+
+        basic_layout.addLayout(culture_row)
         self.layout.addWidget(basic_card)
 
         # ── Bundle Autosave Card ──
@@ -272,3 +302,7 @@ class GeneralSettingsWidget(QWidget):
     def on_aur_helper_changed(self, index):
         helper = self.aur_helper_combo.currentData()
         self.app.update_setting('aur_helper', helper)
+
+    def on_culture_changed(self, index):
+        culture = self.culture_combo.currentData()
+        self.app.update_setting('culture', culture)
