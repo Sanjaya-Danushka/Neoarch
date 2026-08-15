@@ -2603,12 +2603,22 @@ class _ViewsMixin:
         try:
             if dataset is None:
                 dataset = self.search_results if getattr(self, 'search_results', None) else self.all_packages
-            self.updates_table.set_empty_text(
-                "All caught up", "Your system is up to date",
-                "Updates will appear here automatically when available")
+            rows = dataset or []
+            q = ''
+            try:
+                q = (self.search_input.text() or '').strip()
+            except Exception:
+                pass
+            if not rows and q:
+                self.updates_table.set_empty_text(
+                    f"No updates found matching '{q}'.", "Try a different search term")
+            else:
+                self.updates_table.set_empty_text(
+                    "All caught up", "Your system is up to date",
+                    "Updates will appear here automatically when available")
             self.updates_table.show_installed_date(False)
             self.updates_table.set_installed_mode(False)
-            self.updates_table.set_packages(dataset or [])
+            self.updates_table.set_packages(rows)
             self.updates_table.set_loading(False)
         except Exception:
             pass
