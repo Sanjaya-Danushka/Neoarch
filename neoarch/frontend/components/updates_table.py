@@ -330,7 +330,7 @@ class UpdatesModel(QAbstractTableModel):
         return (pkg.get("name") or "").lower()
 
     def _apply_sort(self):
-        if self._sort_col in (0, 7):
+        if self._sort_col in (0, 7, -1):
             return
         self._pkgs.sort(key=lambda p: self._sort_key(p, self._sort_col), reverse=not self._sort_asc)
         if self.rowCount():
@@ -745,6 +745,8 @@ class UpdatesTable(QTableView):
 
         Reuses the exact Updates/Installed rendering, loading overlay, header
         and empty state; only the visible columns, widths and row menu change.
+        Sorting is owned by the source panel, so the table preserves the order
+        it is handed instead of re-sorting by the default column.
         """
         self._discover_mode = bool(discover)
         # Hide the updates-only columns (Size / Status / Installed date).
@@ -753,9 +755,18 @@ class UpdatesTable(QTableView):
         if discover:
             self.setColumnWidth(2, 160)
             self.setColumnWidth(4, 140)
+            self.model._sort_col = -1
+            self.model._sort_asc = True
         else:
             self.setColumnWidth(2, 190)
             self.setColumnWidth(4, 96)
+            if self.model._sort_col == -1:
+                self.model._sort_col = 1
+                self.model._sort_asc = True
+                self.model._apply_sort()
+        header = self.horizontalHeader()
+        if hasattr(header, "set_sort"):
+            header.set_sort(self.model._sort_col, self.model._sort_asc)
         self.viewport().update()
 
     def append_packages(self, packages):
@@ -801,6 +812,8 @@ class UpdatesTable(QTableView):
         self.set_all_checked(state)
 
     def _on_sort_requested(self, col, asc):
+        if self._discover_mode:
+            return
         self.model.sort(col, Qt.SortOrder.AscendingOrder if asc else Qt.SortOrder.DescendingOrder)
         try:
             self.clearSelection()

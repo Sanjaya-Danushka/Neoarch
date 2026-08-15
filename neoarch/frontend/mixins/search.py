@@ -1,11 +1,17 @@
 """Search/discover mixin for the main window."""
 
 import os
+import re
 import json
 import subprocess
 from threading import Thread
 
 from neoarch.resources.paths import PROJECT_ROOT
+
+
+def _parse_version(value):
+    """Best-effort numeric parse of a version string for comparisons."""
+    return [int(m) for m in re.findall(r"\d+", str(value))] or [0]
 
 
 class _SearchMixin:
@@ -232,6 +238,16 @@ class _SearchMixin:
         current_query = self.search_input.text().strip()
         if current_query and self.current_view == "discover":
             self.search_discover_packages(current_query)
+
+    def on_discover_sort_changed(self, field):
+        """Re-sort the cached Discover results without re-searching."""
+        if self.current_view == "discover":
+            self._refresh_discover_results()
+
+    def on_discover_installed_filter_changed(self, hide):
+        """Show/hide already-installed packages in the Discover results."""
+        if self.current_view == "discover":
+            self._refresh_discover_results()
 
     def filter_packages(self):
         query = self.search_input.text().lower()
@@ -568,7 +584,6 @@ class _SearchMixin:
                 self.loading_container.setVisible(False)
         except Exception:
             pass
-        self._show_active_view()
         try:
             if hasattr(self, 'console_toggle_btn'):
                 self.console_toggle_btn.setVisible(True)
@@ -577,19 +592,76 @@ class _SearchMixin:
 
         if selected_sources is None:
             selected_sources = {}
-            if hasattr(self, 'source_card') and self.source_card:
-                selected_sources = self.source_card.get_selected_sources()
-            else:
+            try:
+                if hasattr(self, 'source_card') and self.source_card:
+                    selected_sources = self.source_card.get_selected_sources()
+                else:
+                    selected_sources = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True}
+            except Exception:
                 selected_sources = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True}
 
+        self._ensure_installed_index_async(selected_sources)
+        self._refresh_discover_results(selected_sources)
+
+    def _sort_discover(self, dataset, field, asc):
+        """Sort Discover result dicts by a selected field."""
+        try:
+            if field == 'version':
+                def key(p): return (_parse_version(p.get('version') or ''), (p.get('name') or '').lower())
+            elif field == 'source':
+                def key(p): return ((p.get('source') or '').lower(), (p.get('name') or '').lower())
+            elif field == 'installed':
+                def key(p): return ((not bool(self.is_package_installed(p))), (p.get('name') or '').lower())
+            else:
+                def key(p): return (p.get('name') or '').lower()
+            return sorted(dataset, key=key, reverse=not asc)
+        except Exception:
+            return dataset
+
+    def _refresh_discover_results(self, selected_sources=None):
+        """Re-apply source / hide-installed / sort filters and re-render results."""
+        if self.current_view != "discover":
+            return
+        if selected_sources is None:
+            try:
+                if hasattr(self, 'source_card') and self.source_card:
+                    selected_sources = self.source_card.get_selected_sources()
+                else:
+                    selected_sources = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True}
+            except Exception:
+                selected_sources = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True}
         filtered = self.get_filtered_discover_results(selected_sources)
+        hide = False
+        try:
+            if hasattr(self, 'source_card') and self.source_card:
+                hide = self.source_card.get_hide_installed()
+        except Exception:
+            hide = False
+        if hide:
+            filtered = [p for p in filtered if not self.is_package_installed(p)]
+        field, asc = 'relevance', True
+        try:
+            if hasattr(self, 'source_card') and self.source_card:
+                field = self.source_card.get_sort()
+                asc = self.source_card.get_sort_asc()
+        except Exception:
+            pass
+        if field != 'relevance':
+            try:
+                filtered = self._sort_discover(filtered, field, asc)
+            except Exception:
+                pass
         self.filtered_results = filtered
         self.current_page = 0
-        query = self.search_input.text().strip()
+        try:
+            query = (self.search_input.text() or '').strip()
+        except Exception:
+            query = ''
         self._update_discover_card_results(filtered, query)
-        self._ensure_installed_index_async(selected_sources)
+        self._render_discover_rows(filtered, query)
 
-        # Discover renders through the same redesigned table as Updates/Installed.
+    def _render_discover_rows(self, filtered, query):
+        """Render the filtered Discover result set into the shared table."""
         try:
             if hasattr(self, 'updates_table') and self.updates_table:
                 self.updates_table.set_discover_mode(True)
@@ -618,16 +690,12 @@ class _SearchMixin:
 
         if not filtered:
             self.header_info.setText(f"No packages found matching '{query}'.")
-            if hasattr(self, 'no_results_widget'):
-                self.no_results_widget.setVisible(False)
-            # Keep the shared table visible so its empty-state overlay shows.
-            self._show_active_view()
         else:
             count = len(filtered)
             self.header_info.setText(f"{count} packages were found, {count} of which match the specified filters")
-            if hasattr(self, 'no_results_widget'):
-                self.no_results_widget.setVisible(False)
-            self._show_active_view()
+        if hasattr(self, 'no_results_widget'):
+            self.no_results_widget.setVisible(False)
+        self._show_active_view()
 
         if self.current_view == "discover":
             has_results = bool(filtered)
@@ -653,6 +721,10 @@ class _SearchMixin:
                     tb.setVisible(has_results)
             if hasattr(self, '_greeting_label') and self._greeting_label:
                 self._greeting_label.setVisible(not has_results)
+        try:
+            self._update_discover_install_btn_state()
+        except Exception:
+            pass
 
     def _update_discover_card_results(self, filtered, query):
         """Reflect the current Discover result set on the source card.

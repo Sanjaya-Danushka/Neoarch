@@ -352,6 +352,8 @@ class _FiltersMixin:
         self.source_card = SourceCard(self)
         self.source_card.source_changed.connect(self.on_source_selection_changed)
         self.source_card.search_mode_changed.connect(self.on_search_mode_changed)
+        self.source_card.sort_changed.connect(self.on_discover_sort_changed)
+        self.source_card.installed_filter_changed.connect(self.on_discover_installed_filter_changed)
 
         # Add the four main sources (exclude Local from Discover)
         sources = [
@@ -364,8 +366,24 @@ class _FiltersMixin:
         for source_name, source_icon_path in sources:
             self.source_card.add_source(source_name, source_icon_path)
 
+        # Discover-specific sort options. "relevance" keeps the best-match
+        # ordering produced by the search; the rest are plain field sorts.
+        self.source_card.set_sort_methods([
+            ("relevance", True, "Best Match"),
+            ("name", True, "Name A-Z"),
+            ("name", False, "Name Z-A"),
+            ("version", True, "Version (Oldest)"),
+            ("version", False, "Version (Latest)"),
+            ("source", True, "Source A-Z"),
+            ("source", False, "Source Z-A"),
+            ("installed", False, "Not Installed First"),
+            ("installed", True, "Installed First"),
+        ])
+        self.source_card.set_sort("relevance", True)
+
         self.sources_layout.addWidget(self.source_card)
-        self.source_card.configure_sections(show_search=True, show_counts=True)
+        self.source_card.configure_sections(
+            show_search=True, show_counts=True, show_sort=True, show_installed_filter=True)
 
     def update_updates_sources(self):
         while self.sources_layout.count():

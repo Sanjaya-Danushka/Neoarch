@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import pyqtSignal, Qt, QRectF, QSize, QPropertyAnimation, QEasingCurve, pyqtProperty
 from PyQt6.QtGui import QColor, QPainter, QPen, QFont, QFontMetrics, QRadialGradient
-from neoarch.frontend.components.source_item import SourceItem
+from neoarch.frontend.components.source_item import SourceItem, ToggleSwitch
 from neoarch.frontend.components.flow_layout import FlowLayout
 
 # ── app theme design tokens ─────────────────────────────────────────
@@ -161,6 +161,51 @@ class _RadioRow(QWidget):
         self._hover = False
         self.update()
         super().leaveEvent(event)
+
+
+class _ToggleRow(QWidget):
+    """macOS preference-style toggle row: title on the left, switch on the right."""
+
+    toggled = pyqtSignal(bool)
+
+    def __init__(self, text, accent_color="#10B981", parent=None):
+        super().__init__(parent)
+        self.setFixedHeight(30)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(2, 0, 2, 0)
+        layout.setSpacing(8)
+        layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        self.label = QLabel(text)
+        self.label.setStyleSheet(
+            "color: #EDEDEF; font-size: 12px; font-weight: 500;"
+            "background: transparent; border: none; padding: 0;")
+        layout.addWidget(self.label, 1)
+
+        self.switch = ToggleSwitch(accent_color=accent_color)
+        self.switch.setChecked(False)
+        self.switch.toggled.connect(self.toggled)
+        layout.addWidget(self.switch, 0, Qt.AlignmentFlag.AlignVCenter)
+
+    def isChecked(self):
+        return self.switch.isChecked()
+
+    def setChecked(self, checked, emit=False):
+        if emit:
+            self.switch.setChecked(checked)
+        else:
+            self.switch.blockSignals(True)
+            self.switch.setChecked(checked)
+            self.switch.blockSignals(False)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.switch.toggle()
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
 
 
 class _ActionRow(QWidget):
@@ -531,6 +576,7 @@ class SourceCard(QWidget):
     search_mode_changed = pyqtSignal(str)
     status_filter_changed = pyqtSignal(list)
     sort_changed = pyqtSignal(str)
+    installed_filter_changed = pyqtSignal(bool)
     health_action = pyqtSignal(str)
     maintenance_action = pyqtSignal(str)
 
@@ -542,6 +588,7 @@ class SourceCard(QWidget):
         self._radio_rows = []
         self.sort_field = 'name'
         self.sort_asc = True
+        self.hide_installed = False
         self._active_statuses = {"Security", "Feature", "Bug Fix", "Maintenance"}
         self._status_chips = []
         self._action_buttons = {}
@@ -569,6 +616,8 @@ class SourceCard(QWidget):
         layout.addStretch(1)
         self._build_sort(layout)
         layout.addStretch(1)
+        self._build_installed_filter(layout)
+        layout.addStretch(1)
         self._build_storage(layout)
         layout.addStretch(1)
         self._build_stats(layout)
@@ -580,7 +629,8 @@ class SourceCard(QWidget):
         self._build_summary(layout)
 
         for w in (self.sources_container, self.health_widget, self.search_mode_widget,
-                  self.status_widget, self.sort_widget, self.storage_widget,
+                  self.status_widget, self.sort_widget, self.installed_filter_widget,
+                  self.storage_widget,
                   self.stats_widget, self.quick_actions_widget, self.actions_widget,
                   self.summary_widget):
             w.setSizePolicy(w.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Maximum)
@@ -1043,6 +1093,43 @@ class SourceCard(QWidget):
         self.sort_widget.setVisible(False)
         layout.addWidget(self.sort_widget)
 
+    def _build_installed_filter(self, layout):
+        self.installed_filter_widget = QWidget()
+        self.installed_filter_widget.setObjectName("installedFilterWidget")
+        il = QVBoxLayout(self.installed_filter_widget)
+        il.setContentsMargins(16, 6, 16, 4)
+        il.setSpacing(4)
+
+        il.addWidget(self._section_header("Results"))
+
+        self.hide_installed_row = _ToggleRow("Hide installed packages", accent_color="#10B981")
+        self.hide_installed_row.toggled.connect(self._on_hide_installed_toggled)
+        il.addWidget(self.hide_installed_row)
+
+        self.installed_filter_widget.setStyleSheet("""
+            QWidget#installedFilterWidget {
+                border-top: 1px solid rgba(255, 255, 255, 0.03);
+            }
+        """)
+        self.installed_filter_widget.setVisible(False)
+        layout.addWidget(self.installed_filter_widget)
+
+    def _on_hide_installed_toggled(self, checked):
+        self.hide_installed = bool(checked)
+        self.installed_filter_changed.emit(self.hide_installed)
+
+    def get_hide_installed(self):
+        return bool(self.hide_installed)
+
+    def set_hide_installed(self, checked, emit=True):
+        self.hide_installed = bool(checked)
+        try:
+            self.hide_installed_row.setChecked(checked, emit=emit)
+        except Exception:
+            pass
+        if emit:
+            self.installed_filter_changed.emit(self.hide_installed)
+
     def _build_storage(self, layout):
         self.storage_widget = QWidget()
         self.storage_widget.setObjectName("storageWidget")
@@ -1246,7 +1333,9 @@ class SourceCard(QWidget):
         for f, a, text in self._sort_methods:
             if f == field and a == asc:
                 return text
-        return "Name A-Z"
+        if self._sort_methods:
+            return self._sort_methods[0][2]
+        return "Sort"
 
     def _update_sort_btn_text(self):
         self.sort_btn.setText(f"Sort: {self._sort_label(self.sort_field, self.sort_asc)} \u25be")
@@ -1266,6 +1355,23 @@ class SourceCard(QWidget):
             act.blockSignals(False)
         self._update_sort_btn_text()
         self.sort_changed.emit(field)
+
+    def set_sort_methods(self, methods):
+        """Replace the available sort options (list of (field, ascending, label))."""
+        self._sort_methods = [(f, bool(a), t) for f, a, t in methods]
+        self.sort_menu.clear()
+        self._sort_actions = {}
+        last_field = None
+        for field, asc, text in self._sort_methods:
+            if last_field is not None and field != last_field:
+                self.sort_menu.addSeparator()
+            last_field = field
+            act = self.sort_menu.addAction(text)
+            act.setCheckable(True)
+            act.setChecked(field == self.sort_field and asc == self.sort_asc)
+            act.triggered.connect(lambda checked=False, f=field, a=asc: self._on_sort_menu(f, a))
+            self._sort_actions[(field, asc)] = act
+        self._update_sort_btn_text()
 
     def _build_actions(self, layout):
         self.actions_widget = QWidget()
@@ -1425,7 +1531,7 @@ class SourceCard(QWidget):
     def configure_sections(self, show_status=False, show_sort=False, show_actions=False,
                            show_summary=False, show_search=True, show_counts=False,
                            show_health=False, show_storage=False, show_quick_actions=False,
-                           show_stats=False):
+                           show_stats=False, show_installed_filter=False):
         self.status_widget.setVisible(show_status)
         self.sort_widget.setVisible(show_sort)
         self.actions_widget.setVisible(show_actions)
@@ -1435,6 +1541,7 @@ class SourceCard(QWidget):
         self.storage_widget.setVisible(show_storage)
         self.quick_actions_widget.setVisible(show_quick_actions)
         self.stats_widget.setVisible(show_stats)
+        self.installed_filter_widget.setVisible(show_installed_filter)
         self._balance_sections()
         if not show_counts:
             for item in self.sources.values():

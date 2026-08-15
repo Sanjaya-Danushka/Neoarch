@@ -495,6 +495,14 @@ class _OperationsMixin:
             except Exception:
                 pass
             try:
+                hide = False
+                if hasattr(self, 'source_card') and self.source_card:
+                    hide = self.source_card.get_hide_installed()
+                if hide and hasattr(self, '_refresh_discover_results'):
+                    self._refresh_discover_results()
+            except Exception:
+                pass
+            try:
                 self._update_discover_install_btn_state()
             except Exception:
                 pass
