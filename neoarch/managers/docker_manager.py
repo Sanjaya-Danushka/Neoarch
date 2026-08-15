@@ -751,7 +751,8 @@ class DockerManager(QObject):
                 continue
         self.log_signal.emit("Failed to open shell: no shell or terminal available")
 
-    def show_container_logs(self, cid):
+    @staticmethod
+    def show_container_logs(cid):
         """Show container logs in a dialog."""
         dialog = QDialog()
         dialog.setWindowTitle(f"Container Logs: {cid}")

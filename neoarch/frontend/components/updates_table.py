@@ -266,6 +266,9 @@ class UpdatesModel(QAbstractTableModel):
             return self._pkgs[row]
         return None
 
+    def packages(self):
+        return self._pkgs
+
     def append_packages(self, packages):
         """Extend the model with more rows (Discover pagination)."""
         if not packages:
@@ -281,6 +284,12 @@ class UpdatesModel(QAbstractTableModel):
 
     def is_all_checked(self):
         return bool(self._pkgs) and len(self._checked) >= len(self._pkgs)
+
+    def checked_names(self):
+        return set(self._checked)
+
+    def is_checked(self, name):
+        return name in self._checked
 
     def set_all_checked(self, state):
         if not self._pkgs:
@@ -385,6 +394,29 @@ class UpdatesModel(QAbstractTableModel):
     def sort(self, column, order=Qt.SortOrder.AscendingOrder):
         self._sort_col = column
         self._sort_asc = order == Qt.SortOrder.AscendingOrder
+        self._apply_sort()
+
+    def apply_sort(self):
+        self._apply_sort()
+
+    def set_sort_column(self, col, asc=True):
+        self._sort_col = col
+        self._sort_asc = asc
+        self._apply_sort()
+
+    def get_sort_column(self):
+        return self._sort_col
+
+    def get_sort_ascending(self):
+        return self._sort_asc
+
+    def clear_sort(self):
+        self._sort_col = -1
+        self._sort_asc = True
+
+    def reset_sort_to_default(self):
+        self._sort_col = 1
+        self._sort_asc = True
         self._apply_sort()
 
     def header_labels(self):
@@ -756,18 +788,15 @@ class UpdatesTable(QTableView):
         if discover:
             self.setColumnWidth(2, 160)
             self.setColumnWidth(4, 140)
-            self.model._sort_col = -1
-            self.model._sort_asc = True
+            self.model.clear_sort()
         else:
             self.setColumnWidth(2, 190)
             self.setColumnWidth(4, 96)
-            if self.model._sort_col == -1:
-                self.model._sort_col = 1
-                self.model._sort_asc = True
-                self.model._apply_sort()
+            if self.model.get_sort_column() == -1:
+                self.model.reset_sort_to_default()
         header = self.horizontalHeader()
         if hasattr(header, "set_sort"):
-            header.set_sort(self.model._sort_col, self.model._sort_asc)
+            header.set_sort(self.model.get_sort_column(), self.model.get_sort_ascending())
         self.viewport().update()
 
     def append_packages(self, packages):
@@ -790,7 +819,7 @@ class UpdatesTable(QTableView):
     def mark_installed(self, is_installed):
         """Set the '_installed' flag on rows in place (Discover)."""
         changed = False
-        for pkg in self.model._pkgs:
+        for pkg in self.model.packages():
             flag = False
             try:
                 flag = bool(is_installed(pkg))
@@ -806,7 +835,7 @@ class UpdatesTable(QTableView):
         header = self.horizontalHeader()
         if hasattr(header, "set_select_all_state"):
             checked = self.model.is_all_checked()
-            indeterminate = len(self.model._checked) > 0 and not checked
+            indeterminate = bool(self.model.checked_names()) and not checked
             header.set_select_all_state(checked, indeterminate)
 
     def _on_header_select_all(self, state):
@@ -826,8 +855,6 @@ class UpdatesTable(QTableView):
 
     def sort_by_column(self, col, asc=True):
         """Public API for external sort controls (e.g. the source panel)."""
-        self.model._sort_col = col
-        self.model._sort_asc = asc
         self._on_sort_requested(col, asc)
 
     def _on_checked_changed(self, checked, total):
@@ -835,7 +862,7 @@ class UpdatesTable(QTableView):
         self.checks_changed.emit(checked, total)
 
     def _on_selection_changed(self, selected, deselected):
-        rows = set(i.row() for i in self.selectionModel().selectedRows())
+        rows = {i.row() for i in self.selectionModel().selectedRows()}
         if len(rows) == 1:
             pkg = self.model.package_at(next(iter(rows)))
             if pkg:
@@ -955,7 +982,7 @@ class UpdatesTable(QTableView):
             return
         name = pkg.get("name")
         idx = self.model.index(row, 0)
-        checked = name in self.model._checked
+        checked = self.model.is_checked(name)
         self.model.setData(idx, Qt.CheckState.Unchecked if checked else Qt.CheckState.Checked,
                            Qt.ItemDataRole.CheckStateRole)
         sel_model = self.selectionModel()
@@ -964,7 +991,8 @@ class UpdatesTable(QTableView):
         if not checked:
             self.setCurrentIndex(idx)
 
-    def _row_has_update(self, pkg):
+    @staticmethod
+    def _row_has_update(pkg):
         return bool(pkg.get("new_version")) and pkg.get("new_version") != pkg.get("version")
 
     def _open_row_menu(self, row, pos):
@@ -1029,7 +1057,7 @@ class UpdatesTable(QTableView):
         if self._loading_enrich or not self._enrich:
             return
         self._loading_enrich = True
-        packages = [p for p in self.model._pkgs if p.get("source") in ("pacman", "Flatpak")]
+        packages = [p for p in self.model.packages() if p.get("source") in ("pacman", "Flatpak")]
         if not packages:
             self._loading_enrich = False
             return
@@ -1038,7 +1066,7 @@ class UpdatesTable(QTableView):
 
         def _finish(meta):
             self.model.set_metadata(meta)
-            self.model._apply_sort()
+            self.model.apply_sort()
             self._loading_enrich = False
             app = getattr(self, "_app", None)
             if app is not None:
@@ -1086,7 +1114,8 @@ class UpdatesRowDelegate(QStyledItemDelegate):
         self._menu_font.setPointSize(12)
         self._menu_font.setWeight(QFont.Weight.Bold)
 
-    def sizeHint(self, option, index):
+    @staticmethod
+    def sizeHint(option, index):
         return QSize(0, 52)
 
     def _row_rect(self, option):
@@ -1361,7 +1390,6 @@ def _make_fallback_pixmap(size, color):
 
 
 def _icon_data(size, color):
-    from PyQt6.QtGui import QPixmap
     pm = QPixmap(size, size)
     pm.fill(Qt.GlobalColor.transparent)
     p = QPainter(pm)
