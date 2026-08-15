@@ -382,8 +382,36 @@ class _FiltersMixin:
         self.source_card.set_sort("relevance", True)
 
         self.sources_layout.addWidget(self.source_card)
+        self.source_card.maintenance_action.connect(self.on_installed_maintenance_action)
         self.source_card.configure_sections(
-            show_search=True, show_counts=True, show_sort=True, show_installed_filter=True)
+            show_search=True, show_counts=True, show_sort=True, show_installed_filter=True,
+            show_storage=True, show_summary=True)
+        self._refresh_discover_storage_async()
+
+    def _refresh_discover_storage_async(self):
+        """Fetch disk usage and cache size in the background for Discover."""
+        try:
+            def _run_storage():
+                try:
+                    from neoarch.backend.services.hygiene import disk_usage, package_cache_size
+                    disk = disk_usage("/")
+                    cache = package_cache_size()
+                except Exception:
+                    disk, cache = {}, 0
+                self.ui_call.emit(lambda: self._apply_discover_storage(disk, cache))
+
+            from threading import Thread
+            Thread(target=_run_storage, daemon=True).start()
+        except Exception:
+            pass
+
+    def _apply_discover_storage(self, disk, cache):
+        if self.current_view != "discover" or not getattr(self, 'source_card', None):
+            return
+        try:
+            self.source_card.set_storage(disk=disk, cache_size=cache)
+        except Exception:
+            pass
 
     def update_updates_sources(self):
         while self.sources_layout.count():
@@ -457,7 +485,7 @@ class _FiltersMixin:
             def _run():
                 try:
                     from neoarch.backend.services.hygiene import purge_cache
-                    ok = purge_cache(retain=3)
+                    ok = purge_cache(retain=2)
                 except Exception:
                     ok = False
                 self.ui_call.emit(lambda: self._on_cache_cleared(ok))
@@ -484,7 +512,10 @@ class _FiltersMixin:
         else:
             self._notify("Cache clear failed", "Could not trim the package cache.",
                          level="error", event="errors")
-        self._refresh_installed_storage_async()
+        if self.current_view == "installed":
+            self._refresh_installed_storage_async()
+        elif self.current_view == "discover":
+            self._refresh_discover_storage_async()
 
     def _refresh_installed_storage_async(self):
         """Fetch disk usage and cache size in the background."""

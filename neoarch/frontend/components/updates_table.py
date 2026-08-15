@@ -14,6 +14,7 @@ delegate, and talks to the rest of the app through signals.
 import json
 import re
 import subprocess
+import urllib.parse
 from datetime import datetime
 from threading import Thread
 
@@ -104,6 +105,7 @@ _STATUS_COLORS = {
     "Downloading": QColor(251, 191, 36),
     "Installed": QColor(93, 199, 139),
     "Update": QColor(255, 179, 71),
+    "Available": QColor(0, 191, 174),
 }
 
 _HEADERS = ["", "Package", "Version", "Size", "Source", "Status", "Installed", ""]
@@ -220,6 +222,26 @@ class _EnrichWorker(QObject):
                                 meta.setdefault(name, {})["download_size"] = f"{int(float(val))} B"
                             except (TypeError, ValueError):
                                 pass
+            except Exception:
+                pass
+
+        aur_names = [p.get("name", "") for p in self._packages if p.get("source") == "AUR"]
+        if aur_names:
+            try:
+                for i in range(0, len(aur_names), 100):
+                    batch = aur_names[i:i + 100]
+                    args = "&".join("arg[]=" + urllib.parse.quote(n) for n in batch)
+                    r = subprocess.run(
+                        ["curl", "-s", f"https://aur.archlinux.org/rpc/?v=5&type=info&{args}"],
+                        capture_output=True, text=True, timeout=30,
+                    )
+                    if r.returncode == 0 and r.stdout.strip():
+                        data = json.loads(r.stdout)
+                        for res in data.get("results", []):
+                            name = res.get("Name", "")
+                            size = res.get("Size")
+                            if name and size:
+                                meta.setdefault(name, {})["download_size"] = f"{int(size)} B"
             except Exception:
                 pass
 
@@ -782,12 +804,13 @@ class UpdatesTable(QTableView):
         it is handed instead of re-sorting by the default column.
         """
         self._discover_mode = bool(discover)
-        # Hide the updates-only columns (Size / Status / Installed date).
-        for col in (3, 5, 6):
-            self.setColumnHidden(col, discover)
+        # Match the Updates page layout: same columns (Size / Status) and
+        # widths; only the Installed-date column stays hidden because search
+        # results carry no install date.
+        self.setColumnHidden(6, discover)
         if discover:
-            self.setColumnWidth(2, 160)
-            self.setColumnWidth(4, 140)
+            self.setColumnWidth(2, 190)
+            self.setColumnWidth(4, 96)
             self.model.clear_sort()
         else:
             self.setColumnWidth(2, 190)
@@ -1057,7 +1080,7 @@ class UpdatesTable(QTableView):
         if self._loading_enrich or not self._enrich:
             return
         self._loading_enrich = True
-        packages = [p for p in self.model.packages() if p.get("source") in ("pacman", "Flatpak")]
+        packages = [p for p in self.model.packages() if p.get("source") in ("pacman", "Flatpak", "AUR", "npm")]
         if not packages:
             self._loading_enrich = False
             return

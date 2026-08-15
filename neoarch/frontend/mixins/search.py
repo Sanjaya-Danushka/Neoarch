@@ -134,9 +134,6 @@ class _SearchMixin:
                 except Exception:
                     pass
                 self.header_info.setText("Search and discover new packages to install")
-                btn = getattr(self, 'discover_select_all_btn', None)
-                if btn is not None:
-                    btn.setVisible(False)
                 install_btn = getattr(self, 'discover_install_btn', None)
                 if install_btn is not None:
                     install_btn.setVisible(False)
@@ -674,19 +671,14 @@ class _SearchMixin:
                 else:
                     self.updates_table.set_empty_text(
                         "No packages found", "Try a different search term")
-                page = filtered[:self.packages_per_page]
-                mapped = [self._map_discover_pkg(p) for p in page]
+                # Like the Updates page: show every result in one scrollable list,
+                # no pagination / Load More button.
+                mapped = [self._map_discover_pkg(p) for p in filtered]
                 self.updates_table.set_packages(mapped)
         except Exception:
             pass
 
-        start = 0
-        end = min(self.packages_per_page, len(filtered))
-        has_more = end < len(filtered)
-        self.load_more_btn.setVisible(has_more)
-        if has_more:
-            remaining = len(filtered) - end
-            self.load_more_btn.setText(f"Load More ({remaining} remaining)")
+        self.load_more_btn.setVisible(False)
 
         if not filtered:
             self.header_info.setText(f"No packages found matching '{query}'.")
@@ -706,9 +698,6 @@ class _SearchMixin:
                     self.filters_panel.setVisible(has_results)
             except Exception:
                 pass
-            btn = getattr(self, 'discover_select_all_btn', None)
-            if btn is not None:
-                btn.setVisible(has_results)
             install_btn = getattr(self, 'discover_install_btn', None)
             if install_btn is not None:
                 install_btn.setVisible(has_results)

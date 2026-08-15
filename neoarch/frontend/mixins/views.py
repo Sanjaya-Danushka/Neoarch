@@ -1176,7 +1176,6 @@ class _ViewsMixin:
                     item.layout().deleteLater()
         _clear_layout(self.toolbar_layout)
 
-        self.discover_select_all_btn = None
         self.discover_install_btn = None
         self._grid_view_btn = None
         self._filter_btn = None
@@ -1364,12 +1363,6 @@ class _ViewsMixin:
             layout = QHBoxLayout()
             layout.setSpacing(8)  # Tighter spacing
 
-            self.discover_select_all_btn = QPushButton("Select All")
-            self.discover_select_all_btn.setMinimumHeight(36)
-            self.discover_select_all_btn.clicked.connect(self.toggle_select_all)
-            self.discover_select_all_btn.setVisible(False)
-            layout.addWidget(self.discover_select_all_btn)
-
             self.discover_install_btn = QPushButton("Install Selected")
             self.discover_install_btn.setMinimumHeight(36)
             self.discover_install_btn.setStyleSheet("""
@@ -1397,17 +1390,18 @@ class _ViewsMixin:
 
             layout.addStretch()  # Push remaining buttons to the right
 
-            self._add_right_toolbar_icons(layout, show_install_file=True, show_sudo=True, show_bundle=True)
+            self._add_right_toolbar_icons(layout, show_install_file=True, show_bundle=True, show_filter=False, show_sudo=False)
 
-            # Hide grid/filter/bundle/sudo until search results are shown
+            # Hide grid/bundle until search results are shown
             if self._grid_view_btn:
                 self._grid_view_btn.setVisible(False)
-            if self._filter_btn:
-                self._filter_btn.setVisible(False)
             if self._bundle_btn:
                 self._bundle_btn.setVisible(False)
-            if self._sudo_btn:
-                self._sudo_btn.setVisible(False)
+
+            # Keep the grid view toggle at the far right corner
+            if self._grid_view_btn:
+                layout.removeWidget(self._grid_view_btn)
+                layout.addWidget(self._grid_view_btn)
 
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "plugins":
@@ -2649,9 +2643,9 @@ class _ViewsMixin:
             'new_version': pkg.get('version') or '',
             'source': pkg.get('source') or 'pacman',
             'description': pkg.get('description') or '',
-            'download_size': '',
+            'download_size': pkg.get('download_size') or '',
             'installed_date': 0,
-            'status': '',
+            'status': 'Installed' if installed else 'Available',
             '_installed': bool(installed),
             '_src': pkg,
         }

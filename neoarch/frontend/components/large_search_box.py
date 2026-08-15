@@ -8,7 +8,7 @@ from threading import Thread
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit,
-    QLabel, QFrame, QGraphicsDropShadowEffect, QScrollArea,
+    QLabel, QFrame, QGraphicsDropShadowEffect,
 )
 from PyQt6.QtCore import pyqtSignal, Qt, QSize, QTimer, QRectF, QEvent
 from PyQt6.QtGui import QColor, QIcon, QPixmap, QPainter
@@ -75,22 +75,6 @@ class LargeSearchBox(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
 
-        self._scroll = QScrollArea()
-        self._scroll.setWidgetResizable(True)
-        self._scroll.setFrameShape(QFrame.Shape.NoFrame)
-        self._scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
-        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        try:
-            self._scroll.verticalScrollBar().setStyleSheet("""
-                QScrollBar:vertical { background: transparent; width: 8px; margin: 0; }
-                QScrollBar::handle:vertical { background: rgba(255,255,255,0.15);
-                    border-radius: 4px; min-height: 30px; }
-                QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
-                QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
-            """)
-        except Exception:
-            pass
-
         container = QWidget()
         container.setObjectName("dashContainer")
         container.setStyleSheet("QWidget#dashContainer { background: transparent; }")
@@ -106,8 +90,7 @@ class LargeSearchBox(QWidget):
         self.recent_activity = RecentActivity()
         root.addWidget(self.recent_activity, 1)
 
-        self._scroll.setWidget(container)
-        outer.addWidget(self._scroll)
+        outer.addWidget(container)
         self.setStyleSheet(self._qss())
 
     # ── Hero Search ────────────────────────────────────────────────
