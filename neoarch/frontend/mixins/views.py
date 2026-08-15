@@ -950,7 +950,7 @@ class _ViewsMixin:
             self.large_search_box.search_submitted.connect(self.on_large_search_submitted)
         except Exception:
             pass
-        self.packages_panel_layout.addWidget(self.large_search_box)
+        self.packages_panel_layout.addWidget(self.large_search_box, 1)
 
         # Loading spinner widget
         self.loading_widget = LoadingSpinner(message="Checking for updates...")
@@ -1677,6 +1677,10 @@ class _ViewsMixin:
         # Show filters panel for all views except settings, bundles, git, and docker
         if hasattr(self, 'filters_panel'):
             self.filters_panel.setVisible(view_id not in ("settings", "bundles", "git", "docker"))
+        # Discover starts idle (large search box only); the source panel appears
+        # once a search returns results.
+        if view_id == "discover" and hasattr(self, 'filters_panel'):
+            self.filters_panel.setVisible(False)
 
         # Update greeting in navbar
         self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)

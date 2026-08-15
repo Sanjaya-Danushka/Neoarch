@@ -821,9 +821,11 @@ class SourceCard(QWidget):
         self.summary_widget = QWidget()
         self.summary_widget.setObjectName("summaryWidget")
         self.summary_widget.setMinimumHeight(44)
-        s_layout = QHBoxLayout(self.summary_widget)
+        s_layout = QVBoxLayout(self.summary_widget)
         s_layout.setContentsMargins(16, 8, 16, 8)
-        s_layout.setSpacing(0)
+        s_layout.setSpacing(6)
+        s_row = QHBoxLayout()
+        s_row.setSpacing(0)
 
         self.summary_count_label = QLabel("0")
         self.summary_count_label.setStyleSheet("""
@@ -851,9 +853,9 @@ class SourceCard(QWidget):
         count_col.setContentsMargins(0, 0, 0, 0)
         count_col.addWidget(self.summary_count_label)
         count_col.addWidget(self.summary_count_caption)
-        s_layout.addLayout(count_col)
+        s_row.addLayout(count_col)
 
-        s_layout.addStretch()
+        s_row.addStretch()
 
         self.summary_size_label = QLabel("")
         self.summary_size_label.setStyleSheet("""
@@ -881,7 +883,14 @@ class SourceCard(QWidget):
         size_col.setContentsMargins(0, 0, 0, 0)
         size_col.addWidget(self.summary_size_label, 0, Qt.AlignmentFlag.AlignRight)
         size_col.addWidget(self.summary_size_caption, 0, Qt.AlignmentFlag.AlignRight)
-        s_layout.addLayout(size_col)
+        s_row.addLayout(size_col)
+        s_layout.addLayout(s_row)
+
+        self.summary_distribution_bar = _DistributionBar()
+        self.summary_distribution_bar.setFixedHeight(5)
+        self.summary_distribution_bar.setObjectName("summaryDistributionBar")
+        self.summary_distribution_bar.setVisible(False)
+        s_layout.addWidget(self.summary_distribution_bar)
 
         self.summary_widget.setStyleSheet("""
             QWidget#summaryWidget {
@@ -910,6 +919,21 @@ class SourceCard(QWidget):
         else:
             self.summary_size_label.setVisible(False)
             self.summary_size_caption.setVisible(False)
+
+    def set_summary_distribution(self, counts):
+        if counts:
+            self.summary_distribution_bar.set_counts(counts)
+            self.summary_distribution_bar.setVisible(True)
+        else:
+            self.summary_distribution_bar.set_counts({})
+            self.summary_distribution_bar.setVisible(False)
+
+    def clear_results(self):
+        """Reset per-source counts, summary, and distribution for Discover."""
+        for item in self.sources.values():
+            item.set_count(0)
+        self.set_summary(None)
+        self.set_summary_distribution({})
 
     def _build_status_filter(self, layout):
         self.status_widget = QWidget()

@@ -133,6 +133,16 @@ class _SearchMixin:
                     tb = getattr(self, attr, None)
                     if tb is not None:
                         tb.setVisible(False)
+                try:
+                    if hasattr(self, 'source_card') and self.source_card:
+                        self.source_card.clear_results()
+                except Exception:
+                    pass
+                try:
+                    if hasattr(self, 'filters_panel') and self.filters_panel:
+                        self.filters_panel.setVisible(False)
+                except Exception:
+                    pass
                 self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
             elif self.current_view == "installed":
                 try:
@@ -238,6 +248,16 @@ class _SearchMixin:
                     self.no_results_widget.setVisible(False)
                 self.package_table.setRowCount(0)
                 self.header_info.setText("Search and discover new packages to install")
+                try:
+                    if hasattr(self, 'source_card') and self.source_card:
+                        self.source_card.clear_results()
+                except Exception:
+                    pass
+                try:
+                    if hasattr(self, 'filters_panel') and self.filters_panel:
+                        self.filters_panel.setVisible(False)
+                except Exception:
+                    pass
                 self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
             elif self.current_view == "installed":
                 self.search_results = None
@@ -523,7 +543,6 @@ class _SearchMixin:
             return
         if packages is not None:
             self.search_results = packages
-
         # Hide loading spinner and show packages
         self.loading_widget.setVisible(False)
         self.loading_widget.stop_animation()
@@ -550,6 +569,7 @@ class _SearchMixin:
         self.filtered_results = filtered
         self.current_page = 0
         query = self.search_input.text().strip()
+        self._update_discover_card_results(filtered, query)
 
         self.package_table.setUpdatesEnabled(False)
         self.package_table.setRowCount(0)
@@ -586,6 +606,13 @@ class _SearchMixin:
 
         if self.current_view == "discover":
             has_results = bool(filtered)
+            # Show the source panel only once results are displayed; hide it
+            # on the idle Discover screen or when a search finds nothing.
+            try:
+                if hasattr(self, 'filters_panel') and self.filters_panel:
+                    self.filters_panel.setVisible(has_results)
+            except Exception:
+                pass
             btn = getattr(self, 'discover_select_all_btn', None)
             if btn is not None:
                 btn.setVisible(has_results)
@@ -601,3 +628,31 @@ class _SearchMixin:
                     tb.setVisible(has_results)
             if hasattr(self, '_greeting_label') and self._greeting_label:
                 self._greeting_label.setVisible(not has_results)
+
+    def _update_discover_card_results(self, filtered, query):
+        """Reflect the current Discover result set on the source card.
+
+        Shows per-source match counts, a total summary, and the per-source
+        distribution bar. Only touches the card after a search, so the idle
+        Discover screen (large search box, buttons) is left unchanged.
+        """
+        try:
+            if not hasattr(self, 'source_card') or not self.source_card:
+                return
+            per = {}
+            for pkg in filtered:
+                s = pkg.get('source')
+                if s not in per:
+                    per[s] = 0
+                per[s] += 1
+            for name, item in self.source_card.sources.items():
+                item.set_count(per.get(name, 0))
+            if not filtered:
+                self.source_card.set_summary(None)
+                self.source_card.set_summary_distribution({})
+                return
+            noun = "packages found" if query else "packages"
+            self.source_card.set_summary(len(filtered), noun=noun)
+            self.source_card.set_summary_distribution(per)
+        except Exception:
+            pass

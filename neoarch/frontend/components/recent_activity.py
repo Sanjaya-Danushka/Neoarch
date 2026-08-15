@@ -6,7 +6,7 @@ from datetime import datetime
 
 from PyQt6.QtWidgets import (
     QFrame, QVBoxLayout, QHBoxLayout, QLabel, QWidget, QScrollArea,
-    QGraphicsDropShadowEffect,
+    QGraphicsDropShadowEffect, QSizePolicy,
 )
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor
@@ -31,6 +31,8 @@ class RecentActivity(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("recentActivity")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setMinimumHeight(140)
         self._setup_style()
         self._build()
         QTimer.singleShot(0, self._load)
@@ -79,7 +81,7 @@ class RecentActivity(QFrame):
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll.setMaximumHeight(280)
+        scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }"
                              "QScrollBar:vertical { width: 4px; background: transparent; }"
                              "QScrollBar::handle:vertical { background: rgba(255,255,255,0.15); border-radius: 2px; }"
@@ -99,7 +101,7 @@ class RecentActivity(QFrame):
         if not entries:
             self._show_empty()
             return
-        for action, pkg, ts in entries[:7]:
+        for action, pkg, ts in entries[:12]:
             self._add_row(action, pkg, ts)
 
     def _parse_log(self):
@@ -165,10 +167,12 @@ class RecentActivity(QFrame):
 
         c = QFrame()
         c.setStyleSheet("background: transparent;")
+        c.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        c.setMinimumHeight(30)
         cl = QHBoxLayout(c)
         cl.setContentsMargins(0, 0, 0, 0)
         cl.addLayout(row)
-        self.items_layout.addWidget(c)
+        self.items_layout.addWidget(c, 1)
 
 
 def _parse_iso_timestamp(s: str):

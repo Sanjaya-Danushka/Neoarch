@@ -6,8 +6,9 @@ Main window module for NeoArch Package Manager
 import os
 from typing import Any
 
-from PyQt6.QtWidgets import QMainWindow, QSizePolicy
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtWidgets import QMainWindow, QSizePolicy, QWidget
+from PyQt6.QtCore import Qt, QTimer, QEvent, QPoint, QRect, pyqtSignal
+from PyQt6.QtGui import QCursor
 
 from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.managers.plugin_manager import PluginsManager
@@ -41,7 +42,7 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         super().__init__()
         self.setWindowTitle("NeoArch - Package Manager")
         self.setGeometry(100, 100, 1600, 900)  # Increased width to accommodate sidebar
-        self.setMinimumSize(1200, 800)  # Set minimum size
+        self.setMinimumSize(1280, 850)  # Set minimum size (fits Discover dashboard without scroll)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -50,6 +51,16 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         if os.path.exists(icon_path):
             self.setWindowIcon(_build_window_icon(icon_path))
         # self.set_minimal_icon()
+        self._resize_margin = 6
+        self._resize_edge = None
+        self._edge_cursor = None
+        self._resize_active = False
+        self.setMouseTracking(True)
+        try:
+            from PyQt6.QtWidgets import QApplication
+            QApplication.instance().installEventFilter(self)
+        except Exception:
+            pass
         
         self.current_view = "updates"
         self.updating = False
@@ -144,5 +155,97 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
             self.update_user_avatar(user)
         if hasattr(self, '_update_nav_greeting'):
             self._update_nav_greeting(user)
+
+    def closeEvent(self, event):
+        try:
+            from PyQt6.QtWidgets import QApplication
+            app = QApplication.instance()
+            if app is not None:
+                app.removeEventFilter(self)
+        except Exception:
+            pass
+        super().closeEvent(event)
+
+    # ── Frameless window edge resizing ──────────────────────────────
+
+    def _edge_at(self, pos: QPoint):
+        if self.isMaximized() or self.isFullScreen():
+            return None
+        w, h = self.width(), self.height()
+        m = self._resize_margin
+        x, y = pos.x(), pos.y()
+        left = x <= m
+        right = x >= w - m
+        top = y <= m
+        bottom = y >= h - m
+        if left and top:
+            return Qt.Edge.TopEdge | Qt.Edge.LeftEdge
+        if right and top:
+            return Qt.Edge.TopEdge | Qt.Edge.RightEdge
+        if left and bottom:
+            return Qt.Edge.LeftEdge | Qt.Edge.BottomEdge
+        if right and bottom:
+            return Qt.Edge.RightEdge | Qt.Edge.BottomEdge
+        if left:
+            return Qt.Edge.LeftEdge
+        if right:
+            return Qt.Edge.RightEdge
+        if top:
+            return Qt.Edge.TopEdge
+        if bottom:
+            return Qt.Edge.BottomEdge
+        return None
+
+    @staticmethod
+    def _cursor_for_edge(edge):
+        corners = {
+            Qt.Edge.TopEdge | Qt.Edge.LeftEdge: Qt.CursorShape.SizeFDiagCursor,
+            Qt.Edge.BottomEdge | Qt.Edge.RightEdge: Qt.CursorShape.SizeFDiagCursor,
+            Qt.Edge.TopEdge | Qt.Edge.RightEdge: Qt.CursorShape.SizeBDiagCursor,
+            Qt.Edge.LeftEdge | Qt.Edge.BottomEdge: Qt.CursorShape.SizeBDiagCursor,
+        }
+        if edge in corners:
+            return corners[edge]
+        shapes = {
+            Qt.Edge.TopEdge: Qt.CursorShape.SizeVerCursor,
+            Qt.Edge.BottomEdge: Qt.CursorShape.SizeVerCursor,
+            Qt.Edge.LeftEdge: Qt.CursorShape.SizeHorCursor,
+            Qt.Edge.RightEdge: Qt.CursorShape.SizeHorCursor,
+        }
+        return shapes.get(edge)
+
+    def eventFilter(self, obj, event):
+        etype = event.type()
+        if etype in (QEvent.Type.MouseButtonRelease, QEvent.Type.Resize):
+            if self._resize_active:
+                self._resize_active = False
+                self.unsetCursor()
+                self._edge_cursor = None
+            if etype == QEvent.Type.Resize:
+                return super().eventFilter(obj, event)
+        if etype == QEvent.Type.MouseMove or etype == QEvent.Type.MouseButtonPress:
+            if self.isMaximized() or self.isFullScreen():
+                return super().eventFilter(obj, event)
+            if not (isinstance(obj, QWidget) and obj.window() is self):
+                return super().eventFilter(obj, event)
+            if self._resize_active:
+                return True
+            local = obj.mapTo(self, event.position().toPoint())
+            edge = self._edge_at(local)
+            if etype == QEvent.Type.MouseMove:
+                if edge is not None:
+                    self._edge_cursor = self._cursor_for_edge(edge)
+                    self.setCursor(self._edge_cursor)
+                elif self._edge_cursor is not None:
+                    self._edge_cursor = None
+                    self.unsetCursor()
+            elif etype == QEvent.Type.MouseButtonPress:
+                if edge is not None and event.button() == Qt.MouseButton.LeftButton:
+                    handle = self.windowHandle()
+                    if handle is not None:
+                        self._resize_active = True
+                        handle.startSystemResize(edge)
+                        return True
+        return super().eventFilter(obj, event)
 
 

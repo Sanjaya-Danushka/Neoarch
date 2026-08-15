@@ -365,7 +365,7 @@ class _FiltersMixin:
             self.source_card.add_source(source_name, source_icon_path)
 
         self.sources_layout.addWidget(self.source_card)
-        self.source_card.configure_sections(show_search=True)
+        self.source_card.configure_sections(show_search=True, show_counts=True)
 
     def update_updates_sources(self):
         while self.sources_layout.count():
