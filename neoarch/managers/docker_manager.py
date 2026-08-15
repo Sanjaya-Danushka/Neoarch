@@ -13,7 +13,7 @@ from threading import Thread
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QLineEdit, QMessageBox, QPlainTextEdit, QComboBox, QCheckBox, QMenu,
-    QScrollArea,
+    QScrollArea, QWidget,
 )
 from PyQt6.QtCore import Qt, QObject, QTimer, pyqtSignal
 from PyQt6.QtGui import QCursor

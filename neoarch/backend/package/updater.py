@@ -175,7 +175,7 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                     worker.output.connect(pacman_progress_parser('pacman'))
                     worker.line_update.connect(pacman_progress_parser('pacman'))
                     def _on_err(msg):
-                        nonlocal overall_success, lock_detected, lock_details, failed_sources
+                        nonlocal overall_success, lock_detected, lock_details
                         app.log(msg)
                         m = (msg or '').lower()
                         if 'could not lock database' in m or 'unable to lock database' in m:
@@ -204,7 +204,7 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                     worker.output.connect(app.log)
                     worker.line_update.connect(app.log_line_update)
                     def _on_err_aur(msg):
-                        nonlocal overall_success, failed_sources, aur_failures, aur_hint
+                        nonlocal overall_success, aur_hint
                         app.log(msg)
                         overall_success = False
                         if 'AUR' not in failed_sources:
@@ -226,7 +226,7 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                     worker.output.connect(app.log)
                     worker.line_update.connect(app.log_line_update)
                     def _on_err_fp(msg):
-                        nonlocal overall_success, failed_sources
+                        nonlocal overall_success
                         app.log(msg)
                         overall_success = False
                         if 'Flatpak' not in failed_sources:
@@ -290,7 +290,7 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                         w_u.output.connect(app.log)
                         w_u.line_update.connect(app.log_line_update)
                         def _on_err_np_u(msg):
-                            nonlocal overall_success, failed_sources
+                            nonlocal overall_success
                             app.log(msg)
                             overall_success = False
                             if 'npm' not in failed_sources:
@@ -303,7 +303,7 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                         w_s.output.connect(app.log)
                         w_s.line_update.connect(app.log_line_update)
                         def _on_err_np_s(msg):
-                            nonlocal overall_success, failed_sources
+                            nonlocal overall_success
                             app.log(msg)
                             overall_success = False
                             if 'npm' not in failed_sources:

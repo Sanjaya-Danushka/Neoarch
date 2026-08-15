@@ -8,6 +8,7 @@ comments, ordering, and unrelated directives.
 
 import os
 import re
+import subprocess
 from typing import List, Optional
 
 from neoarch.backend.auth import get_auth_command, get_askpass_env
@@ -27,7 +28,6 @@ _OPTION_LINE_RE = re.compile(r"^(?P<key>[A-Za-z][A-Za-z0-9_]*)\s*=\s*(?P<value>[
 
 
 def _run(cmd: List[str], timeout: int = 60) -> "subprocess.CompletedProcess":
-    import subprocess
     try:
         return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     except Exception:
@@ -35,7 +35,6 @@ def _run(cmd: List[str], timeout: int = 60) -> "subprocess.CompletedProcess":
 
 
 def _run_sudo(cmd: List[str], timeout: int = 120) -> "subprocess.CompletedProcess":
-    import subprocess
     auth = get_auth_command()
     env = None
     if auth == ["sudo", "-A"]:
