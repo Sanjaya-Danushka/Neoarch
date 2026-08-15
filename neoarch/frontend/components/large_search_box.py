@@ -290,7 +290,6 @@ class LargeSearchBox(QWidget):
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(10)
-        row.addStretch()
 
         actions = [
             ("discover/updateall.svg", "Update All", self._on_update_all, True),
