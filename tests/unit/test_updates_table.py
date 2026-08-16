@@ -113,3 +113,76 @@ def test_loading_state_shows_loading_text_and_message(qapp):
     table.set_loading(True)
     assert table._empty._title.text() == "Loading updates\u2026"
 
+
+def test_plugins_mode_hides_version_size_and_installed_columns(qapp):
+    table = UpdatesTable(_FakeApp())
+    table.set_plugins_mode(True)
+    assert table._plugins_mode is True
+    assert table._discover_mode is False
+    assert table._installed_mode is False
+    assert table._enrich is False
+    assert table.isColumnHidden(2) is True
+    assert table.isColumnHidden(3) is True
+    assert table.isColumnHidden(6) is True
+    header = table.horizontalHeader()
+    assert header._labels == ["", "Plugin", "", "", "Source", "Status", "", ""]
+    table.set_plugins_mode(False)
+    assert header._labels is None
+    assert table.isColumnHidden(2) is False
+    assert table.isColumnHidden(3) is False
+    assert table.isColumnHidden(6) is False
+
+
+def test_plugins_mode_row_menu_actions(qapp):
+    table = UpdatesTable(_FakeApp())
+    table.set_enrich(False)
+    table.set_plugins_mode(True)
+    table.set_packages([
+        {"name": "plug-a", "id": "plug-a", "version": "1.0",
+         "new_version": "1.0", "source": "pacman", "_installed": True},
+        {"name": "plug-b", "id": "plug-b", "version": "1.0",
+         "new_version": "1.0", "source": "AUR", "_installed": False},
+    ])
+    emitted = []
+    table.menu_action.connect(lambda action, pkg: emitted.append((action, pkg["id"])))
+
+    menu_installed = table._build_row_menu(table.model.package_at(0))
+    actions = [a.text() for a in menu_installed.actions()]
+    assert "Launch" in actions
+    assert "Uninstall" in actions
+    assert "Install" not in actions
+    assert "View Details" not in actions
+    menu_installed.actions()[0].trigger()
+
+    menu_available = table._build_row_menu(table.model.package_at(1))
+    actions = [a.text() for a in menu_available.actions()]
+    assert "Install" in actions
+    assert "Launch" not in actions
+    assert "Uninstall" not in actions
+    menu_available.actions()[0].trigger()
+
+    assert emitted == [("launch", "plug-a"), ("install", "plug-b")]
+
+
+def test_plugins_row_mapping_uses_source_and_installed_flag(qapp):
+    from neoarch.frontend.components.plugins_view import PluginsView
+    row = PluginsView._map_plugin_row({
+        "id": "zsh-plug",
+        "name": "Zsh Plugin",
+        "desc": "Tiny",
+        "pkg": "zsh-plug",
+        "cmd": "zsh",
+        "category": "shell",
+        "_installed": True,
+    })
+    assert row["name"] == "Zsh Plugin"
+    assert row["id"] == "zsh-plug"
+    assert row["_installed"] is True
+    assert row["status"] == "Installed"
+    assert row["_src"]["id"] == "zsh-plug"
+
+    row2 = PluginsView._map_plugin_row({"id": "plug2", "name": "Plug2"})
+    assert row2["_installed"] is False
+    assert row2["status"] == "Available"
+    assert row2["version"] == ""
+

@@ -461,6 +461,7 @@ class _UpdatesHeader(QHeaderView):
         self._indeterminate = False
         self._sort_col = -1
         self._sort_asc = True
+        self._labels = None
         self.setSectionsClickable(True)
         self.setHighlightSections(False)
         self.setMinimumHeight(44)
@@ -496,6 +497,10 @@ class _UpdatesHeader(QHeaderView):
         self._sort_asc = asc
         self.viewport().update()
 
+    def set_header_labels(self, labels):
+        self._labels = list(labels) if labels else None
+        self.viewport().update()
+
     def _hit_section(self, event):
         pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
         return self.logicalIndexAt(pos)
@@ -520,7 +525,10 @@ class _UpdatesHeader(QHeaderView):
     def paintSection(self, painter, rect, section):
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        label = (_HEADERS[section] if 0 <= section < len(_HEADERS) else "").upper()
+        if self._labels:
+            label = (self._labels[section] if 0 <= section < len(self._labels) else "").upper()
+        else:
+            label = (_HEADERS[section] if 0 <= section < len(_HEADERS) else "").upper()
 
         # QHeaderView can hand us a section rect that is offset/shrunk by its
         # style's section padding, which misaligns the header labels with the
@@ -687,6 +695,7 @@ class UpdatesTable(QTableView):
         self._enrich = True
         self._installed_mode = False
         self._discover_mode = False
+        self._plugins_mode = False
         self._loading_message = _DEFAULT_LOADING_MESSAGE
 
         self.model = UpdatesModel(self)
@@ -828,6 +837,35 @@ class UpdatesTable(QTableView):
         header = self.horizontalHeader()
         if hasattr(header, "set_sort"):
             header.set_sort(self.model.get_sort_column(), self.model.get_sort_ascending())
+        self.viewport().update()
+
+    def set_plugins_mode(self, plugins):
+        """Configure the shared table for the Plugins page.
+
+        Renders plugin rows with the same columns as Discover (Version, Size
+        and the Installed-date column hidden) and swaps the row menu for
+        plugin actions (Launch / Install / Uninstall / browser / copy).
+        """
+        self._plugins_mode = bool(plugins)
+        self._discover_mode = False
+        self._installed_mode = False
+        self.setColumnHidden(2, plugins)  # Version (plugins have none)
+        self.setColumnHidden(3, plugins)  # Size
+        self.setColumnHidden(6, plugins)  # Installed date
+        header = self.horizontalHeader()
+        if plugins:
+            header.set_header_labels(["", "Plugin", "", "", "Source", "Status", "", ""])
+        else:
+            header.set_header_labels(None)
+        self.set_enrich(False)
+        self.setColumnWidth(4, 110)
+        self.viewport().update()
+
+    def set_header_labels(self, labels):
+        """Override the column header labels (None restores the defaults)."""
+        header = self.horizontalHeader()
+        if hasattr(header, "set_header_labels"):
+            header.set_header_labels(labels)
         self.viewport().update()
 
     def append_packages(self, packages):
@@ -1039,6 +1077,11 @@ class UpdatesTable(QTableView):
         pkg = self.model.package_at(row)
         if pkg is None:
             return
+        menu = self._build_row_menu(pkg)
+        global_pos = self.viewport().mapToGlobal(pos if pos is not None else QPoint(10, 10))
+        menu.exec(global_pos)
+
+    def _build_row_menu(self, pkg):
         menu = QMenu(self)
         menu.setStyleSheet("""
             QMenu { background-color: rgba(22, 25, 32, 235); color: #F3F4F6;
@@ -1047,7 +1090,22 @@ class UpdatesTable(QTableView):
             QMenu::item:selected { background-color: rgba(47, 129, 247, 0.28); color: #fff; }
             QMenu::separator { height: 1px; background: rgba(255, 255, 255, 0.10); margin: 4px 8px; }
         """)
-        if self._discover_mode:
+        if self._plugins_mode:
+            installed = bool(pkg.get("_installed"))
+            if installed:
+                act_launch = menu.addAction("Launch")
+                act_launch.triggered.connect(lambda: self.menu_action.emit("launch", pkg))
+                act_uninstall = menu.addAction("Uninstall")
+                act_uninstall.triggered.connect(lambda: self.menu_action.emit("uninstall", pkg))
+            else:
+                act_install = menu.addAction("Install")
+                act_install.triggered.connect(lambda: self.menu_action.emit("install", pkg))
+            menu.addSeparator()
+            act_browser = menu.addAction("View in browser")
+            act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
+            act_copy = menu.addAction("Copy name")
+            act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
+        elif self._discover_mode:
             installed = bool(pkg.get("_installed"))
             if not installed:
                 act_install = menu.addAction("Install")
@@ -1087,10 +1145,10 @@ class UpdatesTable(QTableView):
             act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
             act_copy = menu.addAction("Copy name")
             act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
-        global_pos = self.viewport().mapToGlobal(pos if pos is not None else QPoint(10, 10))
-        menu.exec(global_pos)
+        return menu
 
     # ── enrichment ────────────────────────────────────────────────────
+
     def _start_enrich(self):
         if self._loading_enrich or not self._enrich:
             return

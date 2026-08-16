@@ -1794,10 +1794,10 @@ class _ViewsMixin:
                 pass
             QTimer.singleShot(0, self.refresh_bundles_table)
         elif view_id == "plugins":
-            self._view_mode = "grid"
+            self._view_mode = "table"
             if hasattr(self, '_grid_view_btn') and self._grid_view_btn:
-                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "navbar", "list.svg"), 20))
-                self._grid_view_btn.setToolTip("List View")
+                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "navbar", "view.svg"), 20))
+                self._grid_view_btn.setToolTip("Grid View")
             try:
                 self.loading_widget.setVisible(False)
                 self.loading_widget.stop_animation()
@@ -1851,6 +1851,7 @@ class _ViewsMixin:
             except Exception:
                 pass
             self.plugins_view.refresh_all()
+            self.plugins_view.show_table_mode()
 
             self.header_info.setText("Install and launch extensions like BleachBit and Timeshift")
             try:

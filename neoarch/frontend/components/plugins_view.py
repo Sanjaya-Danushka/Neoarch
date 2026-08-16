@@ -1,7 +1,7 @@
 # === components: plugins_view.py ===
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QFrame, QGridLayout, QSizePolicy, QTableWidget, QTableWidgetItem, QHeaderView, QCheckBox, QGraphicsDropShadowEffect
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QFrame, QGridLayout, QSizePolicy, QGraphicsDropShadowEffect
 from PyQt6.QtCore import pyqtSignal, Qt, QTimer
-from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor
+from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont
 from PyQt6.QtSvg import QSvgRenderer
 from typing import Any
 import os
@@ -9,6 +9,11 @@ import shutil
 
 from neoarch.resources.plugin_data import get_plugins_data, get_all_plugins_data
 from neoarch.resources.paths import ICONS_DIR, ASSETS_DIR, PLUGINS_ITEMS_DIR
+from neoarch.frontend.components.updates_table import UpdatesTable
+from neoarch.frontend.components.packages_grid_view import (
+    PackageCard, _Chip, _CheckBox, _SmallLabel, _SourceLogo,
+    _STATUS_COLORS, _TEXT_MUTED,
+)
 
 
 def _shadow(widget: QWidget, blur=24, offset=(4, 6), alpha=150):
@@ -17,16 +22,6 @@ def _shadow(widget: QWidget, blur=24, offset=(4, 6), alpha=150):
     s.setColor(QColor(0, 0, 0, alpha))
     s.setOffset(*offset)
     widget.setGraphicsEffect(s)
-
-
-_SOURCE_GRADIENTS = {
-    'pacman': ('#4FC3F7', '#2196F3'),
-    'aur': ('#FF8A65', '#FF5722'),
-    'flatpak': ('#26A69A', '#00897B'),
-    'npm': ('#E53935', '#C62828'),
-    'brew': ('#8B5CF6', '#6D28D9'),
-    'pip': ('#4FC3F7', '#2196F3'),
-}
 
 
 class CardState:
@@ -59,6 +54,165 @@ class CardState:
     def get_matching_plugin(self):
         """Get the matching plugin reference"""
         return self.matching_plugin
+
+
+def _canonical_source(source):
+    """Normalize a package source to the canonical names used by the
+    updates table / source logo assets (pacman, AUR, Flatpak, npm)."""
+    return {
+        "pacman": "pacman",
+        "aur": "AUR",
+        "flatpak": "Flatpak",
+        "npm": "npm",
+        "brew": "brew",
+    }.get((source or "").lower(), source or "pacman")
+
+
+_NEU_BTN_QSS = """
+QPushButton {
+    background-color: rgba(26, 28, 34, 0.95);
+    color: #00BFAE;
+    border: 1px solid rgba(0, 191, 174, 0.3);
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 0 14px;
+}
+QPushButton:hover {
+    background-color: rgba(30, 32, 38, 0.95);
+    border: 1px solid rgba(0, 191, 174, 0.6);
+}
+QPushButton:pressed {
+    background-color: rgba(20, 22, 26, 0.95);
+    border: 1px solid rgba(0, 191, 174, 0.8);
+}
+QPushButton:disabled {
+    color: rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+"""
+
+_DANGER_BTN_QSS = """
+QPushButton {
+    background-color: rgba(26, 28, 34, 0.95);
+    color: #FF6B6B;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 0 14px;
+}
+QPushButton:hover {
+    background-color: rgba(30, 32, 38, 0.95);
+    border: 1px solid rgba(255, 107, 107, 0.6);
+}
+QPushButton:pressed {
+    background-color: rgba(20, 22, 26, 0.95);
+    border: 1px solid rgba(255, 107, 107, 0.8);
+}
+QPushButton:disabled {
+    color: rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+"""
+
+
+class _PluginPackageCard(PackageCard):
+    """Plugin card reusing the Updates/Discover PackageCard design language
+    (glass surface, source logo, status chip) with plugin action buttons."""
+
+    install_clicked = pyqtSignal(str)
+    launch_clicked = pyqtSignal(str)
+    uninstall_clicked = pyqtSignal(str)
+
+    CARD_W = 280
+    CARD_H = 150
+
+    def __init__(self, plugin, installed, app=None, parent=None):
+        self._plugin = plugin
+        self._installed = bool(installed)
+        super().__init__(plugin, 0, app, parent)
+
+    def _build(self):
+        source = _canonical_source(PluginsView._get_package_source(self._plugin))
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(14, 10, 14, 9)
+        layout.setSpacing(3)
+
+        top = QHBoxLayout()
+        top.setSpacing(9)
+
+        self.logo = _SourceLogo(self._app, source, 26)
+        top.addWidget(self.logo)
+
+        name = self._plugin.get("name") or self._plugin.get("id") or ""
+        self.name_label = _SmallLabel(name, 11, QFont.Weight.Bold, "#EEF0F4")
+        self.name_label.setToolTip(name)
+        top.addWidget(self.name_label, 1)
+
+        self.checkbox = _CheckBox()
+        self.checkbox.toggled.connect(self._on_check)
+        top.addWidget(self.checkbox, alignment=Qt.AlignmentFlag.AlignTop)
+
+        layout.addLayout(top)
+
+        desc = self._plugin.get("desc") or ""
+        self.desc_label = _SmallLabel(desc, 8, QFont.Weight.Normal, "#8B8D97")
+        self.desc_label.setToolTip(desc)
+        layout.addWidget(self.desc_label)
+
+        layout.addStretch()
+
+        bottom = QHBoxLayout()
+        bottom.setSpacing(6)
+
+        status = "Installed" if self._installed else "Available"
+        self.status_chip = _Chip(status, _STATUS_COLORS.get(status, _TEXT_MUTED))
+        bottom.addWidget(self.status_chip, alignment=Qt.AlignmentFlag.AlignBottom)
+
+        bottom.addStretch(1)
+
+        self._action_buttons = []
+        pid = self._plugin.get("id")
+        if self._installed:
+            open_btn = self._make_action_button("Open", _NEU_BTN_QSS)
+            open_btn.clicked.connect(lambda: self.launch_clicked.emit(pid))
+            bottom.addWidget(open_btn)
+            self._action_buttons.append(open_btn)
+
+            uninstall_btn = self._make_action_button("Uninstall", _DANGER_BTN_QSS)
+            uninstall_btn.clicked.connect(lambda: self.uninstall_clicked.emit(pid))
+            bottom.addWidget(uninstall_btn)
+            self._action_buttons.append(uninstall_btn)
+        else:
+            install_btn = self._make_action_button("Install", _NEU_BTN_QSS)
+            install_btn.clicked.connect(lambda: self.install_clicked.emit(pid))
+            bottom.addWidget(install_btn)
+            self._action_buttons.append(install_btn)
+
+        layout.addLayout(bottom)
+
+    @staticmethod
+    def _make_action_button(text, qss):
+        btn = QPushButton(text)
+        btn.setFixedHeight(28)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.setStyleSheet(qss)
+        return btn
+
+    def set_installing(self, installing):
+        for b in self._action_buttons:
+            b.setEnabled(not installing)
+            if installing:
+                if b.text() in ("Install", "Open"):
+                    b.setText("Installing\u2026")
+                elif b.text() == "Uninstall":
+                    b.setText("Uninstalling\u2026")
+            else:
+                if "Installing" in b.text():
+                    b.setText("Install" if not self._installed else "Open")
+                elif "Uninstalling" in b.text():
+                    b.setText("Uninstall")
 
 
 class ElideLabel(QLabel):
@@ -368,7 +522,6 @@ class PluginsView(QWidget):
         self._filter_text = ""
         self._installed_only = False
         self._categories = set()
-        self._selected_category = None  # Track selected category
         self._current_cols = 2  # Track current column count
         self._all_cards = []  # Store all created cards for performance
         self._current_filter_states = {}  # Track current filter states
@@ -376,13 +529,8 @@ class PluginsView(QWidget):
         self._all_filtered_cards = None
         self._all_filtered_search_cards = None
         
-        # Pagination
         self._all_plugins = []  # All available plugins
-        self._current_page = 1
-        self._total_pages = 1
-        self._items_per_page = 24
         self._card_cache = {}
-        self._category_filtered_plugins = []
         self._is_layouting = False
         
         # Installation status cache — preserved across navigation, cleared only after install/uninstall
@@ -394,7 +542,6 @@ class PluginsView(QWidget):
         self._resize_timer.timeout.connect(self._handle_resize)
         
         self.grid_layout: Any = None
-        self._pagination_bar: Any = None
         self._scroll_area: Any = None
         
         self._init_specs()
@@ -411,9 +558,6 @@ class PluginsView(QWidget):
         layout.setContentsMargins(16, 12, 16, 12)
         layout.setSpacing(16)
 
-        # Filter Buttons Row
-        self.create_filter_buttons(layout)
-        
         # Content stacked area
         self._content_stack = QFrame()
         self._content_stack.setObjectName("pluginContentStack")
@@ -424,128 +568,99 @@ class PluginsView(QWidget):
         # Apps Grid
         self.create_apps_grid(content_layout)
 
-        # Apps Table (for list view)
-        self._create_apps_table(content_layout)
+        # Apps Table (list view) — same redesigned table as Updates/Discover
+        self._plugins_table = UpdatesTable(self.main_app)
+        self._plugins_table.set_plugins_mode(True)
+        self._plugins_table.setVisible(False)
+        self._plugins_table.menu_action.connect(self._on_table_menu_action)
+        self._plugins_table.set_empty_text("No plugins found", "Try a different search or filter")
+        content_layout.addWidget(self._plugins_table, 1)
 
         layout.addWidget(self._content_stack, 1)
-
-        self._pagination_bar = self._create_pagination_bar()
-        layout.addWidget(self._pagination_bar)
-
-    def _create_apps_table(self, parent_layout):
-        self._table_widget = QTableWidget()
-        self._table_widget.setColumnCount(5)
-        self._table_widget.setHorizontalHeaderLabels(["", "Plugin Name", "Version", "Source", "Status"])
-        header = self._table_widget.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
-        self._table_widget.setColumnWidth(0, 48)
-        self._table_widget.setColumnWidth(2, 140)
-        self._table_widget.setColumnWidth(3, 120)
-        self._table_widget.setColumnWidth(4, 120)
-        self._table_widget.verticalHeader().setVisible(False)
-        self._table_widget.setAlternatingRowColors(True)
-        self._table_widget.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self._table_widget.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self._table_widget.setShowGrid(False)
-        self._table_widget.verticalHeader().setDefaultSectionSize(48)
-        self._table_widget.setStyleSheet("""
-            QTableWidget {
-                background-color: rgba(22, 23, 26, 0.85);
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 10px;
-                gridline-color: rgba(255, 255, 255, 0.03);
-                font-size: 12px;
-            }
-            QTableWidget::item {
-                padding: 4px 8px;
-                color: #EDEDEF;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            }
-            QTableWidget::item:selected {
-                background-color: rgba(0, 191, 174, 0.12);
-                color: #FFFFFF;
-            }
-            QHeaderView::section {
-                background-color: rgba(14, 14, 16, 0.9);
-                color: #8B8D97;
-                font-weight: 600;
-                font-size: 11px;
-                padding: 8px;
-                border: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-                text-transform: uppercase;
-            }
-        """)
-        self._table_widget.setVisible(False)
-        parent_layout.addWidget(self._table_widget, 1)
 
     def show_grid_mode(self):
         self._list_mode = False
         self._scroll_area.setVisible(True)
-        self._table_widget.setVisible(False)
+        self._plugins_table.setVisible(False)
+        QTimer.singleShot(0, self._render_grid_after_show)
+
+    def _render_grid_after_show(self):
+        try:
+            self._scroll_area.verticalScrollBar().setValue(0)
+        except Exception:
+            pass
+        self._calc_grid_metrics()
         self._render_current_page()
 
     def show_table_mode(self):
         self._list_mode = True
         self._scroll_area.setVisible(False)
+        self._plugins_table.setVisible(True)
         self._populate_table()
-        self._table_widget.setVisible(True)
+
+    @staticmethod
+    def _map_plugin_row(plugin):
+        """Map a plugin spec to the shared updates-table contract."""
+        name = plugin.get('name') or plugin.get('id', '')
+        return {
+            'name': name,
+            'id': plugin.get('id') or name,
+            'version': plugin.get('version', plugin.get('ver', '')),
+            'new_version': plugin.get('version', plugin.get('ver', '')),
+            'source': _canonical_source(PluginsView._get_package_source(plugin)),
+            'description': plugin.get('desc') or '',
+            'download_size': '',
+            'installed_date': 0,
+            'status': 'Installed' if plugin.get('_installed') else 'Available',
+            '_installed': bool(plugin.get('_installed')),
+            '_src': plugin,
+        }
 
     def _populate_table(self):
+        self._plugins_table.set_loading(True, "Loading plugins\u2026")
         filtered = self._get_filtered_plugins()
-        plugins = [c['plugin'] for c in filtered]
-        start = (self._current_page - 1) * self._items_per_page
-        end = min(start + self._items_per_page, len(plugins))
-        page_plugins = plugins[start:end]
-
-        self._table_widget.setUpdatesEnabled(False)
-        self._table_widget.setRowCount(0)
-        for plugin in page_plugins:
-            row = self._table_widget.rowCount()
-            self._table_widget.insertRow(row)
-
-            cb = QCheckBox()
-            cb_container = QWidget()
-            cb_layout = QHBoxLayout(cb_container)
-            cb_layout.setContentsMargins(0, 0, 0, 0)
-            cb_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            cb_layout.addWidget(cb)
-            self._table_widget.setCellWidget(row, 0, cb_container)
-
-            name = plugin.get('name') or plugin.get('id', '')
-            name_item = QTableWidgetItem(name)
-            name_item.setToolTip(plugin.get('desc', ''))
-            self._table_widget.setItem(row, 1, name_item)
-
-            ver = plugin.get('version', plugin.get('ver', ''))
-            ver_item = QTableWidgetItem(ver)
-            ver_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self._table_widget.setItem(row, 2, ver_item)
-
-            source = plugin.get('source', 'pacman')
-            source_item = QTableWidgetItem(source)
-            source_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self._table_widget.setItem(row, 3, source_item)
-
-            installed = self.is_installed(plugin)
-            status_item = QTableWidgetItem("Installed" if installed else "Available")
-            status_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            if installed:
-                status_item.setForeground(QColor("#00BFAE"))
-            self._table_widget.setItem(row, 4, status_item)
-
-        self._table_widget.setUpdatesEnabled(True)
-        self._update_pagination_buttons()
+        rows = []
+        for card_data in filtered:
+            plugin = dict(card_data['plugin'])
+            plugin['_installed'] = bool(card_data.get('installed', self.is_installed(plugin)))
+            rows.append(self._map_plugin_row(plugin))
+        self._plugins_table.set_packages(rows)
+        self._plugins_table.set_empty_text("No plugins found", "Try a different search or filter")
 
     def _refresh_content(self):
-        if self._list_mode and self._table_widget.isVisible():
+        if self._list_mode and self._plugins_table.isVisible():
             self._populate_table()
         else:
             self._render_current_page()
+
+    def _on_table_menu_action(self, action, pkg):
+        """Route plugin table menu actions to the view's signals."""
+        plugin = pkg.get('_src') if isinstance(pkg, dict) else None
+        if plugin is None:
+            return
+        pid = plugin.get('id')
+        if action == "launch":
+            self.launch_requested.emit(pid)
+        elif action == "install":
+            self.install_requested.emit(pid)
+        elif action == "uninstall":
+            self.uninstall_requested.emit(pid)
+        elif action == "browser":
+            main_app = getattr(self, 'main_app', None)
+            if main_app is not None and hasattr(main_app, '_open_package_page'):
+                try:
+                    main_app._open_package_page(pkg)
+                except Exception:
+                    pass
+        elif action == "copy":
+            name = (plugin.get('name') or plugin.get('id') or '').strip()
+            if name:
+                try:
+                    from PyQt6.QtWidgets import QApplication
+                    QApplication.clipboard().setText(name)
+                except Exception:
+                    pass
+
 
     def _get_or_create_card(self, plugin_spec):
         """Return cached card data for a plugin or create it."""
@@ -579,161 +694,43 @@ class PluginsView(QWidget):
                 item.widget().hide()
         self._reset_row_stretches()
 
-    def create_filter_buttons(self, parent_layout):
-        """Create category filter buttons styled as navbar tabs"""
-        container = QFrame()
-        container.setObjectName("categoryFilterBar")
-        container.setFixedHeight(44)
-        container.setStyleSheet("""
-            QFrame#categoryFilterBar {
-                background-color: rgba(14, 14, 16, 0.95);
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 10px;
-            }
-        """)
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(4)
-
-        categories = sorted({self._category_for(p) for p in self.plugins})
-        all_filters = ["All"] + categories
-
-        self._filter_buttons = {}
-        for cat in all_filters:
-            btn = QPushButton(cat)
-            btn.setCheckable(True)
-            btn.setFixedHeight(36)
-            btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn.clicked.connect(lambda checked, c=cat: self._on_filter_clicked(c))
-
-            if cat == "All":
-                btn.setChecked(True)
-
-            btn.setStyleSheet("""
-                QPushButton {
-                    background-color: transparent;
-                    color: #8B8D97;
-                    border: none;
-                    border-radius: 8px;
-                    padding: 0 16px;
-                    font-weight: 500;
-                    font-size: 12px;
-                }
-                QPushButton:hover {
-                    background-color: rgba(255, 255, 255, 0.04);
-                    color: #EDEDEF;
-                }
-                QPushButton:checked {
-                    background-color: rgba(0, 191, 174, 0.1);
-                    color: #EDEDEF;
-                    font-weight: 600;
-                }
-            """)
-
-            layout.addWidget(btn)
-            self._filter_buttons[cat] = btn
-
-        layout.addStretch()
-        parent_layout.addWidget(container)
-
-    def _on_filter_clicked(self, category):
-        """Toggle exclusive filter button state and apply filter"""
-        for cat, btn in self._filter_buttons.items():
-            btn.setChecked(cat == category)
-        if category == "All":
-            self.show_all_apps()
-        else:
-            self.filter_by_category(category)
-
 
     @staticmethod
     def _get_scrollbar_stylesheet():
-        """Return beautiful scrollbar stylesheet with dark rounded corners"""
+        """Scrollbar styling matching the Updates/Discover card grid."""
         return """
-            QScrollArea {
-                background: transparent;
-                border: none;
-            }
-            QScrollArea::corner {
-                background: transparent;
-                border: none;
-            }
-            /* Vertical Scrollbar */
+            QScrollArea { background: transparent; border: none; }
             QScrollBar:vertical {
-                border: none;
-                background: transparent;
-                width: 12px;
-                margin: 0px 0px 0px 0px;
+                background: rgba(255,255,255,0.03);
+                width: 8px;
+                border-radius: 4px;
             }
             QScrollBar::handle:vertical {
-                background: rgba(60, 60, 60, 0.7);
-                border-radius: 6px;
-                min-height: 20px;
-                margin: 0px 0px 0px 0px;
+                background: rgba(255,255,255,0.1);
+                border-radius: 4px;
+                min-height: 30px;
             }
             QScrollBar::handle:vertical:hover {
-                background: rgba(80, 80, 80, 0.9);
+                background: rgba(255,255,255,0.15);
             }
-            QScrollBar::handle:vertical:pressed {
-                background: rgba(100, 100, 100, 1);
-            }
-            QScrollBar::add-line:vertical {
-                border: none;
-                background: transparent;
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
                 height: 0px;
             }
-            QScrollBar::sub-line:vertical {
-                border: none;
-                background: transparent;
-                height: 0px;
-            }
-            QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
-                border: none;
-                width: 0px;
-                height: 0px;
-                background: transparent;
-            }
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-                background: transparent;
-            }
-            
-            /* Horizontal Scrollbar */
             QScrollBar:horizontal {
-                border: none;
-                background: transparent;
-                height: 12px;
-                margin: 0px 0px 0px 0px;
+                background: rgba(255,255,255,0.03);
+                height: 8px;
+                border-radius: 4px;
             }
             QScrollBar::handle:horizontal {
-                background: rgba(60, 60, 60, 0.7);
-                border-radius: 6px;
-                min-width: 20px;
-                margin: 0px 0px 0px 0px;
+                background: rgba(255,255,255,0.1);
+                border-radius: 4px;
+                min-width: 30px;
             }
             QScrollBar::handle:horizontal:hover {
-                background: rgba(80, 80, 80, 0.9);
+                background: rgba(255,255,255,0.15);
             }
-            QScrollBar::handle:horizontal:pressed {
-                background: rgba(100, 100, 100, 1);
-            }
-            QScrollBar::add-line:horizontal {
-                border: none;
-                background: transparent;
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
                 width: 0px;
-            }
-            QScrollBar::sub-line:horizontal {
-                border: none;
-                background: transparent;
-                width: 0px;
-            }
-            QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal {
-                border: none;
-                width: 0px;
-                height: 0px;
-                background: transparent;
-            }
-            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
-                background: transparent;
             }
         """
 
@@ -756,7 +753,7 @@ class PluginsView(QWidget):
         grid_container = QWidget()
         grid_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.grid_layout = QGridLayout(grid_container)
-        self.grid_layout.setSpacing(20)
+        self.grid_layout.setSpacing(14)
         self.grid_layout.setContentsMargins(0, 0, 0, 0)
         
         self._live_search_label = QLabel("")
@@ -775,10 +772,7 @@ class PluginsView(QWidget):
         if not self._all_plugins:
             self._all_plugins = get_all_plugins_data()
             self._prewarm_installed_cache()
-        if self._selected_category:
-            self._category_filtered_plugins = [p for p in self._all_plugins if self._category_for(p) == self._selected_category]
-        self._current_page = 1
-        self._calc_items_per_page()
+        self._calc_grid_metrics()
     
     def _create_all_cards(self):
         """Create all plugin cards once for better performance"""
@@ -814,62 +808,6 @@ class PluginsView(QWidget):
             return 'brew'
         else:
             return 'pacman'
-    
-    @staticmethod
-    def _category_for(plugin):
-        cat = (plugin.get('category') or '').strip()
-        if cat:
-            c = cat.lower()
-            synonyms = {
-                'system': 'System Tools',
-                'system tool': 'System Tools',
-                'system tools': 'System Tools',
-                'utility': 'Utility',
-                'utilities': 'Utility',
-                'dev': 'Development',
-                'development': 'Development',
-                'internet': 'Internet',
-                'network': 'Internet',
-                'graphics': 'Graphics',
-                'multimedia': 'Multimedia',
-                'audio': 'Multimedia',
-                'video': 'Multimedia',
-                'office': 'Office',
-                'productivity': 'Office',
-                'education': 'Education',
-                'game': 'Games',
-                'games': 'Games',
-                'security': 'Security',
-                'communication': 'Communication',
-                'chat': 'Communication',
-            }
-            return synonyms.get(c, cat)
-        tags = plugin.get('tags') or []
-        tags_text = ' '.join(tags) if isinstance(tags, (list, tuple, set)) else str(tags)
-        text = ' '.join([
-            plugin.get('name', ''),
-            plugin.get('desc', ''),
-            plugin.get('id', ''),
-            plugin.get('pkg', ''),
-            tags_text,
-        ]).lower()
-        patterns = [
-            (('vscode','visual studio','code','editor','ide','developer','dev','git','node','npm','python','qt','gcc','make','electron','android studio'), 'Development'),
-            (('browser','firefox','chrome','web','network','mail','torrent','internet','ftp'), 'Internet'),
-            (('image','photo','graphic','draw','paint','gimp','krita','inkscape','blender'), 'Graphics'),
-            (('video','music','audio','player','vlc','mpv','spotify','media','ffmpeg'), 'Multimedia'),
-            (('chat','telegram','discord','slack','message','voip','call','communication'), 'Communication'),
-            (('system','monitor','btop','htop','terminal','shell','backup','timeshift','disk','partition','gparted','bleachbit'), 'System Tools'),
-            (('game','steam','lutris','retroarch','games'), 'Games'),
-            (('office','libreoffice','document','spreadsheet','writer','calc','pdf'), 'Office'),
-            (('learn','education','anki','study'), 'Education'),
-            (('password','privacy','guard','vpn','security','encrypt'), 'Security'),
-        ]
-        for kws, label in patterns:
-            for kw in kws:
-                if kw in text:
-                    return label
-        return 'Utility'
     
     def _render_source_icon(self, source, size=14):
         """Render a source SVG icon to a QPixmap"""
@@ -949,93 +887,42 @@ class PluginsView(QWidget):
     # --- Layout helpers to keep calculations consistent ---
     def _layout_spacing(self):
         try:
-            return self.grid_layout.spacing() if self.grid_layout else 20
+            return self.grid_layout.spacing() if self.grid_layout else 14
         except Exception:
-            return 20
+            return 14
 
     def _calc_cols(self, viewport_width):
         spacing = self._layout_spacing()
-        unit_w = 280 + spacing
-        return max(1, min(6, (max(0, viewport_width) + spacing) // unit_w))
-
-    def _calc_visible_rows(self, viewport_height):
-        spacing = self._layout_spacing()
-        row_h = 130 + spacing
-        return max(1, (max(0, viewport_height) + spacing) // row_h)
+        min_w = 210
+        cols = 3
+        while cols > 1 and viewport_width < cols * min_w + (cols - 1) * spacing:
+            cols -= 1
+        return cols
 
     def _enforce_row_min_heights(self, upto_row):
         if not hasattr(self, 'grid_layout'):
             return
         try:
             for r in range(0, max(0, int(upto_row)) + 1):
-                self.grid_layout.setRowMinimumHeight(r, 130)
+                self.grid_layout.setRowMinimumHeight(r, 150)
         except Exception:
             pass
 
-    
-    def _calc_items_per_page(self):
+    def _calc_grid_metrics(self):
         try:
             viewport_w = self._scroll_area.viewport().width() if self._scroll_area else self.width()
-            viewport_h = self._scroll_area.viewport().height() if self._scroll_area else self.height()
         except Exception:
             viewport_w = self.width()
-            viewport_h = self.height()
-        if viewport_w < 200 or viewport_h < 100:
+        if viewport_w < 200:
             viewport_w = 900
-            viewport_h = 600
+        spacing = self._layout_spacing()
         cols = self._calc_cols(viewport_w)
         self._current_cols = cols
-        rows = max(2, self._calc_visible_rows(viewport_h))
-        self._items_per_page = max(1, cols * rows * 3)
+        avail = max(1, viewport_w - (cols - 1) * spacing)
+        self._card_width = max(210, avail // cols)
 
     def _get_current_plugins(self):
-        if self._selected_category:
-            return self._category_filtered_plugins
         return self._all_plugins
-
-    def _get_visible_page_numbers(self):
-        total = self._total_pages
-        current = self._current_page
-        if total <= 9:
-            return list(range(1, total + 1))
-        pages = set()
-        pages.add(1)
-        pages.add(total)
-        pages.add(current)
-        if current > 1:
-            pages.add(current - 1)
-        if current < total:
-            pages.add(current + 1)
-        if current > 2:
-            pages.add(current - 2)
-        if current < total - 1:
-            pages.add(current + 2)
-        sorted_pages = sorted(pages)
-        result = []
-        for i, p in enumerate(sorted_pages):
-            if i > 0 and p - sorted_pages[i - 1] > 1:
-                result.append(None)
-            result.append(p)
-        return result
-
-    def _go_to_page(self, page):
-        if page < 1 or page > self._total_pages or page == self._current_page:
-            return
-        self._current_page = page
-        self._refresh_content()
-        QTimer.singleShot(50, lambda: self._scroll_area and self._scroll_area.verticalScrollBar().setValue(0))
-
-    def _go_to_first_page(self):
-        self._go_to_page(1)
-
-    def _go_to_prev_page(self):
-        self._go_to_page(self._current_page - 1)
-
-    def _go_to_next_page(self):
-        self._go_to_page(self._current_page + 1)
-
-    def _go_to_last_page(self):
-        self._go_to_page(self._total_pages)
 
     def _get_filtered_plugins(self):
         has_search = hasattr(self, '_all_filtered_search_cards') and self._all_filtered_search_cards is not None
@@ -1061,159 +948,25 @@ class PluginsView(QWidget):
             pass
         if not filtered:
             self._clear_grid_and_hide_all()
-            self._pagination_bar.setVisible(False)
             self._reset_row_stretches()
             return
+        self._calc_grid_metrics()
         cols = self._current_cols
-        start = (self._current_page - 1) * self._items_per_page
-        end = min(start + self._items_per_page, len(filtered))
-        page_cards = filtered[start:end]
-        if not page_cards:
-            self._clear_grid_and_hide_all()
-            self._pagination_bar.setVisible(False)
-            return
+        card_w = self._card_width
         self._begin_layout_update()
         self._clear_grid_and_hide_all()
         self._reset_row_stretches()
         for i in range(cols):
             self.grid_layout.setColumnStretch(i, 1)
-        for i, card_data in enumerate(page_cards):
+        for i, card_data in enumerate(filtered):
+            card_data['widget'].setFixedWidth(card_w)
             row = i // cols
             col = i % cols
             card_data['widget'].show()
             self.grid_layout.addWidget(card_data['widget'], row, col)
-        max_row = (len(page_cards) - 1) // cols
+        max_row = (len(filtered) - 1) // cols
         self._enforce_row_min_heights(max_row)
         self._finish_layout_update()
-        self._update_pagination_buttons()
-
-    def _create_pagination_bar(self):
-        bar = QFrame()
-        bar.setObjectName("paginationBar")
-        bar.setStyleSheet("""
-            QFrame#paginationBar {
-                background-color: rgba(14, 14, 16, 0.8);
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 10px;
-                padding: 4px 8px;
-            }
-        """)
-        layout = QHBoxLayout(bar)
-        layout.setContentsMargins(8, 4, 8, 4)
-        layout.setSpacing(4)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        def _btn_style(active=False):
-            if active:
-                return ("QPushButton { background-color: rgba(0, 191, 174, 0.15); color: #EDEDEF; "
-                        "border: 1px solid rgba(0, 191, 174, 0.3); border-radius: 6px; "
-                        "padding: 4px 10px; font-size: 11px; font-weight: 600; }")
-            return ("QPushButton { background-color: transparent; color: #8B8D97; "
-                    "border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; "
-                    "padding: 4px 10px; font-size: 11px; font-weight: 500; } "
-                    "QPushButton:hover { background-color: rgba(255, 255, 255, 0.04); color: #EDEDEF; } "
-                    "QPushButton:disabled { color: #5C5E66; border-color: rgba(255, 255, 255, 0.03); }")
-
-        self._first_btn = QPushButton("\u25c0\u25c0")
-        self._first_btn.setToolTip("First page")
-        self._first_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._first_btn.setFixedHeight(28)
-        self._first_btn.setStyleSheet(_btn_style())
-        self._first_btn.clicked.connect(self._go_to_first_page)
-        layout.addWidget(self._first_btn)
-
-        self._prev_btn = QPushButton("\u25c0")
-        self._prev_btn.setToolTip("Previous page")
-        self._prev_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._prev_btn.setFixedHeight(28)
-        self._prev_btn.setStyleSheet(_btn_style())
-        self._prev_btn.clicked.connect(self._go_to_prev_page)
-        layout.addWidget(self._prev_btn)
-
-        self._page_buttons_container = QHBoxLayout()
-        self._page_buttons_container.setSpacing(4)
-        layout.addLayout(self._page_buttons_container)
-
-        self._info_btn = QPushButton()
-        self._info_btn.setFixedHeight(28)
-        self._info_btn.setStyleSheet(
-            "QPushButton { background: transparent; color: #5C5E66; border: none; "
-            "padding: 4px 6px; font-size: 10px; }"
-        )
-        layout.addWidget(self._info_btn)
-
-        self._next_btn = QPushButton("\u25b6")
-        self._next_btn.setToolTip("Next page")
-        self._next_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._next_btn.setFixedHeight(28)
-        self._next_btn.setStyleSheet(_btn_style())
-        self._next_btn.clicked.connect(self._go_to_next_page)
-        layout.addWidget(self._next_btn)
-
-        self._last_btn = QPushButton("\u25b6\u25b6")
-        self._last_btn.setToolTip("Last page")
-        self._last_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._last_btn.setFixedHeight(28)
-        self._last_btn.setStyleSheet(_btn_style())
-        self._last_btn.clicked.connect(self._go_to_last_page)
-        layout.addWidget(self._last_btn)
-
-        bar.setVisible(False)
-        return bar
-
-    def _update_pagination_buttons(self):
-        filtered = self._get_filtered_plugins()
-        total_plugins = len(filtered)
-        if total_plugins == 0:
-            self._pagination_bar.setVisible(False)
-            return
-        self._total_pages = max(1, (total_plugins + self._items_per_page - 1) // self._items_per_page)
-        if self._total_pages <= 1:
-            self._pagination_bar.setVisible(False)
-            return
-        self._pagination_bar.setVisible(True)
-
-        def _btn_style(active=False):
-            if active:
-                return ("QPushButton { background-color: rgba(0, 191, 174, 0.15); color: #EDEDEF; "
-                        "border: 1px solid rgba(0, 191, 174, 0.3); border-radius: 6px; "
-                        "padding: 4px 10px; font-size: 11px; font-weight: 600; }")
-            return ("QPushButton { background-color: transparent; color: #8B8D97; "
-                    "border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; "
-                    "padding: 4px 10px; font-size: 11px; font-weight: 500; } "
-                    "QPushButton:hover { background-color: rgba(255, 255, 255, 0.04); color: #EDEDEF; } "
-                    "QPushButton:disabled { color: #5C5E66; border-color: rgba(255, 255, 255, 0.03); }")
-
-        self._first_btn.setEnabled(self._current_page > 1)
-        self._prev_btn.setEnabled(self._current_page > 1)
-        self._next_btn.setEnabled(self._current_page < self._total_pages)
-        self._last_btn.setEnabled(self._current_page < self._total_pages)
-
-        while self._page_buttons_container.count():
-            item = self._page_buttons_container.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-
-        for page in self._get_visible_page_numbers():
-            if page is None:
-                lbl = QLabel("\u2026")
-                lbl.setStyleSheet("color: #5C5E66; padding: 4px 2px; font-size: 11px;")
-                self._page_buttons_container.addWidget(lbl)
-            else:
-                btn = QPushButton(str(page))
-                btn.setFixedSize(32, 28)
-                btn.setCursor(Qt.CursorShape.PointingHandCursor)
-                btn.setStyleSheet(_btn_style(active=(page == self._current_page)))
-                btn.clicked.connect(lambda checked, p=page: self._go_to_page(p))
-                self._page_buttons_container.addWidget(btn)
-
-        start = (self._current_page - 1) * self._items_per_page + 1
-        end = min(start + self._items_per_page - 1, total_plugins)
-        self._info_btn.setText(f"{start}\u2013{end} of {total_plugins}")
-        self._info_btn.setStyleSheet(
-            "QPushButton { background: transparent; color: #5C5E66; border: none; "
-            "padding: 4px 6px; font-size: 10px; }"
-        )
 
     def _begin_layout_update(self):
         if self._is_layouting:
@@ -1246,160 +999,16 @@ class PluginsView(QWidget):
         self._is_layouting = False
 
     def create_app_card(self, plugin_spec, icon, installed):
-        """Create a beautifully designed app card with glassmorphism styling"""
-        card = QFrame()
-        card.setFixedSize(280, 130)
-        try:
-            card.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-            card.setObjectName("appCard")
-        except Exception:
-            pass
+        """Create a plugin card in the shared Updates/Discover card style
+        (glass surface, source logo, status chip) with action buttons."""
+        card = _PluginPackageCard(plugin_spec, installed, self.main_app)
+        pid = plugin_spec.get('id')
 
-        card_state = CardState()
-        card_state.set_installed_state(installed)
-        card.card_state = card_state
-
-        def set_card_installing(installing):
-            card_state.set_installing(installing)
-            if installing:
-                for widget in card.findChildren(QPushButton):
-                    widget.setEnabled(False)
-                    if widget.text() in ("Install", "Open"):
-                        widget.setText("Installing\u2026")
-                    elif widget.text() == "Uninstall":
-                        widget.setText("Uninstalling\u2026")
-            else:
-                for widget in card.findChildren(QPushButton):
-                    widget.setEnabled(True)
-                    if "Installing" in widget.text() or "Uninstalling" in widget.text():
-                        if "Uninstalling" in widget.text():
-                            widget.setText("Uninstall")
-                        else:
-                            widget.setText("Install" if not card_state.get_installed_state() else "Open")
-        card.set_installing = set_card_installing
-
-        source = self._get_package_source(plugin_spec)
-        sc = _SOURCE_GRADIENTS.get(source, ('#00BFAE', '#00BFAE'))
-
-        card.setStyleSheet(f"""
-            QFrame#appCard {{
-                background-color: rgba(22, 23, 26, 0.85);
-                border-top: 1px solid rgba(255, 255, 255, 0.06);
-                border-bottom: 1px solid rgba(0, 0, 0, 0.3);
-                border-left: 1px solid rgba(255, 255, 255, 0.03);
-                border-right: 1px solid rgba(255, 255, 255, 0.03);
-                border-radius: 14px;
-            }}
-            QFrame#appCard:hover {{
-                border-top: 1px solid rgba(255, 255, 255, 0.10);
-                border-bottom: 1px solid rgba(0, 0, 0, 0.35);
-                background-color: rgba(26, 28, 32, 0.85);
-            }}
-        """)
-        _shadow(card, blur=20, offset=(3, 5), alpha=160)
-
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(14, 12, 14, 12)
-        layout.setSpacing(6)
-
-        top = QHBoxLayout()
-        top.setSpacing(10)
-
-        icon_label = QLabel()
-        icon_label.setPixmap(_get_plugin_app_icon(32))
-        icon_label.setFixedSize(32, 32)
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        top.addWidget(icon_label)
-
-        name_col = QVBoxLayout()
-        name_col.setSpacing(3)
-
-        name_label = QLabel(plugin_spec.get('name', plugin_spec.get('id')))
-        name_label.setStyleSheet("""
-            QLabel {
-                color: #EDEDEF;
-                font-weight: 600;
-                font-size: 13px;
-                border: none;
-                background: transparent;
-            }
-        """)
-        name_col.addWidget(name_label)
-
-        source_badge = self._source_badge(source)
-        name_col.addWidget(source_badge)
-
-        top.addLayout(name_col, 1)
-        layout.addLayout(top)
-
-        desc_label = QLabel(plugin_spec.get('desc', ''))
-        desc_label.setStyleSheet("""
-            QLabel {
-                color: #8B8D97;
-                font-size: 10px;
-                border: none;
-                background: transparent;
-                line-height: 1.3;
-            }
-        """)
-        desc_label.setWordWrap(True)
-        desc_label.setMaximumHeight(30)
-        layout.addWidget(desc_label)
-
-        layout.addStretch()
-
-        btn_row = QHBoxLayout()
-        btn_row.setSpacing(6)
-
-        _neu_btn = """
-            QPushButton {
-                background-color: rgba(26, 28, 34, 0.95);
-                color: #00BFAE;
-                border: 1px solid rgba(0, 191, 174, 0.3);
-                border-radius: 8px;
-                font-weight: 700;
-                font-size: 11px;
-                padding: 0 16px;
-            }
-            QPushButton:hover {
-                background-color: rgba(30, 32, 38, 0.95);
-                border: 1px solid rgba(0, 191, 174, 0.6);
-            }
-            QPushButton:pressed {
-                background-color: rgba(20, 22, 26, 0.95);
-                border: 1px solid rgba(0, 191, 174, 0.8);
-            }
-        """
-
-        if installed:
-            open_btn = QPushButton("Open")
-            open_btn.setFixedHeight(30)
-            open_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            open_btn.setStyleSheet(_neu_btn)
-            open_btn.clicked.connect(lambda: self.launch_requested.emit(plugin_spec['id']))
-            btn_row.addWidget(open_btn)
-
-            uninstall_btn = QPushButton("Uninstall")
-            uninstall_btn.setFixedHeight(30)
-            uninstall_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            uninstall_btn.setStyleSheet(
-                _neu_btn
-                .replace("#00BFAE", "#FF6B6B")
-                .replace("0, 191, 174", "255, 107, 107")
-            )
-            uninstall_btn.clicked.connect(lambda: (card.set_installing(True), self.uninstall_requested.emit(plugin_spec['id'])))
-            btn_row.addWidget(uninstall_btn)
-        else:
-            install_btn = QPushButton("Install")
-            install_btn.setFixedHeight(30)
-            install_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            install_btn.setStyleSheet(_neu_btn)
-            install_btn.clicked.connect(lambda: (card.set_installing(True), self.install_requested.emit(plugin_spec['id'])))
-            btn_row.addWidget(install_btn)
-
-        btn_row.addStretch()
-        layout.addLayout(btn_row)
-
+        card.install_clicked.connect(
+            lambda: (card.set_installing(True), self.install_requested.emit(pid)))
+        card.launch_clicked.connect(lambda: self.launch_requested.emit(pid))
+        card.uninstall_clicked.connect(
+            lambda: (card.set_installing(True), self.uninstall_requested.emit(pid)))
         return card
 
 
@@ -1461,10 +1070,6 @@ class PluginsView(QWidget):
             self._all_cards = []
             self._all_filtered_search_cards = None
             self._all_filtered_cards = None
-        self._selected_category = None
-        if hasattr(self, '_filter_buttons') and 'All' in self._filter_buttons:
-            for cat, btn in self._filter_buttons.items():
-                btn.setChecked(cat == "All")
         self.populate_app_cards()
         # Always apply filters so there's exactly one render
         if not self._current_filter_states:
@@ -1526,7 +1131,7 @@ class PluginsView(QWidget):
         # Live search fallback: text query with no curated matches -> query pacman/AUR
         if self._filter_text and not self._installed_only and not self._categories and not filtered:
             self._run_live_search(self._filter_text)
-        
+
         self._refresh_content()
 
     def _run_live_search(self, query):
@@ -1600,28 +1205,6 @@ class PluginsView(QWidget):
         except Exception:
             pass
     
-    def filter_by_category(self, category):
-        self._selected_category = category
-        if not self._all_plugins:
-            self._all_plugins = get_all_plugins_data()
-        self._category_filtered_plugins = [p for p in self._all_plugins if self._category_for(p) == category]
-        self._current_page = 1
-        self._calc_items_per_page()
-        self._refresh_content()
-        if hasattr(self, '_filter_buttons'):
-            for cat, btn in self._filter_buttons.items():
-                btn.setChecked(cat == category)
-    
-    def show_all_apps(self):
-        self._selected_category = None
-        if hasattr(self, '_filter_buttons'):
-            for cat, btn in self._filter_buttons.items():
-                btn.setChecked(cat == "All")
-        if not self._all_plugins:
-            self._all_plugins = get_all_plugins_data()
-        self._current_page = 1
-        self._calc_items_per_page()
-        self._refresh_content()
     
     def _reset_row_stretches(self):
         if not hasattr(self, 'grid_layout'):
@@ -1647,7 +1230,7 @@ class PluginsView(QWidget):
             return
         if not self._list_mode:
             old_cols = self._current_cols
-            self._calc_items_per_page()
+            self._calc_grid_metrics()
             if self._current_cols != old_cols:
                 self._render_current_page()
     
@@ -1711,5 +1294,4 @@ class PluginsView(QWidget):
         
         self._all_filtered_cards = filtered_cards
         
-        self._current_page = 1
         self._refresh_content()
