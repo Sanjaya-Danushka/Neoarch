@@ -1367,17 +1367,21 @@ class _ViewsMixin:
             self.discover_install_btn.setMinimumHeight(36)
             self.discover_install_btn.setStyleSheet("""
                 QPushButton {
-                    background-color: transparent;
-                    color: #F0F0F0;
-                    border: 1px solid rgba(0, 191, 174, 0.3);
-                    border-radius: 6px;
-                    padding: 6px 12px;
-                    font-size: 12px;
-                    font-weight: 500;
+                    background-color: #FFFFFF;
+                    color: #0C0C0E;
+                    border: 1px solid rgba(255, 255, 255, 0.9);
+                    border-radius: 10px;
+                    padding: 8px 18px;
+                    font-size: 13px;
+                    font-weight: 600;
                 }
-                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
-                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
-                QPushButton:disabled { color: rgba(240, 240, 240, 0.3); border-color: rgba(240, 240, 240, 0.1); }
+                QPushButton:hover { background-color: #E8EAF0; }
+                QPushButton:pressed { background-color: #D3D6DE; }
+                QPushButton:disabled {
+                    background-color: rgba(255, 255, 255, 0.06);
+                    color: #5C5E66;
+                    border-color: rgba(255, 255, 255, 0.08);
+                }
             """)
             self.discover_install_btn.clicked.connect(self.install_selected)
             self.discover_install_btn.setVisible(False)
