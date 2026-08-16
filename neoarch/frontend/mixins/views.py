@@ -25,6 +25,7 @@ from neoarch.frontend.components.large_search_box import LargeSearchBox
 from neoarch.frontend.components.packages_grid_view import PackagesGridView
 from neoarch.frontend.components.package_detail_card import PackageDetailCard
 from neoarch.frontend.components.loading_spinner import LoadingSpinner
+from neoarch.frontend.components.signal_indicator import SignalIndicator
 from neoarch.frontend.components.updates_table import UpdatesTable, _parse_size
 from neoarch.frontend.components.toast import Toast
 from neoarch.frontend.components.installed_table import HoverTableWidget
@@ -810,6 +811,9 @@ class _ViewsMixin:
         search_input.setFixedHeight(36)
         self.search_input = search_input
         layout.addWidget(search_input)
+
+        self.signal_indicator = SignalIndicator()
+        layout.addWidget(self.signal_indicator)
 
         refresh_btn = QPushButton()
         refresh_btn.setFixedSize(36, 36)

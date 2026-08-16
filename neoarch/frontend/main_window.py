@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import QMainWindow, QSizePolicy, QWidget
 from PyQt6.QtCore import Qt, QTimer, QEvent, QPoint, QRect, pyqtSignal
 from PyQt6.QtGui import QCursor
 
+from neoarch.backend.services import network_latency
 from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.managers.plugin_manager import PluginsManager
 from neoarch.frontend.styles import Styles
@@ -26,6 +27,9 @@ from neoarch.frontend.mixins.operations import _OperationsMixin
 
 _BASE_DIR = str(PROJECT_ROOT)
 _DISCOVER_ICON_DIR = os.path.join(_BASE_DIR, "assets", "icons", "discover")
+
+network_latency.install()
+network_latency.start_probing()
 
 class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _SearchMixin, _FiltersMixin, _PluginsMixin, _SettingsMixin, _AuthMixin, _IconsMixin, QMainWindow):
     packages_ready = pyqtSignal(list, object, bool)  # packages, load_id, is_final
