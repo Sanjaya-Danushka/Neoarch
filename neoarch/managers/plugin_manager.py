@@ -67,8 +67,49 @@ class PluginsManager:
             self.app.force_sudo_install = False
             self.app._pending_install_packages = {source: [name]}
             self._log(f"Installing plugin package: {name} ({source})")
-            self._watch_completion(plugins_view, plugin_id)
+            self._watch_completion(plugins_view, plugin_id, "install")
             install_service.install_packages(self.app, {source: [name]})
+        except Exception as e:
+            self._message("Plugins", f"Install error: {e}")
+
+    def install_many_by_id(self, plugins_view, plugin_ids):
+        """Install several plugins in a single batched operation (one command
+        per source, one auth prompt). Skips plugins already installed."""
+        try:
+            specs = []
+            for plugin_id in plugin_ids:
+                spec = plugins_view.get_plugin(plugin_id)
+                if not spec:
+                    continue
+                if plugins_view.is_installed(spec):
+                    continue
+                specs.append(spec)
+            if not specs:
+                self._message("Plugins", "Nothing to install: the selected plugins are already installed")
+                return
+            by_source = {}
+            for spec in specs:
+                pkg = spec.get('pkg')
+                if not pkg:
+                    self._message("Plugins", f"{spec.get('name')} has no package specified")
+                    return
+                source, name = _resolve_source(pkg)
+                if source not in _SUPPORTED_SOURCES:
+                    self._message("Plugins", f"Unsupported package source for {spec.get('name')}: {source}")
+                    return
+                by_source.setdefault(source, []).append(name)
+            if not self.app.ensure_session_auth():
+                self._message("Plugins", "Install cancelled: authentication required.")
+                return
+            for spec in specs:
+                pid = spec.get('id')
+                QTimer.singleShot(0, lambda pid=pid: plugins_view.set_installing(pid, True))
+            self.app.force_sudo_install = False
+            self.app._pending_install_packages = by_source
+            self._log(f"Installing {len(specs)} plugin package(s): {by_source}")
+            for spec in specs:
+                self._watch_completion(plugins_view, spec.get('id'), "install")
+            install_service.install_packages(self.app, by_source)
         except Exception as e:
             self._message("Plugins", f"Install error: {e}")
 
@@ -126,15 +167,15 @@ class PluginsManager:
                 return
             QTimer.singleShot(0, lambda: plugins_view.set_installing(plugin_id, True))
             self._log(f"Uninstalling plugin package: {name} ({source})")
-            self._watch_completion(plugins_view, plugin_id)
+            self._watch_completion(plugins_view, plugin_id, "uninstall")
             uninstall_service.uninstall_packages(self.app, {source: [name]})
         except Exception as e:
             self._message("Plugins", f"Uninstall error: {e}")
 
-    def _watch_completion(self, plugins_view, plugin_id):
-        """Reset the card state and refresh once the shared service reports done."""
+    def _watch_completion(self, plugins_view, plugin_id, op="install"):
+        """Reset the card state, flip it to its real installed state, and
+        refresh once the shared service reports done."""
         app = self.app
-        op = getattr(app, '_last_operation', 'install')
 
         def on_progress(status, _can_cancel):
             if status not in ("success", "failed", "cancelled"):
@@ -144,6 +185,8 @@ class PluginsManager:
             except Exception:
                 pass
             QTimer.singleShot(0, lambda: plugins_view.set_installing(plugin_id, False))
+            if status == "success":
+                QTimer.singleShot(0, lambda: plugins_view.set_installed(plugin_id, op == "install"))
             QTimer.singleShot(200, lambda: plugins_view.refresh_all(force=True))
 
         try:

@@ -78,7 +78,13 @@ QPushButton:disabled {
 
 class _PluginPackageCard(PackageCard):
     """Plugin card reusing the Updates/Discover PackageCard design language
-    (glass surface, source logo, status chip) with plugin action buttons."""
+    (glass surface, source logo, status chip) with plugin action buttons.
+
+    Installed cards show an "Open" button plus an "Uninstall" button that only
+    appears on hover (double-click also launches). The action row is rebuilt
+    in place by :meth:`set_installed` so buttons update in real time after an
+    install/uninstall completes.
+    """
 
     install_clicked = pyqtSignal(str)
     launch_clicked = pyqtSignal(str)
@@ -90,12 +96,24 @@ class _PluginPackageCard(PackageCard):
     def __init__(self, plugin, installed, app=None, parent=None):
         self._plugin = plugin
         self._installed = bool(installed)
+        self._installing = False
+        self._hover = False
         super().__init__(plugin, 0, app, parent)
 
     def mouseDoubleClickEvent(self, event):
         if self._installed:
             self.launch_clicked.emit(self._plugin.get("id"))
         super().mouseDoubleClickEvent(event)
+
+    def enterEvent(self, event):
+        self._hover = True
+        self._sync_uninstall_visibility()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._hover = False
+        self._sync_uninstall_visibility()
+        super().leaveEvent(event)
 
     def _build(self):
         source = _canonical_source(PluginsView._get_package_source(self._plugin))
@@ -137,24 +155,49 @@ class _PluginPackageCard(PackageCard):
         bottom.addStretch(1)
 
         self._action_buttons = []
+        self._uninstall_btn = None
+        self._add_action_buttons(bottom)
+
+        layout.addLayout(bottom)
+        self._action_row = bottom
+        self._sync_uninstall_visibility()
+
+    def _add_action_buttons(self, row):
+        """(Re)build the action buttons into ``row`` based on install state."""
         pid = self._plugin.get("id")
         if self._installed:
             open_btn = self._make_action_button("Open", _NEU_BTN_QSS)
             open_btn.clicked.connect(lambda: self.launch_clicked.emit(pid))
-            bottom.addWidget(open_btn)
+            row.addWidget(open_btn)
             self._action_buttons.append(open_btn)
 
-            uninstall_btn = self._make_action_button("Uninstall", _DANGER_BTN_QSS)
-            uninstall_btn.clicked.connect(lambda: self.uninstall_clicked.emit(pid))
-            bottom.addWidget(uninstall_btn)
-            self._action_buttons.append(uninstall_btn)
+            self._uninstall_btn = self._make_action_button("Uninstall", _DANGER_BTN_QSS)
+            self._uninstall_btn.clicked.connect(lambda: self.uninstall_clicked.emit(pid))
+            self._uninstall_btn.hide()
+            row.addWidget(self._uninstall_btn)
+            self._action_buttons.append(self._uninstall_btn)
         else:
             install_btn = self._make_action_button("Install", _NEU_BTN_QSS)
             install_btn.clicked.connect(lambda: self.install_clicked.emit(pid))
-            bottom.addWidget(install_btn)
+            row.addWidget(install_btn)
             self._action_buttons.append(install_btn)
 
-        layout.addLayout(bottom)
+    def _sync_uninstall_visibility(self):
+        """Show the Uninstall button only while hovering and not installing."""
+        if self._uninstall_btn is not None:
+            self._uninstall_btn.setVisible(bool(self._hover) and not self._installing)
+
+    def _set_status(self, status):
+        color = _STATUS_COLORS.get(status, _TEXT_MUTED)
+        chip = _Chip(status, color)
+        if hasattr(self, '_action_row') and self._action_row is not None:
+            try:
+                self._action_row.replaceWidget(self.status_chip, chip)
+            except Exception:
+                self._action_row.insertWidget(0, chip, alignment=Qt.AlignmentFlag.AlignBottom)
+        self.status_chip.hide()
+        self.status_chip.deleteLater()
+        self.status_chip = chip
 
     @staticmethod
     def _make_action_button(text, qss):
@@ -165,22 +208,48 @@ class _PluginPackageCard(PackageCard):
         return btn
 
     def set_installing(self, installing):
+        self._installing = bool(installing)
         for b in self._action_buttons:
             b.setEnabled(not installing)
             if installing:
-                if b.text() in ("Install", "Open"):
-                    b.setText("Installing\u2026")
-                elif b.text() == "Uninstall":
+                if b is self._uninstall_btn:
                     b.setText("Uninstalling\u2026")
+                elif b.text() in ("Install", "Open"):
+                    b.setText("Installing\u2026")
             else:
                 if "Installing" in b.text():
                     b.setText("Install" if not self._installed else "Open")
                 elif "Uninstalling" in b.text():
                     b.setText("Uninstall")
+        self._sync_uninstall_visibility()
+
+    def set_installed(self, installed):
+        """Flip a card to its installed/uninstalled action row in place so the
+        button updates immediately after an install/uninstall completes."""
+        installed = bool(installed)
+        if installed == self._installed:
+            return
+        self._installed = installed
+        self._installing = False
+        self._action_buttons = []
+        self._uninstall_btn = None
+        row = self._action_row
+        for i in reversed(range(row.count())):
+            item = row.itemAt(i)
+            widget = item.widget()
+            if widget is None or widget is self.status_chip:
+                continue
+            widget.hide()
+            widget.deleteLater()
+            row.removeItem(item)
+        self._add_action_buttons(row)
+        self._set_status("Installed" if installed else "Available")
+        self._sync_uninstall_visibility()
 
 
 class PluginsView(QWidget):
     install_requested = pyqtSignal(str)   # plugin id
+    install_many_requested = pyqtSignal(list)  # list of plugin ids (batch install)
     launch_requested = pyqtSignal(str)    # plugin id
     uninstall_requested = pyqtSignal(str) # plugin id
     live_search_ready = pyqtSignal(list)  # live search specs (main thread)
@@ -233,12 +302,54 @@ class PluginsView(QWidget):
         self._content_stack.setObjectName("pluginContentStack")
         content_layout = QVBoxLayout(self._content_stack)
         content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(0)
+        content_layout.setSpacing(8)
+
+        # Selection bar appears when cards are checked (batch install)
+        self._selection_bar = self._build_selection_bar()
+        content_layout.addWidget(self._selection_bar)
 
         # Apps Grid
         self.create_apps_grid(content_layout)
 
         layout.addWidget(self._content_stack, 1)
+
+    def _build_selection_bar(self):
+        """Floating bar with a batch install action for checked cards."""
+        bar = QFrame()
+        bar.setObjectName("pluginSelectionBar")
+        bar.setStyleSheet(
+            "QFrame#pluginSelectionBar {"
+            " background-color: rgba(0, 191, 174, 0.06);"
+            " border: 1px solid rgba(0, 191, 174, 0.25);"
+            " border-radius: 10px;"
+            "}"
+        )
+        row = QHBoxLayout(bar)
+        row.setContentsMargins(14, 8, 8, 8)
+        row.setSpacing(10)
+
+        self._selection_count_label = QLabel("")
+        self._selection_count_label.setStyleSheet(
+            "color: #EEF0F4; font-size: 12px; font-weight: 600; border: none; background: transparent;")
+        row.addWidget(self._selection_count_label)
+        row.addStretch(1)
+
+        self._install_selected_btn = QPushButton("Install Selected")
+        self._install_selected_btn.setFixedHeight(30)
+        self._install_selected_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._install_selected_btn.setStyleSheet(_NEU_BTN_QSS)
+        self._install_selected_btn.clicked.connect(self._install_selected)
+        row.addWidget(self._install_selected_btn)
+
+        self._clear_selection_btn = QPushButton("Clear")
+        self._clear_selection_btn.setFixedHeight(30)
+        self._clear_selection_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._clear_selection_btn.setStyleSheet(_DANGER_BTN_QSS)
+        self._clear_selection_btn.clicked.connect(self._clear_selection)
+        row.addWidget(self._clear_selection_btn)
+
+        bar.hide()
+        return bar
 
     def show_grid_mode(self):
         self._scroll_area.setVisible(True)
@@ -343,7 +454,10 @@ class PluginsView(QWidget):
         scroll_layout.setSpacing(16)
 
         grid_container = QWidget()
-        grid_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        # Maximum vertical policy: keep the grid sized to its content instead of
+        # expanding to fill the viewport height, which vertically centered the
+        # fixed-height cards in over-tall grid rows (visible when searching).
+        grid_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.grid_layout = QGridLayout(grid_container)
         self.grid_layout.setSpacing(14)
         self.grid_layout.setContentsMargins(0, 0, 0, 0)
@@ -602,6 +716,7 @@ class PluginsView(QWidget):
         card.launch_clicked.connect(lambda: self.launch_requested.emit(pid))
         card.uninstall_clicked.connect(
             lambda: (card.set_installing(True), self.uninstall_requested.emit(pid)))
+        card.toggled.connect(lambda _row, _state, c=card: self._on_card_selection_changed(c))
         return card
 
     def _prewarm_installed_cache(self):
@@ -662,6 +777,10 @@ class PluginsView(QWidget):
             self._all_filtered_search_cards = None
             self._all_filtered_cards = None
         self.populate_app_cards()
+        if force:
+            # Rebuild the installed-package cache after clearing it above so the
+            # freshly created cards reflect the new install state.
+            self._prewarm_installed_cache()
         # Always apply filters so there's exactly one render
         if not self._current_filter_states:
             self._current_filter_states = {"Available": True, "Installed": True}
@@ -786,15 +905,87 @@ class PluginsView(QWidget):
     def set_installing(self, plugin_id: str, installing: bool):
         """Update installing state for a plugin card"""
         try:
-            # Find the card with this plugin_id
-            for card_data in self._all_cards:
-                if card_data['plugin'].get('id') == plugin_id:
-                    card = card_data['widget']
-                    if hasattr(card, 'set_installing'):
+            for card_data in self._all_card_datas():
+                if card_data.get('plugin', {}).get('id') == plugin_id:
+                    card = card_data.get('widget')
+                    if card is not None and hasattr(card, 'set_installing'):
                         card.set_installing(installing)
                     break
         except Exception:
             pass
+
+    def set_installed(self, plugin_id: str, installed: bool):
+        """Update a card's installed state in place so its action buttons
+        (Install -> Open, and the hover-only Uninstall button) switch over in
+        real time once an install/uninstall reports success."""
+        installed = bool(installed)
+        for card_data in list(self._all_cards) + list(self._all_filtered_search_cards or []):
+            if card_data.get('plugin', {}).get('id') == plugin_id:
+                card_data['installed'] = installed
+                card = card_data.get('widget')
+                if card is not None and hasattr(card, 'set_installed'):
+                    card.set_installed(installed)
+                if installed:
+                    try:
+                        self._installed_cache[plugin_id] = True
+                    except Exception:
+                        pass
+                break
+        self._update_selection_bar()
+
+    # --- Batch selection -------------------------------------------------
+    def _on_card_selection_changed(self, _card):
+        self._update_selection_bar()
+
+    def _all_card_datas(self):
+        datas = list(getattr(self, '_all_cards', []) or [])
+        for d in (getattr(self, '_all_filtered_search_cards', None) or []):
+            if d not in datas:
+                datas.append(d)
+        return datas
+
+    def _selected_installable_ids(self):
+        """Ids of checked cards that are not yet installed (batch install)."""
+        ids = []
+        for data in self._all_card_datas():
+            if data.get('installed'):
+                continue
+            widget = data.get('widget')
+            if widget is None or not hasattr(widget, 'is_checked') or not widget.is_checked():
+                continue
+            pid = data.get('plugin', {}).get('id')
+            if pid:
+                ids.append(pid)
+        return ids
+
+    def _update_selection_bar(self):
+        try:
+            n = len(self._selected_installable_ids())
+            if n:
+                self._selection_count_label.setText(
+                    f"{n} plugin{'s' if n != 1 else ''} selected")
+                self._install_selected_btn.setEnabled(True)
+                self._selection_bar.show()
+            else:
+                self._selection_bar.hide()
+        except Exception:
+            pass
+
+    def _install_selected(self):
+        ids = self._selected_installable_ids()
+        if not ids:
+            return
+        self.install_many_requested.emit(ids)
+        for pid in ids:
+            self.set_installing(pid, True)
+        self._clear_selection()
+
+    def _clear_selection(self):
+        for data in self._all_card_datas():
+            widget = data.get('widget')
+            if widget is not None and hasattr(widget, 'is_checked') and widget.is_checked():
+                widget.set_checked(False)
+        self._update_selection_bar()
 
     def _reset_row_stretches(self):
         if not hasattr(self, 'grid_layout'):

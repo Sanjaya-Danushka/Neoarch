@@ -43,6 +43,40 @@ def test_plugin_card_actions_reflect_installed_state(qapp):
     assert inst.status_chip._text == "Installed"
 
 
+def test_plugin_card_uninstall_hidden_until_hover(qapp):
+    """The Uninstall button must be hidden by default and only appear while
+    hovering (double-click launches; uninstall is an explicit secondary action)."""
+    inst = _PluginPackageCard(_spec(), True, None)
+    assert inst._action_buttons[1].isHidden()
+    inst._hover = True
+    inst._sync_uninstall_visibility()
+    assert not inst._action_buttons[1].isHidden()
+    inst._hover = False
+    inst._sync_uninstall_visibility()
+    assert inst._action_buttons[1].isHidden()
+
+
+def test_plugin_card_set_installed_swaps_actions_in_place(qapp):
+    """After an install/uninstall completes the card's action row must flip
+    (Install -> Open + hover Uninstall) without recreating the card."""
+    card = _PluginPackageCard(_spec(pid="bob"), False, None)
+    assert [b.text() for b in card._action_buttons] == ["Install"]
+    assert card.status_chip._text == "Available"
+
+    card.set_installed(True)
+    assert [b.text() for b in card._action_buttons] == ["Open", "Uninstall"]
+    assert card.status_chip._text == "Installed"
+    assert card._action_buttons[1].isHidden()
+
+    card.set_installed(False)
+    assert [b.text() for b in card._action_buttons] == ["Install"]
+    assert card.status_chip._text == "Available"
+
+    # Idempotent: same state leaves the card untouched.
+    card.set_installed(False)
+    assert [b.text() for b in card._action_buttons] == ["Install"]
+
+
 def test_plugin_card_set_installing_swaps_text(qapp):
     inst = _PluginPackageCard(_spec(), True, None)
     inst.set_installing(True)
@@ -274,5 +308,147 @@ def test_toolbar_install_plugin_button_reset_per_view(qapp):
     from neoarch.frontend.mixins import views as views_module
     src = inspect.getsource(views_module._ViewsMixin.update_toolbar)
     assert "self._install_plugin_btn = None" in src
+
+
+def _make_view(qapp, specs, monkeypatch):
+    import neoarch.frontend.components.plugins_view as pv_mod
+    from neoarch.frontend.components.plugins_view import PluginsView
+    monkeypatch.setattr(pv_mod, "get_all_plugins_data", lambda: specs)
+    monkeypatch.setattr(pv_mod, "get_plugins_data", lambda: specs)
+    monkeypatch.setattr(pv_mod.PluginsView, "is_installed", lambda self, spec: False)
+    view = PluginsView(None, lambda *a: None)
+    view.resize(1000, 700)
+    view.show()
+    qapp.processEvents()
+    return view
+
+
+def test_search_cards_align_to_top_not_vertically_centered(qapp, monkeypatch):
+    """Search results must be top-aligned. The grid container used to expand
+    to the full viewport height, so the fixed-height cards were vertically
+    centered in the middle of the page (their y was ~(viewport - card)/2)."""
+    specs = [
+        {"id": pid, "name": pid.capitalize(), "pkg": pid, "desc": "x", "cmd": pid}
+        for pid in ("alpha", "beta", "gamma", "delta", "epsilon")
+    ]
+    view = _make_view(qapp, specs, monkeypatch)
+
+    view.set_filter("ep", False, None)
+    qapp.processEvents()
+
+    cards = list(view._all_filtered_search_cards or [])
+    assert len(cards) == 1
+    assert cards[0]["widget"].y() == 0
+    assert view.grid_layout.parentWidget().height() == 150
+
+
+def test_selection_bar_appears_and_batch_installs(qapp, monkeypatch):
+    """Checking multiple cards shows the selection bar and Install Selected
+    emits install_many_requested with exactly the checked installable ids."""
+    specs = [
+        {"id": pid, "name": pid.capitalize(), "pkg": pid, "desc": "x", "cmd": pid}
+        for pid in ("alpha", "beta", "gamma")
+    ]
+    view = _make_view(qapp, specs, monkeypatch)
+    view.refresh_all()
+    qapp.processEvents()
+    assert not view._selection_bar.isVisible()
+
+    emitted = []
+    view.install_many_requested.connect(lambda ids: emitted.append(list(ids)))
+
+    for d in view._all_cards:
+        if d["plugin"]["id"] in ("alpha", "beta"):
+            d["widget"].set_checked(True)
+    qapp.processEvents()
+
+    assert view._selection_bar.isVisible()
+    assert "2 plugins selected" in view._selection_count_label.text()
+
+    view._install_selected()
+    assert emitted == [["alpha", "beta"]]
+    qapp.processEvents()
+    assert not view._selection_bar.isVisible()
+    assert all(not d["widget"].is_checked() for d in view._all_cards)
+
+
+def test_plugins_view_set_installed_updates_card_data(qapp, monkeypatch):
+    specs = [{"id": "alpha", "name": "Alpha", "pkg": "alpha", "desc": "x", "cmd": "alpha"}]
+    view = _make_view(qapp, specs, monkeypatch)
+    view.refresh_all()
+    qapp.processEvents()
+
+    view.set_installed("alpha", True)
+    data = next(d for d in view._all_cards if d["plugin"]["id"] == "alpha")
+    assert data["installed"] is True
+    assert [b.text() for b in data["widget"]._action_buttons] == ["Open", "Uninstall"]
+
+
+def test_install_many_batches_into_single_operation(qapp, monkeypatch):
+    """install_many_by_id merges all packages per source into one install call
+    and flips every card to its real installed state on success."""
+    from PyQt6.QtCore import QObject, pyqtSignal
+    import neoarch.managers.plugin_manager as pm_mod
+    from neoarch.managers.plugin_manager import PluginsManager
+
+    specs = {
+        "alpha": _spec("alpha", "alpha"),
+        "beta": _spec("beta", "beta"),
+        "ts": _spec("ts", "npm-typescript"),
+    }
+    calls = []
+    monkeypatch.setattr(pm_mod.install_service, "install_packages",
+                        lambda app, pkgs: calls.append(dict(pkgs)))
+
+    class _RecordingView:
+        def __init__(self):
+            self.installing = []
+            self.installed = []
+            self.refresh_forced = False
+
+        def get_plugin(self, pid):
+            return specs.get(pid)
+
+        def is_installed(self, spec):
+            return False
+
+        def set_installing(self, pid, state):
+            self.installing.append((pid, state))
+
+        def set_installed(self, pid, state):
+            self.installed.append((pid, state))
+
+        def refresh_all(self, force=False):
+            self.refresh_forced = bool(force)
+
+    class _App(QObject):
+        installation_progress = pyqtSignal(str, bool)
+        log_signal = pyqtSignal(str)
+        show_message = pyqtSignal(str, str)
+
+        def __init__(self):
+            super().__init__()
+            self.ensure_session_auth = lambda: True
+            self.force_sudo_install = False
+            self._pending_install_packages = {}
+
+    app = _App()
+    view = _RecordingView()
+    manager = PluginsManager(app)
+
+    manager.install_many_by_id(view, ["alpha", "beta", "ts"])
+    assert app._pending_install_packages == {"pacman": ["alpha", "beta"], "npm": ["typescript"]}
+    assert calls == [{"pacman": ["alpha", "beta"], "npm": ["typescript"]}]
+
+    app.installation_progress.emit("success", False)
+    qapp.processEvents()
+    qapp.processEvents()
+
+    assert ("alpha", True) in view.installing and ("alpha", False) in view.installing
+    assert set(view.installed) == {("alpha", True), ("beta", True), ("ts", True)}
+
+    from PyQt6.QtTest import QTest
+    QTest.qWait(300)
+    assert view.refresh_forced is True
 
 

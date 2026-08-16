@@ -895,6 +895,13 @@ class _ViewsMixin:
         except Exception as e:
             self._show_message("Plugins", f"Install error: {e}")
 
+    def on_plugin_install_many_requested(self, plugin_ids):
+        try:
+            if hasattr(self, 'plugins_view') and self.plugins_view:
+                self.plugins_manager.install_many_by_id(self.plugins_view, list(plugin_ids or []))
+        except Exception as e:
+            self._show_message("Plugins", f"Install error: {e}")
+
     def on_plugin_launch_requested(self, plugin_id):
         try:
             if hasattr(self, 'plugins_view') and self.plugins_view:
@@ -1878,6 +1885,7 @@ class _ViewsMixin:
                 from neoarch.frontend.components.plugins_view import PluginsView
                 self.plugins_view = PluginsView(self, self.get_svg_icon)
                 self.plugins_view.install_requested.connect(self.on_plugin_install_requested)
+                self.plugins_view.install_many_requested.connect(self.on_plugin_install_many_requested)
                 self.plugins_view.launch_requested.connect(self.on_plugin_launch_requested)
                 try:
                     self.plugins_view.uninstall_requested.connect(self.on_plugin_uninstall_requested)
