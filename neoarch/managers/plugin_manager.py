@@ -1,4 +1,9 @@
-"""PluginsManager - install, launch, and uninstall plugins"""
+"""PluginsManager - install, launch, and uninstall plugins.
+
+All privileged operations route through the same authentication pipeline as
+the rest of the app (``ensure_session_auth`` + the shared install/uninstall
+services), so the password prompt is always the standard NeoArch dialog.
+"""
 
 import os
 import shutil
@@ -6,7 +11,30 @@ import subprocess
 from threading import Thread
 from PyQt6.QtCore import QTimer
 
-from neoarch.backend.auth import get_auth_command
+from neoarch.backend.package import installer as install_service
+from neoarch.backend.package import uninstaller as uninstall_service
+
+_SUPPORTED_SOURCES = ("pacman", "AUR", "Flatpak", "npm")
+
+
+def _resolve_source(pkg):
+    """Map a plugin ``pkg`` field to ``(source, plain_name)``.
+
+    Examples: ``aur/yay`` -> ``('AUR', 'yay')``,
+    ``org.gnome.Evolution.flatpak`` -> ``('Flatpak', 'org.gnome.Evolution')``,
+    ``npm-typescript`` -> ``('npm', 'typescript')``, ``bleachbit`` -> pacman.
+    """
+    pkg = (pkg or "").strip()
+    low = pkg.lower()
+    if low.startswith("npm-"):
+        return "npm", pkg[len("npm-"):]
+    if "/" in pkg and low.startswith("aur/"):
+        return "AUR", pkg.split("/", 1)[1].strip() or pkg
+    if low.endswith(".flatpak"):
+        return "Flatpak", pkg.rsplit(".", 1)[0]
+    if low.startswith("brew-"):
+        return "brew", pkg[len("brew-"):]
+    return "pacman", pkg
 
 
 class PluginsManager:
@@ -28,29 +56,19 @@ class PluginsManager:
             if not pkg:
                 self._message("Plugins", "No package specified for installation")
                 return
-            auth_cmd = get_auth_command()
-            cmd = auth_cmd + ["pacman", "-S", "--noconfirm", pkg]
-            self._log(f"Installing plugin package: {' '.join(cmd)}")
-
-            def _run():
-                try:
-                    QTimer.singleShot(0, lambda: plugins_view.set_installing(plugin_id, True))
-                    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-                    for line in proc.stdout:
-                        if line:
-                            self._log(line.rstrip())
-                    rc = proc.wait()
-                    if rc == 0:
-                        self._message("Plugins", f"Installed {spec.get('name')}")
-                    else:
-                        self._message("Plugins", f"Install failed (code {rc})")
-                except Exception as e:
-                    self._message("Plugins", f"Install failed: {e}")
-                finally:
-                    QTimer.singleShot(0, lambda: plugins_view.set_installing(plugin_id, False))
-                    QTimer.singleShot(200, lambda: plugins_view.refresh_all(force=True))
-
-            Thread(target=_run, daemon=True).start()
+            source, name = _resolve_source(pkg)
+            if source not in _SUPPORTED_SOURCES:
+                self._message("Plugins", f"Unsupported package source: {source}")
+                return
+            if not self.app.ensure_session_auth():
+                self._message("Plugins", "Install cancelled: authentication required.")
+                return
+            QTimer.singleShot(0, lambda: plugins_view.set_installing(plugin_id, True))
+            self.app.force_sudo_install = False
+            self.app._pending_install_packages = {source: [name]}
+            self._log(f"Installing plugin package: {name} ({source})")
+            self._watch_completion(plugins_view, plugin_id)
+            install_service.install_packages(self.app, {source: [name]})
         except Exception as e:
             self._message("Plugins", f"Install error: {e}")
 
@@ -63,13 +81,17 @@ class PluginsManager:
             if not cmd:
                 self._message("Plugins", "No launch command defined")
                 return
-            use_pkexec = plugin_id in ("timeshift",)
+            needs_root = plugin_id in ("timeshift",)
             terminal_apps = ["htop", "btop", "nvtop"]
             use_terminal = cmd in terminal_apps
             argv = [cmd]
-            if use_pkexec:
-                auth_cmd = get_auth_command()
-                argv = auth_cmd + argv
+            env = None
+            if needs_root:
+                if not self.app.ensure_session_auth():
+                    self._message("Plugins", "Launch cancelled: authentication required.")
+                    return
+                argv = ["sudo", "-A"] + argv
+                env = self.app.get_askpass_env()
             if use_terminal:
                 terminal_cmd = self._get_terminal_command()
                 if terminal_cmd:
@@ -77,7 +99,7 @@ class PluginsManager:
             self._log(f"Launching: {' '.join(argv)}")
             try:
                 subprocess.Popen(argv, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                                 stdin=subprocess.DEVNULL, start_new_session=True)
+                                 stdin=subprocess.DEVNULL, start_new_session=True, env=env)
             except Exception as e:
                 self._message("Plugins", f"Launch failed: {e}")
         except Exception as e:
@@ -95,31 +117,39 @@ class PluginsManager:
             if not plugins_view.is_installed(spec):
                 QTimer.singleShot(0, lambda: plugins_view.refresh_all(force=True))
                 return
-            auth_cmd = get_auth_command()
-            cmd = auth_cmd + ["pacman", "-R", "--noconfirm", pkg]
-            self._log(f"Uninstalling plugin package: {' '.join(cmd)}")
-
-            def _run():
-                try:
-                    QTimer.singleShot(0, lambda: plugins_view.set_installing(plugin_id, True))
-                    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-                    for line in proc.stdout:
-                        if line:
-                            self._log(line.rstrip())
-                    rc = proc.wait()
-                    if rc == 0:
-                        self._message("Plugins", f"Uninstalled {spec.get('name')}")
-                    else:
-                        self._message("Plugins", f"Uninstall failed (code {rc})")
-                except Exception as e:
-                    self._message("Plugins", f"Uninstall failed: {e}")
-                finally:
-                    QTimer.singleShot(0, lambda: plugins_view.set_installing(plugin_id, False))
-                    QTimer.singleShot(200, lambda: plugins_view.refresh_all(force=True))
-
-            Thread(target=_run, daemon=True).start()
+            source, name = _resolve_source(pkg)
+            if source not in _SUPPORTED_SOURCES:
+                self._message("Plugins", f"Unsupported package source: {source}")
+                return
+            if not self.app.ensure_session_auth():
+                self._message("Plugins", "Uninstall cancelled: authentication required.")
+                return
+            QTimer.singleShot(0, lambda: plugins_view.set_installing(plugin_id, True))
+            self._log(f"Uninstalling plugin package: {name} ({source})")
+            self._watch_completion(plugins_view, plugin_id)
+            uninstall_service.uninstall_packages(self.app, {source: [name]})
         except Exception as e:
             self._message("Plugins", f"Uninstall error: {e}")
+
+    def _watch_completion(self, plugins_view, plugin_id):
+        """Reset the card state and refresh once the shared service reports done."""
+        app = self.app
+        op = getattr(app, '_last_operation', 'install')
+
+        def on_progress(status, _can_cancel):
+            if status not in ("success", "failed", "cancelled"):
+                return
+            try:
+                app.installation_progress.disconnect(on_progress)
+            except Exception:
+                pass
+            QTimer.singleShot(0, lambda: plugins_view.set_installing(plugin_id, False))
+            QTimer.singleShot(200, lambda: plugins_view.refresh_all(force=True))
+
+        try:
+            app.installation_progress.connect(on_progress)
+        except Exception:
+            pass
 
     def open_plugins_folder(self):
         try:

@@ -38,9 +38,11 @@ class _PluginsMixin:
                 self.plugin_timer.start()
             except Exception:
                 pass
-            # Start update loading only if auto-check is enabled (no auth prompt at startup)
+            # Start update loading only if auto-check is enabled (no auth prompt at startup).
+            # This is a data load, not a navigation: it must never hijack the
+            # page the user has navigated to.
             if self.settings.get('auto_check_updates', True):
-                QTimer.singleShot(0, lambda: self.switch_view("updates"))
+                QTimer.singleShot(0, self._startup_updates_load)
         except Exception as e:
             self.log(f"Plugin init error: {e}")
 

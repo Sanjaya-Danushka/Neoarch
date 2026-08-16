@@ -139,19 +139,19 @@ class _AuthMixin:
         from neoarch.backend.session_auth import setup_session_auth, is_session_active
 
         if is_session_active():
-            QTimer.singleShot(50, lambda: self.switch_view("updates"))
+            QTimer.singleShot(50, self._startup_updates_load)
             return
 
         success = setup_session_auth(self)
         if success:
             self.log("Session authentication established")
-            QTimer.singleShot(50, lambda: self.switch_view("updates"))
+            QTimer.singleShot(50, self._startup_updates_load)
         else:
             self.log("Session authentication declined or failed")
             self._finish_startup_no_auth()
 
     def _finish_startup_no_auth(self):
-        self.switch_view("updates")
+        self._startup_updates_load()
 
     def ensure_session_auth(self) -> bool:
         """Lazily ensure an authenticated session exists.

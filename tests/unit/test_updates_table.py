@@ -164,25 +164,9 @@ def test_plugins_mode_row_menu_actions(qapp):
     assert emitted == [("launch", "plug-a"), ("install", "plug-b")]
 
 
-def test_plugins_row_mapping_uses_source_and_installed_flag(qapp):
+def test_plugins_are_cards_only_not_table_rows(qapp):
+    # The plugins page is cards-only; no table-mode row mapping should exist.
     from neoarch.frontend.components.plugins_view import PluginsView
-    row = PluginsView._map_plugin_row({
-        "id": "zsh-plug",
-        "name": "Zsh Plugin",
-        "desc": "Tiny",
-        "pkg": "zsh-plug",
-        "cmd": "zsh",
-        "category": "shell",
-        "_installed": True,
-    })
-    assert row["name"] == "Zsh Plugin"
-    assert row["id"] == "zsh-plug"
-    assert row["_installed"] is True
-    assert row["status"] == "Installed"
-    assert row["_src"]["id"] == "zsh-plug"
-
-    row2 = PluginsView._map_plugin_row({"id": "plug2", "name": "Plug2"})
-    assert row2["_installed"] is False
-    assert row2["status"] == "Available"
-    assert row2["version"] == ""
+    assert not hasattr(PluginsView, "_map_plugin_row")
+    assert not hasattr(PluginsView, "_plugins_table")
 

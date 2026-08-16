@@ -7,6 +7,7 @@ import subprocess
 from threading import Thread
 
 from neoarch.backend.services.suggestions import index_ready, refresh_names_index, suggest_names
+from neoarch.frontend.mixins.views import _SELF_CONTAINED_VIEWS
 from neoarch.resources.paths import PROJECT_ROOT
 
 
@@ -165,12 +166,13 @@ class _SearchMixin:
             self.filter_packages()
 
     def toggle_view_mode(self):
+        # Self-contained pages (e.g. plugins cards) have no grid/list toggle.
+        if getattr(self, 'current_view', '') in _SELF_CONTAINED_VIEWS:
+            return
         navbar_dir = os.path.join(str(PROJECT_ROOT), "assets", "icons", "navbar")
         if self._view_mode == "table":
             self._view_mode = "grid"
-            if self.current_view == "plugins" and hasattr(self, 'plugins_view') and self.plugins_view:
-                self.plugins_view.show_grid_mode()
-            elif self.current_view in ("updates", "installed", "discover") and hasattr(self, 'updates_table'):
+            if self.current_view in ("updates", "installed", "discover") and hasattr(self, 'updates_table'):
                 self.updates_table.setVisible(False)
                 self.package_table.setVisible(False)
                 self.packages_grid.setVisible(True)
@@ -184,9 +186,7 @@ class _SearchMixin:
                 self._populate_grid()
         else:
             self._view_mode = "table"
-            if self.current_view == "plugins" and hasattr(self, 'plugins_view') and self.plugins_view:
-                self.plugins_view.show_table_mode()
-            elif self.current_view in ("updates", "installed", "discover") and hasattr(self, 'updates_table'):
+            if self.current_view in ("updates", "installed", "discover") and hasattr(self, 'updates_table'):
                 self.packages_grid.setVisible(False)
                 self.package_table.setVisible(False)
                 self.updates_table.setVisible(True)
@@ -198,6 +198,9 @@ class _SearchMixin:
                 self._grid_view_btn.setToolTip("Grid View")
 
     def _populate_grid(self):
+        # Self-contained pages own their own card grid; never touch the legacy one.
+        if getattr(self, 'current_view', '') in _SELF_CONTAINED_VIEWS:
+            return
         self.packages_grid.clear()
         dataset = self.all_packages
         if self.current_view == "discover":

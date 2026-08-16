@@ -37,6 +37,12 @@ from neoarch.backend.services import ignore as ignore_service
 
 _BASE_DIR = str(PROJECT_ROOT)
 
+# Pages that render their own content (cards/panels) instead of the shared
+# package table/grid. Background callbacks must never touch the legacy
+# widgets while one of these is active, otherwise a previous page's view can
+# flash over the current one.
+_SELF_CONTAINED_VIEWS = frozenset({"plugins", "appimage", "git", "docker", "settings"})
+
 _C = {
     "text_sec": "#8B8D97",
     "text_muted": "#5C5E66",
@@ -288,6 +294,20 @@ class _ViewsMixin:
             traceback.print_exc()
             sys.stdout.flush()
 
+    def _startup_updates_load(self):
+        """Background auto-load of the updates data at startup.
+
+        This is a data load, never a navigation: if the user has already
+        moved to another page, doing nothing is the only correct behaviour.
+        """
+        if getattr(self, '_user_has_navigated', False):
+            return
+        try:
+            if self.current_view == "updates":
+                self.load_updates()
+        except Exception:
+            pass
+
     def set_updates_count(self, count):
         """Update the updates count in nav and header."""
         # Update dashboard counter if visible
@@ -499,6 +519,17 @@ class _ViewsMixin:
             layout.addWidget(self._sudo_btn)
 
     def _show_active_view(self):
+        # Views that render their own content must never re-show the legacy
+        # package table/grid. Background callbacks (packages_ready, load_error,
+        # install completion, search timers) fire regardless of the active
+        # page, so this guard is the single place that keeps cross-page
+        # rendering correct.
+        if getattr(self, 'current_view', '') in _SELF_CONTAINED_VIEWS:
+            self.package_table.setVisible(False)
+            self.packages_grid.setVisible(False)
+            if hasattr(self, 'updates_table'):
+                self.updates_table.setVisible(False)
+            return
         self.packages_grid.setVisible(self._view_mode == "grid")
         if self.current_view in ("updates", "installed", "discover"):
             self.package_table.setVisible(False)
@@ -1176,6 +1207,7 @@ class _ViewsMixin:
         self.discover_install_btn = None
         self._grid_view_btn = None
         self._install_file_btn = None
+        self._install_plugin_btn = None
         self._bundle_btn = None
         self._bundle_select_all_btn = None
         self._bundle_sep1 = None
@@ -1410,7 +1442,13 @@ class _ViewsMixin:
 
             layout.addStretch()
 
-            self._add_right_toolbar_icons(layout, show_bundle=False)
+            if getattr(self, '_install_plugin_btn', None) is None:
+                self._install_plugin_btn = self.create_toolbar_button(
+                    os.path.join(_BASE_DIR, "assets", "icons", "navbar", "install_from_file.svg"),
+                    "Install Plugin (.py file)",
+                    self.install_plugin
+                )
+            layout.addWidget(self._install_plugin_btn)
 
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "bundles":
@@ -1584,6 +1622,10 @@ class _ViewsMixin:
 
     def switch_view(self, view_id, load=True):
         self.current_view = view_id
+        # Any navigation away from the startup page counts as the user having
+        # taken control; background timers must then never hijack the view.
+        if view_id != "updates":
+            self._user_has_navigated = True
         try:
             _installing = getattr(self, "_installing", False) or hasattr(self, 'install_cancel_event')
         except Exception:
@@ -1790,7 +1832,7 @@ class _ViewsMixin:
                 pass
             QTimer.singleShot(0, self.refresh_bundles_table)
         elif view_id == "plugins":
-            self._view_mode = "table"
+            self._view_mode = "grid"
             if hasattr(self, '_grid_view_btn') and self._grid_view_btn:
                 self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "navbar", "view.svg"), 20))
                 self._grid_view_btn.setToolTip("Grid View")
@@ -1847,7 +1889,7 @@ class _ViewsMixin:
             except Exception:
                 pass
             self.plugins_view.refresh_all()
-            self.plugins_view.show_table_mode()
+            self.plugins_view.show_grid_mode()
             self._refresh_plugins_summary()
 
             self.header_info.setText("Install and launch extensions like BleachBit and Timeshift")

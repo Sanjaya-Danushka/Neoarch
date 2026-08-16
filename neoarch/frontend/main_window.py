@@ -68,6 +68,7 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
             pass
         
         self.current_view = "updates"
+        self._user_has_navigated = False
         self.updating = False
         self.all_packages = []
         self.search_results = []

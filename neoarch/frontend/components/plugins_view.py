@@ -1,59 +1,18 @@
 # === components: plugins_view.py ===
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QFrame, QGridLayout, QSizePolicy, QGraphicsDropShadowEffect
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QFrame, QGridLayout, QSizePolicy
 from PyQt6.QtCore import pyqtSignal, Qt, QTimer
-from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QFont
+from PyQt6.QtGui import QFont, QPainter, QPixmap
 from PyQt6.QtSvg import QSvgRenderer
 from typing import Any
 import os
 import shutil
 
 from neoarch.resources.plugin_data import get_plugins_data, get_all_plugins_data
-from neoarch.resources.paths import ICONS_DIR, ASSETS_DIR, PLUGINS_ITEMS_DIR
-from neoarch.frontend.components.updates_table import UpdatesTable
+from neoarch.resources.paths import ICONS_DIR, PLUGINS_ITEMS_DIR
 from neoarch.frontend.components.packages_grid_view import (
     PackageCard, _Chip, _CheckBox, _SmallLabel, _SourceLogo,
     _STATUS_COLORS, _TEXT_MUTED,
 )
-
-
-def _shadow(widget: QWidget, blur=24, offset=(4, 6), alpha=150):
-    s = QGraphicsDropShadowEffect()
-    s.setBlurRadius(blur)
-    s.setColor(QColor(0, 0, 0, alpha))
-    s.setOffset(*offset)
-    widget.setGraphicsEffect(s)
-
-
-class CardState:
-    """Encapsulates the state of a plugin card"""
-    def __init__(self):
-        self.is_installing = False
-        self.is_installed_state = False
-        self.matching_plugin = None
-    
-    def set_installing(self, installing):
-        """Set the installing state"""
-        self.is_installing = installing
-    
-    def get_installing(self):
-        """Get the installing state"""
-        return self.is_installing
-    
-    def set_installed_state(self, installed):
-        """Set the installed state"""
-        self.is_installed_state = installed
-    
-    def get_installed_state(self):
-        """Get the installed state"""
-        return self.is_installed_state
-    
-    def set_matching_plugin(self, plugin):
-        """Set the matching plugin reference"""
-        self.matching_plugin = plugin
-    
-    def get_matching_plugin(self):
-        """Get the matching plugin reference"""
-        return self.matching_plugin
 
 
 def _canonical_source(source):
@@ -132,6 +91,11 @@ class _PluginPackageCard(PackageCard):
         self._plugin = plugin
         self._installed = bool(installed)
         super().__init__(plugin, 0, app, parent)
+
+    def mouseDoubleClickEvent(self, event):
+        if self._installed:
+            self.launch_clicked.emit(self._plugin.get("id"))
+        super().mouseDoubleClickEvent(event)
 
     def _build(self):
         source = _canonical_source(PluginsView._get_package_source(self._plugin))
@@ -215,300 +179,6 @@ class _PluginPackageCard(PackageCard):
                     b.setText("Uninstall")
 
 
-class ElideLabel(QLabel):
-    def __init__(self, text="", parent=None, max_lines=2):
-        super().__init__(text, parent)
-        self._full_text = text or ""
-        self._max_lines = max(1, int(max_lines))
-        try:
-            self.setWordWrap(True)
-            self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
-        except Exception:
-            pass
-
-    def set_max_lines(self, n):
-        try:
-            self._max_lines = max(1, int(n))
-        except Exception:
-            self._max_lines = 1
-        self._apply_elide()
-
-    def setText(self, text):
-        self._full_text = text or ""
-        self._apply_elide()
-
-    def resizeEvent(self, e):
-        super().resizeEvent(e)
-        self._apply_elide()
-
-    def _apply_elide(self):
-        try:
-            fm = self.fontMetrics()
-            width = max(0, self.width())
-            if width <= 0:
-                QLabel.setText(self, self._full_text)
-                return
-            if self._max_lines <= 1:
-                el = fm.elidedText(self._full_text, Qt.TextElideMode.ElideRight, width)
-                QLabel.setText(self, el)
-                return
-            words = (self._full_text or "").split()
-            lines = []
-            current = ""
-            i = 0
-            while i < len(words):
-                w = words[i]
-                trial = (current + " " + w).strip()
-                if fm.horizontalAdvance(trial) <= width:
-                    current = trial
-                    i += 1
-                else:
-                    if current:
-                        lines.append(current)
-                    else:
-                        lines.append(fm.elidedText(w, Qt.TextElideMode.ElideRight, width))
-                        i += 1
-                    current = ""
-                if len(lines) == self._max_lines - 1:
-                    remaining = " ".join(words[i:])
-                    last = (current + (" " if current and remaining else "") + remaining).strip()
-                    el = fm.elidedText(last, Qt.TextElideMode.ElideRight, width)
-                    lines.append(el)
-                    current = ""
-                    break
-            if current and len(lines) < self._max_lines:
-                lines.append(current)
-            QLabel.setText(self, "\n".join(lines[: self._max_lines]))
-        except Exception:
-            try:
-                QLabel.setText(self, self._full_text)
-            except Exception:
-                pass
-
-GENERIC_PLUGIN_ICON = "\U0001f9e9"
-
-_PLUGIN_APP_ICON = None
-
-def _get_plugin_app_icon(size=32):
-    global _PLUGIN_APP_ICON
-    if _PLUGIN_APP_ICON is None:
-        _PLUGIN_APP_ICON = {}
-    if size not in _PLUGIN_APP_ICON:
-        path = str(ASSETS_DIR / "plugins" / "app.svg")
-        try:
-            renderer = QSvgRenderer(path)
-            pixmap = QPixmap(size, size)
-            pixmap.fill(Qt.GlobalColor.transparent)
-            painter = QPainter(pixmap)
-            renderer.render(painter)
-            painter.end()
-            _PLUGIN_APP_ICON[size] = pixmap
-        except Exception:
-            pixmap = QPixmap(size, size)
-            pixmap.fill(Qt.GlobalColor.transparent)
-            _PLUGIN_APP_ICON[size] = pixmap
-    return _PLUGIN_APP_ICON[size]
-
-class PluginCard(QFrame):
-    def __init__(self, spec: dict, icon: QIcon, installed: bool, on_install, on_open, on_uninstall, parent=None):
-        super().__init__(parent)
-        self.spec = spec
-        self.on_install = on_install
-        self.on_open = on_open
-        self.on_uninstall = on_uninstall
-        self.setObjectName("pluginCard")
-        self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.setFixedHeight(88)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-        self.setStyleSheet(self._style())
-        _shadow(self, blur=18, offset=(3, 4), alpha=140)
-
-        layout = QHBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-        layout.setContentsMargins(14, 10, 14, 10)
-        layout.setSpacing(12)
-
-        icon_label = QLabel()
-        icon_label.setPixmap(_get_plugin_app_icon(36))
-        icon_label.setFixedSize(36, 36)
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(icon_label)
-
-        text_col = QVBoxLayout()
-        text_col.setSpacing(3)
-        title_text = spec.get('name') or spec.get('id') or "Unknown"
-        title = ElideLabel(title_text, self, max_lines=1)
-        title.setObjectName("pluginTitle")
-        try:
-            title.setToolTip(title_text)
-        except Exception:
-            pass
-        desc_text = spec.get('desc', "")
-        desc = ElideLabel(desc_text, self, max_lines=1)
-        desc.setObjectName("pluginDesc")
-        try:
-            desc.setToolTip(desc_text)
-        except Exception:
-            pass
-        text_col.addWidget(title)
-        text_col.addWidget(desc)
-        layout.addLayout(text_col, 1)
-
-        self.status_label = QLabel()
-        self.status_label.setObjectName("pluginStatus")
-        layout.addWidget(self.status_label)
-
-        self.action_btn = QPushButton()
-        self.action_btn.setFixedHeight(30)
-        self.action_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        layout.addWidget(self.action_btn)
-
-        self.uninstall_btn = QPushButton("Uninstall")
-        self.uninstall_btn.setFixedHeight(28)
-        self.uninstall_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.uninstall_btn.setVisible(False)
-        layout.addWidget(self.uninstall_btn)
-
-        self.update_state(installed)
-
-    def update_state(self, installed: bool):
-        self.status_label.setText("Installed" if installed else "")
-        if installed:
-            self.action_btn.setText("Open")
-            self.action_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 rgba(42, 44, 50, 0.9),
-                        stop:1 rgba(30, 32, 38, 0.9));
-                    color: #EDEDEF;
-                    border-top: 1px solid rgba(255, 255, 255, 0.08);
-                    border-bottom: 1px solid rgba(0, 0, 0, 0.25);
-                    border-left: 1px solid rgba(255, 255, 255, 0.04);
-                    border-right: 1px solid rgba(0, 0, 0, 0.15);
-                    border-radius: 8px;
-                    font-weight: 700;
-                    font-size: 11px;
-                    padding: 5px 16px;
-                }
-                QPushButton:hover {
-                    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 rgba(52, 54, 60, 0.95),
-                        stop:1 rgba(38, 40, 46, 0.95));
-                    border-top: 1px solid rgba(255, 255, 255, 0.12);
-                }
-                QPushButton:pressed {
-                    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 rgba(26, 28, 34, 0.95),
-                        stop:1 rgba(36, 38, 44, 0.95));
-                    border-top: 1px solid rgba(0, 0, 0, 0.2);
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-                }
-            """)
-            self.action_btn.clicked.disconnect() if self.action_btn.receivers(self.action_btn.clicked) else None
-            self.action_btn.clicked.connect(lambda: self.on_open(self.spec))
-            self.uninstall_btn.setVisible(True)
-            self.uninstall_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: transparent;
-                    color: #8B8D97;
-                    border: 1px solid rgba(255, 255, 255, 0.06);
-                    border-radius: 8px;
-                    font-weight: 600;
-                    font-size: 10px;
-                    padding: 4px 12px;
-                }
-                QPushButton:hover {
-                    background-color: rgba(229, 57, 53, 0.08);
-                    border-color: #E53935;
-                    color: #E53935;
-                }
-                QPushButton:pressed {
-                    background-color: rgba(229, 57, 53, 0.15);
-                }
-            """)
-            self.uninstall_btn.clicked.disconnect() if self.uninstall_btn.receivers(self.uninstall_btn.clicked) else None
-            self.uninstall_btn.clicked.connect(lambda: self.on_uninstall(self.spec))
-        else:
-            self.action_btn.setText("Install")
-            self.action_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 rgba(0, 207, 188, 0.9),
-                        stop:1 rgba(0, 175, 160, 0.9));
-                    color: #0C0C0E;
-                    border-top: 1px solid rgba(255, 255, 255, 0.15);
-                    border-bottom: 1px solid rgba(0, 0, 0, 0.25);
-                    border-left: 1px solid rgba(255, 255, 255, 0.08);
-                    border-right: 1px solid rgba(0, 0, 0, 0.15);
-                    border-radius: 8px;
-                    font-weight: 700;
-                    font-size: 11px;
-                    padding: 5px 16px;
-                }
-                QPushButton:hover {
-                    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 rgba(0, 220, 200, 0.95),
-                        stop:1 rgba(0, 190, 174, 0.95));
-                }
-                QPushButton:pressed {
-                    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 rgba(0, 155, 140, 0.95),
-                        stop:1 rgba(0, 175, 160, 0.95));
-                    border-top: 1px solid rgba(0, 0, 0, 0.2);
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-                }
-            """)
-            self.action_btn.clicked.disconnect() if self.action_btn.receivers(self.action_btn.clicked) else None
-            self.action_btn.clicked.connect(lambda: self.on_install(self.spec))
-            self.uninstall_btn.setVisible(False)
-
-    def set_installing(self, installing: bool):
-        try:
-            if installing:
-                self.action_btn.setEnabled(False)
-                self.uninstall_btn.setEnabled(False)
-                self.action_btn.setText("Installing\u2026")
-                self.status_label.setText("Installing\u2026")
-            else:
-                self.action_btn.setEnabled(True)
-                self.uninstall_btn.setEnabled(True)
-                self.update_state(self.status_label.text().lower().startswith("installed"))
-        except Exception:
-            pass
-
-    def _style(self):
-        return """
-        QFrame#pluginCard {
-            background-color: rgba(22, 23, 26, 0.85);
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.3);
-            border-left: 1px solid rgba(255, 255, 255, 0.03);
-            border-radius: 14px;
-            margin: 4px 0;
-        }
-        QFrame#pluginCard:hover {
-            border-top: 1px solid rgba(255, 255, 255, 0.10);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.35);
-            background-color: rgba(26, 28, 32, 0.85);
-        }
-        QLabel#pluginTitle {
-            color: #EDEDEF;
-            font-size: 13px;
-            font-weight: 600;
-        }
-        QLabel#pluginDesc {
-            color: #8B8D97;
-            font-size: 11px;
-        }
-        QLabel#pluginStatus {
-            color: #00BFAE;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 0 6px;
-        }
-        """
-
-
 class PluginsView(QWidget):
     install_requested = pyqtSignal(str)   # plugin id
     launch_requested = pyqtSignal(str)    # plugin id
@@ -529,22 +199,22 @@ class PluginsView(QWidget):
         self._all_filtered_cards = None
         self._all_filtered_search_cards = None
         self._sort_mode = "name_asc"
-        
+
         self._all_plugins = []  # All available plugins
         self._card_cache = {}
         self._is_layouting = False
-        
+
         # Installation status cache — preserved across navigation, cleared only after install/uninstall
         self._installed_cache = {}
-        
+
         # Debounce timer for resize events
         self._resize_timer = QTimer()
         self._resize_timer.setSingleShot(True)
         self._resize_timer.timeout.connect(self._handle_resize)
-        
+
         self.grid_layout: Any = None
         self._scroll_area: Any = None
-        
+
         self._init_specs()
         self._init_ui()
         self.live_search_ready.connect(self._on_live_search_ready)
@@ -554,7 +224,6 @@ class PluginsView(QWidget):
         self.plugins = get_plugins_data()
 
     def _init_ui(self):
-        self._list_mode = False
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 12, 16, 12)
         layout.setSpacing(16)
@@ -569,20 +238,10 @@ class PluginsView(QWidget):
         # Apps Grid
         self.create_apps_grid(content_layout)
 
-        # Apps Table (list view) — same redesigned table as Updates/Discover
-        self._plugins_table = UpdatesTable(self.main_app)
-        self._plugins_table.set_plugins_mode(True)
-        self._plugins_table.setVisible(False)
-        self._plugins_table.menu_action.connect(self._on_table_menu_action)
-        self._plugins_table.set_empty_text("No plugins found", "Try a different search or filter")
-        content_layout.addWidget(self._plugins_table, 1)
-
         layout.addWidget(self._content_stack, 1)
 
     def show_grid_mode(self):
-        self._list_mode = False
         self._scroll_area.setVisible(True)
-        self._plugins_table.setVisible(False)
         QTimer.singleShot(0, self._render_grid_after_show)
 
     def _render_grid_after_show(self):
@@ -593,76 +252,8 @@ class PluginsView(QWidget):
         self._calc_grid_metrics()
         self._render_current_page()
 
-    def show_table_mode(self):
-        self._list_mode = True
-        self._scroll_area.setVisible(False)
-        self._plugins_table.setVisible(True)
-        self._populate_table()
-
-    @staticmethod
-    def _map_plugin_row(plugin):
-        """Map a plugin spec to the shared updates-table contract."""
-        name = plugin.get('name') or plugin.get('id', '')
-        return {
-            'name': name,
-            'id': plugin.get('id') or name,
-            'version': plugin.get('version', plugin.get('ver', '')),
-            'new_version': plugin.get('version', plugin.get('ver', '')),
-            'source': _canonical_source(PluginsView._get_package_source(plugin)),
-            'description': plugin.get('desc') or '',
-            'download_size': '',
-            'installed_date': 0,
-            'status': 'Installed' if plugin.get('_installed') else 'Available',
-            '_installed': bool(plugin.get('_installed')),
-            '_src': plugin,
-        }
-
-    def _populate_table(self):
-        self._plugins_table.set_loading(True, "Loading plugins\u2026")
-        filtered = self._get_filtered_plugins()
-        rows = []
-        for card_data in filtered:
-            plugin = dict(card_data['plugin'])
-            plugin['_installed'] = bool(card_data.get('installed', self.is_installed(plugin)))
-            rows.append(self._map_plugin_row(plugin))
-        self._plugins_table.set_packages(rows)
-        self._plugins_table.model.clear_sort()
-        self._plugins_table.set_empty_text("No plugins found", "Try a different search or filter")
-
     def _refresh_content(self):
-        if self._list_mode and self._plugins_table.isVisible():
-            self._populate_table()
-        else:
-            self._render_current_page()
-
-    def _on_table_menu_action(self, action, pkg):
-        """Route plugin table menu actions to the view's signals."""
-        plugin = pkg.get('_src') if isinstance(pkg, dict) else None
-        if plugin is None:
-            return
-        pid = plugin.get('id')
-        if action == "launch":
-            self.launch_requested.emit(pid)
-        elif action == "install":
-            self.install_requested.emit(pid)
-        elif action == "uninstall":
-            self.uninstall_requested.emit(pid)
-        elif action == "browser":
-            main_app = getattr(self, 'main_app', None)
-            if main_app is not None and hasattr(main_app, '_open_package_page'):
-                try:
-                    main_app._open_package_page(pkg)
-                except Exception:
-                    pass
-        elif action == "copy":
-            name = (plugin.get('name') or plugin.get('id') or '').strip()
-            if name:
-                try:
-                    from PyQt6.QtWidgets import QApplication
-                    QApplication.clipboard().setText(name)
-                except Exception:
-                    pass
-
+        self._render_current_page()
 
     def _get_or_create_card(self, plugin_spec):
         """Return cached card data for a plugin or create it."""
@@ -695,7 +286,6 @@ class PluginsView(QWidget):
             if item and item.widget():
                 item.widget().hide()
         self._reset_row_stretches()
-
 
     @staticmethod
     def _get_scrollbar_stylesheet():
@@ -746,25 +336,25 @@ class PluginsView(QWidget):
         scroll.verticalScrollBar().setCursor(Qt.CursorShape.PointingHandCursor)
         scroll.horizontalScrollBar().setCursor(Qt.CursorShape.PointingHandCursor)
         scroll.setStyleSheet(self._get_scrollbar_stylesheet())
-        
+
         scroll_widget = QWidget()
         scroll_layout = QVBoxLayout(scroll_widget)
         scroll_layout.setContentsMargins(0, 0, 0, 0)
         scroll_layout.setSpacing(16)
-        
+
         grid_container = QWidget()
         grid_container.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.grid_layout = QGridLayout(grid_container)
         self.grid_layout.setSpacing(14)
         self.grid_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         self._live_search_label = QLabel("")
         self._live_search_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._live_search_label.setStyleSheet(
             "color: #8B8D97; font-size: 13px; border: none; padding: 24px;")
         self._live_search_label.hide()
         scroll_layout.addWidget(self._live_search_label)
-        
+
         scroll_layout.addWidget(grid_container)
         scroll.setWidget(scroll_widget)
         self._scroll_area = scroll
@@ -775,7 +365,7 @@ class PluginsView(QWidget):
             self._all_plugins = get_all_plugins_data()
             self._prewarm_installed_cache()
         self._calc_grid_metrics()
-    
+
     def _create_all_cards(self):
         """Create all plugin cards once for better performance"""
         self._all_cards = []
@@ -810,7 +400,7 @@ class PluginsView(QWidget):
             return 'brew'
         else:
             return 'pacman'
-    
+
     def _render_source_icon(self, source, size=14):
         """Render a source SVG icon to a QPixmap"""
         path = self._get_source_icon(source)
@@ -1014,8 +604,6 @@ class PluginsView(QWidget):
             lambda: (card.set_installing(True), self.uninstall_requested.emit(pid)))
         return card
 
-
-
     def _prewarm_installed_cache(self):
         """Batch-check installed packages with a single pacman -Qq call (short timeout)"""
         try:
@@ -1096,9 +684,9 @@ class PluginsView(QWidget):
         # Create cards if not already created
         if not self._all_cards:
             self._create_all_cards()
-        
+
         has_search = bool(self._filter_text) or self._installed_only or self._categories
-        
+
         # Filter and display cards based on search text, installed status, and categories
         filtered = []
         for card_data in self._all_cards:
@@ -1106,31 +694,31 @@ class PluginsView(QWidget):
                 break
             plugin = card_data['plugin']
             is_installed = card_data['installed']
-            
+
             # Check installed filter
             if self._installed_only and not is_installed:
                 continue
-            
+
             # Check category filter
             if self._categories:
                 plugin_category = plugin.get('category', '')
                 if plugin_category not in self._categories:
                     continue
-            
+
             # Check search text filter
             if self._filter_text:
                 name = (plugin.get('name', '') or '').lower()
                 desc = (plugin.get('desc', '') or '').lower()
                 plugin_id = (plugin.get('id', '') or '').lower()
-                
+
                 # Match if search text is in name, description, or id
                 if not (self._filter_text in name or self._filter_text in desc or self._filter_text in plugin_id):
                     continue
-            
+
             filtered.append(card_data)
-        
+
         self._all_filtered_search_cards = self._sort_cards(filtered) if has_search else None
-        
+
         # Live search fallback: text query with no curated matches -> query pacman/AUR
         if self._filter_text and not self._installed_only and not self._categories and not filtered:
             self._run_live_search(self._filter_text)
@@ -1207,8 +795,7 @@ class PluginsView(QWidget):
                     break
         except Exception:
             pass
-    
-    
+
     def _reset_row_stretches(self):
         if not hasattr(self, 'grid_layout'):
             return
@@ -1219,7 +806,7 @@ class PluginsView(QWidget):
                 self.grid_layout.setRowMinimumHeight(r, 0)
         except Exception:
             pass
-    
+
     def resizeEvent(self, event):
         """Handle window resize to update grid layout"""
         super().resizeEvent(event)
@@ -1227,26 +814,25 @@ class PluginsView(QWidget):
         if hasattr(self, '_resize_timer'):
             self._resize_timer.stop()
             self._resize_timer.start(150)  # Wait 150ms after resize stops
-    
+
     def _handle_resize(self):
         if not hasattr(self, 'grid_layout') or not self.plugins:
             return
-        if not self._list_mode:
-            old_cols = self._current_cols
-            self._calc_grid_metrics()
-            if self._current_cols != old_cols:
-                self._render_current_page()
-    
+        old_cols = self._current_cols
+        self._calc_grid_metrics()
+        if self._current_cols != old_cols:
+            self._render_current_page()
+
     def _update_grid_layout(self):
         self._refresh_content()
-    
+
     def apply_filters(self, filter_states):
         """Apply Available/Installed filters to the plugins view"""
         # Store current filter states
         self._current_filter_states = filter_states
         # Re-apply all filters (both status and source)
         self._apply_combined_filters()
-    
+
     def apply_source_filters(self, source_states):
         """Apply source filters (pacman, AUR, Flatpak, npm) to the plugins view"""
         # Store current source states
@@ -1273,32 +859,32 @@ class PluginsView(QWidget):
             return sorted(cards, key=lambda c: (c['plugin'].get('name') or c['plugin'].get('id') or '').lower())
         except Exception:
             return cards
-    
+
     def _apply_combined_filters(self):
         """Apply both status and source filters together"""
         # Create cards if not already created
         if not self._all_cards:
             self._create_all_cards()
-        
+
         # Get filter states
         show_available = self._current_filter_states.get('Available', True)
         show_installed = self._current_filter_states.get('Installed', True)
-        
+
         # Get source states
         show_pacman = self._current_source_states.get('pacman', True)
         show_aur = self._current_source_states.get('AUR', True)
         show_flatpak = self._current_source_states.get('Flatpak', True)
         show_npm = self._current_source_states.get('npm', True)
-        
+
         # Filter cards based on both status and source
         filtered_cards = []
         for card_data in self._all_cards:
             plugin = card_data['plugin']
             is_installed = card_data['installed']
-            
+
             # Check status filter
             status_match = (is_installed and show_installed) or (not is_installed and show_available)
-            
+
             # Check source filter
             source = self._get_package_source(plugin).lower()
             source_match = False
@@ -1310,11 +896,11 @@ class PluginsView(QWidget):
                 source_match = True
             elif source == 'npm' and show_npm:
                 source_match = True
-            
+
             # Include card only if both filters match
             if status_match and source_match:
                 filtered_cards.append(card_data)
-        
+
         self._all_filtered_cards = self._sort_cards(filtered_cards)
-        
+
         self._refresh_content()
