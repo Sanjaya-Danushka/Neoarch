@@ -5,7 +5,7 @@ import subprocess
 from datetime import datetime
 
 from PyQt6.QtWidgets import (
-    QFrame, QVBoxLayout, QHBoxLayout, QLabel, QWidget,
+    QFrame, QVBoxLayout, QHBoxLayout, QLabel, QWidget, QScrollArea,
     QGraphicsDropShadowEffect, QSizePolicy,
 )
 from PyQt6.QtCore import Qt, QTimer
@@ -77,21 +77,40 @@ class RecentActivity(QFrame):
         hdr.addStretch()
         lay.addLayout(hdr)
 
+        # Scrollable area with the scrollbar always hidden: all rows stay
+        # visible and the mouse wheel scrolls through them.
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+
         content = QWidget()
         content.setStyleSheet("background: transparent;")
         self.items_layout = QVBoxLayout(content)
         self.items_layout.setSpacing(5)
         self.items_layout.setContentsMargins(0, 0, 0, 0)
+        self._content = content
 
-        lay.addWidget(content)
+        scroll.setWidget(content)
+        lay.addWidget(scroll)
 
     def _load(self):
         entries = self._parse_log()
         if not entries:
             self._show_empty()
+            self._sync_content_min_height()
             return
         for action, pkg, ts in entries[:12]:
             self._add_row(action, pkg, ts)
+        self._sync_content_min_height()
+
+    def _sync_content_min_height(self):
+        """Pin the scroll content to the rows' total height so it can exceed
+        the card and become scrollable instead of squeezing rows together."""
+        self.items_layout.activate()
+        self._content.setMinimumHeight(self.items_layout.minimumSize().height())
 
     def _parse_log(self):
         try:

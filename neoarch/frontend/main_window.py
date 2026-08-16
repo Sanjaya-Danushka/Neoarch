@@ -30,6 +30,7 @@ _DISCOVER_ICON_DIR = os.path.join(_BASE_DIR, "assets", "icons", "discover")
 class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _SearchMixin, _FiltersMixin, _PluginsMixin, _SettingsMixin, _AuthMixin, _IconsMixin, QMainWindow):
     packages_ready = pyqtSignal(list, object, bool)  # packages, load_id, is_final
     discover_results_ready = pyqtSignal(list)
+    discover_suggestions_ready = pyqtSignal(str)
     show_message = pyqtSignal(str, str)
     log_signal = pyqtSignal(str)
     load_error = pyqtSignal()
@@ -95,6 +96,7 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         self.plugins_manager = PluginsManager(self)
         self.packages_ready.connect(self.on_packages_loaded)
         self.discover_results_ready.connect(self.display_discover_results)
+        self.discover_suggestions_ready.connect(self._on_discover_suggestions_ready)
         self.show_message.connect(self._show_message)
         self.log_signal.connect(self.log)
         self.load_error.connect(self.on_load_error)

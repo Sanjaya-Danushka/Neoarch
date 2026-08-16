@@ -6,6 +6,7 @@ import json
 import subprocess
 from threading import Thread
 
+from neoarch.backend.services.suggestions import index_ready, refresh_names_index, suggest_names
 from neoarch.resources.paths import PROJECT_ROOT
 
 
@@ -341,6 +342,11 @@ class _SearchMixin:
     def search_discover_packages(self, query):
         self.package_table.setRowCount(0)
         self.search_results = []
+        try:
+            if hasattr(self, 'updates_table') and self.updates_table:
+                self.updates_table.set_suggestions([])
+        except Exception:
+            pass
         # Prepare discover loading context
         self.cancel_discover_search = False
         self.loading_context = "discover"
@@ -668,6 +674,7 @@ class _SearchMixin:
                 if not filtered:
                     self.updates_table.set_empty_text(
                         f"No packages found matching '{query}'.", "Try a different search term")
+                    self._offer_discover_suggestions(query)
                 else:
                     self.updates_table.set_empty_text(
                         "No packages found", "Try a different search term")
@@ -714,6 +721,65 @@ class _SearchMixin:
             self._update_discover_install_btn_state()
         except Exception:
             pass
+
+    def _offer_discover_suggestions(self, query):
+        """Offer fuzzy 'Did you mean' suggestions for a zero-result search."""
+        try:
+            if not hasattr(self, 'updates_table') or not self.updates_table:
+                return
+            self.updates_table.set_suggestions([])
+            query = (query or '').strip()
+            if len(query) < 3:
+                return
+            suggestions = suggest_names(query, limit=3)
+            if suggestions:
+                self._apply_discover_suggestions(suggestions)
+            elif not index_ready():
+                # No usable name index yet: build it in the background and
+                # apply the suggestions when the thread finishes.
+                q = query
+
+                def build_index():
+                    try:
+                        refresh_names_index()
+                    except Exception:
+                        pass
+                    self.discover_suggestions_ready.emit(q)
+
+                Thread(target=build_index, daemon=True).start()
+        except Exception:
+            pass
+
+    def _apply_discover_suggestions(self, suggestions):
+        try:
+            if not suggestions or not hasattr(self, 'updates_table') or not self.updates_table:
+                return
+            if self.current_view != "discover":
+                return
+            self.updates_table.set_suggestions(suggestions, callback=self._search_suggested)
+        except Exception:
+            pass
+
+    def _on_discover_suggestions_ready(self, query):
+        """Apply suggestions after the background name index was built."""
+        try:
+            if self.current_view != "discover":
+                return
+            current = (self.search_input.text() or '').strip()
+            if current != (query or '').strip():
+                return
+            self._apply_discover_suggestions(suggest_names(query, limit=3))
+        except Exception:
+            pass
+
+    def _search_suggested(self, name):
+        """Re-run the Discover search with a suggested package name."""
+        try:
+            if hasattr(self, 'search_input'):
+                self.search_input.setText(name)
+        except Exception:
+            pass
+        self.search_discover_packages(name)
 
     def _update_discover_card_results(self, filtered, query):
         """Reflect the current Discover result set on the source card.

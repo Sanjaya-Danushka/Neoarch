@@ -408,24 +408,17 @@ class PackageCard(QFrame):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # pre-rendered ambient glow (pixmap blit is safe)
-        if self._glow is None or self._glow.size() != self.size():
-            self._glow = _make_glow_pixmap(self.size())
-        p.drawPixmap(0, 0, self._glow)
-
         rect = QRectF(self.rect()).adjusted(1.5, 1.5, -1.5, -1.5)
 
-        # glass top reflection, clipped to the rounded card
-        p.save()
+        # pre-rendered ambient glow (pixmap blit is safe), clipped to the
+        # rounded card so it never leaks a box outside the corner curve.
+        if self._glow is None or self._glow.size() != self.size():
+            self._glow = _make_glow_pixmap(self.size())
         card_path = QPainterPath()
         card_path.addRoundedRect(rect, 18, 18)
-        reflect = QPainterPath()
-        reflect.addRect(QRectF(rect.left(), rect.top(), rect.width(), 9))
-        p.setClipPath(card_path.intersected(reflect))
-        p.setPen(QPen(QColor(255, 255, 255, 30), 1))
-        p.drawLine(QPointF(rect.left() + 16, rect.top() + 1),
-                   QPointF(rect.right() - 16, rect.top() + 1))
-        p.restore()
+        p.setClipPath(card_path)
+        p.drawPixmap(0, 0, self._glow)
+        p.setClipPath(QPainterPath())
 
         # selected: accent bar like the table's selected row
         if self.checkbox.isChecked():

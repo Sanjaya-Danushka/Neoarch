@@ -54,6 +54,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QMenu,
     QProgressBar,
+    QPushButton,
     QStyle,
     QStyledItemDelegate,
     QTableView,
@@ -788,6 +789,10 @@ class UpdatesTable(QTableView):
         """Override the empty-state message (Installed vs Updates wording)."""
         self._empty.set_text(title, subtitle, hint)
 
+    def set_suggestions(self, suggestions, callback=None):
+        """Show clickable 'Did you mean' chips in the empty state (Discover)."""
+        self._empty.set_suggestions(suggestions, callback)
+
     def show_installed_date(self, visible):
         """Show/hide the "Installed" date column (Installed view only)."""
         self.setColumnHidden(6, not visible)
@@ -853,6 +858,13 @@ class UpdatesTable(QTableView):
                 flag = False
             if bool(pkg.get("_installed")) != flag:
                 pkg["_installed"] = flag
+                changed = True
+            if flag:
+                if pkg.get("status") != "Installed":
+                    pkg["status"] = "Installed"
+                    changed = True
+            elif self._discover_mode and pkg.get("status") == "Installed":
+                pkg["status"] = "Available"
                 changed = True
         if changed:
             self.refresh()
@@ -1519,6 +1531,20 @@ class _EmptyOverlay(QWidget):
         self._hint.setStyleSheet("color: #5C5E66; background: transparent; border: none;")
         layout.addWidget(self._hint)
 
+        self._suggest_label = QLabel("Did you mean\u2026")
+        self._suggest_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._suggest_label.setStyleSheet("color: #8B8D97; background: transparent; border: none;")
+        self._suggest_label.hide()
+        layout.addWidget(self._suggest_label)
+
+        self._chips_row = QWidget()
+        self._chips_layout = QHBoxLayout(self._chips_row)
+        self._chips_layout.setContentsMargins(0, 0, 0, 0)
+        self._chips_layout.setSpacing(8)
+        self._chips_row.hide()
+        layout.addWidget(self._chips_row, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self._suggest_callback = None
+
         self._progress = QProgressBar()
         self._progress.setRange(0, 0)
         self._progress.setFixedWidth(240)
@@ -1547,9 +1573,46 @@ class _EmptyOverlay(QWidget):
     def set_loading(self, loading, message=None):
         """Switch between the loading and the finished empty state."""
         if loading:
+            self.set_suggestions([])
             self._title.setText(message or "Loading\u2026")
             self._sub.setText("Please wait, fetching package data")
             self._hint.hide()
             self._progress.show()
         else:
             self._progress.hide()
+
+    def set_suggestions(self, suggestions, callback=None):
+        """Show clickable 'Did you mean' chips for a zero-result search.
+
+        Empty suggestions hide the chips; the overlay must only swallow
+        mouse events while the chips are visible so they can be clicked.
+        """
+        self._suggest_callback = callback
+        while self._chips_layout.count():
+            item = self._chips_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+        if not suggestions:
+            self._suggest_label.hide()
+            self._chips_row.hide()
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+            return
+        for name in suggestions:
+            btn = QPushButton(name)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setStyleSheet(
+                "QPushButton { background: rgba(0,191,174,0.12); color: #4FDBCE;"
+                " border: 1px solid rgba(0,191,174,0.35); border-radius: 13px;"
+                " padding: 5px 14px; font-size: 12px; }"
+                " QPushButton:hover { background: rgba(0,191,174,0.22); }"
+                " QPushButton:pressed { background: rgba(0,191,174,0.32); }")
+            btn.clicked.connect(lambda _=False, n=name: self._suggest_clicked(n))
+            self._chips_layout.addWidget(btn)
+        self._suggest_label.show()
+        self._chips_row.show()
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, False)
+
+    def _suggest_clicked(self, name):
+        if self._suggest_callback:
+            self._suggest_callback(name)
