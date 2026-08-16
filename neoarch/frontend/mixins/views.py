@@ -914,13 +914,15 @@ class _ViewsMixin:
     def on_plugins_filter_changed(self, text, installed_only):
         try:
             if hasattr(self, 'plugins_view') and self.plugins_view:
-                cats = []
-                try:
-                    if hasattr(self, 'plugins_sidebar') and self.plugins_sidebar:
-                        cats = self.plugins_sidebar.get_selected_categories()
-                except Exception:
-                    cats = []
-                self.plugins_view.set_filter(text, installed_only, cats)
+                self._plugins_search_query = (text or "")
+                self._apply_plugins_filters()
+        except Exception:
+            pass
+
+    def on_plugins_sort_changed(self, mode):
+        try:
+            if hasattr(self, 'plugins_view') and self.plugins_view:
+                self.plugins_view.set_sort(mode)
         except Exception:
             pass
 
@@ -1826,7 +1828,7 @@ class _ViewsMixin:
 
             # Update visibility like installed view
             self.sources_section.setVisible(True)
-            self.filters_section.setVisible(True)
+            self.filters_section.setVisible(False)
 
             # Add source cards like installed section
             self.update_plugins_sources()
@@ -1852,6 +1854,7 @@ class _ViewsMixin:
                 pass
             self.plugins_view.refresh_all()
             self.plugins_view.show_table_mode()
+            self._refresh_plugins_summary()
 
             self.header_info.setText("Install and launch extensions like BleachBit and Timeshift")
             try:

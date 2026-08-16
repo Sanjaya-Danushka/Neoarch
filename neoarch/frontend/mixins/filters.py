@@ -8,7 +8,6 @@ from PyQt6.QtCore import Qt
 from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.frontend.components.source_card import SourceCard
 
-from neoarch.frontend.components.plugins_sidebar import PluginsSidebar
 from neoarch.backend.services import filter as filters_service
 from neoarch.frontend.components.updates_table import classify_update, _parse_size, _parse_version
 
@@ -288,37 +287,10 @@ class _FiltersMixin:
             self.sources_section.setVisible(False)
             self.filters_section.setVisible(False)
         elif view_id == "plugins":
-            # Show a VS Code-like extensions sidebar in filters_section
-            self.sources_section.setVisible(False)
-            self.filters_section.setVisible(True)
-            # Clear and add PluginsSidebar
-            while self.filters_layout.count():
-                item = self.filters_layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-            try:
-                self.plugins_sidebar = PluginsSidebar(self)
-                self.plugins_sidebar.filter_changed.connect(self.on_plugins_filter_changed)
-                # Populate sidebar with the same list as cards
-                try:
-                    if hasattr(self, 'plugins_view') and self.plugins_view:
-                        self.plugins_sidebar.set_plugins(self.plugins_view.plugins)
-                        cats = sorted({(p.get('category') or '') for p in self.plugins_view.plugins if p.get('category')})
-                        try:
-                            self.plugins_sidebar.set_categories(cats)
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
-                # Allow install from sidebar
-                try:
-                    self.plugins_sidebar.install_requested.connect(self.on_plugin_install_requested)
-                    self.plugins_sidebar.uninstall_requested.connect(self.on_plugin_uninstall_requested)
-                except Exception:
-                    pass
-                self.filters_layout.addWidget(self.plugins_sidebar)
-            except Exception:
-                pass
+            # Show a source panel like the updates/installed page
+            self.sources_section.setVisible(True)
+            self.filters_section.setVisible(False)
+            self.update_plugins_sources()
         elif view_id == "settings":
             self.sources_section.setVisible(False)
             self.filters_section.setVisible(False)
@@ -629,7 +601,7 @@ class _FiltersMixin:
         self._refresh_installed_sources()
 
     def update_plugins_sources(self):
-        """Update plugins sources using the same SourceCard component as installed section"""
+        """Update plugins sources using the SourceCard component (like updates/installed)."""
         while self.sources_layout.count():
             item = self.sources_layout.takeAt(0)
             if item.widget():
@@ -637,16 +609,112 @@ class _FiltersMixin:
 
         self.source_card = SourceCard(self)
         self.source_card.source_changed.connect(self.on_plugins_source_changed)
+        self.source_card.sort_changed.connect(self.on_plugins_sort_changed)
+
+        # Per-source counts from the curated catalog
+        counts = {"pacman": 0, "AUR": 0, "Flatpak": 0, "npm": 0}
+        plugins = []
+        try:
+            from neoarch.resources.plugin_data import get_all_plugins_data
+            from neoarch.frontend.components.plugins_view import PluginsView, _canonical_source
+            plugins = get_all_plugins_data()
+            for p in plugins:
+                src = _canonical_source(PluginsView._get_package_source(p))
+                counts[src] = counts.get(src, 0) + 1
+        except Exception:
+            pass
+
         sources = [
             ("pacman", os.path.join(_BASE_DIR, "assets", "icons", "discover", "pacman.svg")),
             ("AUR", os.path.join(_BASE_DIR, "assets", "icons", "discover", "aur.svg")),
             ("Flatpak", os.path.join(_BASE_DIR, "assets", "icons", "discover", "flatpack.svg")),
-            ("npm", os.path.join(_BASE_DIR, "assets", "icons", "discover", "node.svg"))
+            ("npm", os.path.join(_BASE_DIR, "assets", "icons", "discover", "node.svg")),
         ]
         for source_name, source_icon_path in sources:
-            self.source_card.add_source(source_name, source_icon_path)
+            self.source_card.add_source(source_name, source_icon_path, count=counts.get(source_name, 0))
+
+        self.source_card.set_sort_methods([
+            ("name_asc", True, "Name A-Z"),
+            ("name_desc", True, "Name Z-A"),
+            ("category", True, "Category"),
+            ("source", True, "Source"),
+            ("installed", True, "Installed First"),
+        ])
+        self.source_card.set_sort("name_asc", True)
+
         self.sources_layout.addWidget(self.source_card)
-        self.source_card.configure_sections(show_search=False)
+        self.source_card.category_changed.connect(self._on_plugins_category_changed)
+        self.source_card.status_mode_changed.connect(self._on_plugins_status_mode_changed)
+        cats = sorted({(p.get('category') or '') for p in plugins if p.get('category')})
+        cat_counts = {}
+        for p in plugins:
+            cat = p.get('category') or ''
+            if cat:
+                cat_counts[cat] = cat_counts.get(cat, 0) + 1
+        self.source_card.set_categories(cats, cat_counts)
+        self._plugins_status_mode = "all"
+        self.source_card.configure_stats(
+            "Extension Stats", [("total", "Total"), ("installed", "Installed"), ("available", "Available")])
+        self.source_card.configure_sections(
+            show_search=False, show_counts=True, show_sort=True, show_summary=True,
+            show_categories=True, show_status_mode=True, show_stats=True)
+        self._refresh_plugins_summary()
+
+    def _on_plugins_category_changed(self, category):
+        self._plugins_category = category or ""
+        self._apply_plugins_filters()
+
+    def _on_plugins_status_mode_changed(self, mode):
+        self._plugins_status_mode = mode or "all"
+        try:
+            if not (hasattr(self, 'plugins_view') and self.plugins_view):
+                return
+            states = {
+                "all": {"Available": True, "Installed": True},
+                "available": {"Available": True, "Installed": False},
+                "installed": {"Available": False, "Installed": True},
+            }.get(self._plugins_status_mode, {"Available": True, "Installed": True})
+            self.plugins_view.apply_filters(states)
+            self._refresh_plugins_summary()
+        except Exception:
+            pass
+
+    def _apply_plugins_filters(self):
+        try:
+            if not (hasattr(self, 'plugins_view') and self.plugins_view):
+                return
+            query = getattr(self, '_plugins_search_query', "")
+            cats = [self._plugins_category] if self._plugins_category else []
+            self.plugins_view.set_filter(query, False, cats)
+            self._refresh_plugins_summary()
+        except Exception:
+            pass
+
+    def _refresh_plugins_summary(self):
+        """Update the bottom extension count and stats on the plugins source card."""
+        try:
+            if not (hasattr(self, 'source_card') and self.source_card):
+                return
+            from neoarch.resources.plugin_data import get_all_plugins_data
+            plugins = get_all_plugins_data()
+            total = len(plugins)
+            installed = 0
+            if hasattr(self, 'plugins_view') and self.plugins_view:
+                try:
+                    cache = getattr(self.plugins_view, '_installed_cache', {})
+                    installed = sum(1 for val in cache.values() if val)
+                except Exception:
+                    installed = 0
+            count = total
+            if hasattr(self, 'plugins_view') and self.plugins_view:
+                try:
+                    count = len(self.plugins_view._get_filtered_plugins()) or total
+                except Exception:
+                    count = total
+            self.source_card.set_summary(count, noun="extensions")
+            self.source_card.set_stats(total=total, installed=installed, available=max(0, total - installed))
+        except Exception:
+            pass
 
     def on_installed_source_changed(self, source_states):
         self.apply_filters()
@@ -654,6 +722,7 @@ class _FiltersMixin:
     def on_plugins_source_changed(self, source_states):
         if hasattr(self, 'plugins_view') and self.plugins_view:
             self.plugins_view.apply_source_filters(source_states)
+            self._refresh_plugins_summary()
 
     def on_updates_source_changed(self, source_states):
         self._recompute_updates()

@@ -579,6 +579,8 @@ class SourceCard(QWidget):
     installed_filter_changed = pyqtSignal(bool)
     health_action = pyqtSignal(str)
     maintenance_action = pyqtSignal(str)
+    category_changed = pyqtSignal(str)
+    status_mode_changed = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -608,6 +610,10 @@ class SourceCard(QWidget):
         layout.addStretch(1)
         self._build_sources_container(layout)
         layout.addStretch(1)
+        self._build_status_mode(layout)
+        layout.addStretch(1)
+        self._build_categories(layout)
+        layout.addStretch(1)
         self._build_health(layout)
         layout.addStretch(1)
         self._build_search_mode(layout)
@@ -628,7 +634,7 @@ class SourceCard(QWidget):
         layout.addStretch(1)
         self._build_summary(layout)
 
-        for w in (self.sources_container, self.health_widget, self.search_mode_widget,
+        for w in (self.sources_container, self.status_mode_widget, self.categories_widget, self.health_widget, self.search_mode_widget,
                   self.status_widget, self.sort_widget, self.installed_filter_widget,
                   self.storage_widget,
                   self.stats_widget, self.quick_actions_widget, self.actions_widget,
@@ -1017,6 +1023,132 @@ class SourceCard(QWidget):
         self.status_widget.setVisible(False)
         layout.addWidget(self.status_widget)
 
+    def _build_status_mode(self, layout):
+        self.status_mode_widget = QWidget()
+        self.status_mode_widget.setObjectName("statusModeWidget")
+        sm_layout = QVBoxLayout(self.status_mode_widget)
+        sm_layout.setContentsMargins(16, 6, 16, 4)
+        sm_layout.setSpacing(1)
+
+        sm_layout.addWidget(self._section_header("Status"))
+
+        self._status_mode_rows = []
+        for mode_id, mode_text in [("all", "All"), ("available", "Available"), ("installed", "Installed")]:
+            row = _RadioRow(mode_text)
+            row.setChecked(mode_id == "all")
+            row.clicked.connect(lambda mid=mode_id: self._on_status_mode_clicked(mid))
+            sm_layout.addWidget(row)
+            self._status_mode_rows.append((mode_id, row))
+
+        self.status_mode_widget.setStyleSheet("""
+            QWidget#statusModeWidget {
+                border-top: 1px solid rgba(255, 255, 255, 0.03);
+            }
+        """)
+        self.status_mode_widget.setVisible(False)
+        layout.addWidget(self.status_mode_widget)
+
+    def _on_status_mode_clicked(self, mode_id):
+        for rid, row in self._status_mode_rows:
+            row.setChecked(rid == mode_id)
+        self.status_mode_changed.emit(mode_id)
+
+    def set_status_mode(self, mode_id):
+        if hasattr(self, '_status_mode_rows'):
+            for rid, row in self._status_mode_rows:
+                row.setChecked(rid == mode_id)
+
+    def _build_categories(self, layout):
+        self.categories_widget = QWidget()
+        self.categories_widget.setObjectName("categoriesWidget")
+        cat_layout = QVBoxLayout(self.categories_widget)
+        cat_layout.setContentsMargins(16, 6, 16, 4)
+        cat_layout.setSpacing(6)
+
+        cat_layout.addWidget(self._section_header("Categories"))
+
+        self.categories_btn = QPushButton("All Categories \u25be")
+        self.categories_btn.setObjectName("sortBtn")
+        self.categories_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.categories_btn.setFixedHeight(24)
+        self.categories_btn.setStyleSheet(self._sort_btn_style())
+        self.categories_btn.clicked.connect(self._open_categories_menu)
+        cat_layout.addWidget(self.categories_btn)
+
+        self.categories_widget.setVisible(False)
+        layout.addWidget(self.categories_widget)
+
+        self.categories_menu = QMenu(self)
+        self.categories_menu.setObjectName("sourceSortMenu")
+        self.categories_menu.setStyleSheet("""
+            QMenu#sourceSortMenu {
+                background-color: #171C25;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 10px;
+                padding: 4px;
+            }
+            QMenu#sourceSortMenu::item {
+                padding: 8px 14px;
+                border-radius: 6px;
+                margin: 1px 0;
+                color: #EDEDEF;
+                font-size: 12px;
+                font-weight: 500;
+                background: transparent;
+            }
+            QMenu#sourceSortMenu::item:selected {
+                background-color: rgba(59, 130, 246, 0.16);
+                color: #FFFFFF;
+            }
+            QMenu#sourceSortMenu::separator {
+                height: 1px;
+                background: rgba(255, 255, 255, 0.06);
+                margin: 4px 8px;
+            }
+        """)
+        self._category_actions = {}
+        self.categories_widget.setVisible(False)
+
+    def set_categories(self, categories, counts=None):
+        """Populate the categories dropdown. `categories` is a list of names;
+        `counts` is an optional dict mapping category -> item count."""
+        self.categories_menu.clear()
+        self._category_actions = {}
+        all_act = self.categories_menu.addAction("All Categories")
+        all_act.setCheckable(True)
+        all_act.setChecked(True)
+        all_act.triggered.connect(lambda: self._on_category_selected(""))
+        self._category_actions[""] = all_act
+        self._categories_list = list(categories or [])
+        if self._categories_list:
+            self.categories_menu.addSeparator()
+        counts = counts or {}
+        for cat in self._categories_list:
+            label = cat if not counts.get(cat) else f"{cat} ({counts[cat]})"
+            act = self.categories_menu.addAction(label)
+            act.setCheckable(True)
+            act.triggered.connect(lambda checked=False, c=cat: self._on_category_selected(c))
+            self._category_actions[cat] = act
+        self._current_category = ""
+        self._update_categories_btn_text()
+
+    def _open_categories_menu(self):
+        pos = self.categories_btn.mapToGlobal(self.categories_btn.rect().bottomLeft())
+        self.categories_menu.setUpdatesEnabled(False)
+        self.categories_menu.popup(pos)
+        self.categories_menu.setUpdatesEnabled(True)
+
+    def _on_category_selected(self, category):
+        self._current_category = category or ""
+        for cat, act in self._category_actions.items():
+            act.setChecked(cat == self._current_category)
+        self._update_categories_btn_text()
+        self.category_changed.emit(self._current_category)
+
+    def _update_categories_btn_text(self):
+        name = self._current_category or "All Categories"
+        self.categories_btn.setText(f"{name} \u25be")
+
     def _build_sort(self, layout):
         self.sort_widget = QWidget()
         self.sort_widget.setObjectName("sortWidget")
@@ -1242,49 +1374,71 @@ class SourceCard(QWidget):
     def _build_stats(self, layout):
         self.stats_widget = QWidget()
         self.stats_widget.setObjectName("statsWidget")
-        st_layout = QVBoxLayout(self.stats_widget)
-        st_layout.setContentsMargins(16, 8, 16, 6)
-        st_layout.setSpacing(2)
+        self._stats_layout = QVBoxLayout(self.stats_widget)
+        self._stats_layout.setContentsMargins(16, 8, 16, 6)
+        self._stats_layout.setSpacing(2)
 
-        st_layout.addWidget(self._section_header("Package Stats"))
+        self._stats_header = self._section_header("Package Stats")
+        self._stats_layout.addWidget(self._stats_header)
 
         self._stat_labels = {}
-        defs = [
+        for key, title in [
             ("explicit", "Explicit"),
             ("deps", "Dependencies"),
             ("outdated", "Updates Available"),
-        ]
-        for key, title in defs:
-            row = QHBoxLayout()
-            row.setSpacing(8)
-            lbl = QLabel(title)
-            lbl.setStyleSheet("color: #A7B1C2; font-size: 11px; font-weight: 500;"
-                              "background: transparent; border: none; padding: 0;")
-            val = QLabel("0")
-            val.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-            val.setStyleSheet("color: #EDEDEF; font-size: 12px; font-weight: 600;"
-                              "background: transparent; border: none; padding: 0;")
-            row.addWidget(lbl, 1)
-            row.addWidget(val, 0)
-            st_layout.addLayout(row)
-            self._stat_labels[key] = val
+        ]:
+            self._add_stat_row(key, title)
 
         self.stats_widget.setStyleSheet(self._section_stylesheet())
         self.stats_widget.setVisible(False)
         layout.addWidget(self.stats_widget)
 
-    def set_stats(self, explicit=None, deps=None, outdated=None):
-        if explicit is not None:
-            self._stat_labels["explicit"].setText(f"{int(explicit):,}")
-        if deps is not None:
-            self._stat_labels["deps"].setText(f"{int(deps):,}")
-        if outdated is not None:
-            label = self._stat_labels["outdated"]
-            label.setText(f"{int(outdated):,}")
-            label.setStyleSheet(
-                "color: #60A5FA; font-size: 12px; font-weight: 700;"
-                "background: transparent; border: none; padding: 0;"
-            )
+    def _add_stat_row(self, key, title):
+        row = QHBoxLayout()
+        row.setSpacing(8)
+        lbl = QLabel(title)
+        lbl.setStyleSheet("color: #A7B1C2; font-size: 11px; font-weight: 500;"
+                          "background: transparent; border: none; padding: 0;")
+        val = QLabel("0")
+        val.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        val.setStyleSheet("color: #EDEDEF; font-size: 12px; font-weight: 600;"
+                          "background: transparent; border: none; padding: 0;")
+        row.addWidget(lbl, 1)
+        row.addWidget(val, 0)
+        self._stats_layout.addLayout(row)
+        self._stat_labels[key] = val
+
+    def configure_stats(self, header="Package Stats", rows=None):
+        """Redefine the stats section. `rows` is a list of (key, title)."""
+        if not hasattr(self, '_stats_layout'):
+            return
+        while self._stats_layout.count():
+            item = self._stats_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        self._stats_header = self._section_header(header or "Stats")
+        self._stats_layout.addWidget(self._stats_header)
+        self._stat_labels = {}
+        for key, title in (rows or [
+            ("explicit", "Explicit"),
+            ("deps", "Dependencies"),
+            ("outdated", "Updates Available"),
+        ]):
+            self._add_stat_row(key, title)
+
+    def set_stats(self, explicit=None, deps=None, outdated=None, **extra):
+        values = {"explicit": explicit, "deps": deps, "outdated": outdated}
+        values.update(extra)
+        for key, value in values.items():
+            label = self._stat_labels.get(key)
+            if value is None or label is None:
+                continue
+            label.setText(f"{int(value):,}")
+            if key == "outdated":
+                label.setStyleSheet(
+                    "color: #60A5FA; font-size: 12px; font-weight: 700;"
+                    "background: transparent; border: none; padding: 0;"
+                )
 
     def _build_quick_actions(self, layout):
         self.quick_actions_widget = QWidget()
@@ -1531,8 +1685,11 @@ class SourceCard(QWidget):
     def configure_sections(self, show_status=False, show_sort=False, show_actions=False,
                            show_summary=False, show_search=True, show_counts=False,
                            show_health=False, show_storage=False, show_quick_actions=False,
-                           show_stats=False, show_installed_filter=False):
+                           show_stats=False, show_installed_filter=False, show_categories=False,
+                           show_status_mode=False):
         self.status_widget.setVisible(show_status)
+        self.categories_widget.setVisible(show_categories)
+        self.status_mode_widget.setVisible(show_status_mode)
         self.sort_widget.setVisible(show_sort)
         self.actions_widget.setVisible(show_actions)
         self.summary_widget.setVisible(show_summary)

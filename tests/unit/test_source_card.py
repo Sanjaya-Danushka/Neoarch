@@ -97,3 +97,45 @@ def test_source_card_health_signal(qapp):
     card._health_rows["pacnew"].clicked.emit()
     card._health_rows["outdated"].clicked.emit()
     assert captured == ["orphans", "pacnew", "outdated"]
+
+
+def test_set_categories_builds_menu_with_counts(qapp):
+    from neoarch.frontend.components.source_card import SourceCard
+
+    sc = SourceCard()
+    sc.set_categories(["Dev", "System"], {"Dev": 50, "System": 5})
+    texts = [a.text() for a in sc.categories_menu.actions()]
+    assert texts == ["All Categories", "", "Dev (50)", "System (5)"]
+    assert sc.categories_btn.text() == "All Categories \u25be"
+
+
+def test_category_selection_emits_and_updates_button(qapp):
+    from neoarch.frontend.components.source_card import SourceCard
+
+    sc = SourceCard()
+    emitted = []
+    sc.category_changed.connect(emitted.append)
+    sc.set_categories(["Dev", "System"])
+    sc._on_category_selected("Dev")
+    assert emitted == ["Dev"]
+    assert sc.categories_btn.text() == "Dev \u25be"
+
+
+def test_status_mode_click_emits(qapp):
+    from neoarch.frontend.components.source_card import SourceCard
+
+    sc = SourceCard()
+    emitted = []
+    sc.status_mode_changed.connect(emitted.append)
+    sc._on_status_mode_clicked("installed")
+    assert emitted == ["installed"]
+
+
+def test_configure_stats_and_set_stats(qapp):
+    from neoarch.frontend.components.source_card import SourceCard
+
+    sc = SourceCard()
+    sc.configure_stats("Extension Stats", [("total", "Total"), ("installed", "Installed")])
+    sc.set_stats(total=183, installed=28)
+    assert sc._stat_labels["total"].text() == "183"
+    assert sc._stat_labels["installed"].text() == "28"

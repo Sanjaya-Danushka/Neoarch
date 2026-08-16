@@ -88,26 +88,8 @@ class _SearchMixin:
         # Plugins view: always filter regardless of text length
         if getattr(self, 'current_view', '') == "plugins":
             try:
-                installed_only = False
-                cats = []
-                if hasattr(self, 'plugins_sidebar') and self.plugins_sidebar:
-                    try:
-                        installed_only = (self.plugins_sidebar.group.checkedId() == 1)
-                    except Exception:
-                        installed_only = False
-                    try:
-                        cats = self.plugins_sidebar.get_selected_categories()
-                    except Exception:
-                        cats = []
-                if hasattr(self, 'plugins_view') and self.plugins_view:
-                    self.plugins_view.set_filter(query, installed_only, cats)
-                # Keep sidebar search box in sync with the top search
-                if hasattr(self, 'plugins_sidebar') and self.plugins_sidebar:
-                    try:
-                        self.plugins_sidebar.search.blockSignals(True)
-                        self.plugins_sidebar.search.setText(query)
-                    finally:
-                        self.plugins_sidebar.search.blockSignals(False)
+                self._plugins_search_query = query
+                self._apply_plugins_filters()
             except Exception:
                 pass
             return

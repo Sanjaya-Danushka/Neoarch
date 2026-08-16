@@ -528,6 +528,7 @@ class PluginsView(QWidget):
         self._current_source_states = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True}  # Track source states
         self._all_filtered_cards = None
         self._all_filtered_search_cards = None
+        self._sort_mode = "name_asc"
         
         self._all_plugins = []  # All available plugins
         self._card_cache = {}
@@ -625,6 +626,7 @@ class PluginsView(QWidget):
             plugin['_installed'] = bool(card_data.get('installed', self.is_installed(plugin)))
             rows.append(self._map_plugin_row(plugin))
         self._plugins_table.set_packages(rows)
+        self._plugins_table.model.clear_sort()
         self._plugins_table.set_empty_text("No plugins found", "Try a different search or filter")
 
     def _refresh_content(self):
@@ -926,7 +928,8 @@ class PluginsView(QWidget):
 
     def _get_filtered_plugins(self):
         has_search = hasattr(self, '_all_filtered_search_cards') and self._all_filtered_search_cards is not None
-        has_combined = hasattr(self, '_current_filter_states') and self._current_filter_states
+        has_combined = (bool(getattr(self, '_current_filter_states', None))
+                        or getattr(self, '_all_filtered_cards', None) is not None)
         if has_search and has_combined and hasattr(self, '_all_filtered_cards'):
             search_ids = {c['plugin'].get('id') for c in self._all_filtered_search_cards}
             combined_ids = {c['plugin'].get('id') for c in self._all_filtered_cards}
@@ -1126,7 +1129,7 @@ class PluginsView(QWidget):
             
             filtered.append(card_data)
         
-        self._all_filtered_search_cards = filtered if has_search else None
+        self._all_filtered_search_cards = self._sort_cards(filtered) if has_search else None
         
         # Live search fallback: text query with no curated matches -> query pacman/AUR
         if self._filter_text and not self._installed_only and not self._categories and not filtered:
@@ -1250,6 +1253,26 @@ class PluginsView(QWidget):
         self._current_source_states = source_states
         # Re-apply all filters (both status and source)
         self._apply_combined_filters()
+
+    def set_sort(self, mode):
+        """Set the sort order for the plugins list/grid."""
+        self._sort_mode = mode or "name_asc"
+        self._apply_combined_filters()
+
+    def _sort_cards(self, cards):
+        mode = self._sort_mode
+        try:
+            if mode == "name_desc":
+                return sorted(cards, key=lambda c: (c['plugin'].get('name') or c['plugin'].get('id') or '').lower(), reverse=True)
+            if mode == "category":
+                return sorted(cards, key=lambda c: ((c['plugin'].get('category') or '').lower(), (c['plugin'].get('name') or c['plugin'].get('id') or '').lower()))
+            if mode == "source":
+                return sorted(cards, key=lambda c: (self._get_package_source(c['plugin']), (c['plugin'].get('name') or c['plugin'].get('id') or '').lower()))
+            if mode == "installed":
+                return sorted(cards, key=lambda c: (not c['installed'], (c['plugin'].get('name') or c['plugin'].get('id') or '').lower()))
+            return sorted(cards, key=lambda c: (c['plugin'].get('name') or c['plugin'].get('id') or '').lower())
+        except Exception:
+            return cards
     
     def _apply_combined_filters(self):
         """Apply both status and source filters together"""
@@ -1292,6 +1315,6 @@ class PluginsView(QWidget):
             if status_match and source_match:
                 filtered_cards.append(card_data)
         
-        self._all_filtered_cards = filtered_cards
+        self._all_filtered_cards = self._sort_cards(filtered_cards)
         
         self._refresh_content()

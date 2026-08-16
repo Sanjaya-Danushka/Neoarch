@@ -111,3 +111,26 @@ def test_map_plugin_row_uses_canonical_source(qapp):
     assert pac["source"] == "pacman"
     assert aur["status"] == "Available"
     assert aur["_installed"] is False
+
+
+def _card_spec(pid, installed=False, category="", source="pacman"):
+    return {"plugin": {"id": pid, "name": pid.capitalize(), "category": category, "pkg": source},
+            "installed": installed, "widget": None}
+
+
+def test_plugins_view_sort_cards_orders_by_mode(qapp):
+    cards = [
+        _card_spec("b", installed=False, category="System"),
+        _card_spec("a", installed=True, category="Games"),
+        _card_spec("c", installed=False, category="System"),
+    ]
+    view = PluginsView.__new__(PluginsView)
+    view._sort_mode = "name_asc"
+    view._get_package_source = PluginsView._get_package_source
+    assert [c["plugin"]["id"] for c in PluginsView._sort_cards(view, cards)] == ["a", "b", "c"]
+    view._sort_mode = "name_desc"
+    assert [c["plugin"]["id"] for c in PluginsView._sort_cards(view, cards)] == ["c", "b", "a"]
+    view._sort_mode = "installed"
+    assert [c["plugin"]["id"] for c in PluginsView._sort_cards(view, cards)] == ["a", "b", "c"]
+    view._sort_mode = "category"
+    assert [c["plugin"]["id"] for c in PluginsView._sort_cards(view, cards)] == ["a", "b", "c"]
