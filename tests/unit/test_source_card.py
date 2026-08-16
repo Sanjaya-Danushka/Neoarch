@@ -99,17 +99,19 @@ def test_source_card_health_signal(qapp):
     assert captured == ["orphans", "pacnew", "outdated"]
 
 
-def test_set_categories_builds_menu_with_counts(qapp):
+def test_set_categories_builds_list_with_counts(qapp):
     from neoarch.frontend.components.source_card import SourceCard
 
     sc = SourceCard()
     sc.set_categories(["Dev", "System"], {"Dev": 50, "System": 5})
-    texts = [a.text() for a in sc.categories_menu.actions()]
-    assert texts == ["All Categories", "", "Dev (50)", "System (5)"]
-    assert sc.categories_btn.text() == "All Categories \u25be"
+    rows = [cat for cat, _ in sc._category_rows]
+    assert rows == ["", "Dev", "System"]
+    counts = [row.count for _, row in sc._category_rows]
+    assert counts == [55, 50, 5]
+    assert sc._current_category == ""
 
 
-def test_category_selection_emits_and_updates_button(qapp):
+def test_category_selection_emits_and_checks_row(qapp):
     from neoarch.frontend.components.source_card import SourceCard
 
     sc = SourceCard()
@@ -118,7 +120,8 @@ def test_category_selection_emits_and_updates_button(qapp):
     sc.set_categories(["Dev", "System"])
     sc._on_category_selected("Dev")
     assert emitted == ["Dev"]
-    assert sc.categories_btn.text() == "Dev \u25be"
+    state = {cat: row.isChecked() for cat, row in sc._category_rows}
+    assert state == {"": False, "Dev": True, "System": False}
 
 
 def test_status_mode_click_emits(qapp):

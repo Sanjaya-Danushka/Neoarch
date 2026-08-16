@@ -69,13 +69,14 @@ class _RadioRow(QWidget):
 
     clicked = pyqtSignal()
 
-    def __init__(self, text, parent=None):
+    def __init__(self, text, count=None, parent=None):
         super().__init__(parent)
         self.text = text
+        self.count = count
         self._checked = False
         self._hover = False
         self._progress = 0.0
-        self.setFixedHeight(22)
+        self.setFixedHeight(20)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setMouseTracking(True)
         self._animation = QPropertyAnimation(self, b"progress", self)
@@ -139,8 +140,26 @@ class _RadioRow(QWidget):
         font.setWeight(QFont.Weight.Medium if not self._checked else QFont.Weight.DemiBold)
         painter.setFont(font)
         painter.setPen(QColor(_TEXT) if self._checked else QColor(_SECONDARY))
+
+        right_w = 0
+        if self.count is not None and str(self.count):
+            count_font = QFont(font)
+            count_font.setPixelSize(10)
+            count_font.setWeight(QFont.Weight.Medium)
+            painter.setFont(count_font)
+            count_text = str(self.count)
+            right_w = painter.fontMetrics().horizontalAdvance(count_text) + 6
+            painter.setPen(QColor(_MUTED))
+            painter.drawText(
+                QRectF(w - right_w, 0, right_w, h),
+                Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight,
+                count_text,
+            )
+            painter.setFont(font)
+            painter.setPen(QColor(_TEXT) if self._checked else QColor(_SECONDARY))
+
         painter.drawText(
-            QRectF(cx + cs + 10, 0, w - cx - cs - 10, h),
+            QRectF(cx + cs + 10, 0, w - cx - cs - 10 - right_w, h),
             Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
             self.text,
         )
@@ -604,7 +623,7 @@ class SourceCard(QWidget):
         self.setAutoFillBackground(False)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
+        layout.setSpacing(8)
 
         self._build_header(layout)
         layout.addStretch(1)
@@ -666,7 +685,7 @@ class SourceCard(QWidget):
     def _build_header(self, layout):
         header = QWidget()
         header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(20, 10, 20, 4)
+        header_layout.setContentsMargins(20, 6, 20, 2)
 
         title = QLabel("Sources")
         title.setObjectName("sourceCardTitle")
@@ -749,8 +768,8 @@ class SourceCard(QWidget):
         self.sources_container = QWidget()
         self.sources_container.setObjectName("sourcesContainer")
         self.sources_layout = QVBoxLayout(self.sources_container)
-        self.sources_layout.setContentsMargins(12, 4, 12, 6)
-        self.sources_layout.setSpacing(4)
+        self.sources_layout.setContentsMargins(12, 2, 12, 4)
+        self.sources_layout.setSpacing(2)
         layout.addWidget(self.sources_container)
 
     def _build_health(self, layout):
@@ -876,9 +895,9 @@ class SourceCard(QWidget):
     def _build_summary(self, layout):
         self.summary_widget = QWidget()
         self.summary_widget.setObjectName("summaryWidget")
-        self.summary_widget.setMinimumHeight(44)
+        self.summary_widget.setMinimumHeight(38)
         s_layout = QVBoxLayout(self.summary_widget)
-        s_layout.setContentsMargins(16, 8, 16, 8)
+        s_layout.setContentsMargins(16, 6, 16, 6)
         s_layout.setSpacing(6)
         s_row = QHBoxLayout()
         s_row.setSpacing(0)
@@ -1027,8 +1046,8 @@ class SourceCard(QWidget):
         self.status_mode_widget = QWidget()
         self.status_mode_widget.setObjectName("statusModeWidget")
         sm_layout = QVBoxLayout(self.status_mode_widget)
-        sm_layout.setContentsMargins(16, 6, 16, 4)
-        sm_layout.setSpacing(1)
+        sm_layout.setContentsMargins(16, 4, 16, 2)
+        sm_layout.setSpacing(0)
 
         sm_layout.addWidget(self._section_header("Status"))
 
@@ -1058,102 +1077,69 @@ class SourceCard(QWidget):
             for rid, row in self._status_mode_rows:
                 row.setChecked(rid == mode_id)
 
+    def set_status_counts(self, counts=None):
+        """Set right-aligned counts on the Status rows (All/Available/Installed)."""
+        if not hasattr(self, '_status_mode_rows'):
+            return
+        counts = counts or {}
+        for mode_id, row in self._status_mode_rows:
+            row.count = counts.get(mode_id)
+            row.update()
+
     def _build_categories(self, layout):
         self.categories_widget = QWidget()
         self.categories_widget.setObjectName("categoriesWidget")
-        cat_layout = QVBoxLayout(self.categories_widget)
-        cat_layout.setContentsMargins(16, 6, 16, 4)
-        cat_layout.setSpacing(6)
+        self._categories_layout = QVBoxLayout(self.categories_widget)
+        self._categories_layout.setContentsMargins(16, 4, 16, 4)
+        self._categories_layout.setSpacing(0)
 
-        cat_layout.addWidget(self._section_header("Categories"))
-
-        self.categories_btn = QPushButton("All Categories \u25be")
-        self.categories_btn.setObjectName("sortBtn")
-        self.categories_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.categories_btn.setFixedHeight(24)
-        self.categories_btn.setStyleSheet(self._sort_btn_style())
-        self.categories_btn.clicked.connect(self._open_categories_menu)
-        cat_layout.addWidget(self.categories_btn)
+        self._categories_layout.addWidget(self._section_header("Categories"))
+        self._category_rows = []
 
         self.categories_widget.setVisible(False)
         layout.addWidget(self.categories_widget)
 
-        self.categories_menu = QMenu(self)
-        self.categories_menu.setObjectName("sourceSortMenu")
-        self.categories_menu.setStyleSheet("""
-            QMenu#sourceSortMenu {
-                background-color: #171C25;
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 10px;
-                padding: 4px;
-            }
-            QMenu#sourceSortMenu::item {
-                padding: 8px 14px;
-                border-radius: 6px;
-                margin: 1px 0;
-                color: #EDEDEF;
-                font-size: 12px;
-                font-weight: 500;
-                background: transparent;
-            }
-            QMenu#sourceSortMenu::item:selected {
-                background-color: rgba(59, 130, 246, 0.16);
-                color: #FFFFFF;
-            }
-            QMenu#sourceSortMenu::separator {
-                height: 1px;
-                background: rgba(255, 255, 255, 0.06);
-                margin: 4px 8px;
-            }
-        """)
-        self._category_actions = {}
-        self.categories_widget.setVisible(False)
-
     def set_categories(self, categories, counts=None):
-        """Populate the categories dropdown. `categories` is a list of names;
+        """Populate the inline category list. `categories` is a list of names;
         `counts` is an optional dict mapping category -> item count."""
-        self.categories_menu.clear()
-        self._category_actions = {}
-        all_act = self.categories_menu.addAction("All Categories")
-        all_act.setCheckable(True)
-        all_act.setChecked(True)
-        all_act.triggered.connect(lambda: self._on_category_selected(""))
-        self._category_actions[""] = all_act
+        while self._categories_layout.count():
+            item = self._categories_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        self._category_rows = []
         self._categories_list = list(categories or [])
-        if self._categories_list:
-            self.categories_menu.addSeparator()
         counts = counts or {}
-        for cat in self._categories_list:
-            label = cat if not counts.get(cat) else f"{cat} ({counts[cat]})"
-            act = self.categories_menu.addAction(label)
-            act.setCheckable(True)
-            act.triggered.connect(lambda checked=False, c=cat: self._on_category_selected(c))
-            self._category_actions[cat] = act
-        self._current_category = ""
-        self._update_categories_btn_text()
 
-    def _open_categories_menu(self):
-        pos = self.categories_btn.mapToGlobal(self.categories_btn.rect().bottomLeft())
-        self.categories_menu.setUpdatesEnabled(False)
-        self.categories_menu.popup(pos)
-        self.categories_menu.setUpdatesEnabled(True)
+        self._categories_layout.addWidget(self._section_header("Categories"))
+        total = sum(counts.values())
+        all_row = _RadioRow("All Categories", count=total or None)
+        all_row.clicked.connect(lambda: self._on_category_selected(""))
+        self._categories_layout.addWidget(all_row)
+        self._category_rows.append(("", all_row))
+
+        for cat in self._categories_list:
+            row = _RadioRow(cat, count=counts.get(cat) or None)
+            row.clicked.connect(lambda c=cat: self._on_category_selected(c))
+            self._categories_layout.addWidget(row)
+            self._category_rows.append((cat, row))
+
+        self._current_category = ""
+        self._set_category_selection("")
+
+    def _set_category_selection(self, category):
+        for cat, row in self._category_rows:
+            row.setChecked(cat == category)
 
     def _on_category_selected(self, category):
         self._current_category = category or ""
-        for cat, act in self._category_actions.items():
-            act.setChecked(cat == self._current_category)
-        self._update_categories_btn_text()
+        self._set_category_selection(self._current_category)
         self.category_changed.emit(self._current_category)
-
-    def _update_categories_btn_text(self):
-        name = self._current_category or "All Categories"
-        self.categories_btn.setText(f"{name} \u25be")
 
     def _build_sort(self, layout):
         self.sort_widget = QWidget()
         self.sort_widget.setObjectName("sortWidget")
         sort_layout = QVBoxLayout(self.sort_widget)
-        sort_layout.setContentsMargins(16, 6, 16, 4)
+        sort_layout.setContentsMargins(16, 4, 16, 2)
         sort_layout.setSpacing(6)
 
         sort_layout.addWidget(self._section_header("Sort By"))
@@ -1161,7 +1147,7 @@ class SourceCard(QWidget):
         self.sort_btn = QPushButton()
         self.sort_btn.setObjectName("sortBtn")
         self.sort_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.sort_btn.setFixedHeight(24)
+        self.sort_btn.setFixedHeight(22)
         self.sort_btn.setStyleSheet(self._sort_btn_style())
         self.sort_btn.clicked.connect(self._open_sort_menu)
         sort_layout.addWidget(self.sort_btn)

@@ -25,152 +25,6 @@ def _fmt_size(b):
 
 
 class _FiltersMixin:
-    def _get_filter_names(self):
-        if self.current_view == "installed":
-            return ("Updates available",)
-        if self.current_view == "updates":
-            return ()
-        return ("Available", "Installed")
-
-    def _update_filter_btn_state(self):
-        if not hasattr(self, '_filter_btn') or not self._filter_btn:
-            return
-        if self.current_view == "installed":
-            states = getattr(self, '_installed_filter_states', {})
-            all_on = not states.get("Updates available", False)
-        elif hasattr(self, 'plugins_view') and self.plugins_view:
-            states = getattr(self.plugins_view, '_current_filter_states', {})
-            all_on = all(states.get(n, True) for n in ("Available", "Installed"))
-        else:
-            all_on = True
-        if all_on:
-            self._filter_btn.setStyleSheet(self._filter_btn.property("defaultStyle") or "")
-        else:
-            self._filter_btn.setStyleSheet("""
-                QPushButton {
-                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 rgba(0, 191, 174, 0.2),
-                        stop:1 rgba(0, 191, 174, 0.1));
-                    border: 1px solid rgba(0, 191, 174, 0.35);
-                    border-radius: 21px;
-                }
-                QPushButton:hover {
-                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 rgba(0, 191, 174, 0.28),
-                        stop:1 rgba(0, 191, 174, 0.15));
-                    border: 1px solid rgba(0, 191, 174, 0.5);
-                }
-                QPushButton:pressed {
-                    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                        stop:0 rgba(0, 191, 174, 0.35),
-                        stop:1 rgba(0, 191, 174, 0.2));
-                    border: 1px solid rgba(0, 191, 174, 0.6);
-                }
-            """)
-
-    def _make_toggle_icon(self, checked, size=18):
-        from PyQt6.QtGui import QPixmap, QPainter, QColor, QPen
-        from PyQt6.QtCore import Qt
-        pm = QPixmap(size, size)
-        pm.fill(Qt.GlobalColor.transparent)
-        p = QPainter(pm)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        track_h = 14
-        track_y = (size - track_h) // 2
-        knob_d = 12
-        knob_y = track_y + 1
-        pad = 2
-        if checked:
-            p.setBrush(QColor("#00BFAE"))
-            p.setPen(Qt.PenStyle.NoPen)
-            p.drawRoundedRect(0, track_y, size, track_h, track_h // 2, track_h // 2)
-            p.setBrush(QColor(255, 255, 255))
-            p.drawEllipse(size - knob_d - pad, knob_y, knob_d, knob_d)
-        else:
-            p.setBrush(QColor(0, 0, 0, 0))
-            p.setPen(QPen(QColor(100, 102, 110), 2))
-            p.drawRoundedRect(1, track_y, size - 2, track_h, track_h // 2, track_h // 2)
-            p.setBrush(QColor(80, 82, 90))
-            p.setPen(Qt.PenStyle.NoPen)
-            p.drawEllipse(pad, knob_y, knob_d, knob_d)
-        p.end()
-        from PyQt6.QtGui import QIcon
-        return QIcon(pm)
-
-    def show_category_filter(self):
-        if not hasattr(self, '_filter_btn') or not self._filter_btn:
-            return
-        self._update_filter_btn_state()
-        from PyQt6.QtWidgets import QMenu
-
-        menu = QMenu(self._filter_btn)
-        menu.setObjectName("filterTogglePopup")
-        menu.setStyleSheet("""
-            QMenu#filterTogglePopup {
-                background-color: rgba(22, 23, 26, 0.85);
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 12px;
-                padding: 6px;
-            }
-            QMenu#filterTogglePopup::item {
-                padding: 10px 14px;
-                border-radius: 8px;
-                margin: 1px 0;
-                color: #EDEDEF;
-                font-size: 13px;
-                font-weight: 500;
-                background: transparent;
-            }
-            QMenu#filterTogglePopup::item:selected {
-                background-color: rgba(255, 255, 255, 0.04);
-                color: #FFFFFF;
-            }
-            QMenu#filterTogglePopup::icon {
-                padding-right: 10px;
-            }
-        """)
-
-        filter_names = self._get_filter_names()
-
-        if self.current_view == "installed":
-            if not hasattr(self, '_installed_filter_states'):
-                self._installed_filter_states = {"Updates available": False}
-            current = self._installed_filter_states
-        elif hasattr(self, 'plugins_view') and self.plugins_view:
-            current = getattr(self.plugins_view, '_current_filter_states', {})
-        else:
-            current = {}
-
-        for name in filter_names:
-            checked = current.get(name, True)
-            action = menu.addAction(self._make_toggle_icon(checked), name)
-            action.setCheckable(True)
-            action.setChecked(checked)
-            def make_handler(n):
-                return lambda ch: self._on_filter_chip_toggled(n, ch)
-            action.triggered.connect(make_handler(name))
-
-        menu.exec(self._filter_btn.mapToGlobal(
-            self._filter_btn.rect().bottomLeft()
-        ))
-
-    def _on_filter_chip_toggled(self, filter_name, checked):
-        if self.current_view == "installed":
-            if not hasattr(self, '_installed_filter_states'):
-                self._installed_filter_states = {"Updates available": False}
-            self._installed_filter_states[filter_name] = checked
-            # Sync with the FilterCard in the left panel (block signals to avoid loop)
-            if hasattr(self, 'filter_card') and self.filter_card:
-                self.filter_card.blockSignals(True)
-                self.filter_card.set_selected_filters(self._installed_filter_states)
-                self.filter_card.blockSignals(False)
-            self.apply_filters()
-        elif hasattr(self, 'plugins_view') and self.plugins_view:
-            states = getattr(self.plugins_view, '_current_filter_states', {})
-            states[filter_name] = checked
-            self.plugins_view.apply_filters(states)
-        self._update_filter_btn_state()
-
     def get_row_checkbox(self, row):
         cell = self.package_table.cellWidget(row, 0)
         if not cell:
@@ -303,7 +157,6 @@ class _FiltersMixin:
         # Apply filtering based on current view
         if self.current_view == "installed":
             self._installed_filter_states = filter_states.copy()
-            self._update_filter_btn_state()
             self.apply_filters()
         elif self.current_view == "updates":
             self._recompute_updates()
@@ -653,11 +506,10 @@ class _FiltersMixin:
                 cat_counts[cat] = cat_counts.get(cat, 0) + 1
         self.source_card.set_categories(cats, cat_counts)
         self._plugins_status_mode = "all"
-        self.source_card.configure_stats(
-            "Extension Stats", [("total", "Total"), ("installed", "Installed"), ("available", "Available")])
+        self._plugins_category = ""
         self.source_card.configure_sections(
             show_search=False, show_counts=True, show_sort=True, show_summary=True,
-            show_categories=True, show_status_mode=True, show_stats=True)
+            show_categories=True, show_status_mode=True, show_stats=False)
         self._refresh_plugins_summary()
 
     def _on_plugins_category_changed(self, category):
@@ -684,14 +536,14 @@ class _FiltersMixin:
             if not (hasattr(self, 'plugins_view') and self.plugins_view):
                 return
             query = getattr(self, '_plugins_search_query', "")
-            cats = [self._plugins_category] if self._plugins_category else []
+            cats = [getattr(self, '_plugins_category', "")] if getattr(self, '_plugins_category', "") else []
             self.plugins_view.set_filter(query, False, cats)
             self._refresh_plugins_summary()
         except Exception:
             pass
 
     def _refresh_plugins_summary(self):
-        """Update the bottom extension count and stats on the plugins source card."""
+        """Update the bottom extension count and status counts on the plugins source card."""
         try:
             if not (hasattr(self, 'source_card') and self.source_card):
                 return
@@ -712,7 +564,11 @@ class _FiltersMixin:
                 except Exception:
                     count = total
             self.source_card.set_summary(count, noun="extensions")
-            self.source_card.set_stats(total=total, installed=installed, available=max(0, total - installed))
+            self.source_card.set_status_counts({
+                "all": total,
+                "available": max(0, total - installed),
+                "installed": installed,
+            })
         except Exception:
             pass
 

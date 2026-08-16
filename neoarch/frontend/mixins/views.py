@@ -461,7 +461,7 @@ class _ViewsMixin:
 
         return btn
 
-    def _add_right_toolbar_icons(self, layout, show_install_file=False, show_sudo=False, show_bundle=False, show_grid_filter=True, show_filter=True):
+    def _add_right_toolbar_icons(self, layout, show_install_file=False, show_sudo=False, show_bundle=False, show_grid_filter=True):
         """Add common right-side navbar icons to any toolbar layout."""
         navbar_dir = os.path.join(_BASE_DIR, "assets", "icons", "navbar")
 
@@ -472,15 +472,6 @@ class _ViewsMixin:
                 self.toggle_view_mode
             )
             layout.addWidget(self._grid_view_btn)
-
-            if show_filter:
-                self._filter_btn = self.create_toolbar_button(
-                    os.path.join(navbar_dir, "Filter.svg"),
-                    "Filter Packages",
-                    self.show_category_filter
-                )
-                self._filter_btn.setProperty("defaultStyle", self._filter_btn.styleSheet())
-                layout.addWidget(self._filter_btn)
 
         if show_install_file:
             self._install_file_btn = self.create_toolbar_button(
@@ -1180,7 +1171,6 @@ class _ViewsMixin:
 
         self.discover_install_btn = None
         self._grid_view_btn = None
-        self._filter_btn = None
         self._install_file_btn = None
         self._bundle_btn = None
         self._bundle_select_all_btn = None
@@ -1285,7 +1275,7 @@ class _ViewsMixin:
             layout.addWidget(self._selection_summary_label)
 
             layout.addStretch()
-            self._add_right_toolbar_icons(layout, show_filter=False)
+            self._add_right_toolbar_icons(layout)
 
             self.toolbar_layout.addLayout(layout)
             try:
@@ -1354,7 +1344,7 @@ class _ViewsMixin:
             layout.addWidget(self._selection_summary_label)
 
             layout.addStretch()
-            self._add_right_toolbar_icons(layout, show_filter=False)
+            self._add_right_toolbar_icons(layout)
 
             self.toolbar_layout.addLayout(layout)
             try:
@@ -1396,7 +1386,7 @@ class _ViewsMixin:
 
             layout.addStretch()  # Push remaining buttons to the right
 
-            self._add_right_toolbar_icons(layout, show_install_file=True, show_bundle=True, show_filter=False, show_sudo=False)
+            self._add_right_toolbar_icons(layout, show_install_file=True, show_bundle=True, show_sudo=False)
 
             # Hide grid/bundle until search results are shown
             if self._grid_view_btn:
