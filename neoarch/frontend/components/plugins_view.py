@@ -277,6 +277,8 @@ class PluginsView(QWidget):
         # Installation status cache — preserved across navigation, cleared only after install/uninstall
         self._installed_cache = {}
 
+        self._pending_live_query = None
+
         # Debounce timer for resize events
         self._resize_timer = QTimer()
         self._resize_timer.setSingleShot(True)
@@ -710,10 +712,10 @@ class PluginsView(QWidget):
             from neoarch.resources.plugin_data import get_all_plugins_data
             plugins = get_all_plugins_data()
             import subprocess
-            r = subprocess.run(["pacman", "-Qq"], capture_output=True, text=True, timeout=5)
+            r = subprocess.run(["pacman", "-Qq"], capture_output=True, text=True, timeout=5, check=False)
             if r.returncode != 0 or not r.stdout:
                 return
-            installed = set(l.strip() for l in r.stdout.strip().split('\n') if l.strip())
+            installed = {l.strip() for l in r.stdout.strip().split('\n') if l.strip()}
             for p in plugins:
                 pid = p.get('id')
                 pkg = p.get('pkg', '')
@@ -737,7 +739,7 @@ class PluginsView(QWidget):
                 result = True
             else:
                 import subprocess
-                r = subprocess.run(["pacman", "-Qi", pkg], capture_output=True, text=True, timeout=5)
+                r = subprocess.run(["pacman", "-Qi", pkg], capture_output=True, text=True, timeout=5, check=False)
                 result = r.returncode == 0
         except Exception:
             result = False
@@ -859,7 +861,7 @@ class PluginsView(QWidget):
         """Handle live search results on the main thread (widgets require it)."""
         try:
             query, specs = payload
-            if getattr(self, '_pending_live_query', None) != query:
+            if self._pending_live_query != query:
                 return
             self._pending_live_query = None
             if not specs:

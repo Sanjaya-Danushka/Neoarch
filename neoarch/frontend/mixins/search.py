@@ -31,6 +31,7 @@ class _SearchMixin:
                 subprocess.run(
                     ["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
                     capture_output=True, text=True, timeout=120, env=env,
+                    check=False,
                 )
                 self.log("Package databases synced.")
             except Exception as e:
