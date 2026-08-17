@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap, QPainter, QColor, QPen, QPalette, QFontMetrics
 from PyQt6.QtCore import Qt, QRectF, pyqtSignal, QPropertyAnimation, QEasingCurve, pyqtProperty
 from PyQt6.QtSvg import QSvgRenderer
+from neoarch.frontend.tokens import Colors, SourceColors
 
 
 class ToggleSwitch(QWidget):
@@ -214,14 +215,13 @@ class SourceItem(QWidget):
         if self._try_load_svg(icon_path):
             return
 
-        icon_styles = {
-            "pacman": {"text": "\u25C9", "color": "#4FC3F7"},
-            "aur": {"text": "\u25C9", "color": "#FF8A65"},
-            "flatpak": {"text": "\u25C9", "color": "#26A69A"},
-            "npm": {"text": "\u25C9", "color": "#E53935"},
-            "local": {"text": "\u25C9", "color": "#3B82F6"},
+        _src_key = {
+            "pacman": "pacman", "aur": "AUR", "flatpak": "Flatpak",
+            "npm": "npm", "local": "Local",
         }
-        style = icon_styles.get(self.source_name.lower(), {"text": "\u25C9", "color": "#727B89"})
+        src_name = _src_key.get(self.source_name.lower())
+        src_color = SourceColors.get(src_name, Colors.TEXT_3) if src_name else Colors.TEXT_3
+        style = {"text": "\u25C9", "color": src_color}
         self.icon_label.setText(style["text"])
         self.icon_label.setStyleSheet(f"""
             QLabel {{
@@ -256,9 +256,12 @@ class SourceItem(QWidget):
             return False
 
     def get_accent_color(self, name):
-        n = name.lower()
-        mapping = {"pacman": "#3B82F6", "aur": "#F59E0B", "flatpak": "#10B981", "npm": "#EF4444", "local": "#3B82F6"}
-        return mapping.get(n, "#3B82F6")
+        _src_key = {
+            "pacman": "pacman", "aur": "AUR", "flatpak": "Flatpak",
+            "npm": "npm", "local": "Local",
+        }
+        src_name = _src_key.get(name.lower())
+        return SourceColors.get(src_name, Colors.ACCENT) if src_name else Colors.ACCENT
 
     def on_toggled(self, state):
         self._checked = state
@@ -266,66 +269,66 @@ class SourceItem(QWidget):
 
     def update_visual_state(self):
         if self._checked:
-            self.setStyleSheet("""
-                SourceItem {
+            self.setStyleSheet(f"""
+                SourceItem {{
                     border: none;
                     border-radius: 14px;
-                }
-                QLabel#sourceItemName {
-                    color: #EDEDEF;
+                }}
+                QLabel#sourceItemName {{
+                    color: {Colors.TEXT};
                     font-size: 12px;
                     font-weight: 600;
                     background: transparent;
                     border: none;
-                }
-                QLabel#sourceItemSubtitle {
+                }}
+                QLabel#sourceItemSubtitle {{
                     color: #6B7280;
                     font-size: 10px;
                     font-weight: 400;
                     background: transparent;
                     border: none;
-                }
-                QLabel#sourceItemCount {
-                    color: #EDEDEF;
+                }}
+                QLabel#sourceItemCount {{
+                    color: {Colors.TEXT};
                     font-size: 10px;
                     font-weight: 600;
                     background: rgba(255, 255, 255, 0.08);
-                    border: 1px solid rgba(255, 255, 255, 0.10);
+                    border: 1px solid {Colors.BORDER_HOVER};
                     border-radius: 10px;
                     padding: 1px 7px;
                     margin: 0;
-                }
+                }}
             """)
         else:
-            self.setStyleSheet("""
-                SourceItem {
+            self.setStyleSheet(f"""
+                SourceItem {{
                     border: none;
                     border-radius: 14px;
-                }
-                QLabel#sourceItemName {
-                    color: #8B8D97;
+                }}
+                QLabel#sourceItemName {{
+                    color: {Colors.TEXT_2};
                     font-size: 12px;
                     font-weight: 500;
                     background: transparent;
                     border: none;
-                }
-                QLabel#sourceItemSubtitle {
+                }}
+                QLabel#sourceItemSubtitle {{
                     color: #6B7280;
                     font-size: 10px;
                     font-weight: 400;
                     background: transparent;
                     border: none;
-                }
-                QLabel#sourceItemCount {
-                    color: #8B8D97;
+                }}
+                QLabel#sourceItemCount {{
+                    color: {Colors.TEXT_2};
                     font-size: 10px;
                     font-weight: 600;
                     background: rgba(255, 255, 255, 0.04);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border: 1px solid {Colors.BORDER_INPUT};
                     border-radius: 10px;
                     padding: 1px 7px;
                     margin: 0;
-                }
+                }}
             """)
         self.update()
 

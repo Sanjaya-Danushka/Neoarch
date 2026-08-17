@@ -9,17 +9,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QPainter, QBrush
 
-
-_C = {
-    "border": "rgba(255, 255, 255, 0.06)",
-    "accent": "#00BFAE",
-    "text": "#EDEDEF",
-    "text_sec": "#8B8D97",
-    "text_muted": "#5C5E66",
-    "success": "#10B981",
-    "warning": "#FF8A65",
-    "danger": "#FF6B6B",
-}
+from neoarch.frontend.tokens import Colors, SourceColors
 
 
 def _shadow(widget: QWidget, blur=24, offset=(4, 6), alpha=150):
@@ -45,7 +35,7 @@ class _Avatar(QLabel):
         p.setBrush(QBrush(QColor(self._color)))
         p.setPen(Qt.PenStyle.NoPen)
         p.drawRoundedRect(r, 10, 10)
-        p.setPen(QColor("#EDEDEF"))
+        p.setPen(QColor(Colors.TEXT))
         f = QFont()
         f.setPointSize(17)
         f.setBold(True)
@@ -57,7 +47,7 @@ class _Avatar(QLabel):
 def _section_title(text: str) -> QLabel:
     lbl = QLabel(text)
     lbl.setStyleSheet(
-        f"color: {_C['text_muted']}; font-size: 9px; font-weight: 700; "
+        f"color: {Colors.TEXT_3}; font-size: 9px; font-weight: 700; "
         f"letter-spacing: 0.8px; background: transparent; padding: 0;"
     )
     return lbl
@@ -70,11 +60,11 @@ def _detail_row(label: str, value: str) -> QWidget:
     l.setContentsMargins(0, 2, 0, 2)
     l.setSpacing(8)
     lbl = QLabel(label)
-    lbl.setStyleSheet(f"color: {_C['text_muted']}; font-size: 12px; background: transparent;")
+    lbl.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: 12px; background: transparent;")
     lbl.setFixedWidth(56)
     l.addWidget(lbl)
     val = QLabel(value)
-    val.setStyleSheet(f"color: {_C['text_sec']}; font-size: 12px; background: transparent;")
+    val.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: 12px; background: transparent;")
     val.setWordWrap(True)
     l.addWidget(val, 1)
     return row
@@ -83,7 +73,7 @@ def _detail_row(label: str, value: str) -> QWidget:
 def _make_sep() -> QFrame:
     sep = QFrame()
     sep.setFrameShape(QFrame.Shape.HLine)
-    sep.setStyleSheet(f"background: {_C['border']}; max-height: 1px; border: none;")
+    sep.setStyleSheet(f"background: {Colors.BORDER}; max-height: 1px; border: none;")
     return sep
 
 
@@ -107,7 +97,7 @@ def _close_btn_stylesheet() -> str:
     """
 
 
-def _nav_btn_stylesheet(color: str = _C["text_sec"]) -> str:
+def _nav_btn_stylesheet(color: str = Colors.TEXT_2) -> str:
     return f"""
         QPushButton {{
             background-color: transparent;
@@ -121,7 +111,7 @@ def _nav_btn_stylesheet(color: str = _C["text_sec"]) -> str:
         }}
         QPushButton:hover {{
             background-color: rgba(255, 255, 255, 0.04);
-            color: {_C['text']};
+            color: {Colors.TEXT};
         }}
         QPushButton:pressed {{
             background-color: rgba(255, 255, 255, 0.08);
@@ -129,12 +119,7 @@ def _nav_btn_stylesheet(color: str = _C["text_sec"]) -> str:
     """
 
 
-SOURCE_COLORS = {
-    "pacman": "#00BFAE",
-    "aur": "#A855F7",
-    "flatpak": "#3B82F6",
-    "npm": "#F97316",
-}
+SOURCE_COLORS = SourceColors
 
 
 def _fmt_size(b):
@@ -170,8 +155,8 @@ class PackageDetailCard(QFrame):
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 rgba(28, 30, 36, 0.55),
                     stop:1 rgba(20, 22, 26, 0.40));
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                border-top: 1px solid rgba(255, 255, 255, 0.10);
+                border: 1px solid {Colors.BORDER_INPUT};
+                border-top: 1px solid {Colors.BORDER_HOVER};
                 border-radius: 16px;
             }}
         """)
@@ -204,7 +189,7 @@ class PackageDetailCard(QFrame):
         hl.setContentsMargins(0, 0, 0, 0)
         hl.setSpacing(10)
 
-        self.avatar = _Avatar("?", _C["accent"])
+        self.avatar = _Avatar("?", Colors.ACCENT)
         hl.addWidget(self.avatar)
 
         nc = QVBoxLayout()
@@ -214,12 +199,12 @@ class PackageDetailCard(QFrame):
         f.setBold(True)
         f.setPointSize(14)
         self.name_label.setFont(f)
-        self.name_label.setStyleSheet(f"color: {_C['text']}; background: transparent;")
+        self.name_label.setStyleSheet(f"color: {Colors.TEXT}; background: transparent;")
         self.name_label.setWordWrap(True)
         nc.addWidget(self.name_label)
         self.version_label = QLabel()
         self.version_label.setStyleSheet(
-            f"color: {_C['text_muted']}; font-size: 11px; background: transparent;"
+            f"color: {Colors.TEXT_3}; font-size: 11px; background: transparent;"
         )
         nc.addWidget(self.version_label)
         hl.addLayout(nc, 1)
@@ -250,7 +235,7 @@ class PackageDetailCard(QFrame):
 
         self.version_row = QLabel()
         self.version_row.setStyleSheet(
-            f"color: {_C['text_sec']}; font-size: 12px; background: transparent;"
+            f"color: {Colors.TEXT_2}; font-size: 12px; background: transparent;"
         )
         content.addWidget(self.version_row)
 
@@ -281,7 +266,7 @@ class PackageDetailCard(QFrame):
         content.addSpacing(6)
         self.revdeps_label = QLabel()
         self.revdeps_label.setStyleSheet(
-            f"color: {_C['text_sec']}; font-size: 12px; background: transparent;"
+            f"color: {Colors.TEXT_2}; font-size: 12px; background: transparent;"
         )
         self.revdeps_label.setWordWrap(True)
         self.revdeps_label.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -297,7 +282,7 @@ class PackageDetailCard(QFrame):
 
         self.desc_label = QLabel()
         self.desc_label.setStyleSheet(
-            f"color: {_C['text_sec']}; font-size: 12px; background: transparent;"
+            f"color: {Colors.TEXT_2}; font-size: 12px; background: transparent;"
         )
         self.desc_label.setWordWrap(True)
         self.desc_label.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -320,7 +305,7 @@ class PackageDetailCard(QFrame):
         self.install_btn.setMinimumHeight(40)
         self.install_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.install_btn.setStyleSheet(
-            _nav_btn_stylesheet(_C["accent"])
+            _nav_btn_stylesheet(Colors.ACCENT)
         )
         self.install_btn.clicked.connect(self.install_requested.emit)
         self.action_layout.addWidget(self.install_btn)
@@ -329,7 +314,7 @@ class PackageDetailCard(QFrame):
         self.update_btn.setMinimumHeight(40)
         self.update_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.update_btn.setStyleSheet(
-            _nav_btn_stylesheet(_C["warning"])
+            _nav_btn_stylesheet("#FF8A65")
         )
         self.update_btn.clicked.connect(self.update_requested.emit)
         self.action_layout.addWidget(self.update_btn)
@@ -338,7 +323,7 @@ class PackageDetailCard(QFrame):
         self.uninstall_btn.setMinimumHeight(40)
         self.uninstall_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.uninstall_btn.setStyleSheet(
-            _nav_btn_stylesheet(_C["danger"])
+            _nav_btn_stylesheet(Colors.RED)
         )
         self.uninstall_btn.clicked.connect(self.uninstall_requested.emit)
         self.action_layout.addWidget(self.uninstall_btn)
@@ -347,14 +332,14 @@ class PackageDetailCard(QFrame):
         self.check_updates_btn.setMinimumHeight(40)
         self.check_updates_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.check_updates_btn.setStyleSheet(
-            _nav_btn_stylesheet(_C["warning"])
+            _nav_btn_stylesheet("#FF8A65")
         )
         self.action_layout.addWidget(self.check_updates_btn)
 
         self.up_to_date_label = QLabel("✓  Up to date")
         self.up_to_date_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.up_to_date_label.setStyleSheet(
-            f"color: {_C['success']}; font-size: 12px; font-weight: 600; "
+            f"color: {"#10B981"}; font-size: 12px; font-weight: 600; "
             f"background: rgba(16,185,129,0.08); border-radius: 8px; padding: 8px;"
         )
         self.action_layout.addWidget(self.up_to_date_label)
@@ -363,7 +348,7 @@ class PackageDetailCard(QFrame):
         layout.addWidget(scroll)
 
     def _source_color(self, source: str) -> str:
-        return SOURCE_COLORS.get(source.lower(), _C["accent"])
+        return SOURCE_COLORS.get(source.lower(), Colors.ACCENT)
 
     def show_package(self, pkg_data: dict):
         self._pkg_data = pkg_data
@@ -394,19 +379,19 @@ class PackageDetailCard(QFrame):
             if has_update:
                 self.status_badge.setText("◉  Update Available")
                 self.status_badge.setStyleSheet(
-                    f"background: rgba(255,138,101,0.12); color: {_C['warning']};"
+                    f"background: rgba(255,138,101,0.12); color: {"#FF8A65"};"
                     f" font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
                 )
             else:
                 self.status_badge.setText("◉  Installed")
                 self.status_badge.setStyleSheet(
-                    f"background: rgba(16,185,129,0.12); color: {_C['success']};"
+                    f"background: rgba(16,185,129,0.12); color: {"#10B981"};"
                     f" font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
                 )
         else:
             self.status_badge.setText("○  Not Installed")
             self.status_badge.setStyleSheet(
-                f"background: rgba(92,94,102,0.12); color: {_C['text_muted']};"
+                f"background: rgba(92,94,102,0.12); color: {Colors.TEXT_3};"
                 f" font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
             )
         self.status_badge.setVisible(True)

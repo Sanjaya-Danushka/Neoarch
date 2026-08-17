@@ -5,105 +5,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QFrame)
 
 from neoarch.backend import sys_utils
-
-_CARD = """
-    QFrame#settingsCard {
-        background-color: rgba(28, 30, 36, 0.75);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 12px;
-    }
-"""
-
-_CHECKBOX = """
-    QCheckBox {
-        color: #EDEDEF;
-        font-size: 13px;
-        spacing: 10px;
-    }
-    QCheckBox::indicator {
-        width: 18px;
-        height: 18px;
-        border-radius: 5px;
-        border: 1.5px solid #5C5E66;
-        background-color: rgba(18, 19, 22, 0.8);
-    }
-    QCheckBox::indicator:hover {
-        border-color: #00BFAE;
-    }
-    QCheckBox::indicator:checked {
-        background-color: #00BFAE;
-        border: 1.5px solid #00BFAE;
-    }
-"""
-
-_COMBO = """
-    QComboBox {
-        background-color: rgba(18, 19, 22, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        padding: 10px 14px;
-        color: #EDEDEF;
-        min-width: 180px;
-        font-size: 13px;
-    }
-    QComboBox:hover {
-        border-color: #00BFAE;
-    }
-    QComboBox::drop-down {
-        border: none;
-        width: 24px;
-    }
-    QComboBox::down-arrow {
-        image: none;
-        border: none;
-    }
-"""
-
-_LINEEDIT = """
-    QLineEdit {
-        background-color: rgba(18, 19, 22, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        padding: 10px 14px;
-        color: #EDEDEF;
-        font-size: 13px;
-    }
-    QLineEdit:focus {
-        border-color: #00BFAE;
-    }
-"""
-
-_BTN_OUTLINE = """
-    QPushButton {
-        background-color: transparent;
-        color: #00BFAE;
-        border: 1px solid rgba(0, 191, 174, 0.35);
-        border-radius: 8px;
-        padding: 10px 24px;
-        font-size: 13px;
-        font-weight: 600;
-    }
-    QPushButton:hover {
-        background-color: rgba(0, 191, 174, 0.12);
-        border-color: #00BFAE;
-    }
-"""
-
-_BTN_GHOST = """
-    QPushButton {
-        background-color: transparent;
-        color: #8B8D97;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        padding: 10px 24px;
-        font-size: 13px;
-        font-weight: 600;
-    }
-    QPushButton:hover {
-        background-color: rgba(255, 255, 255, 0.06);
-        border-color: rgba(255, 255, 255, 0.2);
-    }
-"""
+from neoarch.frontend.tokens import QSS, Colors, Fonts, Radii
 
 
 class GeneralSettingsWidget(QWidget):
@@ -119,43 +21,43 @@ class GeneralSettingsWidget(QWidget):
     def _make_card(self, title_text):
         card = QFrame()
         card.setObjectName("settingsCard")
-        card.setStyleSheet(_CARD)
+        card.setStyleSheet(QSS.CARD)
         card_layout = QVBoxLayout(card)
         card_layout.setContentsMargins(20, 18, 20, 20)
         card_layout.setSpacing(16)
 
         title = QLabel(title_text)
-        title.setStyleSheet("font-size: 15px; font-weight: 600; color: #EDEDEF; border: none;")
+        title.setStyleSheet(f"font-size: {Fonts.CARD_TITLE}; font-weight: {Fonts.SEMI}; color: {Colors.TEXT}; border: none;")
         card_layout.addWidget(title)
 
         return card, card_layout
 
     def setup_ui(self):
         title = QLabel("General")
-        title.setStyleSheet("font-size: 28px; font-weight: 700; color: #EDEDEF; letter-spacing: -0.5px;")
+        title.setStyleSheet(f"font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD}; color: {Colors.TEXT}; letter-spacing: -0.5px;")
         self.layout.addWidget(title)
 
         subtitle = QLabel("Configure basic application settings and preferences")
-        subtitle.setStyleSheet("font-size: 13px; color: #8B8D97; margin-top: -16px;")
+        subtitle.setStyleSheet(f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2}; margin-top: -16px;")
         self.layout.addWidget(subtitle)
 
         # ── Basic Settings Card ──
         basic_card, basic_layout = self._make_card("Basic Settings")
 
         self.cb_auto_check = QCheckBox("Auto check updates on launch")
-        self.cb_auto_check.setStyleSheet(_CHECKBOX)
+        self.cb_auto_check.setStyleSheet(QSS.CHECKBOX)
         self.cb_auto_check.setChecked(bool(self.app.settings.get('auto_check_updates', True)))
         self.cb_auto_check.toggled.connect(lambda v: self.app.update_setting('auto_check_updates', v))
         basic_layout.addWidget(self.cb_auto_check)
 
         self.cb_local = QCheckBox("Include Local source (custom scripts)")
-        self.cb_local.setStyleSheet(_CHECKBOX)
+        self.cb_local.setStyleSheet(QSS.CHECKBOX)
         self.cb_local.setChecked(bool(self.app.settings.get('include_local_source', True)))
         self.cb_local.toggled.connect(lambda v: self.app.update_setting('include_local_source', v))
         basic_layout.addWidget(self.cb_local)
 
         self.cb_npm = QCheckBox("Use npm user mode for global installs")
-        self.cb_npm.setStyleSheet(_CHECKBOX)
+        self.cb_npm.setStyleSheet(QSS.CHECKBOX)
         self.cb_npm.setChecked(bool(self.app.settings.get('npm_user_mode', True)))
         self.cb_npm.toggled.connect(lambda v: self.app.update_setting('npm_user_mode', v))
         basic_layout.addWidget(self.cb_npm)
@@ -163,11 +65,11 @@ class GeneralSettingsWidget(QWidget):
         aur_row = QHBoxLayout()
         aur_row.setSpacing(12)
         aur_label = QLabel("AUR Helper:")
-        aur_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        aur_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         aur_row.addWidget(aur_label)
 
         self.aur_helper_combo = QComboBox()
-        self.aur_helper_combo.setStyleSheet(_COMBO)
+        self.aur_helper_combo.setStyleSheet(QSS.COMBO)
 
         available_helpers = sys_utils.get_available_aur_helpers()
         self.aur_helper_combo.addItem("Auto (detect available)", "auto")
@@ -186,12 +88,12 @@ class GeneralSettingsWidget(QWidget):
         detected_helper = sys_utils.get_aur_helper()
         if detected_helper:
             status_text = f"Currently using: {detected_helper}"
-            status_color = "#8B8D97"
+            status_color = Colors.TEXT_2
         else:
             status_text = "No AUR helper detected"
-            status_color = "#FF6B6B"
+            status_color = Colors.RED
         helper_status = QLabel(status_text)
-        helper_status.setStyleSheet(f"color: {status_color}; font-size: 11px; border: none;")
+        helper_status.setStyleSheet(f"color: {status_color}; font-size: {Fonts.SM}; border: none;")
         aur_row.addWidget(helper_status)
         aur_row.addStretch()
 
@@ -200,11 +102,11 @@ class GeneralSettingsWidget(QWidget):
         culture_row = QHBoxLayout()
         culture_row.setSpacing(12)
         culture_label = QLabel("Language / Culture:")
-        culture_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        culture_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         culture_row.addWidget(culture_label)
 
         self.culture_combo = QComboBox()
-        self.culture_combo.setStyleSheet(_COMBO)
+        self.culture_combo.setStyleSheet(QSS.COMBO)
         try:
             from neoarch.backend.services.i18n import available_languages
             langs = available_languages()
@@ -222,7 +124,7 @@ class GeneralSettingsWidget(QWidget):
         culture_row.addWidget(self.culture_combo)
 
         culture_note = QLabel("Affects the CLI translation catalog; the GUI ships in English.")
-        culture_note.setStyleSheet("color: #8B8D97; font-size: 11px; border: none;")
+        culture_note.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.SM}; border: none;")
         culture_row.addWidget(culture_note)
         culture_row.addStretch()
 
@@ -233,7 +135,7 @@ class GeneralSettingsWidget(QWidget):
         bundle_card, bundle_layout = self._make_card("Bundle Autosave")
 
         self.cb_bsave = QCheckBox("Autosave bundle to file")
-        self.cb_bsave.setStyleSheet(_CHECKBOX)
+        self.cb_bsave.setStyleSheet(QSS.CHECKBOX)
         self.cb_bsave.setChecked(bool(self.app.settings.get('bundle_autosave', True)))
         self.cb_bsave.toggled.connect(lambda v: self.app.update_setting('bundle_autosave', v))
         bundle_layout.addWidget(self.cb_bsave)
@@ -248,15 +150,15 @@ class GeneralSettingsWidget(QWidget):
         path_row = QHBoxLayout()
         path_row.setSpacing(10)
         path_label = QLabel("Autosave path:")
-        path_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        path_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         path_row.addWidget(path_label)
 
         self.path_edit = QLineEdit(from_path)
-        self.path_edit.setStyleSheet(_LINEEDIT)
+        self.path_edit.setStyleSheet(QSS.LINEEDIT)
         path_row.addWidget(self.path_edit, 1)
 
         browse_btn = QPushButton("Browse\u2026")
-        browse_btn.setStyleSheet(_BTN_OUTLINE)
+        browse_btn.setStyleSheet(QSS.BTN_OUTLINE)
         browse_btn.setFixedHeight(40)
 
         def on_browse():
@@ -275,7 +177,7 @@ class GeneralSettingsWidget(QWidget):
         # ── Separator ──
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet("color: rgba(255,255,255,0.06); background-color: rgba(255,255,255,0.06); max-height: 1px;")
+        sep.setStyleSheet(f"color: {Colors.BORDER}; background-color: {Colors.BORDER}; max-height: 1px;")
         self.layout.addWidget(sep)
 
         # ── Export / Import ──
@@ -283,14 +185,14 @@ class GeneralSettingsWidget(QWidget):
         btn_box.setSpacing(12)
 
         export_btn = QPushButton("Export Settings")
-        export_btn.setStyleSheet(_BTN_OUTLINE)
+        export_btn.setStyleSheet(QSS.BTN_OUTLINE)
         export_btn.setFixedHeight(42)
         export_btn.setMinimumWidth(160)
         export_btn.clicked.connect(lambda: self.app.export_settings())
         btn_box.addWidget(export_btn)
 
         import_btn = QPushButton("Import Settings")
-        import_btn.setStyleSheet(_BTN_GHOST)
+        import_btn.setStyleSheet(QSS.BTN_GHOST)
         import_btn.setFixedHeight(42)
         import_btn.setMinimumWidth(160)
         import_btn.clicked.connect(lambda: self.app.import_settings())

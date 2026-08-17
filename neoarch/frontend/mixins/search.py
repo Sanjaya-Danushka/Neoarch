@@ -25,21 +25,27 @@ class _SearchMixin:
             self.perform_update_all()
             return
         if query == "__REFRESH_DB__":
-            self.log("Syncing package databases\u2026")
-            try:
-                env = self.get_askpass_env()
-                subprocess.run(
-                    ["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
-                    capture_output=True, text=True, timeout=120, env=env,
-                    check=False,
-                )
-                self.log("Package databases synced.")
-            except Exception as e:
-                self.log(f"Database sync failed: {e}")
-            self.refresh_packages()
+            def _sync_db():
+                self.log("Syncing package databases\u2026")
+                try:
+                    env = self.get_askpass_env()
+                    result = subprocess.run(
+                        ["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
+                        capture_output=True, text=True, timeout=120, env=env,
+                        check=False,
+                    )
+                    if result.returncode == 0:
+                        self.log("Package databases synced.")
+                    else:
+                        self.log(f"Database sync failed: {result.stderr.strip()}")
+                except Exception as e:
+                    self.log(f"Database sync failed: {e}")
+            if not self.ensure_session_auth():
+                self.log("Database sync cancelled: authentication required.")
+                return
+            Thread(target=_sync_db, daemon=True).start()
             return
         if query == "__CLEAN_CACHE__":
-            self.log("Cleaning package cache\u2026")
             self.clean_cache()
             return
 
@@ -137,11 +143,6 @@ class _SearchMixin:
                 try:
                     if hasattr(self, 'source_card') and self.source_card:
                         self.source_card.clear_results()
-                except Exception:
-                    pass
-                try:
-                    if hasattr(self, 'filters_panel') and self.filters_panel:
-                        self.filters_panel.setVisible(False)
                 except Exception:
                     pass
                 self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
@@ -283,11 +284,6 @@ class _SearchMixin:
                 try:
                     if hasattr(self, 'source_card') and self.source_card:
                         self.source_card.clear_results()
-                except Exception:
-                    pass
-                try:
-                    if hasattr(self, 'filters_panel') and self.filters_panel:
-                        self.filters_panel.setVisible(False)
                 except Exception:
                     pass
                 self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
@@ -706,11 +702,9 @@ class _SearchMixin:
 
         if self.current_view == "discover":
             has_results = bool(filtered)
-            # Show the source panel only once results are displayed; hide it
-            # on the idle Discover screen or when a search finds nothing.
             try:
                 if hasattr(self, 'filters_panel') and self.filters_panel:
-                    self.filters_panel.setVisible(has_results)
+                    self.filters_panel.setVisible(True)
             except Exception:
                 pass
             install_btn = getattr(self, 'discover_install_btn', None)

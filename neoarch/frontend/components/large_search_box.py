@@ -15,20 +15,21 @@ from PyQt6.QtGui import QColor, QIcon, QPixmap, QPainter
 from PyQt6.QtSvg import QSvgRenderer
 
 from neoarch.frontend.components.recent_activity import RecentActivity
+from neoarch.frontend.tokens import Colors
 from neoarch.resources.paths import PROJECT_ROOT
 
 _C = {
-    "bg": "#0C0C0E",
+    "bg": Colors.BG,
     "surface": "rgba(255, 255, 255, 0.03)",
     "card": "rgba(255, 255, 255, 0.04)",
     "card_hover": "rgba(255, 255, 255, 0.07)",
     "border": "rgba(255, 255, 255, 0.06)",
     "border_hover": "rgba(255, 255, 255, 0.12)",
-    "accent": "#00BFAE",
+    "accent": Colors.ACCENT,
     "accent_soft": "rgba(0, 191, 174, 0.10)",
-    "text": "#EDEDEF",
-    "text_sec": "#8B8D97",
-    "text_muted": "#5C5E66",
+    "text": Colors.TEXT,
+    "text_sec": Colors.TEXT_2,
+    "text_muted": Colors.TEXT_3,
 }
 
 
@@ -137,7 +138,7 @@ class LargeSearchBox(QWidget):
 
         icon = QLabel()
         icon.setFixedSize(24, 24)
-        self._set_svg_icon(icon, "discover/search.svg", 24, "#5C5E66")
+        self._set_svg_icon(icon, "discover/search.svg", 24, Colors.TEXT_3)
         lay.addWidget(icon)
 
         self.input = QLineEdit()

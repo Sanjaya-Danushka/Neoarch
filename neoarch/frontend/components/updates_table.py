@@ -6,7 +6,7 @@ arrow, source and status badges, per-row overflow menu, sorting, zebra
 stripes, multi-select checkboxes, sticky header with select-all checkbox,
 a loading indicator and an empty state overlay.
 
-Design follows the app theme (styles.py): accent #00BFAE, near-black
+Design follows the app theme (tokens.py): accent #00BFAE, near-black
 surfaces and muted secondary text. The widget owns its data model and
 delegate, and talks to the rest of the app through signals.
 """
@@ -61,25 +61,19 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from neoarch.frontend.tokens import Colors, SourceColors
 
-# ── theme (mint accent, matching the app's design language) ────────
-_ACCENT = QColor(0, 191, 174)              # app accent #00BFAE
-_TEXT = QColor(238, 240, 244)
-_TEXT_SEC = QColor(139, 141, 151)           # app _TEXT_SEC #8B8D97
-_TEXT_MUTED = QColor(92, 94, 102)           # app _TEXT_MUTED #5C5E66
+# ── theme (from centralized tokens.py) ─────────────────────────────
+_ACCENT = QColor(Colors.ACCENT)
+_TEXT = QColor(Colors.TEXT)
+_TEXT_SEC = QColor(Colors.TEXT_2)
+_TEXT_MUTED = QColor(Colors.TEXT_3)
 _DEFAULT_LOADING_MESSAGE = "Loading\u2026"
 
-_SOURCE_COLORS = {
-    "pacman": QColor(79, 195, 247),
-    "AUR": QColor(255, 138, 101),
-    "Flatpak": QColor(38, 166, 154),
-    "npm": QColor(229, 57, 53),
-    "Local": QColor(163, 166, 176),
-    "Docker": QColor(36, 150, 237),
-}
+_SOURCE_COLORS = {k: QColor(v) for k, v in SourceColors.items()}
 _GREEN = QColor(88, 202, 143)
 
-_PANEL_RADIUS = 14
+_PANEL_RADIUS = int(Colors.ACCENT and 14)  # keep existing value
 
 _VIEWPORT_GLASS = """
 QWidget {

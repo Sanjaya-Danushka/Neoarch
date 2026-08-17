@@ -4,6 +4,8 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QProgressBar
 from PyQt6.QtCore import Qt, QPropertyAnimation, pyqtProperty
 from PyQt6.QtGui import QPainter, QColor, QPen
 
+from neoarch.frontend.tokens import Colors
+
 
 _SIZE = 48
 _CYCLE_MS = 2000
@@ -33,7 +35,7 @@ class _SpinnerCanvas(QLabel):
         cx = cy = _SIZE / 2
         t = self._progress
 
-        for color, delay in [("#00BFAE", 0.0), ("#00D4AA", 0.5)]:
+        for color, delay in [(Colors.ACCENT, 0.0), (Colors.TEAL, 0.5)]:
             ft = (t - delay) % 1.0
             s = max(0.01, ft)
             half = s * _SIZE / 2
@@ -85,27 +87,27 @@ class LoadingSpinner(QWidget):
         layout.addWidget(self._msg_label, alignment=Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self._progress_bar, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self.setStyleSheet("""
-            LoadingSpinner {
+        self.setStyleSheet(f"""
+            LoadingSpinner {{
                 background-color: transparent;
                 border: none;
-            }
-            LoadingSpinner QLabel#spinnerMsgLabel {
+            }}
+            LoadingSpinner QLabel#spinnerMsgLabel {{
                 background-color: transparent;
                 color: #E8E8E8;
                 font-size: 20px;
                 font-weight: 500;
-            }
-            LoadingSpinner QProgressBar {
+            }}
+            LoadingSpinner QProgressBar {{
                 border: none;
                 border-radius: 4px;
                 text-align: center;
                 background-color: rgba(255, 255, 255, 0.08);
-            }
-            LoadingSpinner QProgressBar::chunk {
-                background-color: #00BFAE;
+            }}
+            LoadingSpinner QProgressBar::chunk {{
+                background-color: {Colors.ACCENT};
                 border-radius: 4px;
-            }
+            }}
         """)
 
     def start_animation(self, message=None):

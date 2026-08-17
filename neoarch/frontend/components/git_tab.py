@@ -19,27 +19,33 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtSvg import QSvgRenderer
 from neoarch.resources.paths import PROJECT_ROOT
+from neoarch.frontend.tokens import Colors, Fonts, Radii, Spacing
 
 __all__ = ["GitTab"]
 
-# ── design tokens ──────────────────────────────────────────────────
-_BG = "#191A1F"
-_SURFACE = "#16171A"
-_SURFACE_2 = "#1E1F24"
-_TEXT = "#EDEDEF"
-_TEXT2 = "#8B8D97"
-_TEXT3 = "#5C5E66"
-_ACCENT = "#00BFAE"
-_BORDER = "rgba(255,255,255,0.06)"
-_BORDER_HOVER = "rgba(255,255,255,0.10)"
-_RADIUS_SM = 8
-_RADIUS_MD = 10
-_RADIUS_LG = 14
-_RADIUS_CARD = 16
+# ── design tokens (from centralized tokens.py) ─────────────────────
+_BG = Colors.BG_SECONDARY
+_SURFACE = Colors.SURFACE
+_SURFACE_2 = Colors.SURFACE_2
+_TEXT = Colors.TEXT
+_TEXT2 = Colors.TEXT_2
+_TEXT3 = Colors.TEXT_3
+_ACCENT = Colors.ACCENT
+_BORDER = Colors.BORDER
+_BORDER_HOVER = Colors.BORDER_HOVER
+_RADIUS_SM = int(Radii.SM)
+_RADIUS_MD = int(Radii.MD)
+_RADIUS_LG = int(Radii.LG)
+_RADIUS_CARD = int(Radii.XL)
 
 # Semantic colors
-_TEAL = "#00D4AA"
-_ORANGE = "#FF9F1C"
+_TEAL = Colors.TEAL
+_ORANGE = Colors.ORANGE
+_PURPLE = Colors.PURPLE
+_BLUE = Colors.BLUE
+_GREEN = Colors.GREEN
+_RED = Colors.RED
+_YELLOW = Colors.YELLOW
 
 
 def _svg_icon(rel_path, size, color="#FFFFFF"):
@@ -59,11 +65,6 @@ def _svg_icon(rel_path, size, color="#FFFFFF"):
     except Exception:
         pass
     return QIcon()
-_PURPLE = "#8B7CFF"
-_BLUE = "#4C9AFF"
-_GREEN = "#22C55E"
-_RED = "#FF6B6B"
-_YELLOW = "#FBBF24"
 
 
 def _relative_time(ts):

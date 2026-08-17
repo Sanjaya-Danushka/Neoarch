@@ -34,6 +34,7 @@ from neoarch.backend.package import loader as packages_service
 from neoarch.backend.package import updater as update_service
 from neoarch.backend.package import uninstaller as uninstall_service
 from neoarch.backend.services import ignore as ignore_service
+from neoarch.frontend.tokens import Colors, SourceColors
 
 _BASE_DIR = str(PROJECT_ROOT)
 
@@ -42,12 +43,6 @@ _BASE_DIR = str(PROJECT_ROOT)
 # widgets while one of these is active, otherwise a previous page's view can
 # flash over the current one.
 _SELF_CONTAINED_VIEWS = frozenset({"appimage", "git", "docker", "settings"})
-
-_C = {
-    "text_sec": "#8B8D97",
-    "text_muted": "#5C5E66",
-    "accent": "#00BFAE",
-}
 
 
 def _fmt_size(b):
@@ -674,6 +669,26 @@ class _ViewsMixin:
         base = ["sudo", "-A", "pacman", "-U", "--noconfirm"]
         label = f"Installing {os.path.basename(file_path)}"
 
+        def restore_view():
+            """Restore the discover view after install completes or fails."""
+            try:
+                self.loading_widget.stop_animation()
+            except Exception:
+                pass
+            try:
+                self.loading_widget.setVisible(False)
+                self.loading_container.setVisible(False)
+            except Exception:
+                pass
+            try:
+                if self.current_view == "discover":
+                    self.large_search_box.setVisible(True)
+                    self._hide_all_package_views()
+                else:
+                    self._show_active_view()
+            except Exception:
+                pass
+
         def run(assume):
             cmd = base + assume + [file_path]
             self.log(f"{label}...")
@@ -695,6 +710,7 @@ class _ViewsMixin:
         def on_success():
             self.log(f"{label}: done")
             self.refresh_packages()
+            self.ui_call.emit(restore_view)
 
         def task():
             def extract_missing(stderr):
@@ -727,14 +743,19 @@ class _ViewsMixin:
                                 self.ui_call.emit(on_success)
                                 return
                             more = extract_missing(result2.stderr)
-                            if result2.stderr.strip():
-                                self.log(f"{label}: failed\n{result2.stderr.strip()}")
+                            err = result2.stderr.strip()
+                            if err:
+                                self.log(f"{label}: failed\n{err}")
                             if more and not all(m in flat for m in more):
                                 attempt_retry(more, new_assume)
                             else:
-                                err = result2.stderr.strip()
-                                self.ui_call.emit(lambda: self.show_message.emit("Install Failed", err))
+                                self.ui_call.emit(lambda: self._notify(
+                                    "Install Failed", err or "See console for details.",
+                                    level="error"))
+                                self.ui_call.emit(restore_view)
                         Thread(target=retry, daemon=True).start()
+                    else:
+                        self.ui_call.emit(restore_view)
 
                 self.ui_call.emit(prompt)
 
@@ -743,13 +764,20 @@ class _ViewsMixin:
                 self.ui_call.emit(on_success)
                 return
             flat = extract_missing(result.stderr)
-            if result.stderr.strip():
-                self.log(f"{label}: failed\n{result.stderr.strip()}")
+            err = result.stderr.strip()
+            if err:
+                self.log(f"{label}: failed\n{err}")
             if not flat:
-                self.ui_call.emit(lambda: self.show_message.emit("Install Failed", result.stderr.strip()))
+                self.ui_call.emit(lambda: self._notify(
+                    "Install Failed", err or "See console for details.",
+                    level="error"))
+                self.ui_call.emit(restore_view)
                 return
             attempt_retry(flat, [])
 
+        if not self.ensure_session_auth():
+            self.log("Install cancelled: authentication required.")
+            return
         Thread(target=task, daemon=True).start()
 
     def _run_cmd(self, cmd, label):
@@ -1117,10 +1145,10 @@ class _ViewsMixin:
         nr_layout.setSpacing(8)
         self.no_results_title = QLabel("No results found")
         self.no_results_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.no_results_title.setStyleSheet("color: #8B8D97; font-size: 18px; font-weight: 600; background: transparent;")
+        self.no_results_title.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: 18px; font-weight: 600; background: transparent;")
         self.no_results_desc = QLabel("")
         self.no_results_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.no_results_desc.setStyleSheet("color: #5C5E66; font-size: 13px; background: transparent;")
+        self.no_results_desc.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: 13px; background: transparent;")
         nr_layout.addWidget(self.no_results_title)
         nr_layout.addWidget(self.no_results_desc)
         self.no_results_widget.setVisible(False)
@@ -1130,6 +1158,8 @@ class _ViewsMixin:
         self.settings_container = QScrollArea()
         self.settings_container.setWidgetResizable(True)
         self.settings_container.setVisible(False)
+        self.settings_container.setStyleSheet(
+            "QScrollArea { background-color: #0C0C0E; border: none; }")
         self.settings_root = QWidget()
         self.settings_layout = QVBoxLayout(self.settings_root)
         self.settings_layout.setContentsMargins(0, 0, 0, 0)
@@ -1322,7 +1352,7 @@ class _ViewsMixin:
             btn_style = f"""
                 QPushButton {{
                     background-color: rgba(28, 30, 36, 0.75);
-                    color: #EDEDEF;
+                    color: {Colors.TEXT};
                     border: 1px solid rgba(255,255,255,0.06);
                     border-radius: 10px;
                     padding: 8px 18px;
@@ -1372,25 +1402,25 @@ class _ViewsMixin:
             update_selected_btn = QPushButton("Update Selected")
             update_selected_btn.setMinimumHeight(36)
             update_selected_btn.setEnabled(False)
-            update_selected_btn.setStyleSheet("""
-                QPushButton {
+            update_selected_btn.setStyleSheet(f"""
+                QPushButton {{
                     background-color: rgba(255, 255, 255, 0.06);
-                    color: #EDEDEF;
+                    color: {Colors.TEXT};
                     border: 1px solid rgba(255, 255, 255, 0.1);
                     border-radius: 10px;
                     padding: 8px 18px;
                     font-size: 13px;
                     font-weight: 500;
-                }
-                QPushButton:hover {
+                }}
+                QPushButton:hover {{
                     background-color: rgba(255, 255, 255, 0.1);
                     border-color: rgba(0, 191, 174, 0.4);
-                }
-                QPushButton:disabled {
-                    color: #5C5E66;
+                }}
+                QPushButton:disabled {{
+                    color: {Colors.TEXT_3};
                     background-color: rgba(255, 255, 255, 0.03);
                     border-color: rgba(255, 255, 255, 0.04);
-                }
+                }}
             """)
             update_selected_btn.clicked.connect(self.update_selected)
             self._updates_selected_btn = update_selected_btn
@@ -1398,7 +1428,7 @@ class _ViewsMixin:
 
             self._selection_summary_label = QLabel("")
             self._selection_summary_label.setStyleSheet(
-                "color: #8B8D97; font-size: 12px; font-weight: 500;"
+                f"color: {Colors.TEXT_2}; font-size: 12px; font-weight: 500;"
                 "background: transparent; border: none; padding: 0 6px;")
             layout.addWidget(self._selection_summary_label)
 
@@ -1416,24 +1446,23 @@ class _ViewsMixin:
 
             update_btn = QPushButton("Update Selected")
             update_btn.setMinimumHeight(36)
-            update_btn.setStyleSheet(
-                """
-                QPushButton {
+            update_btn.setStyleSheet(f"""
+                QPushButton {{
                     background-color: rgba(28, 30, 36, 0.75);
-                    color: #EDEDEF;
+                    color: {Colors.TEXT};
                     border: 1px solid rgba(255,255,255,0.06);
                     border-radius: 10px;
                     padding: 8px 18px;
                     font-size: 13px;
                     font-weight: 500;
-                }
-                QPushButton:hover {
+                }}
+                QPushButton:hover {{
                     background-color: rgba(34, 36, 42, 0.85);
                     border-color: rgba(255,255,255,0.12);
-                }
-                QPushButton:pressed {
+                }}
+                QPushButton:pressed {{
                     background-color: rgba(38, 40, 48, 0.9);
-                }
+                }}
                 """
             )
             update_btn.clicked.connect(self.update_selected)
@@ -1467,7 +1496,7 @@ class _ViewsMixin:
 
             self._selection_summary_label = QLabel("")
             self._selection_summary_label.setStyleSheet(
-                "color: #8B8D97; font-size: 12px; font-weight: 500;"
+                f"color: {Colors.TEXT_2}; font-size: 12px; font-weight: 500;"
                 "background: transparent; border: none; padding: 0 6px;")
             layout.addWidget(self._selection_summary_label)
 
@@ -1485,8 +1514,8 @@ class _ViewsMixin:
 
             self.discover_install_btn = QPushButton("Install Selected")
             self.discover_install_btn.setMinimumHeight(36)
-            self.discover_install_btn.setStyleSheet("""
-                QPushButton {
+            self.discover_install_btn.setStyleSheet(f"""
+                QPushButton {{
                     background-color: #FFFFFF;
                     color: #0C0C0E;
                     border: 1px solid rgba(255, 255, 255, 0.9);
@@ -1494,14 +1523,14 @@ class _ViewsMixin:
                     padding: 8px 18px;
                     font-size: 13px;
                     font-weight: 600;
-                }
-                QPushButton:hover { background-color: #E8EAF0; }
-                QPushButton:pressed { background-color: #D3D6DE; }
-                QPushButton:disabled {
+                }}
+                QPushButton:hover {{ background-color: #E8EAF0; }}
+                QPushButton:pressed {{ background-color: #D3D6DE; }}
+                QPushButton:disabled {{
                     background-color: rgba(255, 255, 255, 0.06);
-                    color: #5C5E66;
+                    color: {Colors.TEXT_3};
                     border-color: rgba(255, 255, 255, 0.08);
-                }
+                }}
             """)
             self.discover_install_btn.clicked.connect(self.install_selected)
             self.discover_install_btn.setVisible(False)
@@ -1536,8 +1565,8 @@ class _ViewsMixin:
             self._plugins_install_btn.setMinimumHeight(36)
             self._plugins_install_btn.setMinimumWidth(120)
             self._plugins_install_btn.setEnabled(False)
-            self._plugins_install_btn.setStyleSheet("""
-                QPushButton {
+            self._plugins_install_btn.setStyleSheet(f"""
+                QPushButton {{
                     background-color: #FFFFFF;
                     color: #0C0C0E;
                     border: 1px solid rgba(255, 255, 255, 0.9);
@@ -1545,14 +1574,14 @@ class _ViewsMixin:
                     padding: 8px 18px;
                     font-size: 13px;
                     font-weight: 600;
-                }
-                QPushButton:hover { background-color: #E8EAF0; }
-                QPushButton:pressed { background-color: #D3D6DE; }
-                QPushButton:disabled {
+                }}
+                QPushButton:hover {{ background-color: #E8EAF0; }}
+                QPushButton:pressed {{ background-color: #D3D6DE; }}
+                QPushButton:disabled {{
                     background-color: rgba(255, 255, 255, 0.06);
-                    color: #5C5E66;
+                    color: {Colors.TEXT_3};
                     border-color: rgba(255, 255, 255, 0.08);
-                }
+                }}
             """)
             self._plugins_install_btn.clicked.connect(self._on_plugins_install_selected)
             layout.addWidget(self._plugins_install_btn)
@@ -1561,8 +1590,8 @@ class _ViewsMixin:
             self._plugins_clear_btn.setMinimumHeight(36)
             self._plugins_clear_btn.setMinimumWidth(120)
             self._plugins_clear_btn.setEnabled(False)
-            self._plugins_clear_btn.setStyleSheet("""
-                QPushButton {
+            self._plugins_clear_btn.setStyleSheet(f"""
+                QPushButton {{
                     background-color: transparent;
                     color: #FF6B6B;
                     border: 1px solid rgba(255, 107, 107, 0.3);
@@ -1570,23 +1599,23 @@ class _ViewsMixin:
                     padding: 8px 18px;
                     font-size: 13px;
                     font-weight: 600;
-                }
-                QPushButton:hover {
+                }}
+                QPushButton:hover {{
                     background-color: rgba(255, 107, 107, 0.12);
                     border-color: rgba(255, 107, 107, 0.5);
-                }
-                QPushButton:pressed { background-color: rgba(255, 107, 107, 0.2); }
-                QPushButton:disabled {
-                    color: #5C5E66;
+                }}
+                QPushButton:pressed {{ background-color: rgba(255, 107, 107, 0.2); }}
+                QPushButton:disabled {{
+                    color: {Colors.TEXT_3};
                     border-color: rgba(255, 255, 255, 0.06);
-                }
+                }}
             """)
             self._plugins_clear_btn.clicked.connect(self._on_plugins_clear_selection)
             layout.addWidget(self._plugins_clear_btn)
 
             self._plugins_selection_label = QLabel("")
             self._plugins_selection_label.setStyleSheet(
-                "color: #8B8D97; font-size: 12px; font-weight: 500;"
+                f"color: {Colors.TEXT_2}; font-size: 12px; font-weight: 500;"
                 "background: transparent; border: none; padding: 0 6px;")
             layout.addWidget(self._plugins_selection_label)
 
@@ -1640,8 +1669,8 @@ class _ViewsMixin:
             self._bundle_install_btn = QPushButton("Install Bundle")
             self._bundle_install_btn.setMinimumHeight(36)
             self._bundle_install_btn.setStyleSheet(
-                """
-                QPushButton {
+                f"""
+                QPushButton {{
                     background-color: transparent;
                     color: #F0F0F0;
                     border: 1px solid rgba(0, 191, 174, 0.3);
@@ -1649,10 +1678,10 @@ class _ViewsMixin:
                     padding: 6px 12px;
                     font-size: 12px;
                     font-weight: 500;
-                }
-                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
-                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
-                QPushButton:disabled { color: #5C5E66; border-color: rgba(92, 94, 102, 0.3); }
+                }}
+                QPushButton:hover {{ background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }}
+                QPushButton:pressed {{ background-color: rgba(0, 191, 174, 0.25); }}
+                QPushButton:disabled {{ color: {Colors.TEXT_3}; border-color: rgba(92, 94, 102, 0.3); }}
                 """
             )
             self._bundle_install_btn.clicked.connect(self.install_bundle)
@@ -1698,23 +1727,23 @@ class _ViewsMixin:
             layout.addWidget(_sep())
 
             # Group 3 — Cloud
-            cloud_style = """
-                QPushButton {
+            cloud_style = f"""
+                QPushButton {{
                     background-color: transparent;
-                    color: #00BFAE;
+                    color: {Colors.ACCENT};
                     border: 1px solid rgba(0, 191, 174, 0.5);
                     border-radius: 6px;
                     padding: 6px 12px;
                     font-size: 12px;
                     font-weight: 500;
-                }
-                QPushButton:hover {
+                }}
+                QPushButton:hover {{
                     background-color: rgba(0, 191, 174, 0.15);
-                    border-color: #00BFAE;
-                }
-                QPushButton:pressed {
+                    border-color: {Colors.ACCENT};
+                }}
+                QPushButton:pressed {{
                     background-color: rgba(0, 191, 174, 0.25);
-                }
+                }}
             """
 
             grp3 = QHBoxLayout()
@@ -1722,7 +1751,7 @@ class _ViewsMixin:
 
             self._bundle_save_cloud_btn = QPushButton("☁ Save to Cloud")
             self._bundle_save_cloud_btn.setMinimumHeight(36)
-            self._bundle_save_cloud_btn.setStyleSheet(cloud_style + "QPushButton:disabled { color: #5C5E66; border-color: rgba(92, 94, 102, 0.3); }")
+            self._bundle_save_cloud_btn.setStyleSheet(cloud_style + f"QPushButton:disabled {{ color: {Colors.TEXT_3}; border-color: rgba(92, 94, 102, 0.3); }}")
             self._bundle_save_cloud_btn.clicked.connect(self._cloud_save_favourites)
             self._bundle_save_cloud_btn.setToolTip("Upload bundle items to cloud (replace remote)")
             grp3.addWidget(self._bundle_save_cloud_btn)
@@ -1863,10 +1892,6 @@ class _ViewsMixin:
         # Show filters panel for all views except settings, bundles, git, and docker
         if hasattr(self, 'filters_panel'):
             self.filters_panel.setVisible(view_id not in ("settings", "bundles", "git", "docker"))
-        # Discover starts idle (large search box only); the source panel appears
-        # once a search returns results.
-        if view_id == "discover" and hasattr(self, 'filters_panel'):
-            self.filters_panel.setVisible(False)
 
         # Update greeting in navbar
         self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
@@ -2190,7 +2215,9 @@ class _ViewsMixin:
             except Exception:
                 pass
             self.header_info.setText("Configure NeoArch settings and plugins")
-            QTimer.singleShot(0, self.build_settings_ui)
+            if not getattr(self, '_settings_built', False):
+                self._settings_built = True
+                QTimer.singleShot(0, self.build_settings_ui)
         # Notify plugins about view change
         try:
             self.run_plugin_hook('on_view_changed', view_id)
@@ -3109,14 +3136,14 @@ class _ViewsMixin:
 
         from PyQt6.QtWidgets import QMenu
         menu = QMenu(self)
-        menu.setStyleSheet("""
-            QMenu {
+        menu.setStyleSheet(f"""
+            QMenu {{
                 background-color: #1C1E24; color: #F3F4F6;
                 border: 1px solid #373A43; border-radius: 8px; padding: 4px;
-            }
-            QMenu::item { padding: 8px 16px; border-radius: 4px; }
-            QMenu::item:selected { background-color: #00BFAE; color: #fff; }
-            QMenu::separator { height: 1px; background: #373A43; margin: 4px 8px; }
+            }}
+            QMenu::item {{ padding: 8px 16px; border-radius: 4px; }}
+            QMenu::item:selected {{ background-color: {Colors.ACCENT}; color: #fff; }}
+            QMenu::separator {{ height: 1px; background: #373A43; margin: 4px 8px; }}
         """)
 
         downgrade_act = menu.addAction("Downgrade...")
@@ -3621,13 +3648,13 @@ class _ViewsMixin:
         cm = getattr(self, '_cloud_auth', None)
         if cm and cm.is_logged_in:
             menu = QMenu(self)
-            menu.setStyleSheet("""
-                QMenu {
+            menu.setStyleSheet(f"""
+                QMenu {{
                     background-color: #1C1E24; color: #F3F4F6;
                     border: 1px solid #373A43; border-radius: 8px; padding: 4px;
-                }
-                QMenu::item { padding: 8px 16px; border-radius: 4px; }
-                QMenu::item:selected { background-color: #00BFAE; color: #fff; }
+                }}
+                QMenu::item {{ padding: 8px 16px; border-radius: 4px; }}
+                QMenu::item:selected {{ background-color: {Colors.ACCENT}; color: #fff; }}
             """)
             save_act = menu.addAction("Save Favourites to Cloud")
             save_act.triggered.connect(self._cloud_save_favourites)
@@ -3736,7 +3763,7 @@ class _ViewsMixin:
                 initials = user.name[:2].upper() if user.name else "?"
                 self.user_avatar_label.setText(initials)
                 self.user_avatar_label.setStyleSheet(f"""
-                    color: #00BFAE; font-weight: bold; font-size: 14px;
+                    color: {Colors.ACCENT}; font-weight: bold; font-size: 14px;
                     background-color: rgba(0,191,174,0.15);
                     border-radius: {size // 2}px;
                 """)

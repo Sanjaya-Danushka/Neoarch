@@ -7,15 +7,16 @@ from PyQt6.QtCore import pyqtSignal, Qt, QRectF, QSize, QPropertyAnimation, QEas
 from PyQt6.QtGui import QColor, QPainter, QPen, QFont, QFontMetrics, QRadialGradient
 from neoarch.frontend.components.source_item import SourceItem, ToggleSwitch
 from neoarch.frontend.components.flow_layout import FlowLayout
+from neoarch.frontend.tokens import Colors, SourceColors
 
 # ── app theme design tokens ─────────────────────────────────────────
-_RAISED = "#22242A"
+_RAISED = Colors.CARD_HOVER
 _HOVER = "#24262C"
-_ACCENT = "#3B82F6"
-_TEXT = "#EDEDEF"
-_SECONDARY = "#8B8D97"
-_MUTED = "#5C5E66"
-_BORDER = "rgba(255, 255, 255, 0.06)"
+_ACCENT = Colors.ACCENT
+_TEXT = Colors.TEXT
+_SECONDARY = Colors.TEXT_2
+_MUTED = Colors.TEXT_3
+_BORDER = Colors.BORDER
 
 
 def _fmt_bytes(b):
@@ -199,7 +200,7 @@ class _ToggleRow(QWidget):
 
         self.label = QLabel(text)
         self.label.setStyleSheet(
-            "color: #EDEDEF; font-size: 12px; font-weight: 500;"
+            f"color: {Colors.TEXT}; font-size: 12px; font-weight: 500;"
             "background: transparent; border: none; padding: 0;")
         layout.addWidget(self.label, 1)
 
@@ -469,10 +470,10 @@ class _DistributionBar(QWidget):
         super().__init__(parent)
         self._counts = {}
         self._colors = {
-            "pacman": QColor("#3B82F6"),
-            "AUR": QColor("#F59E0B"),
-            "Flatpak": QColor("#10B981"),
-            "npm": QColor("#EF4444"),
+            "pacman": QColor(SourceColors.get("pacman", "#3B82F6")),
+            "AUR": QColor(SourceColors.get("AUR", "#F59E0B")),
+            "Flatpak": QColor(SourceColors.get("Flatpak", "#10B981")),
+            "npm": QColor(SourceColors.get("npm", "#EF4444")),
         }
         self.setFixedHeight(6)
         self.setMinimumWidth(0)
@@ -689,14 +690,14 @@ class SourceCard(QWidget):
 
         title = QLabel("Sources")
         title.setObjectName("sourceCardTitle")
-        title.setStyleSheet("""
-            QLabel#sourceCardTitle {
-                color: #EDEDEF;
+        title.setStyleSheet(f"""
+            QLabel#sourceCardTitle {{
+                color: {Colors.TEXT};
                 font-size: 15px;
                 font-weight: 700;
                 background: transparent;
                 border: none;
-            }
+            }}
         """)
         header_layout.addWidget(title)
         header_layout.addStretch()
@@ -715,44 +716,44 @@ class SourceCard(QWidget):
         text = "Pause All" if all_on else "Enable All"
         self.select_all_btn.setText(text)
         if all_on:
-            return """
-                QPushButton#toggleAllBtn {
-                    background-color: rgba(59, 130, 246, 0.12);
-                    color: #3B82F6;
-                    border: 1px solid rgba(59, 130, 246, 0.25);
+            return f"""
+                QPushButton#toggleAllBtn {{
+                    background-color: {Colors.ACCENT_SOFT};
+                    color: {Colors.ACCENT};
+                    border: 1px solid {Colors.ACCENT_BORDER};
                     border-radius: 8px;
                     padding: 0 10px;
                     font-size: 11px;
                     font-weight: 600;
-                }
-                QPushButton#toggleAllBtn:hover {
-                    background-color: rgba(59, 130, 246, 0.20);
-                }
+                }}
+                QPushButton#toggleAllBtn:hover {{
+                    background-color: rgba(255, 255, 255, 0.20);
+                }}
             """
         else:
-            return """
-                QPushButton#toggleAllBtn {
+            return f"""
+                QPushButton#toggleAllBtn {{
                     background-color: rgba(255, 255, 255, 0.04);
                     color: #6B7280;
-                    border: 1px solid rgba(255, 255, 255, 0.06);
+                    border: 1px solid {Colors.BORDER};
                     border-radius: 8px;
                     padding: 0 10px;
                     font-size: 11px;
                     font-weight: 500;
-                }
-                QPushButton#toggleAllBtn:hover {
+                }}
+                QPushButton#toggleAllBtn:hover {{
                     background-color: rgba(255, 255, 255, 0.08);
                     color: #A7B1C2;
-                }
+                }}
             """
 
     def _section_header(self, text):
         label = QLabel(text.upper())
         label.setObjectName("sectionHeaderLabel")
         label.setCursor(Qt.CursorShape.ArrowCursor)
-        label.setStyleSheet("""
-            QLabel#sectionHeaderLabel {
-                color: #3B82F6;
+        label.setStyleSheet(f"""
+            QLabel#sectionHeaderLabel {{
+                color: {Colors.ACCENT};
                 font-size: 11px;
                 font-weight: 600;
                 letter-spacing: 1.0px;
@@ -760,7 +761,7 @@ class SourceCard(QWidget):
                 border: none;
                 padding: 0;
                 margin: 0;
-            }
+            }}
         """)
         return label
 
@@ -790,8 +791,8 @@ class SourceCard(QWidget):
         status_col = QVBoxLayout()
         status_col.setSpacing(4)
         self.health_status_title = QLabel("System Healthy")
-        self.health_status_title.setStyleSheet("""
-            color: #22C55E;
+        self.health_status_title.setStyleSheet(f"""
+            color: {Colors.GREEN};
             font-size: 13px;
             font-weight: 700;
             background: transparent;
@@ -903,8 +904,8 @@ class SourceCard(QWidget):
         s_row.setSpacing(0)
 
         self.summary_count_label = QLabel("0")
-        self.summary_count_label.setStyleSheet("""
-            color: #EDEDEF;
+        self.summary_count_label.setStyleSheet(f"""
+            color: {Colors.TEXT};
             font-size: 17px;
             font-weight: 700;
             background: transparent;
@@ -933,8 +934,8 @@ class SourceCard(QWidget):
         s_row.addStretch()
 
         self.summary_size_label = QLabel("")
-        self.summary_size_label.setStyleSheet("""
-            color: #3B82F6;
+        self.summary_size_label.setStyleSheet(f"""
+            color: {Colors.ACCENT};
             font-size: 17px;
             font-weight: 700;
             background: transparent;
@@ -1027,8 +1028,8 @@ class SourceCard(QWidget):
         self._status_chips = []
         statuses = [
             ("Security", "#EF4444"),
-            ("Feature", "#3B82F6"),
-            ("Bug Fix", "#22C55E"),
+            ("Feature", Colors.ACCENT),
+            ("Bug Fix", Colors.GREEN),
             ("Maintenance", "#6B7280"),
         ]
         for status_text, status_color in statuses:
@@ -1154,31 +1155,31 @@ class SourceCard(QWidget):
 
         self.sort_menu = QMenu(self)
         self.sort_menu.setObjectName("sourceSortMenu")
-        self.sort_menu.setStyleSheet("""
-            QMenu#sourceSortMenu {
+        self.sort_menu.setStyleSheet(f"""
+            QMenu#sourceSortMenu {{
                 background-color: #171C25;
                 border: 1px solid rgba(255, 255, 255, 0.08);
                 border-radius: 10px;
                 padding: 4px;
-            }
-            QMenu#sourceSortMenu::item {
+            }}
+            QMenu#sourceSortMenu::item {{
                 padding: 8px 14px;
                 border-radius: 6px;
                 margin: 1px 0;
-                color: #EDEDEF;
+                color: {Colors.TEXT};
                 font-size: 12px;
                 font-weight: 500;
                 background: transparent;
-            }
-            QMenu#sourceSortMenu::item:selected {
-                background-color: rgba(59, 130, 246, 0.16);
-                color: #FFFFFF;
-            }
-            QMenu#sourceSortMenu::separator {
+            }}
+            QMenu#sourceSortMenu::item:selected {{
+                background-color: {Colors.ACCENT_SOFT};
+                color: {Colors.WHITE};
+            }}
+            QMenu#sourceSortMenu::separator {{
                 height: 1px;
-                background: rgba(255, 255, 255, 0.06);
+                background: {Colors.BORDER};
                 margin: 4px 8px;
-            }
+            }}
         """)
         self._sort_methods = [
             ("name", True, "Name A-Z"),
@@ -1260,8 +1261,8 @@ class SourceCard(QWidget):
         self.disk_row = QHBoxLayout()
         self.disk_row.setSpacing(8)
         disk_label = QLabel("Root Filesystem")
-        disk_label.setStyleSheet("""
-            color: #EDEDEF;
+        disk_label.setStyleSheet(f"""
+            color: {Colors.TEXT};
             font-size: 12px;
             font-weight: 500;
             background: transparent;
@@ -1291,8 +1292,8 @@ class SourceCard(QWidget):
         cache_row = QHBoxLayout()
         cache_row.setSpacing(8)
         cache_label = QLabel("Package Cache")
-        cache_label.setStyleSheet("""
-            color: #EDEDEF;
+        cache_label.setStyleSheet(f"""
+            color: {Colors.TEXT};
             font-size: 12px;
             font-weight: 500;
             background: transparent;
@@ -1300,8 +1301,8 @@ class SourceCard(QWidget):
             padding: 0;
         """)
         self.cache_size_label = QLabel("")
-        self.cache_size_label.setStyleSheet("""
-            color: #3B82F6;
+        self.cache_size_label.setStyleSheet(f"""
+            color: {Colors.ACCENT};
             font-size: 11px;
             font-weight: 600;
             background: transparent;
@@ -1312,20 +1313,20 @@ class SourceCard(QWidget):
         self.clear_cache_btn.setObjectName("clearCacheBtn")
         self.clear_cache_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.clear_cache_btn.setFixedHeight(22)
-        self.clear_cache_btn.setStyleSheet("""
-            QPushButton#clearCacheBtn {
-                color: #3B82F6;
+        self.clear_cache_btn.setStyleSheet(f"""
+            QPushButton#clearCacheBtn {{
+                color: {Colors.ACCENT};
                 background: rgba(59, 130, 246, 0.10);
-                border: 1px solid rgba(59, 130, 246, 0.25);
+                border: 1px solid {Colors.ACCENT_BORDER};
                 border-radius: 11px;
                 font-size: 10px;
                 font-weight: 600;
                 padding: 0 10px;
-            }
-            QPushButton#clearCacheBtn:hover {
+            }}
+            QPushButton#clearCacheBtn:hover {{
                 background: rgba(59, 130, 246, 0.20);
                 border-color: rgba(59, 130, 246, 0.40);
-            }
+            }}
         """)
         self.clear_cache_btn.clicked.connect(lambda: self.maintenance_action.emit("purge_cache"))
         cache_row.addWidget(cache_label, 1)
@@ -1387,7 +1388,7 @@ class SourceCard(QWidget):
                           "background: transparent; border: none; padding: 0;")
         val = QLabel("0")
         val.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        val.setStyleSheet("color: #EDEDEF; font-size: 12px; font-weight: 600;"
+        val.setStyleSheet(f"color: {Colors.TEXT}; font-size: 12px; font-weight: 600;"
                           "background: transparent; border: none; padding: 0;")
         row.addWidget(lbl, 1)
         row.addWidget(val, 0)
@@ -1451,22 +1452,22 @@ class SourceCard(QWidget):
         layout.addWidget(self.quick_actions_widget)
 
     def _sort_btn_style(self):
-        return """
-            QPushButton#sortBtn {
+        return f"""
+            QPushButton#sortBtn {{
                 color: #A7B1C2;
                 background: rgba(255, 255, 255, 0.04);
-                border: 1px solid rgba(255, 255, 255, 0.06);
+                border: 1px solid {Colors.BORDER};
                 border-radius: 8px;
                 font-size: 12px;
                 font-weight: 500;
                 padding: 0 12px;
                 text-align: left;
-            }
-            QPushButton#sortBtn:hover {
+            }}
+            QPushButton#sortBtn:hover {{
                 background: rgba(255, 255, 255, 0.07);
                 border-color: rgba(59, 130, 246, 0.30);
-                color: #EDEDEF;
-            }
+                color: {Colors.TEXT};
+            }}
         """
 
     def _sort_label(self, field, asc):
@@ -1528,68 +1529,68 @@ class SourceCard(QWidget):
         self.action_update_all_btn = QPushButton("Update All")
         self.action_update_all_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.action_update_all_btn.setFixedHeight(28)
-        self.action_update_all_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #3B82F6;
-                color: #FFFFFF;
-                border: 1px solid rgba(59, 130, 246, 0.4);
+        self.action_update_all_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Colors.ACCENT};
+                color: {Colors.WHITE};
+                border: 1px solid {Colors.ACCENT_BORDER_STRONG};
                 border-radius: 8px;
                 padding: 0 14px;
                 font-size: 12px;
                 font-weight: 600;
-            }
-            QPushButton:hover {
-                background-color: #2563EB;
-            }
-            QPushButton:pressed {
-                background-color: #1D4ED8;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {Colors.ACCENT_HOVER};
+            }}
+            QPushButton:pressed {{
+                background-color: {Colors.ACCENT_PRESSED};
+            }}
         """)
         self._action_buttons["update_all"] = self.action_update_all_btn
 
         self.action_ignore_btn = QPushButton("Ignore Selected")
         self.action_ignore_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.action_ignore_btn.setFixedHeight(24)
-        self.action_ignore_btn.setStyleSheet("""
-            QPushButton {
+        self.action_ignore_btn.setStyleSheet(f"""
+            QPushButton {{
                 background-color: rgba(255, 255, 255, 0.04);
                 color: #A7B1C2;
-                border: 1px solid rgba(255, 255, 255, 0.06);
+                border: 1px solid {Colors.BORDER};
                 border-radius: 8px;
                 padding: 0 12px;
                 font-size: 11px;
                 font-weight: 500;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: rgba(255, 255, 255, 0.07);
-                color: #EDEDEF;
-            }
-            QPushButton:pressed {
+                color: {Colors.TEXT};
+            }}
+            QPushButton:pressed {{
                 background-color: rgba(255, 255, 255, 0.03);
-            }
+            }}
         """)
         self._action_buttons["ignore"] = self.action_ignore_btn
 
         self.action_manage_btn = QPushButton("Manage Ignored")
         self.action_manage_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.action_manage_btn.setFixedHeight(24)
-        self.action_manage_btn.setStyleSheet("""
-            QPushButton {
+        self.action_manage_btn.setStyleSheet(f"""
+            QPushButton {{
                 background-color: rgba(255, 255, 255, 0.04);
                 color: #A7B1C2;
-                border: 1px solid rgba(255, 255, 255, 0.06);
+                border: 1px solid {Colors.BORDER};
                 border-radius: 8px;
                 padding: 0 12px;
                 font-size: 11px;
                 font-weight: 500;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: rgba(255, 255, 255, 0.07);
-                color: #EDEDEF;
-            }
-            QPushButton:pressed {
+                color: {Colors.TEXT};
+            }}
+            QPushButton:pressed {{
                 background-color: rgba(255, 255, 255, 0.03);
-            }
+            }}
         """)
         self._action_buttons["manage"] = self.action_manage_btn
 

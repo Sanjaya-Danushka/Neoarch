@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 from PyQt6.QtSvg import QSvgRenderer
 
 from neoarch.resources.paths import PROJECT_ROOT
+from neoarch.frontend.tokens import Colors, SourceColors
 
 _BASE_DIR = str(PROJECT_ROOT)
 _DISCOVER_ICON_DIR = os.path.join(_BASE_DIR, "assets", "icons", "discover")
@@ -80,13 +81,7 @@ class _IconsMixin:
 
     def get_source_icon(self, source, size=18):
         icon_dir = _DISCOVER_ICON_DIR
-        source_colors = {
-            "pacman": "#4FC3F7",
-            "AUR": "#FF8A65",
-            "Flatpak": "#26A69A",
-            "npm": "#E53935",
-            "Docker": "#2496ED",
-        }
+        source_colors = SourceColors
         mapping = {
             "pacman": "pacman.svg",
             "AUR": "aur.svg",
@@ -123,7 +118,7 @@ class _IconsMixin:
                 painter.end()
                 icon = QIcon(pixmap)
             else:
-                color = source_colors.get(source, "#8B8D97")
+                color = source_colors.get(source, Colors.TEXT_2)
                 pm = QPixmap(size, size)
                 pm.fill(Qt.GlobalColor.transparent)
                 p = QPainter(pm)
@@ -194,13 +189,7 @@ class _IconsMixin:
             return QIcon()
 
     def get_source_accent(self, source):
-        m = {
-            "pacman": "#4FC3F7",
-            "AUR": "#FF8A65",
-            "Flatpak": "#26A69A",
-            "npm": "#E53935",
-        }
-        return m.get(source, "#00BFAE")
+        return SourceColors.get(source, Colors.ACCENT)
 
     def apply_checkbox_accent(self, checkbox, source):
         hex_color = self.get_source_accent(source)

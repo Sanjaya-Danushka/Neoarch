@@ -11,11 +11,13 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor
 
+from neoarch.frontend.tokens import Colors
+
 
 _ACTION_STYLES = {
-    "installed": ("+", "#00BFAE"),
+    "installed": ("+", Colors.ACCENT),
     "upgraded": ("↑", "#FF9F43"),
-    "removed": ("−", "#FF6B6B"),
+    "removed": ("−", Colors.RED),
     "downgraded": ("↓", "#A29BFE"),
 }
 
@@ -64,13 +66,13 @@ class RecentActivity(QFrame):
 
         dot = QFrame()
         dot.setFixedSize(8, 8)
-        dot.setStyleSheet("background-color: #00BFAE; border-radius: 4px;")
+        dot.setStyleSheet(f"background-color: {Colors.ACCENT}; border-radius: 4px;")
         hdr.addWidget(dot)
         hdr.addSpacing(10)
 
         title = QLabel("Recent Activity")
         title.setStyleSheet(
-            "font-size: 12px; font-weight: 500; color: #8B8D97;"
+            f"font-size: 12px; font-weight: 500; color: {Colors.TEXT_2};"
             " background: transparent; letter-spacing: 0.3px;"
         )
         hdr.addWidget(title)
@@ -134,12 +136,12 @@ class RecentActivity(QFrame):
     def _show_empty(self):
         lbl = QLabel("No recent package activity found")
         lbl.setStyleSheet(
-            "font-size: 12px; color: #5C5E66; background: transparent; padding: 6px 0;"
+            f"font-size: 12px; color: {Colors.TEXT_3}; background: transparent; padding: 6px 0;"
         )
         self.items_layout.addWidget(lbl)
 
     def _add_row(self, action: str, pkg: str, timestamp: str):
-        symbol, color = _ACTION_STYLES.get(action, ("•", "#8B8D97"))
+        symbol, color = _ACTION_STYLES.get(action, ("•", Colors.TEXT_2))
 
         row = QHBoxLayout()
         row.setSpacing(10)
@@ -155,7 +157,7 @@ class RecentActivity(QFrame):
 
         name = QLabel(pkg)
         name.setStyleSheet(
-            "font-size: 13px; font-weight: 500; color: #EDEDEF; background: transparent;"
+            f"font-size: 13px; font-weight: 500; color: {Colors.TEXT}; background: transparent;"
         )
         row.addWidget(name)
 
@@ -169,7 +171,7 @@ class RecentActivity(QFrame):
 
         ts = QLabel(time_str)
         ts.setStyleSheet(
-            "font-size: 11px; font-weight: 400; color: #5C5E66; background: transparent;"
+            f"font-size: 11px; font-weight: 400; color: {Colors.TEXT_3}; background: transparent;"
         )
         row.addWidget(ts)
 

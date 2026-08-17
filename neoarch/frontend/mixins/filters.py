@@ -7,6 +7,7 @@ from PyQt6.QtCore import Qt
 
 from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.frontend.components.source_card import SourceCard
+from neoarch.frontend.tokens import Colors, SourceColors
 
 from neoarch.backend.services import filter as filters_service
 from neoarch.frontend.components.updates_table import classify_update, _parse_size, _parse_version

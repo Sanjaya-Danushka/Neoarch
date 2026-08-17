@@ -14,6 +14,7 @@ from neoarch.backend.services import network_latency
 from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.managers.plugin_manager import PluginsManager
 from neoarch.frontend.styles import Styles
+from neoarch.frontend.themes import ThemeManager
 from neoarch.frontend.components.title_bar import _get_brand_icon_path
 from neoarch.frontend.mixins.icons import _IconsMixin, _build_window_icon
 from neoarch.frontend.mixins.auth import _AuthMixin
@@ -45,12 +46,18 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
     
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NeoArch - Package Manager")
+        from neoarch.resources.paths import APP_EDITION
+        self.setWindowTitle(f"NeoArch — {APP_EDITION} Edition")
         self.setGeometry(100, 100, 1600, 900)  # Increased width to accommodate sidebar
         self.setMinimumSize(1280, 850)  # Set minimum size (fits Discover dashboard without scroll)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setStyleSheet(Styles.get_dark_stylesheet())
+        self._theme_manager = ThemeManager(self)
+        self._theme_manager.theme_changed.connect(self._on_theme_changed)
+        self._theme_manager.load_saved()
+        # Re-apply stylesheet after theme load
         self.setStyleSheet(Styles.get_dark_stylesheet())
         icon_path = _get_brand_icon_path()
         if os.path.exists(icon_path):
@@ -162,6 +169,11 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
             self.update_user_avatar(user)
         if hasattr(self, '_update_nav_greeting'):
             self._update_nav_greeting(user)
+
+    def _on_theme_changed(self, theme_id):
+        """Reapply the main stylesheet when the theme changes."""
+        from neoarch.frontend.tokens import DARK_STYLESHEET
+        self.setStyleSheet(DARK_STYLESHEET)
 
     def closeEvent(self, event):
         try:

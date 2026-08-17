@@ -5,7 +5,7 @@ from pathlib import Path
 
 __all__ = [
     "PROJECT_ROOT", "ASSETS_DIR", "ICONS_DIR", "CONFIG_DIR",
-    "APP_NAME", "APP_VERSION", "APP_ICON",
+    "APP_NAME", "APP_VERSION", "APP_EDITION", "APP_ICON",
     "PLUGINS_ITEMS_DIR", "DEFAULT_ICON_PATH",
 ]
 
@@ -16,7 +16,8 @@ ICONS_DIR = ASSETS_DIR / "icons"
 CONFIG_DIR = Path.home() / ".config" / "neoarch"
 
 APP_NAME = "NeoArch"
-APP_VERSION = os.environ.get("NEOARCH_VERSION", "2.3.0")
+APP_VERSION = os.environ.get("NEOARCH_VERSION", "3.0.0-beta")
+APP_EDITION = "Lynx"
 APP_ICON = str(ASSETS_DIR / "icons" / "app.png")
 
 PLUGINS_ITEMS_DIR = str(PROJECT_ROOT / "assets" / "plugins" / "plugins-items")

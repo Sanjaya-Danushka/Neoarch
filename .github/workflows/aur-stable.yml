@@ -1,0 +1,55 @@
+name: AUR - neoarch (stable)
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  aur-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/v}"
+          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Generate PKGBUILD and .SRCINFO
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          mkdir -p build
+          sed "s/__VERSION__/$VERSION/g" packaging/PKGBUILD.stable > build/PKGBUILD
+          cp packaging/neoarch.install build/neoarch.install
+
+          docker run --rm -v "${{ github.workspace }}/build:/build" archlinux:latest bash -c '
+            pacman -Sy --noconfirm base-devel
+            cd /build
+            makepkg --printsrcinfo > .SRCINFO
+          '
+
+      - name: Setup SSH for AUR
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_KEY }}" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Push to AUR
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          git clone ssh://aur@aur.archlinux.org/neoarch.git aur-repo
+          cp build/PKGBUILD aur-repo/
+          cp build/neoarch.install aur-repo/
+          cp build/.SRCINFO aur-repo/
+          cd aur-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to push"
+          else
+            git commit -m "Update neoarch to v$VERSION"
+            GIT_SSH_COMMAND="ssh -i ~/.ssh/aur" git push origin HEAD
+          fi

@@ -3,87 +3,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
                              QLabel, QComboBox, QSpinBox, QLineEdit,
                              QCheckBox, QPushButton)
 
-_CARD = """
-    QFrame#settingsCard {
-        background-color: rgba(28, 30, 36, 0.75);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 12px;
-    }
-"""
-
-_CHECKBOX = """
-    QCheckBox {
-        color: #EDEDEF;
-        font-size: 13px;
-        spacing: 10px;
-    }
-    QCheckBox::indicator {
-        width: 18px;
-        height: 18px;
-        border-radius: 5px;
-        border: 1.5px solid #5C5E66;
-        background-color: rgba(18, 19, 22, 0.8);
-    }
-    QCheckBox::indicator:hover {
-        border-color: #00BFAE;
-    }
-    QCheckBox::indicator:checked {
-        background-color: #00BFAE;
-        border: 1.5px solid #00BFAE;
-    }
-"""
-
-_COMBO = """
-    QComboBox {
-        background-color: rgba(18, 19, 22, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        padding: 10px 14px;
-        color: #EDEDEF;
-        min-width: 180px;
-        font-size: 13px;
-    }
-    QComboBox:hover {
-        border-color: #00BFAE;
-    }
-    QComboBox::drop-down {
-        border: none;
-        width: 24px;
-    }
-    QComboBox::down-arrow {
-        image: none;
-        border: none;
-    }
-"""
-
-_SPINBOX = """
-    QSpinBox {
-        background-color: rgba(18, 19, 22, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        padding: 8px 12px;
-        color: #EDEDEF;
-        font-size: 13px;
-        min-width: 80px;
-    }
-    QSpinBox:focus {
-        border-color: #00BFAE;
-    }
-"""
-
-_LINEEDIT = """
-    QLineEdit {
-        background-color: rgba(18, 19, 22, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        padding: 10px 14px;
-        color: #EDEDEF;
-        font-size: 13px;
-    }
-    QLineEdit:focus {
-        border-color: #00BFAE;
-    }
-"""
+from neoarch.frontend.tokens import QSS, Colors, Fonts, Radii
 
 
 class ProxySettingsWidget(QWidget):
@@ -99,24 +19,24 @@ class ProxySettingsWidget(QWidget):
     def _make_card(self, title_text):
         card = QFrame()
         card.setObjectName("settingsCard")
-        card.setStyleSheet(_CARD)
+        card.setStyleSheet(QSS.CARD)
         card_layout = QVBoxLayout(card)
         card_layout.setContentsMargins(20, 18, 20, 20)
         card_layout.setSpacing(16)
 
         title = QLabel(title_text)
-        title.setStyleSheet("font-size: 15px; font-weight: 600; color: #EDEDEF; border: none;")
+        title.setStyleSheet(f"font-size: {Fonts.CARD_TITLE}; font-weight: {Fonts.SEMI}; color: {Colors.TEXT}; border: none;")
         card_layout.addWidget(title)
 
         return card, card_layout
 
     def setup_ui(self):
         title = QLabel("Proxy & Network")
-        title.setStyleSheet("font-size: 28px; font-weight: 700; color: #EDEDEF; letter-spacing: -0.5px;")
+        title.setStyleSheet(f"font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD}; color: {Colors.TEXT}; letter-spacing: -0.5px;")
         self.layout.addWidget(title)
 
         subtitle = QLabel("Configure network proxy settings and connection options")
-        subtitle.setStyleSheet("font-size: 13px; color: #8B8D97; margin-top: -16px;")
+        subtitle.setStyleSheet(f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2}; margin-top: -16px;")
         self.layout.addWidget(subtitle)
 
         # ── Proxy Card ──
@@ -125,11 +45,11 @@ class ProxySettingsWidget(QWidget):
         type_row = QHBoxLayout()
         type_row.setSpacing(12)
         type_label = QLabel("Proxy type:")
-        type_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        type_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         type_row.addWidget(type_label)
 
         self.type_combo = QComboBox()
-        self.type_combo.setStyleSheet(_COMBO)
+        self.type_combo.setStyleSheet(QSS.COMBO)
         self.type_combo.addItem("None (direct connection)", "none")
         self.type_combo.addItem("HTTP", "http")
         self.type_combo.addItem("HTTPS", "https")
@@ -148,11 +68,11 @@ class ProxySettingsWidget(QWidget):
         host_row = QHBoxLayout()
         host_row.setSpacing(12)
         host_label = QLabel("Host:")
-        host_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        host_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         host_row.addWidget(host_label)
 
         self.host_edit = QLineEdit(self.app.settings.get('proxy_host', ''))
-        self.host_edit.setStyleSheet(_LINEEDIT)
+        self.host_edit.setStyleSheet(QSS.LINEEDIT)
         self.host_edit.setPlaceholderText("e.g. 127.0.0.1 or proxy.example.com")
         self.host_edit.textChanged.connect(lambda v: self.app.update_setting('proxy_host', v))
         host_row.addWidget(self.host_edit, 1)
@@ -161,11 +81,11 @@ class ProxySettingsWidget(QWidget):
         port_row = QHBoxLayout()
         port_row.setSpacing(12)
         port_label = QLabel("Port:")
-        port_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        port_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         port_row.addWidget(port_label)
 
         self.port_spin = QSpinBox()
-        self.port_spin.setStyleSheet(_SPINBOX)
+        self.port_spin.setStyleSheet(QSS.SPINBOX)
         self.port_spin.setRange(1, 65535)
         self.port_spin.setValue(int(self.app.settings.get('proxy_port', 8080)))
         self.port_spin.valueChanged.connect(lambda v: self.app.update_setting('proxy_port', v))
@@ -183,11 +103,11 @@ class ProxySettingsWidget(QWidget):
         req_row = QHBoxLayout()
         req_row.setSpacing(12)
         req_label = QLabel("Request timeout:")
-        req_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        req_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         req_row.addWidget(req_label)
 
         self.req_timeout_spin = QSpinBox()
-        self.req_timeout_spin.setStyleSheet(_SPINBOX)
+        self.req_timeout_spin.setStyleSheet(QSS.SPINBOX)
         self.req_timeout_spin.setRange(5, 300)
         self.req_timeout_spin.setSingleStep(5)
         self.req_timeout_spin.setValue(int(self.app.settings.get('request_timeout', 30)))
@@ -195,7 +115,7 @@ class ProxySettingsWidget(QWidget):
         req_row.addWidget(self.req_timeout_spin)
 
         req_unit = QLabel("seconds")
-        req_unit.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        req_unit.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         req_row.addWidget(req_unit)
         req_row.addStretch()
         timeout_layout.addLayout(req_row)
@@ -206,13 +126,13 @@ class ProxySettingsWidget(QWidget):
         misc_card, misc_layout = self._make_card("Advanced")
 
         self.cb_verify_ssl = QCheckBox("Verify SSL certificates")
-        self.cb_verify_ssl.setStyleSheet(_CHECKBOX)
+        self.cb_verify_ssl.setStyleSheet(QSS.CHECKBOX)
         self.cb_verify_ssl.setChecked(bool(self.app.settings.get('verify_ssl', True)))
         self.cb_verify_ssl.toggled.connect(lambda v: self.app.update_setting('verify_ssl', v))
         misc_layout.addWidget(self.cb_verify_ssl)
 
         self.cb_parallel = QCheckBox("Allow parallel network requests")
-        self.cb_parallel.setStyleSheet(_CHECKBOX)
+        self.cb_parallel.setStyleSheet(QSS.CHECKBOX)
         self.cb_parallel.setChecked(bool(self.app.settings.get('parallel_network', True)))
         self.cb_parallel.toggled.connect(lambda v: self.app.update_setting('parallel_network', v))
         misc_layout.addWidget(self.cb_parallel)
@@ -220,11 +140,11 @@ class ProxySettingsWidget(QWidget):
         dl_row = QHBoxLayout()
         dl_row.setSpacing(12)
         dl_label = QLabel("pacman ParallelDownloads:")
-        dl_label.setStyleSheet("color: #8B8D97; font-size: 13px; border: none;")
+        dl_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         dl_row.addWidget(dl_label)
 
         self.dl_spin = QSpinBox()
-        self.dl_spin.setStyleSheet(_SPINBOX)
+        self.dl_spin.setStyleSheet(QSS.SPINBOX)
         self.dl_spin.setRange(1, 32)
         try:
             from neoarch.backend.services.pacman_conf import get_parallel_downloads
@@ -235,23 +155,12 @@ class ProxySettingsWidget(QWidget):
         dl_row.addWidget(self.dl_spin)
 
         apply_btn = QPushButton("Apply")
-        apply_btn.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                color: #00BFAE;
-                border: 1px solid rgba(0, 191, 174, 0.35);
-                border-radius: 8px;
-                padding: 8px 18px;
-                font-size: 13px;
-                font-weight: 600;
-            }
-            QPushButton:hover { background-color: rgba(0, 191, 174, 0.12); }
-        """)
+        apply_btn.setStyleSheet(QSS.BTN_OUTLINE)
         apply_btn.clicked.connect(self._apply_parallel_downloads)
         dl_row.addWidget(apply_btn)
 
         dl_note = QLabel("Requires root; writes /etc/pacman.conf")
-        dl_note.setStyleSheet("color: #8B8D97; font-size: 11px; border: none;")
+        dl_note.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.SM}; border: none;")
         dl_row.addWidget(dl_note)
         dl_row.addStretch()
         misc_layout.addLayout(dl_row)

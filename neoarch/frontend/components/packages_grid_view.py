@@ -18,22 +18,12 @@ from PyQt6.QtGui import (
 )
 
 from neoarch.frontend.components.updates_table import _EmptyOverlay
+from neoarch.frontend.tokens import Colors, SourceColors
 
 # ── theme (matches updates_table.py) ──────────────────────────────────
-_ACCENT = QColor(0, 191, 174)
 _TEXT = QColor(238, 240, 244)
 _TEXT_SEC = QColor(139, 141, 151)
-_TEXT_MUTED = QColor(92, 94, 102)
 _GREEN = QColor(88, 202, 143)
-
-_SOURCE_COLORS = {
-    "pacman": QColor(79, 195, 247),
-    "AUR": QColor(255, 138, 101),
-    "Flatpak": QColor(38, 166, 154),
-    "npm": QColor(229, 57, 53),
-    "Local": QColor(163, 166, 176),
-    "Docker": QColor(36, 150, 237),
-}
 
 _STATUS_COLORS = {
     "Security": QColor(248, 113, 113),
@@ -180,7 +170,7 @@ class _CheckBox(QWidget):
         path = QPainterPath()
         path.addRoundedRect(r, 5, 5)
         if self._checked:
-            p.fillPath(path, _ACCENT)
+            p.fillPath(path, QColor(Colors.ACCENT))
             pen = QPen(QColor(255, 255, 255), 1.9)
             pen.setCapStyle(Qt.PenCapStyle.RoundCap)
             p.setPen(pen)
@@ -222,7 +212,7 @@ class _SourceLogo(QWidget):
             p.end()
             return
         r = QRectF(self.rect())
-        c = _SOURCE_COLORS.get(self._source, _TEXT_MUTED)
+        c = QColor(SourceColors.get(self._source, Colors.TEXT_3))
         grad = QLinearGradient(r.topLeft(), r.bottomRight())
         grad.setColorAt(0.0, c.lighter(115))
         grad.setColorAt(1.0, c.darker(110))
@@ -332,7 +322,7 @@ class PackageCard(QFrame):
 
         self.name_label = _SmallLabel(
             self.pkg.get("name") or self.pkg.get("id") or "",
-            11, QFont.Weight.Bold, "#EEF0F4")
+            11, QFont.Weight.Bold, Colors.TEXT)
         self.name_label.setToolTip(self.pkg.get("name") or self.pkg.get("id") or "")
         top.addWidget(self.name_label, 1)
 
@@ -344,7 +334,7 @@ class PackageCard(QFrame):
 
         # ── description ────────────────────────────────────────────────
         desc = self.pkg.get("description") or _fallback_description(self.pkg)
-        self.desc_label = _SmallLabel(desc, 8, QFont.Weight.Normal, "#8B8D97")
+        self.desc_label = _SmallLabel(desc, 8, QFont.Weight.Normal, Colors.TEXT_2)
         self.desc_label.setToolTip(desc)
         layout.addWidget(self.desc_label)
 
@@ -352,7 +342,7 @@ class PackageCard(QFrame):
         tags = self.pkg.get("tags") or ""
         self.tags_label = None
         if tags:
-            self.tags_label = _SmallLabel(tags, 7, QFont.Weight.Normal, "#5C5E66")
+            self.tags_label = _SmallLabel(tags, 7, QFont.Weight.Normal, Colors.TEXT_3)
             self.tags_label.setToolTip(tags)
             layout.addWidget(self.tags_label)
 
@@ -372,7 +362,7 @@ class PackageCard(QFrame):
         self.arrow_label = None
         self.new_label = None
         if has_update:
-            self.arrow_label = _SmallLabel("\u2192", 8.5, QFont.Weight.Normal, "#5C5E66")
+            self.arrow_label = _SmallLabel("\u2192", 8.5, QFont.Weight.Normal, Colors.TEXT_3)
             bottom.addWidget(self.arrow_label)
             self.new_label = _SmallLabel(new, 8.5, QFont.Weight.DemiBold, "#58CA8D")
             self.new_label.setToolTip(new)
@@ -383,7 +373,7 @@ class PackageCard(QFrame):
         bottom.addStretch(1)
 
         self.size_label = _SmallLabel(self.pkg.get("download_size") or "",
-                                      8, QFont.Weight.Normal, "#8B8D97")
+                                      8, QFont.Weight.Normal, Colors.TEXT_2)
         self.size_label.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
         self.size_label.setVisible(bool(self.pkg.get("download_size")))
         bottom.addWidget(self.size_label)
@@ -396,7 +386,7 @@ class PackageCard(QFrame):
             status = "Installed"
         else:
             status = "Available"
-        self.status_chip = _Chip(status, _STATUS_COLORS.get(status, _TEXT_MUTED))
+        self.status_chip = _Chip(status, QColor(_STATUS_COLORS.get(status, Colors.TEXT_3)))
         bottom.addWidget(self.status_chip, alignment=Qt.AlignmentFlag.AlignBottom)
 
         layout.addLayout(bottom)
@@ -426,7 +416,7 @@ class PackageCard(QFrame):
             bar_path = QPainterPath()
             bar_path.addRoundedRect(bar, 1.5, 1.5)
             p.setPen(Qt.PenStyle.NoPen)
-            p.fillPath(bar_path, _ACCENT)
+            p.fillPath(bar_path, QColor(Colors.ACCENT))
 
         p.end()
 

@@ -3,6 +3,8 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QCheckBox
 from PyQt6.QtCore import pyqtSignal
 
+from neoarch.frontend.tokens import Colors
+
 
 class FilterCard(QWidget):
     """Card component for filter options"""
@@ -62,47 +64,47 @@ class FilterCard(QWidget):
                 self.filters[name].setChecked(checked)
 
     def get_stylesheet(self):
-        return """
-            FilterCard {
+        return f"""
+            FilterCard {{
                 background-color: rgba(42, 45, 51, 0.4);
                 border-radius: 12px;
                 border: 1px solid rgba(0, 191, 174, 0.2);
                 margin: 4px 0px;
-            }
-            QLabel#filterCardTitle {
-                color: #00BFAE;
+            }}
+            QLabel#filterCardTitle {{
+                color: {Colors.ACCENT};
                 font-size: 14px;
                 font-weight: 600;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
-            }
-            QCheckBox#filterCheckbox {
+            }}
+            QCheckBox#filterCheckbox {{
                 color: #F0F0F0;
                 font-size: 13px;
                 font-weight: 500;
                 spacing: 8px;
                 padding: 4px 8px;
                 border-radius: 6px;
-            }
-            QCheckBox#filterCheckbox:hover {
+            }}
+            QCheckBox#filterCheckbox:hover {{
                 background-color: rgba(0, 191, 174, 0.05);
                 border-radius: 6px;
-            }
-            QCheckBox#filterCheckbox::indicator {
+            }}
+            QCheckBox#filterCheckbox::indicator {{
                 width: 18px;
                 height: 18px;
                 border-radius: 9px;
                 border: 2px solid rgba(0, 191, 174, 0.4);
                 background-color: rgba(42, 45, 51, 0.8);
-            }
-            QCheckBox#filterCheckbox::indicator:checked {
-                background-color: #00BFAE;
-                border: 2px solid #00BFAE;
-            }
-            QCheckBox#filterCheckbox::indicator:unchecked {
+            }}
+            QCheckBox#filterCheckbox::indicator:checked {{
+                background-color: {Colors.ACCENT};
+                border: 2px solid {Colors.ACCENT};
+            }}
+            QCheckBox#filterCheckbox::indicator:unchecked {{
                 background-color: rgba(42, 45, 51, 0.8);
-            }
-            QCheckBox#filterCheckbox::indicator:hover {
+            }}
+            QCheckBox#filterCheckbox::indicator:hover {{
                 border-color: rgba(0, 191, 174, 0.8);
-            }
+            }}
         """

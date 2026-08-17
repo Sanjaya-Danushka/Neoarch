@@ -9,6 +9,8 @@ from PyQt6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import QWidget, QLabel, QHBoxLayout
 
+from neoarch.frontend.tokens import Colors
+
 _LEVEL_COLORS = {
     "info": QColor(0, 191, 174),
     "success": QColor(88, 202, 143),
@@ -29,7 +31,7 @@ class Toast(QWidget):
         self._progress = 1.0
 
         self._label = QLabel(self)
-        self._label.setStyleSheet("color: #EDEDEF; background: transparent; border: none;")
+        self._label.setStyleSheet(f"color: {Colors.TEXT}; background: transparent; border: none;")
         self._label.setWordWrap(True)
         self._label.setMinimumWidth(220)
         self._label.setMaximumWidth(420)

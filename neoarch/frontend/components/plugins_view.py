@@ -1,7 +1,7 @@
 # === components: plugins_view.py ===
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QFrame, QGridLayout, QSizePolicy
 from PyQt6.QtCore import pyqtSignal, Qt, QTimer
-from PyQt6.QtGui import QFont, QPainter, QPixmap
+from PyQt6.QtGui import QColor, QFont, QPainter, QPixmap
 from PyQt6.QtSvg import QSvgRenderer
 from typing import Any
 import os
@@ -9,10 +9,14 @@ import shutil
 
 from neoarch.resources.plugin_data import get_plugins_data, get_all_plugins_data
 from neoarch.resources.paths import ICONS_DIR, PLUGINS_ITEMS_DIR
+from neoarch.frontend.tokens import Colors, SourceColors
 from neoarch.frontend.components.packages_grid_view import (
     PackageCard, _Chip, _CheckBox, _SmallLabel, _SourceLogo,
-    _STATUS_COLORS, _TEXT_MUTED,
+    _STATUS_COLORS,
 )
+
+_ACCENT = Colors.ACCENT
+_TEXT_MUTED = QColor(Colors.TEXT_3)
 
 
 def _canonical_source(source):
@@ -520,14 +524,7 @@ class PluginsView(QWidget):
 
     def _source_badge(self, source):
         """Create a source badge widget with icon and label"""
-        colors = {
-            'pacman': '#4FC3F7',
-            'aur': '#FF8A65',
-            'flatpak': '#26A69A',
-            'npm': '#E53935',
-            'brew': '#8B5CF6',
-        }
-        color = colors.get(source, '#8B8D97')
+        color = SourceColors.get(source, Colors.TEXT_2)
 
         badge = QWidget()
         badge.setObjectName("sourceBadge")

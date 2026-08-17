@@ -3,13 +3,15 @@ from PyQt6.QtWidgets import (
 )
 
 from neoarch.backend.services import settings as settings_service
-from neoarch.resources.paths import APP_VERSION
+from neoarch.resources.paths import APP_VERSION, APP_EDITION
 from neoarch.frontend.views.settings_general import GeneralSettingsWidget
 from neoarch.frontend.views.settings_auto_update import AutoUpdateSettingsWidget
 from neoarch.frontend.views.settings_notifications import NotificationsSettingsWidget
 from neoarch.frontend.views.settings_logging import LoggingSettingsWidget
 from neoarch.frontend.views.settings_proxy import ProxySettingsWidget
 from neoarch.frontend.views.settings_maintenance import MaintenanceSettingsWidget
+from neoarch.frontend.views.settings_appearance import AppearanceSettingsWidget
+from neoarch.frontend.tokens import Colors, Fonts, Fonts, Radii
 
 
 class _SettingsMixin:
@@ -20,10 +22,17 @@ class _SettingsMixin:
         return settings_service.save_settings(self.settings, self.log)
 
     def build_settings_ui(self):
+        # Clear existing widgets
         while self.settings_layout.count():
             item = self.settings_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
+            elif item.layout():
+                while item.layout().count():
+                    sub = item.layout().takeAt(0)
+                    if sub.widget():
+                        sub.widget().deleteLater()
+        self._settings_built = False
 
         main_layout = QHBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -32,47 +41,48 @@ class _SettingsMixin:
         # Sidebar
         sidebar = QFrame()
         sidebar.setObjectName("settingsSidebar")
-        sidebar.setFixedWidth(260)
-        sidebar.setStyleSheet("""
-            QFrame#settingsSidebar {
-                background-color: rgba(22, 23, 26, 0.85);
-                border-right: 1px solid rgba(255, 255, 255, 0.06);
-            }
-            QPushButton {
+        sidebar.setMinimumWidth(250)
+        sidebar.setMaximumWidth(268)
+        sidebar.setStyleSheet(f"""
+            QFrame#settingsSidebar {{
+                background-color: {Colors.BG};
+                border-right: 1px solid {Colors.BORDER};
+            }}
+            QPushButton {{
                 text-align: left;
-                padding: 14px 20px;
+                padding: 10px 16px;
                 border: none;
                 background-color: transparent;
-                color: #8B8D97;
-                font-size: 14px;
-                font-weight: 500;
-                border-radius: 8px;
-                margin: 2px 12px;
-            }
-            QPushButton:hover {
+                color: {Colors.TEXT_2};
+                font-size: {Fonts.BASE};
+                font-weight: {Fonts.MEDIUM};
+                border-radius: {Radii.MD}px;
+                margin: 1px 8px;
+            }}
+            QPushButton:hover {{
                 background-color: rgba(255, 255, 255, 0.06);
-                color: #EDEDEF;
-            }
-            QPushButton:checked {
-                background-color: rgba(0, 191, 174, 0.12);
-                color: #00BFAE;
-                font-weight: 600;
-            }
+                color: {Colors.TEXT};
+            }}
+            QPushButton:checked {{
+                background-color: {Colors.ACCENT_SOFT};
+                color: {Colors.ACCENT};
+                font-weight: {Fonts.SEMI};
+            }}
         """)
 
         sidebar_layout = QVBoxLayout(sidebar)
-        sidebar_layout.setContentsMargins(0, 24, 0, 24)
-        sidebar_layout.setSpacing(2)
+        sidebar_layout.setContentsMargins(0, 16, 0, 16)
+        sidebar_layout.setSpacing(1)
 
         self.settings_nav_buttons = {}
 
         header_label = QLabel("SETTINGS")
-        header_label.setStyleSheet("""
-            color: #5C5E66;
-            font-size: 11px;
-            font-weight: 700;
+        header_label.setStyleSheet(f"""
+            color: {Colors.TEXT_3};
+            font-size: {Fonts.SM};
+            font-weight: {Fonts.BOLD};
             letter-spacing: 1.2px;
-            padding: 8px 20px 12px 20px;
+            padding: 6px 16px 8px 16px;
         """)
         sidebar_layout.addWidget(header_label)
 
@@ -82,6 +92,12 @@ class _SettingsMixin:
         btn_general.clicked.connect(lambda: self.switch_settings_category("general"))
         self.settings_nav_buttons["general"] = btn_general
         sidebar_layout.addWidget(btn_general)
+
+        btn_appearance = QPushButton("Appearance")
+        btn_appearance.setCheckable(True)
+        btn_appearance.clicked.connect(lambda: self.switch_settings_category("appearance"))
+        self.settings_nav_buttons["appearance"] = btn_appearance
+        sidebar_layout.addWidget(btn_appearance)
 
         btn_auto_update = QPushButton("Auto Update")
         btn_auto_update.setCheckable(True)
@@ -115,25 +131,43 @@ class _SettingsMixin:
 
         sidebar_layout.addStretch()
 
-        version_label = QLabel(f"NeoArch v{APP_VERSION}")
-        version_label.setStyleSheet("""
-            color: #5C5E66;
-            font-size: 11px;
-            padding: 12px 20px;
+        # Version badge with edition
+        version_container = QHBoxLayout()
+        version_container.setContentsMargins(16, 4, 16, 8)
+        version_container.setSpacing(6)
+
+        version_text = QLabel(f"NeoArch {APP_VERSION}")
+        version_text.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: {Fonts.SM}; background: transparent;")
+        version_container.addWidget(version_text)
+
+        edition_badge = QLabel(APP_EDITION)
+        edition_badge.setStyleSheet(f"""
+            color: #0C0C0E;
+            background-color: {Colors.ACCENT};
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 2px 8px;
+            border-radius: 10px;
         """)
-        sidebar_layout.addWidget(version_label)
+        edition_badge.setFixedHeight(18)
+        version_container.addWidget(edition_badge)
+        version_container.addStretch()
+
+        sidebar_layout.addLayout(version_container)
 
         # Content area
         content_area = QFrame()
         content_area.setObjectName("settingsContent")
-        content_area.setStyleSheet("QFrame#settingsContent { background-color: rgba(22, 23, 26, 0.6); }")
+        content_area.setStyleSheet(f"QFrame#settingsContent {{ background-color: #0C0C0E; }}")
 
         self.settings_content_layout = QVBoxLayout(content_area)
-        self.settings_content_layout.setContentsMargins(32, 32, 32, 32)
-        self.settings_content_layout.setSpacing(24)
+        self.settings_content_layout.setContentsMargins(24, 24, 24, 24)
+        self.settings_content_layout.setSpacing(20)
 
         self.settings_widgets = {
             "general": GeneralSettingsWidget(self),
+            "appearance": AppearanceSettingsWidget(self),
             "auto_update": AutoUpdateSettingsWidget(self),
             "notifications": NotificationsSettingsWidget(self),
             "logging": LoggingSettingsWidget(self),

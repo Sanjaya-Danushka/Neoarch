@@ -13,43 +13,45 @@ from PyQt6.QtWidgets import (
     QMessageBox,
 )
 
-_HEADER_BTN = """
-    QPushButton {
+from neoarch.frontend.tokens import Colors
+
+_HEADER_BTN = f"""
+    QPushButton {{
         background-color: transparent;
-        color: #8B8D97;
+        color: {Colors.TEXT_2};
         border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: 7px;
         padding: 0 14px;
         font-weight: 500;
         font-size: 11px;
-    }
-    QPushButton:hover {
+    }}
+    QPushButton:hover {{
         background-color: rgba(255, 255, 255, 0.04);
-        color: #EDEDEF;
+        color: {Colors.TEXT};
         border-color: rgba(255, 255, 255, 0.12);
-    }
+    }}
 """
 
-_TABLE = """
-    QTableWidget {
+_TABLE = f"""
+    QTableWidget {{
         background-color: rgba(18, 19, 22, 0.8);
         border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: 10px;
         gridline-color: rgba(255, 255, 255, 0.04);
-        color: #EDEDEF;
+        color: {Colors.TEXT};
         font-size: 12px;
-    }
-    QHeaderView::section {
+    }}
+    QHeaderView::section {{
         background-color: rgba(14, 14, 16, 0.9);
-        color: #8B8D97;
+        color: {Colors.TEXT_2};
         border: none;
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         padding: 8px;
         font-size: 11px;
         font-weight: 600;
-    }
-    QTableWidget::item { padding: 6px 8px; }
-    QTableWidget::item:selected { background-color: rgba(0, 191, 174, 0.15); color: #00BFAE; }
+    }}
+    QTableWidget::item {{ padding: 6px 8px; }}
+    QTableWidget::item:selected {{ background-color: rgba(0, 191, 174, 0.15); color: {Colors.ACCENT}; }}
 """
 
 
@@ -85,11 +87,11 @@ class AppImageTab(QWidget):
         header_layout.setSpacing(6)
 
         title = QLabel("AppImages")
-        title.setStyleSheet("color: #EDEDEF; font-size: 13px; font-weight: 600; border: none;")
+        title.setStyleSheet(f"color: {Colors.TEXT}; font-size: 13px; font-weight: 600; border: none;")
         header_layout.addWidget(title)
 
         self.status_label = QLabel()
-        self.status_label.setStyleSheet("color: #8B8D97; font-size: 11px; border: none;")
+        self.status_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: 11px; border: none;")
         header_layout.addWidget(self.status_label)
         header_layout.addStretch()
 

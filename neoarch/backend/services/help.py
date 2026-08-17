@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QPixmap
 
-from neoarch.resources.paths import ASSETS_DIR, APP_VERSION
+from neoarch.resources.paths import ASSETS_DIR, APP_VERSION, APP_EDITION
 
 __all__ = ["_make_text_tab", "show_help", "show_about"]
 
@@ -174,8 +174,8 @@ def show_about(parent):
     title.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(title)
 
-    subtitle = QLabel("Elevate Your Arch Experience")
-    subtitle.setStyleSheet("font-size: 14px; color: #C9C9C9;")
+    subtitle = QLabel(f"{APP_EDITION} Edition")
+    subtitle.setStyleSheet("font-size: 14px; font-weight: 600; color: #C9C9C9; letter-spacing: 1px;")
     subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(subtitle)
 
