@@ -1214,7 +1214,6 @@ class _ViewsMixin:
         self.discover_install_btn = None
         self._grid_view_btn = None
         self._install_file_btn = None
-        self._install_plugin_btn = None
         self._bundle_btn = None
         self._bundle_select_all_btn = None
         self._bundle_sep1 = None
@@ -1441,21 +1440,6 @@ class _ViewsMixin:
             if self._grid_view_btn:
                 layout.removeWidget(self._grid_view_btn)
                 layout.addWidget(self._grid_view_btn)
-
-            self.toolbar_layout.addLayout(layout)
-        elif self.current_view == "plugins":
-            layout = QHBoxLayout()
-            layout.setSpacing(12)
-
-            layout.addStretch()
-
-            if getattr(self, '_install_plugin_btn', None) is None:
-                self._install_plugin_btn = self.create_toolbar_button(
-                    os.path.join(_BASE_DIR, "assets", "icons", "navbar", "install_from_file.svg"),
-                    "Install Plugin (.py file)",
-                    self.install_plugin
-                )
-            layout.addWidget(self._install_plugin_btn)
 
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "bundles":

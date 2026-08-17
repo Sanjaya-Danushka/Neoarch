@@ -298,16 +298,15 @@ def test_startup_updates_load_skips_after_user_navigation(qapp):
     assert not app.loaded_updates, "must not touch a non-updates view"
 
 
-def test_toolbar_install_plugin_button_reset_per_view(qapp):
-    """The plugins install button must be recreated like every other per-view
-    toolbar button. Keeping a stale reference after the toolbar is cleared
-    (deleteLater) re-adds a deleted widget, which raises inside update_toolbar
-    and aborts switch_view — leaving the previous page (Discover) visible or a
-    blank page, with the navbar install button missing."""
+def test_toolbar_plugins_view_has_no_install_plugin_button(qapp):
+    """The 'Install Plugin (.py file)' button must not appear in the toolbar
+    for the plugins page — it was redundant since install is done from the
+    cards directly."""
     import inspect
     from neoarch.frontend.mixins import views as views_module
     src = inspect.getsource(views_module._ViewsMixin.update_toolbar)
-    assert "self._install_plugin_btn = None" in src
+    assert "_install_plugin_btn" not in src
+    assert "Install Plugin (.py file)" not in src
 
 
 def _make_view(qapp, specs, monkeypatch):
@@ -319,6 +318,8 @@ def _make_view(qapp, specs, monkeypatch):
     view = PluginsView(None, lambda *a: None)
     view.resize(1000, 700)
     view.show()
+    qapp.processEvents()
+    view._transition_from_spinner()
     qapp.processEvents()
     return view
 

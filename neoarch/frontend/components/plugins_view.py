@@ -13,6 +13,7 @@ from neoarch.frontend.components.packages_grid_view import (
     PackageCard, _Chip, _CheckBox, _SmallLabel, _SourceLogo,
     _STATUS_COLORS, _TEXT_MUTED,
 )
+from neoarch.frontend.components.loading_spinner import LoadingSpinner
 
 
 def _canonical_source(source):
@@ -297,6 +298,11 @@ class PluginsView(QWidget):
         layout.setContentsMargins(16, 12, 16, 12)
         layout.setSpacing(16)
 
+        # Loading spinner — visible by default, hidden once cards are rendered
+        self._loading_spinner = LoadingSpinner(message="Loading plugins\u2026")
+        layout.addWidget(self._loading_spinner, 1)
+        self._loading_spinner.start_animation()
+
         # Content stacked area
         self._content_stack = QFrame()
         self._content_stack.setObjectName("pluginContentStack")
@@ -312,6 +318,7 @@ class PluginsView(QWidget):
         self.create_apps_grid(content_layout)
 
         layout.addWidget(self._content_stack, 1)
+        self._content_stack.setVisible(False)
 
     def _build_selection_bar(self):
         """Floating bar with a batch install action for checked cards."""
@@ -352,8 +359,23 @@ class PluginsView(QWidget):
         return bar
 
     def show_grid_mode(self):
+        """Show the loading spinner briefly, then transition to the card grid."""
+        self._loading_spinner.setVisible(True)
+        self._loading_spinner.start_animation()
+        self._content_stack.setVisible(False)
+        QTimer.singleShot(120, self._transition_from_spinner)
+
+    def _transition_from_spinner(self):
+        """Fade from the loading spinner to the card grid."""
+        self._loading_spinner.stop_animation()
+        self._loading_spinner.setVisible(False)
+        self._content_stack.setVisible(True)
         self._scroll_area.setVisible(True)
-        QTimer.singleShot(0, self._render_grid_after_show)
+        try:
+            self._scroll_area.verticalScrollBar().setValue(0)
+        except Exception:
+            pass
+        self._calc_grid_metrics()
 
     def _render_grid_after_show(self):
         try:
@@ -767,10 +789,16 @@ class PluginsView(QWidget):
         """Refresh all plugin cards to reflect current installation state
 
         Args:
-            force: If True, clears all caches (for post-install/uninstall refresh).
+            force: If True, clears all caches and shows a brief loading spinner
+                   (for post-install/uninstall refresh).
                    If False, preserves caches (for navigation) — much faster.
         """
         if force:
+            # Brief spinner to signal the refresh
+            if hasattr(self, '_loading_spinner') and self._content_stack.isVisible():
+                self._loading_spinner.setVisible(True)
+                self._loading_spinner.start_animation()
+                self._content_stack.setVisible(False)
             self.clear_installed_cache()
             self._card_cache.clear()
             self._all_cards = []
@@ -778,13 +806,12 @@ class PluginsView(QWidget):
             self._all_filtered_cards = None
         self.populate_app_cards()
         if force:
-            # Rebuild the installed-package cache after clearing it above so the
-            # freshly created cards reflect the new install state.
             self._prewarm_installed_cache()
-        # Always apply filters so there's exactly one render
         if not self._current_filter_states:
             self._current_filter_states = {"Available": True, "Installed": True}
         self._apply_combined_filters()
+        if force and hasattr(self, '_loading_spinner') and self._loading_spinner.isVisible():
+            QTimer.singleShot(120, self._transition_from_spinner)
 
     def get_plugin(self, plugin_id):
         for spec in self.plugins:
