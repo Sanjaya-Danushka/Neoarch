@@ -76,8 +76,7 @@ class _SearchMixin:
 
     def on_search_text_changed(self):
         try:
-            if getattr(self, 'current_view', '') == "plugins":
-                # Immediate filtering for Plugins for a responsive feel
+            if getattr(self, 'current_view', '') in ("plugins", "git"):
                 self.perform_search()
                 return
         except Exception:
@@ -91,6 +90,15 @@ class _SearchMixin:
             try:
                 self._plugins_search_query = query
                 self._apply_plugins_filters()
+            except Exception:
+                pass
+            return
+
+        # Git view: filter projects
+        if getattr(self, 'current_view', '') == "git":
+            try:
+                if hasattr(self, 'git_view') and self.git_view:
+                    self.git_view.set_search(query)
             except Exception:
                 pass
             return

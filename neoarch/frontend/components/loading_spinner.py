@@ -33,7 +33,7 @@ class _SpinnerCanvas(QLabel):
         cx = cy = _SIZE / 2
         t = self._progress
 
-        for color, delay in [("#FF6B6B", 0.0), ("#E53E3E", 0.5)]:
+        for color, delay in [("#00BFAE", 0.0), ("#00D4AA", 0.5)]:
             ft = (t - delay) % 1.0
             s = max(0.01, ft)
             half = s * _SIZE / 2
@@ -103,7 +103,7 @@ class LoadingSpinner(QWidget):
                 background-color: rgba(255, 255, 255, 0.08);
             }
             LoadingSpinner QProgressBar::chunk {
-                background-color: #E53E3E;
+                background-color: #00BFAE;
                 border-radius: 4px;
             }
         """)

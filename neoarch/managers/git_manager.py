@@ -82,12 +82,7 @@ class GitManager(QObject):
         self._build_history = []
 
     def _emit_repos_changed(self):
-        """Thread-safe repos_changed emission via QueuedConnection."""
-        QMetaObject.invokeMethod(
-            self, "_do_repos_changed", Qt.ConnectionType.QueuedConnection)
-
-    @pyqtSlot()
-    def _do_repos_changed(self):
+        """Thread-safe repos_changed emission — emits directly; PyQt6 auto-queues cross-thread."""
         self.repos_changed.emit()
 
     # ------------------------------------------------------------------
@@ -292,6 +287,8 @@ class GitManager(QObject):
             self._emit_repos_changed()
 
         Thread(target=_task, daemon=True).start()
+        QTimer.singleShot(3000, self._emit_repos_changed)
+        QTimer.singleShot(8000, self._emit_repos_changed)
 
     # ------------------------------------------------------------------
     # Query

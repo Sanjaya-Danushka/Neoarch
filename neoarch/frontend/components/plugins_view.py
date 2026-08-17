@@ -13,7 +13,6 @@ from neoarch.frontend.components.packages_grid_view import (
     PackageCard, _Chip, _CheckBox, _SmallLabel, _SourceLogo,
     _STATUS_COLORS, _TEXT_MUTED,
 )
-from neoarch.frontend.components.loading_spinner import LoadingSpinner
 
 
 def _canonical_source(source):
@@ -299,10 +298,11 @@ class PluginsView(QWidget):
         layout.setContentsMargins(16, 12, 16, 12)
         layout.setSpacing(16)
 
-        # Loading spinner — visible by default, hidden once cards are rendered
-        self._loading_spinner = LoadingSpinner(message="Loading plugins\u2026")
-        layout.addWidget(self._loading_spinner, 1)
-        self._loading_spinner.start_animation()
+        # Loading state — identical to updates/discover page
+        from neoarch.frontend.components.updates_table import _EmptyOverlay
+        self._loading_overlay = _EmptyOverlay()
+        self._loading_overlay.set_loading(True, "Loading plugins\u2026")
+        layout.addWidget(self._loading_overlay)
 
         # Content stacked area
         self._content_stack = QFrame()
@@ -318,16 +318,14 @@ class PluginsView(QWidget):
         self._content_stack.setVisible(False)
 
     def show_grid_mode(self):
-        """Show the loading spinner briefly, then transition to the card grid."""
-        self._loading_spinner.setVisible(True)
-        self._loading_spinner.start_animation()
+        """Show the loading bar briefly, then transition to the card grid."""
+        self._loading_overlay.setVisible(True)
         self._content_stack.setVisible(False)
-        QTimer.singleShot(120, self._transition_from_spinner)
+        QTimer.singleShot(120, self._transition_from_loading)
 
-    def _transition_from_spinner(self):
-        """Fade from the loading spinner to the card grid."""
-        self._loading_spinner.stop_animation()
-        self._loading_spinner.setVisible(False)
+    def _transition_from_loading(self):
+        """Fade from the loading bar to the card grid."""
+        self._loading_overlay.setVisible(False)
         self._content_stack.setVisible(True)
         self._scroll_area.setVisible(True)
         try:
@@ -759,10 +757,9 @@ class PluginsView(QWidget):
                    If False, preserves caches (for navigation) — much faster.
         """
         if force:
-            # Brief spinner to signal the refresh
-            if hasattr(self, '_loading_spinner') and self._content_stack.isVisible():
-                self._loading_spinner.setVisible(True)
-                self._loading_spinner.start_animation()
+            # Brief loading bar to signal the refresh
+            if hasattr(self, '_loading_overlay') and self._content_stack.isVisible():
+                self._loading_overlay.setVisible(True)
                 self._content_stack.setVisible(False)
             self.clear_installed_cache()
             self._card_cache.clear()
@@ -775,8 +772,8 @@ class PluginsView(QWidget):
         if not self._current_filter_states:
             self._current_filter_states = {"Available": True, "Installed": True}
         self._apply_combined_filters()
-        if force and hasattr(self, '_loading_spinner') and self._loading_spinner.isVisible():
-            QTimer.singleShot(120, self._transition_from_spinner)
+        if force and hasattr(self, '_loading_overlay') and self._loading_overlay.isVisible():
+            QTimer.singleShot(120, self._transition_from_loading)
 
     def get_plugin(self, plugin_id):
         for spec in self.plugins:

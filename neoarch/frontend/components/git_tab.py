@@ -15,8 +15,10 @@ from PyQt6.QtCore import (
     Qt, QTimer, pyqtSignal, QRectF, QPoint,
 )
 from PyQt6.QtGui import (
-    QColor, QPainter, QPen, QCursor,
+    QColor, QPainter, QPen, QCursor, QIcon, QPixmap,
 )
+from PyQt6.QtSvg import QSvgRenderer
+from neoarch.resources.paths import PROJECT_ROOT
 
 __all__ = ["GitTab"]
 
@@ -38,6 +40,25 @@ _RADIUS_CARD = 16
 # Semantic colors
 _TEAL = "#00D4AA"
 _ORANGE = "#FF9F1C"
+
+
+def _svg_icon(rel_path, size, color="#FFFFFF"):
+    path = os.path.join(str(PROJECT_ROOT), "assets", "icons", rel_path)
+    try:
+        r = QSvgRenderer(path)
+        if r.isValid():
+            pm = QPixmap(size, size)
+            pm.fill(Qt.GlobalColor.transparent)
+            p = QPainter(pm)
+            p.setRenderHint(QPainter.RenderHint.Antialiasing)
+            r.render(p, QRectF(0, 0, size, size))
+            p.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+            p.fillRect(QRectF(0, 0, size, size), QColor(color))
+            p.end()
+            return QIcon(pm)
+    except Exception:
+        pass
+    return QIcon()
 _PURPLE = "#8B7CFF"
 _BLUE = "#4C9AFF"
 _GREEN = "#22C55E"
@@ -452,8 +473,8 @@ class GitTab(QWidget):
 
     def _init_ui(self):
         root = QVBoxLayout(self)
-        root.setContentsMargins(20, 0, 20, 12)
-        root.setSpacing(4)
+        root.setContentsMargins(20, 12, 20, 12)
+        root.setSpacing(12)
 
         # ── Header ──
         self._build_header(root)
@@ -463,7 +484,7 @@ class GitTab(QWidget):
 
         # ── Spacer before projects ──
         spacer = QWidget()
-        spacer.setFixedHeight(8)
+        spacer.setFixedHeight(12)
         spacer.setStyleSheet("background: transparent; border: none;")
         root.addWidget(spacer)
 
@@ -516,57 +537,26 @@ class GitTab(QWidget):
         row.addLayout(left, 1)
 
         # Clone button
-        clone_btn = QPushButton("+ Clone Repository")
+        clone_btn = QPushButton(" Clone Repository")
+        clone_btn.setIcon(_svg_icon("discover/git.svg", 16, "#0C0C0E"))
+        clone_btn.setIconSize(QRectF(0, 0, 16, 16).toRect().size())
         clone_btn.setFixedHeight(34)
         clone_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         clone_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {_ACCENT}; color: #0C0C0E;
-                border: none; border-radius: {_RADIUS_SM}px;
-                padding: 0 18px; font-size: 12px; font-weight: 600;
+                background-color: #FFFFFF;
+                color: #0C0C0E;
+                border: 1px solid rgba(255, 255, 255, 0.9);
+                border-radius: 10px;
+                padding: 0 18px;
+                font-size: 12px;
+                font-weight: 600;
             }}
-            QPushButton:hover {{ background: #00D4C1; }}
-            QPushButton:pressed {{ background: #009688; }}
+            QPushButton:hover {{ background-color: #E8EAF0; }}
+            QPushButton:pressed {{ background-color: #D3D6DE; }}
         """)
         clone_btn.clicked.connect(self._on_clone)
         row.addWidget(clone_btn)
-
-        # Search
-        self._search = QLineEdit()
-        self._search.setPlaceholderText("Search projects...")
-        self._search.setFixedWidth(200)
-        self._search.setFixedHeight(34)
-        self._search.setStyleSheet(f"""
-            QLineEdit {{
-                background: {_SURFACE};
-                color: {_TEXT};
-                border: 1px solid {_BORDER};
-                border-radius: {_RADIUS_SM}px;
-                padding: 0 12px; font-size: 12px;
-                selection-background-color: rgba(0,191,174,0.3);
-            }}
-            QLineEdit:focus {{ border-color: rgba(0,191,174,0.4); }}
-        """)
-        self._search.textChanged.connect(self._on_search)
-        row.addWidget(self._search)
-
-        # Refresh
-        refresh_btn = QPushButton("↻")
-        refresh_btn.setFixedSize(34, 34)
-        refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        refresh_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: {_SURFACE}; color: {_TEXT2};
-                border: 1px solid {_BORDER};
-                border-radius: {_RADIUS_SM}px; font-size: 16px;
-            }}
-            QPushButton:hover {{
-                background: {_SURFACE_2}; color: {_TEXT};
-                border-color: {_BORDER_HOVER};
-            }}
-        """)
-        refresh_btn.clicked.connect(self.refresh)
-        row.addWidget(refresh_btn)
 
         parent.addLayout(row)
 
@@ -591,84 +581,94 @@ class GitTab(QWidget):
         row.setSpacing(12)
         row.setContentsMargins(0, 4, 0, 0)
 
-        # Build Activity
-        build_frame = QFrame()
-        build_frame.setStyleSheet(f"""
+        _scroll_qss = (
+            "QScrollArea { background: transparent; border: none; }"
+            "QScrollBar:vertical { background: transparent; width: 4px; }"
+            "QScrollBar::handle:vertical { background: rgba(255,255,255,0.08);"
+            "  border-radius: 2px; min-height: 20px; }"
+            "QScrollBar::handle:vertical:hover { background: rgba(255,255,255,0.14); }"
+            "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }")
+
+        _frame_qss = f"""
             QFrame {{
                 background: {_SURFACE};
                 border: 1px solid {_BORDER};
                 border-radius: {_RADIUS_LG}px;
             }}
-        """)
+        """
+
+        # Build Activity
+        build_frame = QFrame()
+        build_frame.setStyleSheet(_frame_qss)
+        build_frame.setFixedHeight(140)
         bl = QVBoxLayout(build_frame)
-        bl.setContentsMargins(16, 14, 16, 14)
-        bl.setSpacing(6)
+        bl.setContentsMargins(12, 6, 12, 6)
+        bl.setSpacing(2)
 
         bh = QHBoxLayout()
         bh.setSpacing(8)
         bh.setContentsMargins(0, 0, 0, 0)
         bh_title = QLabel("Build Activity")
         bh_title.setStyleSheet(
-            f"color: {_TEXT}; font-size: 13px; font-weight: 600;"
+            f"color: {_TEXT}; font-size: 12px; font-weight: 600;"
             "background: transparent; border: none;")
         bh.addWidget(bh_title)
         bh.addStretch(1)
-        bh.add_btn = QLabel("View All")
-        bh.add_btn.setStyleSheet(
-            f"color: {_ACCENT}; font-size: 11px; font-weight: 500;"
-            "background: transparent; border: none;")
-        bh.addWidget(bh.add_btn)
         bl.addLayout(bh)
 
         self._build_list_layout = QVBoxLayout()
         self._build_list_layout.setSpacing(0)
         self._build_list_layout.setContentsMargins(0, 0, 0, 0)
-        bl.addLayout(self._build_list_layout)
-
-        self._build_history_label = QLabel("Show Full Build History")
-        self._build_history_label.setStyleSheet(
-            f"color: {_TEXT3}; font-size: 10px; font-weight: 500;"
-            "background: transparent; border: none; padding-top: 4px;")
-        bl.addWidget(self._build_history_label)
+        build_inner = QWidget()
+        build_inner.setLayout(self._build_list_layout)
+        build_scroll = QScrollArea()
+        build_scroll.setWidgetResizable(True)
+        build_scroll.setWidget(build_inner)
+        build_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        build_scroll.setStyleSheet(_scroll_qss)
+        bl.addWidget(build_scroll)
 
         row.addWidget(build_frame, 2)
 
         # Storage
         storage_frame = QFrame()
-        storage_frame.setStyleSheet(build_frame.styleSheet())
+        storage_frame.setStyleSheet(_frame_qss)
+        storage_frame.setFixedHeight(140)
         sl = QVBoxLayout(storage_frame)
-        sl.setContentsMargins(16, 14, 16, 14)
-        sl.setSpacing(8)
+        sl.setContentsMargins(12, 6, 12, 6)
+        sl.setSpacing(2)
 
-        sl.addWidget(QLabel("Repository Storage"))
-        sl.itemAt(sl.count() - 1).widget().setStyleSheet(
-            f"color: {_TEXT}; font-size: 13px; font-weight: 600;"
+        sl_title = QLabel("Repository Storage")
+        sl_title.setStyleSheet(
+            f"color: {_TEXT}; font-size: 12px; font-weight: 600;"
             "background: transparent; border: none;")
+        sl.addWidget(sl_title)
 
         # Donut + total
         top = QHBoxLayout()
-        top.setSpacing(12)
-        self._donut = _DonutChart(80)
+        top.setSpacing(8)
+        self._donut = _DonutChart(48)
         top.addWidget(self._donut, 0, Qt.AlignmentFlag.AlignTop)
 
         self._disk_total = QLabel("—")
         self._disk_total.setStyleSheet(
-            f"color: {_TEXT}; font-size: 16px; font-weight: 700;"
+            f"color: {_TEXT}; font-size: 14px; font-weight: 700;"
             "background: transparent; border: none;")
         top.addWidget(self._disk_total, 0, Qt.AlignmentFlag.AlignTop)
         top.addStretch(1)
         sl.addLayout(top)
 
         self._disk_list_layout = QVBoxLayout()
-        self._disk_list_layout.setSpacing(4)
+        self._disk_list_layout.setSpacing(2)
         self._disk_list_layout.setContentsMargins(0, 0, 0, 0)
-        sl.addLayout(self._disk_list_layout)
-
-        manage_lbl = QLabel("Manage Storage")
-        manage_lbl.setStyleSheet(
-            f"color: {_ACCENT}; font-size: 11px; font-weight: 500;"
-            "background: transparent; border: none; padding-top: 4px;")
-        sl.addWidget(manage_lbl)
+        disk_inner = QWidget()
+        disk_inner.setLayout(self._disk_list_layout)
+        disk_scroll = QScrollArea()
+        disk_scroll.setWidgetResizable(True)
+        disk_scroll.setWidget(disk_inner)
+        disk_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        disk_scroll.setStyleSheet(_scroll_qss)
+        sl.addWidget(disk_scroll)
 
         row.addWidget(storage_frame, 1)
         parent.addLayout(row)
@@ -705,7 +705,9 @@ class GitTab(QWidget):
         t2.setAlignment(Qt.AlignmentFlag.AlignCenter)
         el.addWidget(t2)
 
-        empty_clone = QPushButton("+ Clone Repository")
+        empty_clone = QPushButton(" Clone Repository")
+        empty_clone.setIcon(_svg_icon("discover/git.svg", 16, "#FFFFFF"))
+        empty_clone.setIconSize(QRectF(0, 0, 16, 16).toRect().size())
         empty_clone.setFixedHeight(36)
         empty_clone.setCursor(Qt.CursorShape.PointingHandCursor)
         empty_clone.setStyleSheet(f"""
@@ -800,21 +802,6 @@ class GitTab(QWidget):
         """)
         self._sort_btn.clicked.connect(self._cycle_sort)
         hrow.addWidget(self._sort_btn)
-
-        self._toggle_btn = QPushButton("☰")
-        self._toggle_btn.setFixedSize(28, 28)
-        self._toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._toggle_btn.setToolTip("Grid View")
-        self._toggle_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: transparent; color: {_TEXT2};
-                border: 1px solid {_BORDER}; border-radius: 6px;
-                font-size: 14px;
-            }}
-            QPushButton:hover {{ color: {_TEXT}; border-color: {_BORDER_HOVER}; }}
-        """)
-        self._toggle_btn.clicked.connect(self._toggle_view)
-        hrow.addWidget(self._toggle_btn)
 
         self._content_layout.addWidget(header)
 
@@ -967,8 +954,8 @@ class GitTab(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             self.manager.remove_repo(repo.get("path", ""))
 
-    def _on_search(self, text):
-        self._search_text = text.strip()
+    def set_search(self, text):
+        self._search_text = text
         self._render_projects()
 
     def _cycle_sort(self):

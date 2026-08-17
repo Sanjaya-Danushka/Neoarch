@@ -319,7 +319,7 @@ def _make_view(qapp, specs, monkeypatch):
     view.resize(1000, 700)
     view.show()
     qapp.processEvents()
-    view._transition_from_spinner()
+    view._transition_from_loading()
     qapp.processEvents()
     return view
 

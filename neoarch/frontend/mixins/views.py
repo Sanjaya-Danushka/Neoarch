@@ -2777,6 +2777,9 @@ class _ViewsMixin:
                 self.search_discover_packages(query)
             else:
                 self.package_table.setRowCount(0)
+        elif self.current_view == "git":
+            if getattr(self, 'git_view', None) is not None:
+                self.git_view.refresh()
 
     def get_source_text(self, row, view_id=None):
         vid = view_id or self.current_view
