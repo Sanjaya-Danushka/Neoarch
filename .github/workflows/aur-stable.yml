@@ -25,8 +25,10 @@ jobs:
 
           docker run --rm -v "${{ github.workspace }}/build:/build" archlinux:latest bash -c '
             pacman -Sy --noconfirm base-devel
-            cd /build
-            makepkg --printsrcinfo > .SRCINFO
+            useradd -m builder
+            echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+            chown -R builder:builder /build
+            su builder -c "cd /build && makepkg --printsrcinfo" > /build/.SRCINFO
           '
 
       - name: Setup SSH for AUR
