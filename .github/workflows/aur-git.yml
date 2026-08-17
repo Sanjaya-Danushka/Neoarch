@@ -34,6 +34,7 @@ jobs:
 
       - name: Push to AUR
         run: |
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/aur -o StrictHostKeyChecking=no"
           git clone ssh://aur@aur.archlinux.org/neoarch-git.git aur-repo
           cp packaging/PKGBUILD aur-repo/
           cp packaging/neoarch-git.install aur-repo/
@@ -46,5 +47,5 @@ jobs:
             echo "No changes to push"
           else
             git commit -m "Update neoarch-git from dev branch (${GITHUB_SHA::7})"
-            GIT_SSH_COMMAND="ssh -i ~/.ssh/aur" git push origin HEAD
+            git push origin HEAD
           fi

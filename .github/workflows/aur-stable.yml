@@ -41,6 +41,7 @@ jobs:
       - name: Push to AUR
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/aur -o StrictHostKeyChecking=no"
           git clone ssh://aur@aur.archlinux.org/neoarch.git aur-repo
           cp build/PKGBUILD aur-repo/
           cp build/neoarch.install aur-repo/
@@ -53,5 +54,5 @@ jobs:
             echo "No changes to push"
           else
             git commit -m "Update neoarch to v$VERSION"
-            GIT_SSH_COMMAND="ssh -i ~/.ssh/aur" git push origin HEAD
+            git push origin HEAD
           fi
