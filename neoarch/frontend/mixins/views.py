@@ -2127,8 +2127,14 @@ class _ViewsMixin:
             self.settings_container.setVisible(False)
             self.sources_section.setVisible(False)
             self.filters_section.setVisible(False)
+            if hasattr(self, 'packages_content_area'):
+                self.packages_content_area.setVisible(False)
             if hasattr(self, 'toolbar_widget'):
                 self.toolbar_widget.setVisible(False)
+            if hasattr(self, 'loading_container'):
+                self.loading_container.setVisible(False)
+            if hasattr(self, 'no_results_widget'):
+                self.no_results_widget.setVisible(False)
             try:
                 self.console_label.setVisible(False)
                 self.console.setVisible(False)
@@ -2143,7 +2149,7 @@ class _ViewsMixin:
                 self.docker_manager = DockerManager(self.log_signal, self.show_message, self)
                 from neoarch.frontend.components.docker_tab import DockerTab
                 self.docker_view = DockerTab(self.docker_manager, self)
-                self.packages_panel_layout.insertWidget(8, self.docker_view, 1)
+                self.packages_panel_layout.insertWidget(6, self.docker_view, 1)
             self.docker_view.setVisible(True)
             self.docker_view.refresh()
 

@@ -826,3 +826,250 @@ class DockerManager(QObject):
             QTimer.singleShot(0, lambda: self.show_message.emit("Docker Clean Complete", "Docker containers cleaned successfully"))
             self.load_containers(include_all=True)
         Thread(target=clean_thread, daemon=True).start()
+
+    # ── data-fetching helpers for the new tab UI ──────────────────────
+
+    def list_images(self):
+        """Return list of local Docker images as dicts."""
+        images = []
+        try:
+            fmt = "{{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.ID}}\t{{.CreatedAt}}"
+            result = subprocess.run(
+                [DOCKER_PATH, "images", "--format", fmt],
+                check=False, capture_output=True, text=True, timeout=30,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                for line in result.stdout.strip().split('\n'):
+                    parts = line.split('\t')
+                    if len(parts) >= 4 and parts[0] and parts[0] != "<none>":
+                        images.append({
+                            'repo': parts[0],
+                            'tag': parts[1],
+                            'size': parts[2],
+                            'id': parts[3],
+                            'created': parts[4] if len(parts) > 4 else '',
+                        })
+        except Exception as e:
+            self.log_signal.emit(f"Error listing images: {e}")
+        return images
+
+    def list_volumes(self):
+        """Return list of Docker volumes as dicts."""
+        volumes = []
+        try:
+            result = subprocess.run(
+                [DOCKER_PATH, "volume", "ls", "--format", "{{.Name}}\t{{.Driver}}"],
+                check=False, capture_output=True, text=True, timeout=30,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                for line in result.stdout.strip().split('\n'):
+                    parts = line.split('\t')
+                    if len(parts) >= 2:
+                        name = parts[0]
+                        # Get size via docker system df
+                        size = ""
+                        try:
+                            sr = subprocess.run(
+                                [DOCKER_PATH, "system", "df", "-v", "--format", "{{.Name}}\t{{.Size}}"],
+                                check=False, capture_output=True, text=True, timeout=10,
+                            )
+                            if sr.returncode == 0:
+                                for sl in sr.stdout.strip().split('\n'):
+                                    sp = sl.split('\t')
+                                    if len(sp) >= 2 and sp[0] == name:
+                                        size = sp[1]
+                                        break
+                        except Exception:
+                            pass
+                        volumes.append({
+                            'name': name,
+                            'driver': parts[1],
+                            'size': size,
+                        })
+        except Exception as e:
+            self.log_signal.emit(f"Error listing volumes: {e}")
+        return volumes
+
+    def list_networks(self):
+        """Return list of Docker networks as dicts."""
+        networks = []
+        try:
+            fmt = "{{.Name}}\t{{.Driver}}\t{{.Scope}}"
+            result = subprocess.run(
+                [DOCKER_PATH, "network", "ls", "--format", fmt],
+                check=False, capture_output=True, text=True, timeout=30,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                for line in result.stdout.strip().split('\n'):
+                    parts = line.split('\t')
+                    if len(parts) >= 3:
+                        name = parts[0]
+                        # Count containers on this network
+                        count = 0
+                        try:
+                            nr = subprocess.run(
+                                [DOCKER_PATH, "network", "inspect", name,
+                                 "--format", "{{len .Containers}}"],
+                                check=False, capture_output=True, text=True, timeout=10,
+                            )
+                            if nr.returncode == 0 and nr.stdout.strip().isdigit():
+                                count = int(nr.stdout.strip())
+                        except Exception:
+                            pass
+                        networks.append({
+                            'name': name,
+                            'driver': parts[1],
+                            'scope': parts[2],
+                            'containers': count,
+                        })
+        except Exception as e:
+            self.log_signal.emit(f"Error listing networks: {e}")
+        return networks
+
+    def get_stats(self):
+        """Return resource usage stats dict."""
+        stats = {'cpu': '—', 'memory': '—', 'disk': '—', 'containers': 0, 'running': 0, 'images': 0}
+        try:
+            containers = self.load_containers(include_all=True)
+            stats['containers'] = len(containers)
+            stats['running'] = sum(1 for c in containers if c.get('status', '').startswith('Up'))
+        except Exception:
+            pass
+        try:
+            imgs = self.list_images()
+            stats['images'] = len(imgs)
+        except Exception:
+            pass
+        try:
+            result = subprocess.run(
+                [DOCKER_PATH, "system", "df", "--format", "{{.Type}}\t{{.TotalCount}}\t{{.Size}}\t{{.Reclaimable}}"],
+                check=False, capture_output=True, text=True, timeout=15,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                for line in result.stdout.strip().split('\n'):
+                    parts = line.split('\t')
+                    if len(parts) >= 3 and 'Images' in parts[0]:
+                        stats['disk'] = parts[2]
+        except Exception:
+            pass
+        return stats
+
+    def get_container_logs(self, cid, tail=200):
+        """Fetch last N lines of container logs."""
+        try:
+            result = subprocess.run(
+                [DOCKER_PATH, "logs", "--tail", str(tail), cid],
+                check=False, capture_output=True, text=True, timeout=15,
+            )
+            return result.stdout or result.stderr or "No logs available"
+        except Exception as e:
+            return f"Error fetching logs: {e}"
+
+    def pull_image(self, image):
+        """Pull a Docker image in a background thread."""
+        def task():
+            self.ensure_image_local(image)
+            QTimer.singleShot(0, lambda: self.containers_changed.emit())
+        Thread(target=task, daemon=True).start()
+
+    def remove_image(self, image_id):
+        """Remove a Docker image."""
+        def task():
+            result = subprocess.run(
+                [DOCKER_PATH, "rmi", "-f", image_id],
+                check=False, capture_output=True, text=True, timeout=30,
+            )
+            if result.returncode == 0:
+                self.log_signal.emit(f"Removed image: {image_id}")
+                self.show_message.emit("Image Removed", f"Removed image {image_id}")
+            else:
+                self.log_signal.emit(f"Failed to remove image: {(result.stderr or '').strip()}")
+            QTimer.singleShot(0, lambda: self.containers_changed.emit())
+        Thread(target=task, daemon=True).start()
+
+    def remove_volume(self, name):
+        """Remove a Docker volume."""
+        def task():
+            result = subprocess.run(
+                [DOCKER_PATH, "volume", "rm", name],
+                check=False, capture_output=True, text=True, timeout=30,
+            )
+            if result.returncode == 0:
+                self.log_signal.emit(f"Removed volume: {name}")
+                self.show_message.emit("Volume Removed", f"Removed volume {name}")
+            else:
+                self.log_signal.emit(f"Failed to remove volume: {(result.stderr or '').strip()}")
+            QTimer.singleShot(0, lambda: self.containers_changed.emit())
+        Thread(target=task, daemon=True).start()
+
+    def create_volume(self, name):
+        """Create a Docker volume."""
+        def task():
+            result = subprocess.run(
+                [DOCKER_PATH, "volume", "create", name],
+                check=False, capture_output=True, text=True, timeout=15,
+            )
+            if result.returncode == 0:
+                self.log_signal.emit(f"Created volume: {name}")
+                self.show_message.emit("Volume Created", f"Created volume {name}")
+            else:
+                self.log_signal.emit(f"Failed to create volume: {(result.stderr or '').strip()}")
+            QTimer.singleShot(0, lambda: self.containers_changed.emit())
+        Thread(target=task, daemon=True).start()
+
+    def remove_network(self, name):
+        """Remove a Docker network."""
+        def task():
+            result = subprocess.run(
+                [DOCKER_PATH, "network", "rm", name],
+                check=False, capture_output=True, text=True, timeout=30,
+            )
+            if result.returncode == 0:
+                self.log_signal.emit(f"Removed network: {name}")
+                self.show_message.emit("Network Removed", f"Removed network {name}")
+            else:
+                self.log_signal.emit(f"Failed to remove network: {(result.stderr or '').strip()}")
+            QTimer.singleShot(0, lambda: self.containers_changed.emit())
+        Thread(target=task, daemon=True).start()
+
+    def inspect_container(self, cid):
+        """Return container inspect data as dict."""
+        try:
+            result = subprocess.run(
+                [DOCKER_PATH, "inspect", cid],
+                check=False, capture_output=True, text=True, timeout=15,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                import json
+                data = json.loads(result.stdout)
+                if data:
+                    return data[0]
+        except Exception:
+            pass
+        return {}
+
+    def get_cleanup_stats(self):
+        """Return cleanup stats for unused Docker resources."""
+        stats = {'images': '0', 'containers': '0', 'volumes': '0', 'build_cache': '0'}
+        try:
+            result = subprocess.run(
+                [DOCKER_PATH, "system", "df", "--format", "{{.Type}}\t{{.Reclaimable}}"],
+                check=False, capture_output=True, text=True, timeout=15,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                for line in result.stdout.strip().split('\n'):
+                    parts = line.split('\t')
+                    if len(parts) >= 2:
+                        t = parts[0].lower()
+                        r = parts[1]
+                        if 'images' in t:
+                            stats['images'] = r
+                        elif 'containers' in t:
+                            stats['containers'] = r
+                        elif 'volumes' in t:
+                            stats['volumes'] = r
+                        elif 'build' in t:
+                            stats['build_cache'] = r
+        except Exception:
+            pass
+        return stats
