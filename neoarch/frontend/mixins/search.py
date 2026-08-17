@@ -406,7 +406,7 @@ class _SearchMixin:
                     if len(tokens) > 1:
                         for tok in tokens:
                             try:
-                                result = subprocess.run(["pacman", "-Ss", tok], capture_output=True, text=True, timeout=30)
+                                result = subprocess.run(["pacman", "-Ss", tok], capture_output=True, text=True, timeout=30, check=False)
                             except Exception:
                                 result = None
                             if result and result.returncode == 0 and result.stdout:
@@ -432,7 +432,7 @@ class _SearchMixin:
                                                 })
                                     i += 1
                     else:
-                        result = subprocess.run(["pacman", "-Ss", query], capture_output=True, text=True, timeout=30)
+                        result = subprocess.run(["pacman", "-Ss", query], capture_output=True, text=True, timeout=30, check=False)
                         if result.returncode == 0 and result.stdout:
                             lines = result.stdout.strip().split('\n')
                             i = 0
@@ -454,7 +454,7 @@ class _SearchMixin:
                                 i += 1
 
                 if show_aur:
-                    result_aur = subprocess.run(["curl", "-s", f"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg={query}"], capture_output=True, text=True, timeout=10)
+                    result_aur = subprocess.run(["curl", "-s", f"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg={query}"], capture_output=True, text=True, timeout=10, check=False)
                     if result_aur.returncode == 0:
                         try:
                             data = json.loads(result_aur.stdout)
@@ -486,7 +486,7 @@ class _SearchMixin:
                         pass
                     result_flatpak = subprocess.run([
                         "flatpak", "search", "--columns=application,name,description,version", query
-                    ], capture_output=True, text=True, timeout=30)
+                    ], capture_output=True, text=True, timeout=30, check=False)
                     if result_flatpak.returncode == 0 and result_flatpak.stdout:
                         lines = [l for l in result_flatpak.stdout.strip().split('\n') if l.strip()]
                         for line in lines:
@@ -513,7 +513,7 @@ class _SearchMixin:
 
                 if show_npm:
                     try:
-                        result_npm = subprocess.run(["npm", "search", "--json", query], capture_output=True, text=True, timeout=30)
+                        result_npm = subprocess.run(["npm", "search", "--json", query], capture_output=True, text=True, timeout=30, check=False)
                         if result_npm.returncode == 0 and result_npm.stdout:
                             npm_data = json.loads(result_npm.stdout)
                             for pkg in npm_data:
