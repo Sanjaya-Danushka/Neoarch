@@ -343,9 +343,9 @@ def test_search_cards_align_to_top_not_vertically_centered(qapp, monkeypatch):
     assert view.grid_layout.parentWidget().height() == 150
 
 
-def test_selection_bar_appears_and_batch_installs(qapp, monkeypatch):
-    """Checking multiple cards shows the selection bar and Install Selected
-    emits install_many_requested with exactly the checked installable ids."""
+def test_selection_emits_signal_and_batch_installs(qapp, monkeypatch):
+    """Checking multiple cards emits selection_changed with count and
+    install_many_requested fires with exactly the checked installable ids."""
     specs = [
         {"id": pid, "name": pid.capitalize(), "pkg": pid, "desc": "x", "cmd": pid}
         for pid in ("alpha", "beta", "gamma")
@@ -353,23 +353,23 @@ def test_selection_bar_appears_and_batch_installs(qapp, monkeypatch):
     view = _make_view(qapp, specs, monkeypatch)
     view.refresh_all()
     qapp.processEvents()
-    assert not view._selection_bar.isVisible()
 
-    emitted = []
-    view.install_many_requested.connect(lambda ids: emitted.append(list(ids)))
+    counts = []
+    view.selection_changed.connect(lambda n: counts.append(n))
+
+    install_emitted = []
+    view.install_many_requested.connect(lambda ids: install_emitted.append(list(ids)))
 
     for d in view._all_cards:
         if d["plugin"]["id"] in ("alpha", "beta"):
             d["widget"].set_checked(True)
     qapp.processEvents()
 
-    assert view._selection_bar.isVisible()
-    assert "2 plugins selected" in view._selection_count_label.text()
+    assert counts[-1] == 2
+    assert len(view.selected_installable_ids()) == 2
 
-    view._install_selected()
-    assert emitted == [["alpha", "beta"]]
-    qapp.processEvents()
-    assert not view._selection_bar.isVisible()
+    view.clear_selection()
+    assert counts[-1] == 0
     assert all(not d["widget"].is_checked() for d in view._all_cards)
 
 

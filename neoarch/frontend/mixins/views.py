@@ -41,7 +41,7 @@ _BASE_DIR = str(PROJECT_ROOT)
 # package table/grid. Background callbacks must never touch the legacy
 # widgets while one of these is active, otherwise a previous page's view can
 # flash over the current one.
-_SELF_CONTAINED_VIEWS = frozenset({"plugins", "appimage", "git", "docker", "settings"})
+_SELF_CONTAINED_VIEWS = frozenset({"appimage", "git", "docker", "settings"})
 
 _C = {
     "text_sec": "#8B8D97",
@@ -530,6 +530,16 @@ class _ViewsMixin:
             if hasattr(self, 'updates_table'):
                 self.updates_table.setVisible(False)
             return
+        if getattr(self, 'current_view', '') == "plugins":
+            self.package_table.setVisible(False)
+            self.packages_grid.setVisible(False)
+            if hasattr(self, 'plugins_view') and self.plugins_view:
+                self.plugins_view.setVisible(self._view_mode == "grid")
+            if hasattr(self, 'updates_table'):
+                self.updates_table.setVisible(self._view_mode == "table")
+            if hasattr(self, 'packages_content_area'):
+                self.packages_content_area.setVisible(True)
+            return
         self.packages_grid.setVisible(self._view_mode == "grid")
         if self.current_view in ("updates", "installed", "discover"):
             self.package_table.setVisible(False)
@@ -915,6 +925,82 @@ class _ViewsMixin:
                 self.plugins_manager.uninstall_by_id(self.plugins_view, plugin_id)
         except Exception as e:
             self._show_message("Plugins", f"Uninstall error: {e}")
+
+    def _connect_plugins_selection(self):
+        """Connect the PluginsView selection_changed signal to the toolbar."""
+        try:
+            self.plugins_view.selection_changed.disconnect(self._on_plugins_selection_changed)
+        except (TypeError, RuntimeError):
+            pass
+        self.plugins_view.selection_changed.connect(self._on_plugins_selection_changed)
+
+    def _on_plugins_selection_changed(self, count):
+        """Update the plugins toolbar buttons when card selection changes."""
+        try:
+            btn = getattr(self, '_plugins_install_btn', None)
+            clear = getattr(self, '_plugins_clear_btn', None)
+            label = getattr(self, '_plugins_selection_label', None)
+            if btn is not None:
+                btn.setEnabled(count > 0)
+            if clear is not None:
+                clear.setEnabled(count > 0)
+            if label is not None:
+                if count > 0:
+                    label.setText(f"{count} plugin{'s' if count != 1 else ''} selected")
+                else:
+                    label.setText("")
+        except Exception:
+            pass
+
+    def _on_plugins_install_selected(self):
+        """Install all selected plugin cards."""
+        try:
+            if not (self.plugins_view and hasattr(self.plugins_view, 'selected_installable_ids')):
+                return
+            ids = self.plugins_view.selected_installable_ids()
+            if ids:
+                self.plugins_manager.install_many_by_id(self.plugins_view, ids)
+        except Exception as e:
+            self._show_message("Plugins", f"Install error: {e}")
+
+    def _on_plugins_clear_selection(self):
+        """Clear all card selections on the plugins page."""
+        try:
+            if self.plugins_view and hasattr(self.plugins_view, 'clear_selection'):
+                self.plugins_view.clear_selection()
+        except Exception:
+            pass
+
+    def _sync_plugins_table(self):
+        """Populate the shared UpdatesTable with plugin data for list view."""
+        try:
+            if not (self.plugins_view and hasattr(self.plugins_view, '_all_card_datas')):
+                return
+            self.updates_table.set_plugins_mode(True)
+            self.updates_table.set_loading(False)
+            self.updates_table.set_empty_text(
+                "No plugins found", "Extensions will appear here after loading")
+            mapped = []
+            for card_data in self.plugins_view._all_card_datas():
+                plugin = card_data.get('plugin', {})
+                installed = card_data.get('installed', False)
+                mapped.append({
+                    'name': plugin.get('name') or plugin.get('id') or '',
+                    'id': plugin.get('id') or '',
+                    'version': plugin.get('version') or '—',
+                    'new_version': '',
+                    'source': self.plugins_view._get_package_source(plugin),
+                    'description': plugin.get('desc') or plugin.get('description') or '',
+                    'download_size': '—',
+                    'installed_date': 0,
+                    'status': 'Installed' if installed else 'Available',
+                    '_installed': installed,
+                    '_src': plugin,
+                })
+            self.updates_table.set_enrich(False)
+            self.updates_table.set_packages(mapped)
+        except Exception:
+            pass
 
     def open_plugins_folder(self):
         try:
@@ -1442,6 +1528,79 @@ class _ViewsMixin:
                 layout.addWidget(self._grid_view_btn)
 
             self.toolbar_layout.addLayout(layout)
+        elif self.current_view == "plugins":
+            layout = QHBoxLayout()
+            layout.setSpacing(8)
+
+            self._plugins_install_btn = QPushButton("Install Selected")
+            self._plugins_install_btn.setMinimumHeight(36)
+            self._plugins_install_btn.setMinimumWidth(120)
+            self._plugins_install_btn.setEnabled(False)
+            self._plugins_install_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #FFFFFF;
+                    color: #0C0C0E;
+                    border: 1px solid rgba(255, 255, 255, 0.9);
+                    border-radius: 10px;
+                    padding: 8px 18px;
+                    font-size: 13px;
+                    font-weight: 600;
+                }
+                QPushButton:hover { background-color: #E8EAF0; }
+                QPushButton:pressed { background-color: #D3D6DE; }
+                QPushButton:disabled {
+                    background-color: rgba(255, 255, 255, 0.06);
+                    color: #5C5E66;
+                    border-color: rgba(255, 255, 255, 0.08);
+                }
+            """)
+            self._plugins_install_btn.clicked.connect(self._on_plugins_install_selected)
+            layout.addWidget(self._plugins_install_btn)
+
+            self._plugins_clear_btn = QPushButton("Clear")
+            self._plugins_clear_btn.setMinimumHeight(36)
+            self._plugins_clear_btn.setMinimumWidth(120)
+            self._plugins_clear_btn.setEnabled(False)
+            self._plugins_clear_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: transparent;
+                    color: #FF6B6B;
+                    border: 1px solid rgba(255, 107, 107, 0.3);
+                    border-radius: 10px;
+                    padding: 8px 18px;
+                    font-size: 13px;
+                    font-weight: 600;
+                }
+                QPushButton:hover {
+                    background-color: rgba(255, 107, 107, 0.12);
+                    border-color: rgba(255, 107, 107, 0.5);
+                }
+                QPushButton:pressed { background-color: rgba(255, 107, 107, 0.2); }
+                QPushButton:disabled {
+                    color: #5C5E66;
+                    border-color: rgba(255, 255, 255, 0.06);
+                }
+            """)
+            self._plugins_clear_btn.clicked.connect(self._on_plugins_clear_selection)
+            layout.addWidget(self._plugins_clear_btn)
+
+            self._plugins_selection_label = QLabel("")
+            self._plugins_selection_label.setStyleSheet(
+                "color: #8B8D97; font-size: 12px; font-weight: 500;"
+                "background: transparent; border: none; padding: 0 6px;")
+            layout.addWidget(self._plugins_selection_label)
+
+            layout.addStretch()
+            self._add_right_toolbar_icons(layout, show_install_file=False, show_bundle=False, show_sudo=False)
+
+            self.toolbar_layout.addLayout(layout)
+
+            # Wire the selection signal from the plugins view (if it already exists)
+            try:
+                if self.plugins_view is not None:
+                    self._connect_plugins_selection()
+            except Exception:
+                pass
         elif self.current_view == "bundles":
             layout = QHBoxLayout()
             layout.setSpacing(16)
@@ -1826,7 +1985,7 @@ class _ViewsMixin:
             self._view_mode = "grid"
             if hasattr(self, '_grid_view_btn') and self._grid_view_btn:
                 self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "navbar", "view.svg"), 20))
-                self._grid_view_btn.setToolTip("Grid View")
+                self._grid_view_btn.setToolTip("List View")
             try:
                 self.loading_widget.setVisible(False)
                 self.loading_widget.stop_animation()
@@ -1860,9 +2019,16 @@ class _ViewsMixin:
             # Add source cards like installed section
             self.update_plugins_sources()
 
-            # Hide packages content area (has stretch=1, would push plugins to bottom)
-            if hasattr(self, 'packages_content_area'):
-                self.packages_content_area.setVisible(False)
+            # Show/hide packages content area based on view mode
+            if self._view_mode == "table":
+                if hasattr(self, 'packages_content_area'):
+                    self.packages_content_area.setVisible(True)
+                if hasattr(self, 'updates_table'):
+                    self._sync_plugins_table()
+                    self.updates_table.setVisible(True)
+            else:
+                if hasattr(self, 'packages_content_area'):
+                    self.packages_content_area.setVisible(False)
 
             # Lazy-create plugins view on first visit
             if self.plugins_view is None:
@@ -1875,13 +2041,15 @@ class _ViewsMixin:
                     self.plugins_view.uninstall_requested.connect(self.on_plugin_uninstall_requested)
                 except Exception:
                     pass
+                self._connect_plugins_selection()
                 self.packages_panel_layout.insertWidget(5, self.plugins_view, 1)
             try:
-                self.plugins_view.setVisible(True)
+                self.plugins_view.setVisible(self._view_mode == "grid")
             except Exception:
                 pass
-            self.plugins_view.refresh_all()
-            self.plugins_view.show_grid_mode()
+            if self._view_mode == "grid":
+                self.plugins_view.refresh_all()
+                self.plugins_view.show_grid_mode()
             self._refresh_plugins_summary()
 
             self.header_info.setText("Install and launch extensions like BleachBit and Timeshift")
@@ -1929,6 +2097,8 @@ class _ViewsMixin:
             self.settings_container.setVisible(False)
             self.sources_section.setVisible(False)
             self.filters_section.setVisible(False)
+            if hasattr(self, 'packages_content_area'):
+                self.packages_content_area.setVisible(False)
             if hasattr(self, 'toolbar_widget'):
                 self.toolbar_widget.setVisible(False)
             try:
@@ -1945,7 +2115,7 @@ class _ViewsMixin:
                 self.git_manager = GitManager(self.log_signal, self.show_message, self)
                 from neoarch.frontend.components.git_tab import GitTab
                 self.git_view = GitTab(self.git_manager, self)
-                self.packages_panel_layout.insertWidget(7, self.git_view, 1)
+                self.packages_panel_layout.insertWidget(6, self.git_view, 1)
             self.git_view.setVisible(True)
             self.git_view.refresh()
 
@@ -2885,6 +3055,10 @@ class _ViewsMixin:
             self._show_detail_for_updates(pkg)
         elif action == "browser":
             self._open_package_page(pkg)
+        elif action == "launch":
+            pid = pkg.get('id') or pkg.get('name')
+            if pid:
+                self.on_plugin_launch_requested(pid)
         elif action == "copy":
             if name:
                 QApplication.clipboard().setText(name)

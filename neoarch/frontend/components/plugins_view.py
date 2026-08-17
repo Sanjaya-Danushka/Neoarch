@@ -253,6 +253,7 @@ class PluginsView(QWidget):
     install_many_requested = pyqtSignal(list)  # list of plugin ids (batch install)
     launch_requested = pyqtSignal(str)    # plugin id
     uninstall_requested = pyqtSignal(str) # plugin id
+    selection_changed = pyqtSignal(int)   # count of selected installable items
     live_search_ready = pyqtSignal(list)  # live search specs (main thread)
 
     def __init__(self, main_app, get_icon_callback, parent=None):
@@ -310,53 +311,11 @@ class PluginsView(QWidget):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(8)
 
-        # Selection bar appears when cards are checked (batch install)
-        self._selection_bar = self._build_selection_bar()
-        content_layout.addWidget(self._selection_bar)
-
         # Apps Grid
         self.create_apps_grid(content_layout)
 
         layout.addWidget(self._content_stack, 1)
         self._content_stack.setVisible(False)
-
-    def _build_selection_bar(self):
-        """Floating bar with a batch install action for checked cards."""
-        bar = QFrame()
-        bar.setObjectName("pluginSelectionBar")
-        bar.setStyleSheet(
-            "QFrame#pluginSelectionBar {"
-            " background-color: rgba(0, 191, 174, 0.06);"
-            " border: 1px solid rgba(0, 191, 174, 0.25);"
-            " border-radius: 10px;"
-            "}"
-        )
-        row = QHBoxLayout(bar)
-        row.setContentsMargins(14, 8, 8, 8)
-        row.setSpacing(10)
-
-        self._selection_count_label = QLabel("")
-        self._selection_count_label.setStyleSheet(
-            "color: #EEF0F4; font-size: 12px; font-weight: 600; border: none; background: transparent;")
-        row.addWidget(self._selection_count_label)
-        row.addStretch(1)
-
-        self._install_selected_btn = QPushButton("Install Selected")
-        self._install_selected_btn.setFixedHeight(30)
-        self._install_selected_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._install_selected_btn.setStyleSheet(_NEU_BTN_QSS)
-        self._install_selected_btn.clicked.connect(self._install_selected)
-        row.addWidget(self._install_selected_btn)
-
-        self._clear_selection_btn = QPushButton("Clear")
-        self._clear_selection_btn.setFixedHeight(30)
-        self._clear_selection_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._clear_selection_btn.setStyleSheet(_DANGER_BTN_QSS)
-        self._clear_selection_btn.clicked.connect(self._clear_selection)
-        row.addWidget(self._clear_selection_btn)
-
-        bar.hide()
-        return bar
 
     def show_grid_mode(self):
         """Show the loading spinner briefly, then transition to the card grid."""
@@ -376,6 +335,12 @@ class PluginsView(QWidget):
         except Exception:
             pass
         self._calc_grid_metrics()
+        QTimer.singleShot(0, self._post_layout_recalc)
+
+    def _post_layout_recalc(self):
+        """Recalculate grid after the layout engine has settled."""
+        self._calc_grid_metrics()
+        self._render_current_page()
 
     def _render_grid_after_show(self):
         try:
@@ -971,7 +936,7 @@ class PluginsView(QWidget):
                 datas.append(d)
         return datas
 
-    def _selected_installable_ids(self):
+    def selected_installable_ids(self):
         """Ids of checked cards that are not yet installed (batch install)."""
         ids = []
         for data in self._all_card_datas():
@@ -987,32 +952,18 @@ class PluginsView(QWidget):
 
     def _update_selection_bar(self):
         try:
-            n = len(self._selected_installable_ids())
-            if n:
-                self._selection_count_label.setText(
-                    f"{n} plugin{'s' if n != 1 else ''} selected")
-                self._install_selected_btn.setEnabled(True)
-                self._selection_bar.show()
-            else:
-                self._selection_bar.hide()
+            n = len(self.selected_installable_ids())
+            self.selection_changed.emit(n)
         except Exception:
-            pass
+            self.selection_changed.emit(0)
 
-    def _install_selected(self):
-        ids = self._selected_installable_ids()
-        if not ids:
-            return
-        self.install_many_requested.emit(ids)
-        for pid in ids:
-            self.set_installing(pid, True)
-        self._clear_selection()
-
-    def _clear_selection(self):
+    def clear_selection(self):
+        """Uncheck all cards and notify the toolbar."""
         for data in self._all_card_datas():
             widget = data.get('widget')
             if widget is not None and hasattr(widget, 'is_checked') and widget.is_checked():
                 widget.set_checked(False)
-        self._update_selection_bar()
+        self.selection_changed.emit(0)
 
     def _reset_row_stretches(self):
         if not hasattr(self, 'grid_layout'):
