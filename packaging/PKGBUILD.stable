@@ -2,7 +2,7 @@
 pkgname=neoarch
 pkgver=__VERSION__
 pkgrel=1
-pkgdesc="NeoArch Package Manager for Arch Linux"
+pkgdesc="NeoArch Package Manager for Arch Linux (stable release, use 'neoarch-git' for latest dev builds)"
 arch=('any')
 url="https://github.com/Sanjaya-Danushka/Neoarch"
 license=('MIT')
