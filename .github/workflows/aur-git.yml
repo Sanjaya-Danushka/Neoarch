@@ -3,10 +3,6 @@ name: AUR - neoarch-git
 on:
   push:
     branches: [dev]
-    paths:
-      - 'packaging/PKGBUILD'
-      - 'packaging/neoarch-git.install'
-      - 'packaging/.SRCINFO'
 
 jobs:
   aur-publish:
