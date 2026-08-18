@@ -1,8 +1,7 @@
 pkgbase = neoarch-git
-	pkgname = neoarch-git
-	pkgver = 2.3.0.r1.g0000000
+	pkgver = 3.0.0beta.g0000000
 	pkgrel = 1
-	pkgdesc = NeoArch Package Manager for Arch Linux
+	pkgdesc = NeoArch Package Manager for Arch Linux (Lynx Edition — development build, use 'neoarch' for stable)
 	url = https://github.com/Sanjaya-Danushka/Neoarch
 	install = neoarch-git.install
 	arch = any
@@ -20,3 +19,4 @@ pkgbase = neoarch-git
 	conflicts = neoarch
 	source = git+https://github.com/Sanjaya-Danushka/Neoarch.git#branch=dev
 	sha256sums = SKIP
+	pkgname = neoarch-git

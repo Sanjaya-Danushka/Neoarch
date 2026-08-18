@@ -21,7 +21,6 @@ jobs:
           echo "Version: $VERSION"
 
           printf 'pkgbase = neoarch-git\n' > packaging/.SRCINFO
-          printf '\tpkgname = neoarch-git\n' >> packaging/.SRCINFO
           printf '\tpkgver = %s\n' "$VERSION" >> packaging/.SRCINFO
           printf '\tpkgrel = 1\n' >> packaging/.SRCINFO
           printf '\tpkgdesc = NeoArch Package Manager for Arch Linux (Lynx Edition — development build, use '\''neoarch'\'' for stable)\n' >> packaging/.SRCINFO
@@ -42,6 +41,7 @@ jobs:
           printf '\tconflicts = neoarch\n' >> packaging/.SRCINFO
           printf '\tsource = git+https://github.com/Sanjaya-Danushka/Neoarch.git#branch=dev\n' >> packaging/.SRCINFO
           printf '\tsha256sums = SKIP\n' >> packaging/.SRCINFO
+          printf '\tpkgname = neoarch-git\n' >> packaging/.SRCINFO
 
       - name: Setup SSH for AUR
         run: |
