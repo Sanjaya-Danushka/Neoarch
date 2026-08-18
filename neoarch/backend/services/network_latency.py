@@ -37,14 +37,14 @@ class _Recorder:
 
     def average(self):
         with self._lock:
-            if not self._samples:
-                return None
-            if self._samples[-1][1] is None:
-                return None
             latencies = [s for _, s in self._samples if s is not None]
             if not latencies:
                 return None
             return sum(latencies) / len(latencies)
+
+    def has_samples(self):
+        with self._lock:
+            return bool(self._samples)
 
     def begin(self):
         with self._lock:
@@ -77,6 +77,11 @@ def record_failure():
 def average():
     """Recent average latency in seconds, or ``None`` if unknown/failed."""
     return _recorder.average()
+
+
+def has_samples():
+    """True if at least one probe has completed (success or failure)."""
+    return _recorder.has_samples()
 
 
 def begin():

@@ -7,7 +7,7 @@ latency: no signal, low, medium or high. Icons live in
 
 import os
 
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QLabel
 
@@ -52,11 +52,15 @@ def _state_for(avg):
 class SignalIndicator(QLabel):
     """Displays one of the four signal-state icons for the current latency."""
 
+    no_signal = pyqtSignal()
+    connection_restored = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFixedSize(36, 36)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setCursor(Qt.CursorShape.ArrowCursor)
+        self._prev_state = None
 
         self._pixmaps = {}
         for state, filename in _ICONS.items():
@@ -71,13 +75,32 @@ class SignalIndicator(QLabel):
         self._timer = QTimer(self)
         self._timer.setInterval(600)
         self._timer.timeout.connect(self.refresh_state)
+        self._baseline_set = False
         self._timer.start()
 
     def refresh_state(self):
         avg = network_latency.average()
-        self._render(_state_for(avg), avg)
+        new_state = _state_for(avg)
+        if not self._baseline_set:
+            if not network_latency.has_samples():
+                self._state = new_state
+                return
+            self._baseline_set = True
+            self._prev_state = new_state
+            self._state = new_state
+            if new_state == "nosignal":
+                QTimer.singleShot(500, self.no_signal.emit)
+            self._render(new_state, avg)
+            return
+        self._render(new_state, avg)
 
     def _render(self, state, avg):
+        if self._prev_state is not None and state != self._prev_state:
+            if state == "nosignal" and self._prev_state != "nosignal":
+                self.no_signal.emit()
+            elif state != "nosignal" and self._prev_state == "nosignal":
+                self.connection_restored.emit()
+        self._prev_state = state
         self._state = state
         pixmap = self._pixmaps.get(state)
         if pixmap is not None:
@@ -90,3 +113,6 @@ class SignalIndicator(QLabel):
         if avg is not None:
             label += f" \u2014 {_fmt(avg)}"
         self.setToolTip(label)
+
+    def is_online(self):
+        return self._state != "nosignal"

@@ -15,6 +15,7 @@ from threading import Thread, Event
 from neoarch.backend.auth import get_auth_command, get_askpass_env
 from neoarch.backend.workers import CommandWorker, strip_ansi
 from neoarch.backend import sys_utils
+from neoarch.backend.package.errors import classify_error
 
 __all__ = ["install_packages"]
 
@@ -32,10 +33,10 @@ def _clean_pacman_cache(app):
 
 
 def _process_pty_buf(buf, parse_output_line, worker, final=False):
-    """Process PTY buffer, handling \r progress updates and \n line endings.
+    """Process PTY buffer, handling \\r progress updates and \\n line endings.
 
-    Progress updates (from \r) go to worker.line_update for in-place console
-    updates. Complete lines (from \n) go to worker.output for appending.
+    Progress updates (from \\r) go to worker.line_update for in-place console
+    updates. Complete lines (from \\n) go to worker.output for appending.
     """
     while '\n' in buf:
         line, buf = buf.split('\n', 1)
@@ -45,6 +46,8 @@ def _process_pty_buf(buf, parse_output_line, worker, final=False):
         if '\r' in line:
             parts = line.split('\r')
             stripped = strip_ansi(parts[-1].strip())
+            if not stripped:
+                continue
         parse_output_line(stripped)
         worker.output.emit(stripped)
 
@@ -84,6 +87,12 @@ def install_packages(app, packages_by_source: dict):
 
         success = True
         current_download_info = ""
+        terminal_emitted = False
+
+        def _emit_terminal(status, can_cancel=False):
+            nonlocal terminal_emitted
+            terminal_emitted = True
+            app.installation_progress.emit(status, can_cancel)
 
         total_packages = sum(len(pkgs) for pkgs in packages_by_source.values())
         total_sources = len(packages_by_source)
@@ -137,7 +146,7 @@ def install_packages(app, packages_by_source: dict):
             for source, packages in packages_by_source.items():
                 if app.install_cancel_event.is_set():
                     app.log_signal.emit("Installation cancelled by user")
-                    app.installation_progress.emit("cancelled", False)
+                    _emit_terminal("cancelled")
                     return
 
                 update_progress_message(f"Installing from {source}...")
@@ -183,7 +192,7 @@ def install_packages(app, packages_by_source: dict):
 
                 if app.install_cancel_event.is_set():
                     app.log_signal.emit("Installation cancelled by user")
-                    app.installation_progress.emit("cancelled", False)
+                    _emit_terminal("cancelled")
                     return
 
                 if source == 'AUR':
@@ -246,37 +255,57 @@ def install_packages(app, packages_by_source: dict):
                         )
 
                     buf = ""
-                    while True:
-                        if app.install_cancel_event.is_set():
-                            process.terminate()
-                            try:
-                                process.wait(timeout=5)
-                            except subprocess.TimeoutExpired:
-                                process.kill()
-                            app.log_signal.emit("Installation cancelled by user")
-                            app.installation_progress.emit("cancelled", False)
-                            return
-
-                        if process.poll() is not None:
-                            break
-
-                        if use_pty:
-                            try:
-                                data = os.read(master_fd, 4096)
-                                if data:
-                                    buf += data.decode('utf-8', errors='replace')
-                                    buf = _process_pty_buf(buf, parse_output_line, worker)
-                            except OSError:
-                                pass
-                        else:
-                            if process.stdout and select.select([process.stdout], [], [], 0.2)[0]:
-                                line = process.stdout.readline()
-                                if line:
-                                    line = line.strip()
-                                    parse_output_line(line)
-                                    worker.output.emit(line)
+                    stderr_collected = ""
 
                     if use_pty:
+                        stderr_fd = None
+                        if process.stderr is not None:
+                            stderr_fd = process.stderr.fileno()
+                            os.set_blocking(stderr_fd, False)
+                        poller = select.poll()
+                        poller.register(master_fd, select.POLLIN)
+                        if stderr_fd is not None:
+                            poller.register(stderr_fd, select.POLLIN)
+
+                        while True:
+                            if app.install_cancel_event.is_set():
+                                process.terminate()
+                                try:
+                                    process.wait(timeout=5)
+                                except subprocess.TimeoutExpired:
+                                    process.kill()
+                                app.log_signal.emit("Installation cancelled by user")
+                                _emit_terminal("cancelled")
+                                return
+
+                            if process.poll() is not None:
+                                break
+
+                            try:
+                                events = poller.poll(200)
+                                for fd, event in events:
+                                    if event & select.POLLHUP:
+                                        continue
+                                    if fd == master_fd and event & select.POLLIN:
+                                        data = os.read(master_fd, 4096)
+                                        if data:
+                                            buf += data.decode('utf-8', errors='replace')
+                                            buf = _process_pty_buf(buf, parse_output_line, worker)
+                                    elif (stderr_fd is not None
+                                          and fd == stderr_fd
+                                          and event & select.POLLIN):
+                                        data = os.read(stderr_fd, 4096)
+                                        if data:
+                                            chunk = data.decode('utf-8', errors='replace')
+                                            stderr_collected += chunk
+                                            for err_line in chunk.splitlines():
+                                                err_line = err_line.strip()
+                                                if err_line:
+                                                    worker.output.emit(err_line)
+                            except OSError:
+                                break
+
+                        # Drain remaining PTY data
                         try:
                             while True:
                                 data = os.read(master_fd, 4096)
@@ -290,13 +319,66 @@ def install_packages(app, packages_by_source: dict):
                             os.close(master_fd)
                         except OSError:
                             pass
+
+                        # Drain remaining stderr
+                        if stderr_fd is not None:
+                            try:
+                                while True:
+                                    chunk = os.read(stderr_fd, 4096)
+                                    if not chunk:
+                                        break
+                                    stderr_collected += chunk.decode('utf-8', errors='replace')
+                            except OSError:
+                                pass
+                            try:
+                                process.stderr.close()
+                            except Exception:
+                                pass
                     else:
+                        # Pipe mode (Flatpak, npm) — read stdout + stderr concurrently
+                        err_buf = ""
+                        while True:
+                            if app.install_cancel_event.is_set():
+                                process.terminate()
+                                try:
+                                    process.wait(timeout=5)
+                                except subprocess.TimeoutExpired:
+                                    process.kill()
+                                app.log_signal.emit("Installation cancelled by user")
+                                _emit_terminal("cancelled")
+                                return
+
+                            if process.poll() is not None:
+                                break
+
+                            fds_to_watch = [process.stdout]
+                            if process.stderr:
+                                fds_to_watch.append(process.stderr)
+                            ready, _, _ = select.select(fds_to_watch, [], [], 0.2)
+                            for f in ready:
+                                if f is process.stdout:
+                                    line = process.stdout.readline()
+                                    if line:
+                                        line = line.strip()
+                                        parse_output_line(line)
+                                        worker.output.emit(line)
+                                elif f is process.stderr:
+                                    chunk = process.stderr.readline()
+                                    if chunk:
+                                        err_buf += chunk
+
+                        # Drain remaining
                         if process.stdout:
                             for line in process.stdout:
                                 if line:
                                     line = line.strip()
                                     parse_output_line(line)
                                     worker.output.emit(line)
+                        if process.stderr:
+                            remaining = process.stderr.read()
+                            if remaining:
+                                err_buf += remaining
+                        stderr_collected = err_buf
 
                     if process.returncode == 0:
                         completed_packages += len(packages)
@@ -306,75 +388,71 @@ def install_packages(app, packages_by_source: dict):
                         app.log_signal.emit(f"Successfully installed {len(packages)} {source} package(s)")
                     else:
                         success = False
-                        if process.stderr:
-                            error_output = process.stderr.read()
-                            if error_output:
-                                app.log_signal.emit(f"Process stderr: {error_output}")
-                                if source == 'AUR' and ("cancelled" in error_output.lower() or "authentication failed" in error_output.lower() or process.returncode == 1):
-                                    if "sudo: no askpass program specified" in error_output.lower() or "authentication agent" in error_output.lower():
-                                        app.log_signal.emit("Error: Authentication failed - no GUI password dialog available")
-                                        app.log_signal.emit("This usually means you need to install a GUI authentication tool.")
-                                        app.log_signal.emit("Please install: sudo pacman -S kdialog (or zenity/yad)")
+                        if stderr_collected:
+                            result = classify_error(stderr_collected, source)
+                            app._last_install_result = result
+                            app.log_signal.emit(f"Error: {result.title} — {result.message}")
+                            app.log_signal.emit(f"Process stderr: {stderr_collected}")
+                            if source == 'AUR' and ("cancelled" in stderr_collected.lower() or "authentication failed" in stderr_collected.lower() or process.returncode == 1):
+                                if "sudo: no askpass program specified" in stderr_collected.lower() or "authentication agent" in stderr_collected.lower():
+                                    app.log_signal.emit("Error: Authentication failed - no GUI password dialog available")
+                                    app.log_signal.emit("This usually means you need to install a GUI authentication tool.")
+                                    app.log_signal.emit("Please install: sudo pacman -S kdialog (or zenity/yad)")
+                                else:
+                                    app.log_signal.emit("AUR installation cancelled by user")
+                                _emit_terminal("cancelled")
+                                return
+                            if source == 'npm' and ("EACCES" in stderr_collected or "permission denied" in stderr_collected.lower()):
+                                try:
+                                    app.log_signal.emit("Permission denied installing npm package(s). Retrying with system privileges (polkit)...")
+                                    env2 = os.environ.copy()
+                                    auth_cmd2 = get_auth_command(env2)
+                                    exec_cmd2 = auth_cmd2 + ["npm", "install", "-g"] + packages
+                                    process2 = subprocess.Popen(
+                                        exec_cmd2,
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                        stdin=subprocess.DEVNULL, text=True, bufsize=1,
+                                        start_new_session=True, env=env2
+                                    )
+                                    while True:
+                                        if app.install_cancel_event.is_set():
+                                            process2.terminate()
+                                            try:
+                                                process2.wait(timeout=5)
+                                            except subprocess.TimeoutExpired:
+                                                process2.kill()
+                                            app.log_signal.emit("Installation cancelled by user")
+                                            _emit_terminal("cancelled")
+                                            return
+                                        if process2.poll() is not None:
+                                            if process2.stdout:
+                                                for line in process2.stdout:
+                                                    if line:
+                                                        line2 = line.strip()
+                                                        parse_output_line(line2)
+                                                        worker.output.emit(line2)
+                                            break
+                                        if process2.stdout and select.select([process2.stdout], [], [], 0.2)[0]:
+                                            line2 = process2.stdout.readline()
+                                            if line2:
+                                                line2 = line2.strip()
+                                                parse_output_line(line2)
+                                                worker.output.emit(line2)
+                                    if process2.returncode == 0:
+                                        success = True
+                                        completed_packages += len(packages)
+                                        completed_sources += 1
+                                        app._installed_packages[source] = packages
+                                        update_progress_message(f"Completed {source} packages (elevated)")
+                                        app.log_signal.emit(f"Successfully installed {len(packages)} {source} package(s) with system privileges")
                                     else:
-                                        app.log_signal.emit("AUR installation cancelled by user")
-                                    app.installation_progress.emit("cancelled", False)
-                                    return
-                                if source == 'npm' and ("EACCES" in error_output or "permission denied" in error_output.lower()):
-                                    try:
-                                        app.log_signal.emit("Permission denied installing npm package(s). Retrying with system privileges (polkit)...")
-                                        env2 = os.environ.copy()
-                                        auth_cmd2 = get_auth_command(env2)
-                                        exec_cmd2 = auth_cmd2 + ["npm", "install", "-g"] + packages
-                                        process2 = subprocess.Popen(
-                                            exec_cmd2,
-                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                            stdin=subprocess.DEVNULL, text=True, bufsize=1,
-                                            start_new_session=True, env=env2
-                                        )
-                                        while True:
-                                            if app.install_cancel_event.is_set():
-                                                process2.terminate()
-                                                try:
-                                                    process2.wait(timeout=5)
-                                                except subprocess.TimeoutExpired:
-                                                    process2.kill()
-                                                app.log_signal.emit("Installation cancelled by user")
-                                                app.installation_progress.emit("cancelled", False)
-                                                return
-                                            if process2.poll() is not None:
-                                                if process2.stdout:
-                                                    for line in process2.stdout:
-                                                        if line:
-                                                            line2 = line.strip()
-                                                            parse_output_line(line2)
-                                                            worker.output.emit(line2)
-                                                break
-                                            if process2.stdout and select.select([process2.stdout], [], [], 0.2)[0]:
-                                                line2 = process2.stdout.readline()
-                                                if line2:
-                                                    line2 = line2.strip()
-                                                    parse_output_line(line2)
-                                                    worker.output.emit(line2)
-                                        if process2.returncode == 0:
-                                            success = True
-                                            completed_packages += len(packages)
-                                            completed_sources += 1
-                                            app._installed_packages[source] = packages
-                                            update_progress_message(f"Completed {source} packages (elevated)")
-                                            app.log_signal.emit(f"Successfully installed {len(packages)} {source} package(s) with system privileges")
-                                        else:
-                                            err2 = process2.stderr.read() if process2.stderr else ''
-                                            worker.error.emit(f"Error: {err2 or error_output}")
-                                        continue
-                                    except Exception as _e:
-                                        worker.error.emit(f"Error: {str(_e)}")
+                                        err2 = process2.stderr.read() if process2.stderr else ''
+                                        worker.error.emit(f"Error: {err2 or stderr_collected}")
+                                    continue
+                                except Exception as _e:
+                                    worker.error.emit(f"Error: {str(_e)}")
 
-                                error_text = f"Error: {error_output}"
-                                if "Cannot change ownership" in error_output and "Value too large for defined data type" in error_output:
-                                    error_text += "\n\nThis error occurs when tar tries to set file ownership to UIDs/GIDs that don't exist in the current environment.\n"
-                                    error_text += "To fix this, you can modify packaging/PKGBUILD to add '--no-same-owner' to the tar command.\n"
-                                    error_text += "For example, change 'tar -xzf file.tar.gz' to 'tar -xzf file.tar.gz --no-same-owner'"
-                                worker.error.emit(error_text)
+                            worker.error.emit(f"Error: {result.title} — {result.message}")
                 finally:
                     pass
 
@@ -385,15 +463,24 @@ def install_packages(app, packages_by_source: dict):
                     pass
                 app.log_signal.emit("Install completed")
                 app.show_message.emit("Installation Complete", f"Successfully installed {total_packages} package(s).")
-                app.installation_progress.emit("success", False)
+                _emit_terminal("success")
             elif not success and not app.install_cancel_event.is_set():
                 app.log_signal.emit("Install failed")
-                app.installation_progress.emit("failed", False)
+                _emit_terminal("failed")
 
         except Exception as e:
             app.log_signal.emit(f"Error in installation thread: {str(e)}")
-            app.installation_progress.emit("failed", False)
+            _emit_terminal("failed")
         finally:
+            if not terminal_emitted:
+                try:
+                    was_cancelled = (hasattr(app, 'install_cancel_event')
+                                     and app.install_cancel_event.is_set())
+                    status = "cancelled" if was_cancelled else "failed"
+                    app.log_signal.emit(f"Safety emit: {status}")
+                    app.installation_progress.emit(status, False)
+                except Exception:
+                    pass
             try:
                 if hasattr(app, 'install_cancel_event') and app.install_cancel_event.is_set():
                     _clean_pacman_cache(app)

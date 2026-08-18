@@ -145,7 +145,7 @@ class _ViewsMixin:
         logo_label = QLabel()
         logo_label.setObjectName("sidebarLogo")
         logo_label.setFixedSize(36, 36)
-        logo_path = os.path.join(_BASE_DIR, "assets", "icons", "logo.png")
+        logo_path = os.path.join(_BASE_DIR, "assets", "icons", "app", "logo-beta.png")
         pm = QPixmap(logo_path)
         if not pm.isNull():
             logo_label.setPixmap(pm.scaled(36, 36, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
@@ -535,6 +535,12 @@ class _ViewsMixin:
             if hasattr(self, 'packages_content_area'):
                 self.packages_content_area.setVisible(True)
             return
+        if getattr(self, 'current_view', '') == "bundles":
+            self.package_table.setVisible(False)
+            self.packages_grid.setVisible(False)
+            if hasattr(self, 'updates_table'):
+                self.updates_table.setVisible(True)
+            return
         self.packages_grid.setVisible(self._view_mode == "grid")
         if self.current_view in ("updates", "installed", "discover"):
             self.package_table.setVisible(False)
@@ -606,17 +612,34 @@ class _ViewsMixin:
 
     def _update_bundle_buttons(self):
         empty = not self.bundle_items
-        for btn in ('_bundle_select_all_btn', '_bundle_remove_sel_btn', '_bundle_clear_btn'):
+        for btn in ('_bundle_remove_sel_btn', '_bundle_clear_btn'):
             b = getattr(self, btn, None)
             if b:
                 b.setVisible(not empty)
-        sep = getattr(self, '_bundle_sep1', None)
-        if sep:
-            sep.setVisible(not empty)
-        for btn in ('_bundle_install_btn', '_bundle_export_btn'):
+        for btn in ('_bundle_install_btn',):
             b = getattr(self, btn, None)
             if b:
                 b.setEnabled(not empty)
+        try:
+            self.update_bundle_source_counts()
+        except Exception:
+            pass
+
+    def _remove_from_bundle(self, pkg):
+        """Remove a single package from the bundle by name+source."""
+        name = (pkg.get('name') or pkg.get('id') or '').strip()
+        source = pkg.get('source', '')
+        key = (source, name)
+        before = len(self.bundle_items)
+        self.bundle_items = [
+            it for it in self.bundle_items
+            if (it.get('source'), it.get('name') or it.get('id')) != key
+        ]
+        if len(self.bundle_items) < before:
+            self.log(f"Removed '{name}' from bundle")
+            self.refresh_bundles_table()
+        else:
+            self.log(f"'{name}' not found in bundle")
 
     def install_from_local_file(self):
         """Open a file dialog to select and install local package files."""
@@ -882,6 +905,8 @@ class _ViewsMixin:
         layout.addWidget(search_input)
 
         self.signal_indicator = SignalIndicator()
+        self.signal_indicator.no_signal.connect(self._on_no_signal)
+        self.signal_indicator.connection_restored.connect(self._on_connection_restored)
         layout.addWidget(self.signal_indicator)
 
         refresh_btn = QPushButton()
@@ -1331,13 +1356,9 @@ class _ViewsMixin:
         self._grid_view_btn = None
         self._install_file_btn = None
         self._bundle_btn = None
-        self._bundle_select_all_btn = None
-        self._bundle_sep1 = None
         self._bundle_remove_sel_btn = None
         self._bundle_clear_btn = None
         self._bundle_install_btn = None
-        self._bundle_export_btn = None
-        self._bundle_save_cloud_btn = None
         self._sudo_btn = None
         self._greeting_label = None
         self._selection_summary_label = None
@@ -1632,140 +1653,98 @@ class _ViewsMixin:
                 pass
         elif self.current_view == "bundles":
             layout = QHBoxLayout()
-            layout.setSpacing(16)
+            layout.setSpacing(8)
 
-            def _sep():
-                s = QFrame()
-                s.setFrameShape(QFrame.Shape.VLine)
-                s.setStyleSheet("QFrame { color: rgba(255,255,255,0.08); }")
-                s.setFixedWidth(1)
-                return s
-
-            # Group 1 — Select All
-            self._bundle_select_all_btn = QPushButton("Select All")
-            self._bundle_select_all_btn.setMinimumHeight(36)
-            self._bundle_select_all_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: transparent;
-                    color: #F0F0F0;
-                    border: 1px solid rgba(0, 191, 174, 0.3);
-                    border-radius: 6px;
-                    padding: 6px 12px;
-                    font-size: 12px;
-                    font-weight: 500;
-                }
-                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
-                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
-            """)
-            self._bundle_select_all_btn.clicked.connect(self.toggle_select_all)
-            layout.addWidget(self._bundle_select_all_btn)
-            self._bundle_sep1 = _sep()
-            layout.addWidget(self._bundle_sep1)
-
-            # Group 2 — Bundle operations
-            grp2 = QHBoxLayout()
-            grp2.setSpacing(6)
-
+            # ── Primary: Install Bundle ──
             self._bundle_install_btn = QPushButton("Install Bundle")
             self._bundle_install_btn.setMinimumHeight(36)
-            self._bundle_install_btn.setStyleSheet(
-                f"""
+            self._bundle_install_btn.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: transparent;
-                    color: #F0F0F0;
-                    border: 1px solid rgba(0, 191, 174, 0.3);
-                    border-radius: 6px;
-                    padding: 6px 12px;
-                    font-size: 12px;
-                    font-weight: 500;
+                    background-color: #FFFFFF;
+                    color: #0C0C0E;
+                    border: 1px solid rgba(255, 255, 255, 0.9);
+                    border-radius: 10px;
+                    padding: 8px 18px;
+                    font-size: 13px;
+                    font-weight: 600;
                 }}
-                QPushButton:hover {{ background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }}
-                QPushButton:pressed {{ background-color: rgba(0, 191, 174, 0.25); }}
-                QPushButton:disabled {{ color: {Colors.TEXT_3}; border-color: rgba(92, 94, 102, 0.3); }}
-                """
-            )
-            self._bundle_install_btn.clicked.connect(self.install_bundle)
-            grp2.addWidget(self._bundle_install_btn)
-
-            self._bundle_export_btn = QPushButton("Export Bundle")
-            self._bundle_export_btn.setMinimumHeight(36)
-            self._bundle_export_btn.setStyleSheet(self._bundle_install_btn.styleSheet())
-            self._bundle_export_btn.clicked.connect(self.export_bundle)
-            grp2.addWidget(self._bundle_export_btn)
-
-            import_btn = QPushButton("Import Bundle")
-            import_btn.setMinimumHeight(36)
-            import_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: transparent;
-                    color: #F0F0F0;
-                    border: 1px solid rgba(0, 191, 174, 0.3);
-                    border-radius: 6px;
-                    padding: 6px 12px;
-                    font-size: 12px;
-                    font-weight: 500;
-                }
-                QPushButton:hover { background-color: rgba(0, 191, 174, 0.15); border-color: rgba(0, 191, 174, 0.5); }
-                QPushButton:pressed { background-color: rgba(0, 191, 174, 0.25); }
+                QPushButton:hover {{ background-color: #E8EAF0; }}
+                QPushButton:pressed {{ background-color: #D3D6DE; }}
+                QPushButton:disabled {{
+                    background-color: rgba(255, 255, 255, 0.06);
+                    color: {Colors.TEXT_3};
+                    border-color: rgba(255, 255, 255, 0.08);
+                }}
             """)
-            import_btn.clicked.connect(self.import_bundle)
-            grp2.addWidget(import_btn)
+            self._bundle_install_btn.clicked.connect(self.install_bundle)
+            self._bundle_install_btn.setEnabled(False)
+            layout.addWidget(self._bundle_install_btn)
 
-            self._bundle_remove_sel_btn = QPushButton("Remove Selected")
-            self._bundle_remove_sel_btn.setMinimumHeight(36)
-            self._bundle_remove_sel_btn.setStyleSheet(self._bundle_install_btn.styleSheet())
-            self._bundle_remove_sel_btn.clicked.connect(self.remove_selected_from_bundle)
-            grp2.addWidget(self._bundle_remove_sel_btn)
+            # ── Separator ──
+            sep1 = QFrame()
+            sep1.setFrameShape(QFrame.Shape.VLine)
+            sep1.setStyleSheet("QFrame { color: rgba(255,255,255,0.08); }")
+            sep1.setFixedWidth(1)
+            layout.addWidget(sep1)
 
-            self._bundle_clear_btn = QPushButton("Clear Bundle")
-            self._bundle_clear_btn.setMinimumHeight(36)
-            self._bundle_clear_btn.setStyleSheet(self._bundle_install_btn.styleSheet())
-            self._bundle_clear_btn.clicked.connect(self.clear_bundle)
-            grp2.addWidget(self._bundle_clear_btn)
-
-            layout.addLayout(grp2)
-            layout.addWidget(_sep())
-
-            # Group 3 — Cloud
-            cloud_style = f"""
+            # ── Secondary: Remove Selected + Clear ──
+            btn_secondary_style = f"""
                 QPushButton {{
                     background-color: transparent;
-                    color: {Colors.ACCENT};
-                    border: 1px solid rgba(0, 191, 174, 0.5);
-                    border-radius: 6px;
-                    padding: 6px 12px;
+                    color: {Colors.TEXT};
+                    border: 1px solid rgba(255, 255, 255, 0.12);
+                    border-radius: 8px;
+                    padding: 7px 14px;
                     font-size: 12px;
                     font-weight: 500;
                 }}
                 QPushButton:hover {{
-                    background-color: rgba(0, 191, 174, 0.15);
-                    border-color: {Colors.ACCENT};
+                    background-color: rgba(255, 255, 255, 0.06);
+                    border-color: rgba(255, 255, 255, 0.2);
                 }}
-                QPushButton:pressed {{
-                    background-color: rgba(0, 191, 174, 0.25);
+                QPushButton:pressed {{ background-color: rgba(255, 255, 255, 0.10); }}
+                QPushButton:disabled {{
+                    color: {Colors.TEXT_3};
+                    border-color: rgba(255, 255, 255, 0.06);
                 }}
             """
 
-            grp3 = QHBoxLayout()
-            grp3.setSpacing(6)
+            self._bundle_remove_sel_btn = QPushButton("Remove Selected")
+            self._bundle_remove_sel_btn.setMinimumHeight(34)
+            self._bundle_remove_sel_btn.setStyleSheet(btn_secondary_style)
+            self._bundle_remove_sel_btn.clicked.connect(self.remove_selected_from_bundle)
+            self._bundle_remove_sel_btn.setVisible(False)
+            layout.addWidget(self._bundle_remove_sel_btn)
 
-            self._bundle_save_cloud_btn = QPushButton("☁ Save to Cloud")
-            self._bundle_save_cloud_btn.setMinimumHeight(36)
-            self._bundle_save_cloud_btn.setStyleSheet(cloud_style + f"QPushButton:disabled {{ color: {Colors.TEXT_3}; border-color: rgba(92, 94, 102, 0.3); }}")
-            self._bundle_save_cloud_btn.clicked.connect(self._cloud_save_favourites)
-            self._bundle_save_cloud_btn.setToolTip("Upload bundle items to cloud (replace remote)")
-            grp3.addWidget(self._bundle_save_cloud_btn)
-
-            load_cloud_btn = QPushButton("☁ Load from Cloud")
-            load_cloud_btn.setMinimumHeight(36)
-            load_cloud_btn.setStyleSheet(cloud_style)
-            load_cloud_btn.clicked.connect(self._cloud_sync_favourites)
-            load_cloud_btn.setToolTip("Download bundle items from cloud (replace local)")
-            grp3.addWidget(load_cloud_btn)
-
-            layout.addLayout(grp3)
+            self._bundle_clear_btn = QPushButton("Clear")
+            self._bundle_clear_btn.setMinimumHeight(34)
+            self._bundle_clear_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: transparent;
+                    color: #FF6B6B;
+                    border: 1px solid rgba(255, 107, 107, 0.2);
+                    border-radius: 8px;
+                    padding: 7px 14px;
+                    font-size: 12px;
+                    font-weight: 500;
+                }}
+                QPushButton:hover {{
+                    background-color: rgba(255, 107, 107, 0.1);
+                    border-color: rgba(255, 107, 107, 0.4);
+                }}
+                QPushButton:pressed {{ background-color: rgba(255, 107, 107, 0.18); }}
+                QPushButton:disabled {{
+                    color: {Colors.TEXT_3};
+                    border-color: rgba(255, 255, 255, 0.06);
+                }}
+            """)
+            self._bundle_clear_btn.clicked.connect(self.clear_bundle)
+            self._bundle_clear_btn.setVisible(False)
+            layout.addWidget(self._bundle_clear_btn)
 
             layout.addStretch()
+
+            # ── Right toolbar icons ──
             self._add_right_toolbar_icons(layout, show_bundle=False, show_grid_filter=False)
             self.toolbar_layout.addLayout(layout)
         elif self.current_view == "settings":
@@ -1891,7 +1870,7 @@ class _ViewsMixin:
 
         # Show filters panel for all views except settings, bundles, git, and docker
         if hasattr(self, 'filters_panel'):
-            self.filters_panel.setVisible(view_id not in ("settings", "bundles", "git", "docker"))
+            self.filters_panel.setVisible(view_id not in ("settings", "git", "docker"))
 
         # Update greeting in navbar
         self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
@@ -1985,15 +1964,15 @@ class _ViewsMixin:
                 except Exception:
                     pass
         elif view_id == "bundles":
-            self.package_table.setRowCount(0)
+            self.large_search_box.setVisible(False)
+            self.settings_container.setVisible(False)
+            self._hide_all_package_views()
             self.header_info.setText("Create, import, export, and install bundles of packages across sources")
-            self._show_active_view()
             self.load_more_btn.setVisible(False)
             try:
                 self.search_input.setPlaceholderText("Search for packages")
             except Exception:
                 pass
-            # Show console in non-settings views
             try:
                 self.console_label.setVisible(False)
                 self.console.setVisible(False)
@@ -2005,6 +1984,7 @@ class _ViewsMixin:
                     self.console_toggle_btn.setToolTip("Show Console")
             except Exception:
                 pass
+            self._show_active_view()
             QTimer.singleShot(0, self.refresh_bundles_table)
         elif view_id == "plugins":
             self._view_mode = "grid"
@@ -2350,15 +2330,17 @@ class _ViewsMixin:
                 self.updates_table.set_loading(False)
             except Exception:
                 pass
+            try:
+                self._sync_installed_table()
+            except Exception:
+                pass
         if not is_final:
             return
 
         self.current_page = 0
         self.packages_per_page = 10
         self.package_table.setRowCount(0)
-        if self.current_view == "installed":
-            self._sync_installed_table()
-        else:
+        if self.current_view != "installed":
             try:
                 self.display_page()
             except Exception:
@@ -2508,8 +2490,12 @@ class _ViewsMixin:
             else:
                 self.loading_widget.set_message("Install failed")
             self.cancel_install_btn.setVisible(False)
-            self._notify("Installation failed", "See console output for details.", level="error", event="errors")
-            # Keep spinner visible briefly, then hide
+            result = getattr(self, '_last_install_result', None)
+            if result and hasattr(result, 'title'):
+                self._notify(result.title, result.message, level="error", event="errors")
+            else:
+                self._notify("Installation failed", "See console output for details.", level="error", event="errors")
+            self._last_install_result = None
             QTimer.singleShot(2000, lambda: self.finish_installation_progress())
         elif status == "cancelled":
             try:
@@ -2575,6 +2561,20 @@ class _ViewsMixin:
             self._pending_install_packages = None
             self._installed_packages = None
             self._install_succeeded = False
+
+    def _on_no_signal(self):
+        self._notify(
+            "No internet connection",
+            "You appear to be offline. Search results may be incomplete and installations may fail.",
+            level="warning", event="errors",
+        )
+
+    def _on_connection_restored(self):
+        self._notify(
+            "Connection restored",
+            "Internet connection is available again.",
+            level="success", event="updates",
+        )
 
     def update_load_more_visibility(self):
         if self.current_view == "discover":
@@ -2848,7 +2848,7 @@ class _ViewsMixin:
             return
         try:
             if dataset is None:
-                dataset = self.search_results if getattr(self, 'search_results', None) else self.all_packages
+                dataset = getattr(self, 'updates_all', None) or self.all_packages
             rows = dataset or []
             q = ''
             try:
@@ -3099,6 +3099,8 @@ class _ViewsMixin:
             if name:
                 QApplication.clipboard().setText(name)
                 self.log(f"Copied '{name}' to clipboard")
+        elif action == "bundle_remove":
+            self._remove_from_bundle(pkg)
 
     def _open_package_page(self, pkg):
         name = (pkg.get('name') or '').strip()

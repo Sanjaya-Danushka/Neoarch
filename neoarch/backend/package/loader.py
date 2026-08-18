@@ -480,6 +480,9 @@ def load_installed_packages(app):
                 if pkg['name'] in aur_packages:
                     pkg['source'] = 'AUR'
 
+            if getattr(app, '_installed_load_id', 0) == load_id:
+                app.packages_ready.emit(list(packages), load_id, False)
+
             try:
                 aur_pkg_updates = _check_aur_updates()
                 aur_updates = {p['name']: p.get('new_version', '') for p in aur_pkg_updates}

@@ -21,12 +21,19 @@ __all__ = [
 def add_selected_to_bundle(app):
     """Add currently selected packages from the main table to the bundle."""
     items = []
-    for row in range(app.package_table.rowCount()):
-        checkbox = app.get_row_checkbox(row)
-        if checkbox is not None and checkbox.isChecked():
-            info = app.get_row_info(row)
-            if info.get("name") and info.get("source"):
-                items.append(info)
+    # Modern table (Discover/Updates/Installed views)
+    if hasattr(app, 'updates_table') and app.updates_table and hasattr(app.updates_table, 'checked_packages'):
+        for pkg in app.updates_table.checked_packages():
+            if pkg.get("name") and pkg.get("source"):
+                items.append(pkg)
+    # Legacy table fallback
+    if not items:
+        for row in range(app.package_table.rowCount()):
+            checkbox = app.get_row_checkbox(row)
+            if checkbox is not None and checkbox.isChecked():
+                info = app.get_row_info(row)
+                if info.get("name") and info.get("source"):
+                    items.append(info)
     if not items:
         app.log("No selected rows to add to bundle")
         return
@@ -44,29 +51,34 @@ def add_selected_to_bundle(app):
 
 
 def refresh_bundles_table(app):
-    """Refresh the package table to show current bundle items."""
+    """Refresh the updates table to show current bundle items."""
     if app.current_view != "bundles":
         return
-    app.package_table.setRowCount(0)
-    app.package_table.setUpdatesEnabled(False)
+    if not hasattr(app, 'updates_table') or not app.updates_table:
+        return
+    table = app.updates_table
+    table.set_bundles_mode(True)
+    table.set_loading(False)
+    table.set_empty_text(
+        "No packages in bundle",
+        "Add packages from Discover, Updates, or Installed views")
+    mapped = []
     for it in app.bundle_items:
-        pkg = {
+        mapped.append({
             'name': it.get('name', ''),
             'id': it.get('id') or it.get('name', ''),
-            'version': it.get('version', ''),
+            'version': it.get('version', '—'),
+            'new_version': '',
             'source': it.get('source', ''),
-        }
-        app.add_discover_row(pkg)
-    app.package_table.setUpdatesEnabled(True)
-    try:
-        app.package_table.clearSelection()
-    except Exception:
-        pass
-    app.load_more_btn.setVisible(False)
-    try:
-        app.package_table.setVisible(True)
-    except Exception:
-        pass
+            'description': it.get('desc') or it.get('description') or '',
+            'download_size': '—',
+            'installed_date': 0,
+            'status': 'Installed' if it.get('_installed') else 'Available',
+            '_installed': it.get('_installed', False),
+            '_src': it,
+        })
+    table.set_enrich(False)
+    table.set_packages(mapped)
     try:
         app._update_bundle_buttons()
     except Exception:

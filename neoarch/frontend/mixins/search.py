@@ -393,11 +393,12 @@ class _SearchMixin:
             self.no_results_widget.setVisible(False)
 
         def search_in_thread():
-            try:
-                packages = []
+            packages = []
 
-                tokens = [t for t in query.split() if t]
-                if show_pacman:
+            tokens = [t for t in query.split() if t]
+
+            if show_pacman:
+                try:
                     pacman_seen = set()
                     if len(tokens) > 1:
                         for tok in tokens:
@@ -448,38 +449,38 @@ class _SearchMixin:
                                             'has_update': False
                                         })
                                 i += 1
+                except Exception:
+                    pass
 
-                if show_aur:
+            if show_aur:
+                try:
                     result_aur = subprocess.run(["curl", "-s", f"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg={query}"], capture_output=True, text=True, timeout=10, check=False)
                     if result_aur.returncode == 0:
+                        data = json.loads(result_aur.stdout)
+                        if data.get('results'):
+                            for pkg in data['results']:
+                                packages.append({
+                                    'name': pkg.get('Name', ''),
+                                    'version': pkg.get('Version', ''),
+                                    'id': pkg.get('Name', ''),
+                                    'source': 'AUR',
+                                    'description': pkg.get('Description', ''),
+                                    'tags': ', '.join(pkg.get('Keywords', []))
+                                })
+                except Exception:
+                    pass
+
+            if show_flatpak:
+                try:
+                    if not getattr(self, "_flathub_checked", False):
                         try:
-                            data = json.loads(result_aur.stdout)
-                            if data.get('results'):
-                                for pkg in data['results']:
-                                    packages.append({
-                                        'name': pkg.get('Name', ''),
-                                        'version': pkg.get('Version', ''),
-                                        'id': pkg.get('Name', ''),
-                                        'source': 'AUR',
-                                        'description': pkg.get('Description', ''),
-                                        'tags': ', '.join(pkg.get('Keywords', []))
-                                    })
+                            self.ensure_flathub_user_remote()
                         except Exception:
                             pass
-
-                if show_flatpak:
-                    try:
-                        if not getattr(self, "_flathub_checked", False):
-                            try:
-                                self.ensure_flathub_user_remote()
-                            except Exception:
-                                pass
-                            try:
-                                self._flathub_checked = True
-                            except Exception:
-                                pass
-                    except Exception:
-                        pass
+                        try:
+                            self._flathub_checked = True
+                        except Exception:
+                            pass
                     result_flatpak = subprocess.run([
                         "flatpak", "search", "--columns=application,name,description,version", query
                     ], capture_output=True, text=True, timeout=30, check=False)
@@ -506,28 +507,28 @@ class _SearchMixin:
                                     'description': description,
                                     'has_update': False
                                 })
+                except Exception:
+                    pass
 
-                if show_npm:
-                    try:
-                        result_npm = subprocess.run(["npm", "search", "--json", query], capture_output=True, text=True, timeout=30, check=False)
-                        if result_npm.returncode == 0 and result_npm.stdout:
-                            npm_data = json.loads(result_npm.stdout)
-                            for pkg in npm_data:
-                                packages.append({
-                                    'name': pkg.get('name', ''),
-                                    'version': pkg.get('version', ''),
-                                    'id': pkg.get('name', ''),
-                                    'source': 'npm',
-                                    'description': pkg.get('description', ''),
-                                    'has_update': False
-                                })
-                    except (subprocess.CalledProcessError, json.JSONDecodeError, FileNotFoundError):
-                        pass
+            if show_npm:
+                try:
+                    result_npm = subprocess.run(["npm", "search", "--json", query], capture_output=True, text=True, timeout=30, check=False)
+                    if result_npm.returncode == 0 and result_npm.stdout:
+                        npm_data = json.loads(result_npm.stdout)
+                        for pkg in npm_data:
+                            packages.append({
+                                'name': pkg.get('name', ''),
+                                'version': pkg.get('version', ''),
+                                'id': pkg.get('name', ''),
+                                'source': 'npm',
+                                'description': pkg.get('description', ''),
+                                'has_update': False
+                            })
+                except Exception:
+                    pass
 
-                if not self.cancel_discover_search and self.loading_context == 'discover' and self.current_view == 'discover':
-                    self.discover_results_ready.emit(packages)
-            except Exception as e:
-                self.log(f"Search error: {str(e)}")
+            if not self.cancel_discover_search and self.loading_context == 'discover' and self.current_view == 'discover':
+                self.discover_results_ready.emit(packages)
 
         Thread(target=search_in_thread, daemon=True).start()
 
@@ -695,7 +696,14 @@ class _SearchMixin:
             self.header_info.setText(f"No packages found matching '{query}'.")
         else:
             count = len(filtered)
-            self.header_info.setText(f"{count} packages were found, {count} of which match the specified filters")
+            offline = False
+            try:
+                if hasattr(self, 'signal_indicator') and self.signal_indicator:
+                    offline = not self.signal_indicator.is_online()
+            except Exception:
+                pass
+            suffix = " \u00B7 Offline \u2014 showing cached results" if offline else ""
+            self.header_info.setText(f"{count} packages were found, {count} of which match the specified filters{suffix}")
         if hasattr(self, 'no_results_widget'):
             self.no_results_widget.setVisible(False)
         self._show_active_view()

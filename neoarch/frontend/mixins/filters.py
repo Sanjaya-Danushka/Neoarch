@@ -2,17 +2,227 @@
 
 import os
 
-from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget, QCheckBox, QScrollArea
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QWidget, QCheckBox,
+                             QScrollArea, QLabel, QSizePolicy)
+from PyQt6.QtCore import Qt, QRectF, pyqtSignal
+from PyQt6.QtGui import QColor, QPainter, QPen, QRadialGradient, QFont
 
 from neoarch.resources.paths import PROJECT_ROOT
-from neoarch.frontend.components.source_card import SourceCard
+from neoarch.frontend.components.source_card import SourceCard, _ActionRow
+
+
+class _BundleActionRow(_ActionRow):
+    """ActionRow variant with white icon for bundles sidebar."""
+
+    def __init__(self, title, icon_text="", parent=None):
+        super().__init__(title, icon_text, parent)
+
+    def paintEvent(self, event):
+        from PyQt6.QtGui import QPainter, QColor, QPen, QFont, QFontMetrics
+        from PyQt6.QtCore import QRectF
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        w = self.width()
+        h = self.height()
+
+        if self._hover:
+            painter.setPen(QPen(QColor(255, 255, 255, 8), 1))
+            painter.setBrush(QColor(Colors.CARD_HOVER))
+            painter.drawRoundedRect(QRectF(self.rect()).adjusted(1, 1, -1, -1), 10, 10)
+
+        icon_size = 16
+        icon_x = 16
+        icon_y = (h - icon_size) // 2
+        font = painter.font()
+        font.setPixelSize(14)
+        painter.setFont(font)
+        painter.setPen(QColor("#FFFFFF"))
+        painter.drawText(
+            QRectF(icon_x, icon_y, icon_size, icon_size),
+            Qt.AlignmentFlag.AlignCenter,
+            self.icon_text,
+        )
+
+        text_x = 40
+        text_w = w - 40 - 24
+
+        font.setPixelSize(11)
+        font.setWeight(QFont.Weight.Medium)
+        painter.setFont(font)
+        painter.setPen(QColor(Colors.TEXT))
+        painter.drawText(
+            QRectF(text_x, 0, text_w, h),
+            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+            self.title,
+        )
+
+        font.setPixelSize(15)
+        painter.setFont(font)
+        painter.setPen(QColor(255, 255, 255, 40))
+        painter.drawText(
+            QRectF(w - 21, 0, 13, h),
+            Qt.AlignmentFlag.AlignCenter,
+            "\u203A",
+        )
+
+        painter.end()
 from neoarch.frontend.tokens import Colors, SourceColors
 
 from neoarch.backend.services import filter as filters_service
 from neoarch.frontend.components.updates_table import classify_update, _parse_size, _parse_version
 
 _BASE_DIR = str(PROJECT_ROOT)
+
+
+class _BundlesSourcePanel(QWidget):
+    """Custom panel for bundles sidebar — matches SourceCard visual style."""
+
+    source_toggled = pyqtSignal()
+    export_clicked = pyqtSignal()
+    import_clicked = pyqtSignal()
+    save_clicked = pyqtSignal()
+    load_clicked = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._sources = {}
+        self.setMinimumWidth(200)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self._init_ui()
+
+    def _init_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        header = QLabel("Sources")
+        header.setStyleSheet(f"""
+            color: {Colors.TEXT}; font-size: 15px; font-weight: 700;
+            background: transparent; border: none; padding: 12px 20px 4px 20px;
+        """)
+        layout.addWidget(header)
+
+        src_widget = QWidget()
+        src_layout = QVBoxLayout(src_widget)
+        src_layout.setContentsMargins(12, 4, 12, 4)
+        src_layout.setSpacing(2)
+        self._src_layout = src_layout
+        layout.addWidget(src_widget)
+
+        self._src_container = src_widget
+
+        sep1 = QFrame()
+        sep1.setFrameShape(QFrame.Shape.HLine)
+        sep1.setStyleSheet("color: rgba(255,255,255,0.04);")
+        layout.addWidget(sep1)
+
+        self._build_actions_section(layout)
+
+        sep2 = QFrame()
+        sep2.setFrameShape(QFrame.Shape.HLine)
+        sep2.setStyleSheet("color: rgba(255,255,255,0.04);")
+        layout.addWidget(sep2)
+
+        self._build_summary(layout)
+
+    def _build_actions_section(self, layout):
+        header = QLabel("ACTIONS")
+        header.setStyleSheet(f"""
+            color: {Colors.ACCENT}; font-size: 11px; font-weight: 600;
+            letter-spacing: 1.0px; background: transparent; border: none;
+            padding: 8px 20px 4px 20px;
+        """)
+        layout.addWidget(header)
+
+        actions_widget = QWidget()
+        actions_layout = QVBoxLayout(actions_widget)
+        actions_layout.setContentsMargins(12, 0, 12, 0)
+        actions_layout.setSpacing(0)
+
+        defs = [
+            ("Export", "\U0001f4e4", self.export_clicked),
+            ("Import", "\U0001f4e5", self.import_clicked),
+            ("Save to Cloud", "\u2601", self.save_clicked),
+            ("Load from Cloud", "\u2601", self.load_clicked),
+        ]
+        for title, icon, signal in defs:
+            row = _BundleActionRow(title, icon)
+            row.clicked.connect(signal.emit)
+            actions_layout.addWidget(row)
+
+        layout.addWidget(actions_widget)
+
+    def _build_summary(self, layout):
+        summary_widget = QWidget()
+        summary_widget.setObjectName("summaryWidget")
+        s_layout = QVBoxLayout(summary_widget)
+        s_layout.setContentsMargins(20, 8, 20, 12)
+        s_layout.setSpacing(2)
+
+        self._count_label = QLabel("0")
+        self._count_label.setStyleSheet(f"""
+            color: {Colors.TEXT}; font-size: 22px; font-weight: 700;
+            background: transparent; border: none; padding: 0;
+        """)
+        s_layout.addWidget(self._count_label)
+
+        self._caption_label = QLabel("ITEMS IN BUNDLE")
+        self._caption_label.setStyleSheet(f"""
+            color: {Colors.TEXT_3}; font-size: 9px; font-weight: 600;
+            letter-spacing: 0.5px; background: transparent; border: none; padding: 0;
+        """)
+        s_layout.addWidget(self._caption_label)
+
+        summary_widget.setStyleSheet("""
+            QWidget#summaryWidget {
+                border-top: 1px solid rgba(255, 255, 255, 0.04);
+                background: rgba(255, 255, 255, 0.02);
+            }
+        """)
+        layout.addWidget(summary_widget)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        r = self.rect()
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(9, 9, 10))
+        painter.drawRect(r)
+        glow = QRadialGradient(r.width() / 2.0, 0, r.width() * 0.9)
+        glow.setColorAt(0.0, QColor(124, 58, 237, 16))
+        glow.setColorAt(0.5, QColor(88, 40, 160, 8))
+        glow.setColorAt(1.0, QColor(88, 40, 160, 0))
+        painter.setBrush(glow)
+        painter.drawRect(r)
+        painter.setPen(QPen(QColor(255, 255, 255, 6), 1))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRect(QRectF(r).adjusted(0.5, 0.5, -0.5, -0.5))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(168, 85, 247, 8))
+        painter.drawRect(QRectF(0, 0, r.width(), 1))
+        painter.end()
+        super().paintEvent(event)
+
+    def add_source(self, name, icon_path, count=0):
+        from neoarch.frontend.components.source_item import SourceItem
+        item = SourceItem(name, icon_path, count=count)
+        item.toggle.toggled.connect(lambda: self.source_toggled.emit())
+        self._sources[name] = item
+        self._src_layout.addWidget(item)
+
+    def get_source_states(self):
+        return {name: item.is_checked() for name, item in self._sources.items()}
+
+    def set_source_count(self, name, count):
+        item = self._sources.get(name)
+        if item:
+            item.set_count(count)
+
+    def set_summary(self, total):
+        self._count_label.setText(str(total))
+        self._caption_label.setText(
+            f"ITEM{'S' if total != 1 else ''} IN BUNDLE")
 
 
 def _fmt_size(b):
@@ -134,9 +344,9 @@ class _FiltersMixin:
             self.filters_section.setVisible(False)
             self.update_discover_sources()
         elif view_id == "bundles":
-            # No source or status filters for bundles
-            self.sources_section.setVisible(False)
+            self.sources_section.setVisible(True)
             self.filters_section.setVisible(False)
+            self.update_bundles_sources()
         elif view_id in ("git", "docker"):
             # No source or status filters for Git/Docker pages
             self.sources_section.setVisible(False)
@@ -715,3 +925,57 @@ class _FiltersMixin:
 
     def apply_update_filters(self):
         return filters_service.apply_update_filters(self)
+
+    # ── Bundles source panel ──────────────────────────────────────────────
+
+    def update_bundles_sources(self):
+        """Build the bundles sidebar — custom panel matching SourceCard style."""
+        while self.sources_layout.count():
+            item = self.sources_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        panel = _BundlesSourcePanel(self)
+        self._bundle_panel = panel
+        panel.source_toggled.connect(self._on_bundle_source_toggle)
+        panel.export_clicked.connect(self.export_bundle)
+        panel.import_clicked.connect(self.import_bundle)
+        panel.save_clicked.connect(self._cloud_save_favourites)
+        panel.load_clicked.connect(self._cloud_sync_favourites)
+
+        src_icon = os.path.join(_BASE_DIR, "assets", "icons", "discover")
+        for name, icon_file in [
+            ("pacman", "pacman.svg"), ("AUR", "aur.svg"),
+            ("Flatpak", "flatpack.svg"), ("npm", "node.svg"),
+        ]:
+            panel.add_source(name, os.path.join(src_icon, icon_file), count=0)
+
+        self.sources_layout.addWidget(panel)
+        self.sources_layout.addStretch(1)
+
+    def _on_bundle_source_toggle(self):
+        if self.current_view != "bundles":
+            return
+        states = self._bundle_panel.get_source_states()
+        items = getattr(self, 'bundle_items', [])
+        if not items:
+            return
+        filtered = [it for it in items if states.get(it.get('source', ''), True)]
+        try:
+            self.updates_table.set_bundles_mode(True)
+            self.updates_table.set_packages(filtered)
+        except Exception:
+            pass
+
+    def update_bundle_source_counts(self):
+        items = getattr(self, 'bundle_items', [])
+        counts = {"pacman": 0, "AUR": 0, "Flatpak": 0, "npm": 0}
+        for it in items:
+            src = it.get('source', '')
+            if src in counts:
+                counts[src] += 1
+        panel = getattr(self, '_bundle_panel', None)
+        if panel:
+            for name, cnt in counts.items():
+                panel.set_source_count(name, cnt)
+            panel.set_summary(len(items))

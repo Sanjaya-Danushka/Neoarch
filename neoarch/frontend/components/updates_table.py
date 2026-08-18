@@ -690,6 +690,7 @@ class UpdatesTable(QTableView):
         self._installed_mode = False
         self._discover_mode = False
         self._plugins_mode = False
+        self._bundles_mode = False
         self._loading_message = _DEFAULT_LOADING_MESSAGE
 
         self.model = UpdatesModel(self)
@@ -805,6 +806,8 @@ class UpdatesTable(QTableView):
         """Switch the row menu to Installed-view behaviour (Update only when
         available, plus an Uninstall action)."""
         self._installed_mode = bool(installed)
+        if installed:
+            self._bundles_mode = False
 
     def set_discover_mode(self, discover):
         """Configure the shared table for the Discover results view.
@@ -815,6 +818,7 @@ class UpdatesTable(QTableView):
         it is handed instead of re-sorting by the default column.
         """
         self._discover_mode = bool(discover)
+        self._bundles_mode = False
         # Match the Updates page layout: same columns (Size / Status) and
         # widths; only the Installed-date column stays hidden because search
         # results carry no install date.
@@ -843,12 +847,35 @@ class UpdatesTable(QTableView):
         self._plugins_mode = bool(plugins)
         self._discover_mode = False
         self._installed_mode = False
+        self._bundles_mode = False
         self.setColumnHidden(2, plugins)  # Version (plugins have none)
         self.setColumnHidden(3, plugins)  # Size
         self.setColumnHidden(6, plugins)  # Installed date
         header = self.horizontalHeader()
         if plugins:
             header.set_header_labels(["", "Plugin", "", "", "Source", "Status", "", ""])
+        else:
+            header.set_header_labels(None)
+        self.set_enrich(False)
+        self.setColumnWidth(4, 110)
+        self.viewport().update()
+
+    def set_bundles_mode(self, bundles):
+        """Configure the shared table for the Bundles page.
+
+        Shows Package, Source, Status columns with a Remove menu action.
+        Hides Version, Size, and Installed date columns.
+        """
+        self._bundles_mode = bool(bundles)
+        self._plugins_mode = False
+        self._discover_mode = False
+        self._installed_mode = False
+        self.setColumnHidden(2, bundles)   # Version
+        self.setColumnHidden(3, bundles)   # Size
+        self.setColumnHidden(6, bundles)   # Installed date
+        header = self.horizontalHeader()
+        if bundles:
+            header.set_header_labels(["", "Package", "", "", "Source", "Status", "", ""])
         else:
             header.set_header_labels(None)
         self.set_enrich(False)
@@ -1094,6 +1121,18 @@ class UpdatesTable(QTableView):
             else:
                 act_install = menu.addAction("Install")
                 act_install.triggered.connect(lambda: self.menu_action.emit("install", pkg))
+            menu.addSeparator()
+            act_browser = menu.addAction("View in browser")
+            act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
+            act_copy = menu.addAction("Copy name")
+            act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
+        elif self._bundles_mode:
+            installed = bool(pkg.get("_installed"))
+            if not installed:
+                act_install = menu.addAction("Install")
+                act_install.triggered.connect(lambda: self.menu_action.emit("install", pkg))
+            act_remove = menu.addAction("Remove from Bundle")
+            act_remove.triggered.connect(lambda: self.menu_action.emit("bundle_remove", pkg))
             menu.addSeparator()
             act_browser = menu.addAction("View in browser")
             act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))

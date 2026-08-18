@@ -14,7 +14,7 @@ _BASE_DIR = str(PROJECT_ROOT)
 def _get_brand_icon_path():
     base_dir = _BASE_DIR
     candidates = [
-        os.path.join(base_dir, "assets", "icons", "icon.png"),
+        os.path.join(base_dir, "assets", "icons", "app", "icon-beta.png"),
         os.path.join(base_dir, "assets", "icons", "NeoarchLogo.svg"),
         os.path.join(base_dir, "assets", "icons", "brand", "neoarch.svg"),
         os.path.join(base_dir, "assets", "icons", "brand", "neoarch.png"),

@@ -584,6 +584,8 @@ def _find_logo() -> str | None:
     """Find an app logo icon file."""
     from neoarch.resources.paths import ASSETS_DIR
     candidates = [
+        ASSETS_DIR / "icons" / "app" / "logo-beta.png",
+        ASSETS_DIR / "icons" / "app" / "icon-beta.png",
         ASSETS_DIR / "icons" / "logo.png",
         ASSETS_DIR / "icons" / "NeoarchLogo.svg",
         ASSETS_DIR / "icons" / "icon.png",

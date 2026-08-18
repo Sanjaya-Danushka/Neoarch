@@ -277,6 +277,8 @@ class PluginsView(QWidget):
         self._all_plugins = []  # All available plugins
         self._card_cache = {}
         self._is_layouting = False
+        self._PAGE_SIZE = 50
+        self._visible_count = 0
 
         # Installation status cache — preserved across navigation, cleared only after install/uninstall
         self._installed_cache = {}
@@ -358,13 +360,17 @@ class PluginsView(QWidget):
         self._render_current_page()
 
     def _get_or_create_card(self, plugin_spec):
-        """Return cached card data for a plugin or create it."""
+        """Return cached card data for a plugin, creating the widget lazily."""
         try:
             pid = plugin_spec.get('id')
         except Exception:
             pid = None
         if pid and pid in getattr(self, '_card_cache', {}):
-            return self._card_cache[pid]
+            card_data = self._card_cache[pid]
+            if card_data.get('widget') is None:
+                card = self.create_app_card(plugin_spec, None, card_data.get('installed', False))
+                card_data['widget'] = card
+            return card_data
         installed = self.is_installed(plugin_spec)
         card = self.create_app_card(plugin_spec, None, installed)
         data = {
@@ -461,6 +467,15 @@ class PluginsView(QWidget):
         scroll_layout.addWidget(self._live_search_label)
 
         scroll_layout.addWidget(grid_container)
+
+        self._load_more_btn = QPushButton("Load More")
+        self._load_more_btn.setObjectName("loadMoreBtn")
+        self._load_more_btn.setFixedHeight(40)
+        self._load_more_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._load_more_btn.setVisible(False)
+        self._load_more_btn.clicked.connect(self._on_load_more)
+        scroll_layout.addWidget(self._load_more_btn, 0, Qt.AlignmentFlag.AlignHCenter)
+
         scroll.setWidget(scroll_widget)
         self._scroll_area = scroll
         parent_layout.addWidget(scroll, 1)
@@ -472,7 +487,7 @@ class PluginsView(QWidget):
         self._calc_grid_metrics()
 
     def _create_all_cards(self):
-        """Create all plugin cards once for better performance"""
+        """Store plugin data without creating widgets (lazy creation)."""
         self._all_cards = []
         plugins = self._all_plugins or self.plugins
         for plugin in plugins:
@@ -481,14 +496,11 @@ class PluginsView(QWidget):
                 card_data = self._card_cache[pid]
             else:
                 installed = self.is_installed(plugin)
-                card = self.create_app_card(plugin, None, installed)
                 card_data = {
                     'plugin': plugin,
-                    'widget': card,
+                    'widget': None,
                     'installed': installed
                 }
-                if pid:
-                    self._card_cache[pid] = card_data
             self._all_cards.append(card_data)
 
     @staticmethod
@@ -640,7 +652,11 @@ class PluginsView(QWidget):
         if not filtered:
             self._clear_grid_and_hide_all()
             self._reset_row_stretches()
+            self._load_more_btn.setVisible(False)
+            self._visible_count = 0
             return
+        if self._visible_count == 0 or self._visible_count > len(filtered):
+            self._visible_count = min(self._PAGE_SIZE, len(filtered))
         self._calc_grid_metrics()
         cols = self._current_cols
         card_w = self._card_width
@@ -649,15 +665,31 @@ class PluginsView(QWidget):
         self._reset_row_stretches()
         for i in range(cols):
             self.grid_layout.setColumnStretch(i, 1)
-        for i, card_data in enumerate(filtered):
+        visible = filtered[:self._visible_count]
+        for i, card_data in enumerate(visible):
+            if card_data.get('widget') is None:
+                card = self.create_app_card(card_data['plugin'], None, card_data.get('installed', False))
+                card_data['widget'] = card
+                pid = card_data['plugin'].get('id')
+                if pid:
+                    self._card_cache[pid] = card_data
             card_data['widget'].setFixedWidth(card_w)
             row = i // cols
             col = i % cols
             card_data['widget'].show()
             self.grid_layout.addWidget(card_data['widget'], row, col)
-        max_row = (len(filtered) - 1) // cols
+        max_row = (len(visible) - 1) // cols
         self._enforce_row_min_heights(max_row)
+        has_more = self._visible_count < len(filtered)
+        self._load_more_btn.setVisible(has_more)
+        if has_more:
+            remaining = len(filtered) - self._visible_count
+            self._load_more_btn.setText(f"Load More ({remaining} remaining)")
         self._finish_layout_update()
+
+    def _on_load_more(self):
+        self._visible_count += self._PAGE_SIZE
+        self._render_current_page()
 
     def _begin_layout_update(self):
         if self._is_layouting:
@@ -825,6 +857,7 @@ class PluginsView(QWidget):
             filtered.append(card_data)
 
         self._all_filtered_search_cards = self._sort_cards(filtered) if has_search else None
+        self._visible_count = 0
 
         # Live search fallback: text query with no curated matches -> query pacman/AUR
         if self._filter_text and not self._installed_only and not self._categories and not filtered:
@@ -1008,6 +1041,8 @@ class PluginsView(QWidget):
     def set_sort(self, mode):
         """Set the sort order for the plugins list/grid."""
         self._sort_mode = mode or "name_asc"
+        if getattr(self, '_all_filtered_search_cards', None) is not None:
+            self.apply_filter()
         self._apply_combined_filters()
 
     def _sort_cards(self, cards):
@@ -1067,5 +1102,6 @@ class PluginsView(QWidget):
                 filtered_cards.append(card_data)
 
         self._all_filtered_cards = self._sort_cards(filtered_cards)
+        self._visible_count = 0
 
         self._refresh_content()
