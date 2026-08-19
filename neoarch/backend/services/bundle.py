@@ -18,6 +18,23 @@ __all__ = [
 ]
 
 
+def _auto_save(app):
+    """Persist the active bundle to disk if multi-bundle mode is active."""
+    key = getattr(app, '_active_bundle_key', '')
+    if not key:
+        return
+    try:
+        from neoarch.backend.services.bundle_storage import save_bundle, list_bundles
+        name = "My Bundle"
+        for b in list_bundles():
+            if b["key"] == key:
+                name = b["name"]
+                break
+        save_bundle(key, app.bundle_items)
+    except Exception:
+        pass
+
+
 def add_selected_to_bundle(app):
     """Add currently selected packages from the main table to the bundle."""
     items = []
@@ -46,6 +63,7 @@ def add_selected_to_bundle(app):
             existing.add(key)
             added += 1
     app.log(f"Added {added} item(s) to bundle")
+    _auto_save(app)
     if app.current_view == "bundles":
         refresh_bundles_table(app)
 
@@ -56,6 +74,11 @@ def refresh_bundles_table(app):
         return
     if not hasattr(app, 'updates_table') or not app.updates_table:
         return
+    if not app.bundle_items:
+        key = getattr(app, '_active_bundle_key', '')
+        if key:
+            from neoarch.backend.services.bundle_storage import load_bundle
+            app.bundle_items = load_bundle(key)
     table = app.updates_table
     table.set_bundles_mode(True)
     table.set_loading(False)
@@ -135,6 +158,7 @@ def import_bundle(app):
                 existing.add(key)
                 added += 1
         app.display_message("Import Bundle", f"Added {added} items")
+        _auto_save(app)
         if app.current_view == "bundles":
             refresh_bundles_table(app)
     except Exception as e:
@@ -158,6 +182,7 @@ def remove_selected_from_bundle(app):
     app.bundle_items = [it for it in app.bundle_items if (it.get('source'), it.get('id') or it.get('name')) not in keys_to_remove]
     removed = before - len(app.bundle_items)
     app.log(f"Removed {removed} items from bundle")
+    _auto_save(app)
     refresh_bundles_table(app)
 
 
@@ -166,6 +191,7 @@ def clear_bundle(app):
     if not app.bundle_items:
         return
     app.bundle_items = []
+    _auto_save(app)
     refresh_bundles_table(app)
 
 

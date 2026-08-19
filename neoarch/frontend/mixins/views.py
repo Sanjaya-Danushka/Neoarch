@@ -612,7 +612,9 @@ class _ViewsMixin:
 
     def _update_bundle_buttons(self):
         empty = not self.bundle_items
-        for btn in ('_bundle_remove_sel_btn', '_bundle_clear_btn'):
+        cm = getattr(self, '_cloud_auth', None)
+        logged_in = bool(cm and cm.is_logged_in)
+        for btn in ('_bundle_clear_btn',):
             b = getattr(self, btn, None)
             if b:
                 b.setVisible(not empty)
@@ -620,6 +622,14 @@ class _ViewsMixin:
             b = getattr(self, btn, None)
             if b:
                 b.setEnabled(not empty)
+        for btn in ('_bundle_sync_btn',):
+            b = getattr(self, btn, None)
+            if b:
+                b.setVisible(not empty and logged_in)
+        for btn in ('_bundle_restore_btn',):
+            b = getattr(self, btn, None)
+            if b:
+                b.setVisible(logged_in)
         try:
             self.update_bundle_source_counts()
         except Exception:
@@ -1356,7 +1366,6 @@ class _ViewsMixin:
         self._grid_view_btn = None
         self._install_file_btn = None
         self._bundle_btn = None
-        self._bundle_remove_sel_btn = None
         self._bundle_clear_btn = None
         self._bundle_install_btn = None
         self._sudo_btn = None
@@ -1709,13 +1718,6 @@ class _ViewsMixin:
                 }}
             """
 
-            self._bundle_remove_sel_btn = QPushButton("Remove Selected")
-            self._bundle_remove_sel_btn.setMinimumHeight(34)
-            self._bundle_remove_sel_btn.setStyleSheet(btn_secondary_style)
-            self._bundle_remove_sel_btn.clicked.connect(self.remove_selected_from_bundle)
-            self._bundle_remove_sel_btn.setVisible(False)
-            layout.addWidget(self._bundle_remove_sel_btn)
-
             self._bundle_clear_btn = QPushButton("Clear")
             self._bundle_clear_btn.setMinimumHeight(34)
             self._bundle_clear_btn.setStyleSheet(f"""
@@ -1741,6 +1743,26 @@ class _ViewsMixin:
             self._bundle_clear_btn.clicked.connect(self.clear_bundle)
             self._bundle_clear_btn.setVisible(False)
             layout.addWidget(self._bundle_clear_btn)
+
+            sep2 = QFrame()
+            sep2.setFrameShape(QFrame.Shape.VLine)
+            sep2.setStyleSheet("QFrame { color: rgba(255,255,255,0.08); }")
+            sep2.setFixedWidth(1)
+            layout.addWidget(sep2)
+
+            self._bundle_sync_btn = QPushButton("\u2601 Sync")
+            self._bundle_sync_btn.setMinimumHeight(34)
+            self._bundle_sync_btn.setStyleSheet(btn_secondary_style)
+            self._bundle_sync_btn.clicked.connect(self._cloud_save_favourites)
+            self._bundle_sync_btn.setVisible(False)
+            layout.addWidget(self._bundle_sync_btn)
+
+            self._bundle_restore_btn = QPushButton("\u21BB Restore")
+            self._bundle_restore_btn.setMinimumHeight(34)
+            self._bundle_restore_btn.setStyleSheet(btn_secondary_style)
+            self._bundle_restore_btn.clicked.connect(self._cloud_sync_favourites)
+            self._bundle_restore_btn.setVisible(False)
+            layout.addWidget(self._bundle_restore_btn)
 
             layout.addStretch()
 
@@ -3689,34 +3711,234 @@ class _ViewsMixin:
         return True
 
     def _cloud_save_favourites(self):
+        """Sync active bundle to cloud (per-bundle, not single favourites)."""
         if not self._cloud_ensure_login():
             return
         cm = getattr(self, '_cloud_auth', None)
-        if not self.bundle_items:
-            ok = cm.delete_all_favorites()
-            if ok:
-                self.log("Cleared cloud favourites")
-            else:
-                self.log("Cloud: nothing to clear")
+        key = getattr(self, '_active_bundle_key', '')
+        if not key or not self.bundle_items:
+            self.log("No active bundle to sync")
             return
-        ok = cm.save_favorites("My Favourites", self.bundle_items)
+        bundle_name = "My Bundle"
+        try:
+            from neoarch.backend.services.bundle_storage import list_bundles
+            for b in list_bundles():
+                if b["key"] == key:
+                    bundle_name = b["name"]
+                    break
+        except Exception:
+            pass
+        ok = cm.save_bundle_to_cloud(key, bundle_name, self.bundle_items)
         if ok:
-            self.log(f"☁ Saved {len(self.bundle_items)} items to cloud")
+            self.log(f"\u2601 Synced '{bundle_name}' ({len(self.bundle_items)} items) to cloud")
         else:
-            self.log("☁ Failed to save to cloud")
+            self.log("\u2601 Failed to sync to cloud")
 
     def _cloud_sync_favourites(self):
+        """Restore active bundle from cloud (per-bundle)."""
         if not self._cloud_ensure_login():
             return
         cm = getattr(self, '_cloud_auth', None)
-        faves = cm.get_favorites()
-        if faves:
-            self.bundle_items = list(faves)
-            from neoarch.backend.services.bundle import refresh_bundles_table
-            refresh_bundles_table(self)
-            self.log(f"☁ Synced {len(faves)} items from cloud")
+        key = getattr(self, '_active_bundle_key', '')
+
+        items = []
+        if key:
+            items = cm.load_bundle_from_cloud(key)
+
+        if not items:
+            cloud_bundles = cm.list_cloud_bundles()
+            if not cloud_bundles:
+                self.log("\u2601 No bundles found in cloud")
+                return
+            labels = [f"{b['name']} ({b['count']} items)" for b in cloud_bundles]
+            from neoarch.frontend.components.dark_dialogs import dark_pick
+            choice, ok = dark_pick(
+                self, "Restore from Cloud", "Select a bundle to restore:", labels)
+            if not ok:
+                return
+            idx = labels.index(choice)
+            chosen = cloud_bundles[idx]
+            key = chosen['key']
+            items = cm.load_bundle_from_cloud(key)
+            if not items:
+                self.log("\u2601 Failed to load bundle from cloud")
+                return
+
+        self.bundle_items = list(items)
+
+        from neoarch.backend.services.bundle_storage import list_bundles, create_bundle
+        local_keys = {b["key"] for b in list_bundles()}
+        if key not in local_keys:
+            bundle_name = "Restored Bundle"
+            try:
+                cloud_bundles = cm.list_cloud_bundles()
+                for cb in cloud_bundles:
+                    if cb['key'] == key:
+                        bundle_name = cb.get('name', bundle_name)
+                        break
+            except Exception:
+                pass
+            create_bundle(bundle_name, key=key)
+            self._active_bundle_key = key
         else:
-            self.log("☁ No cloud favourites found — bundle unchanged")
+            self._active_bundle_key = key
+
+        try:
+            from neoarch.backend.services.bundle_storage import save_bundle
+            save_bundle(key, self.bundle_items)
+        except Exception:
+            pass
+
+        if hasattr(self, '_bundle_panel') and self._bundle_panel:
+            try:
+                from neoarch.backend.services.bundle_storage import list_bundles as lb
+                self._bundle_panel.refresh_bundles(lb(), self._active_bundle_key)
+            except Exception:
+                pass
+
+        from neoarch.backend.services.bundle import refresh_bundles_table
+        refresh_bundles_table(self)
+        self.log(f"\u21BB Restored {len(items)} items from cloud")
+
+    def _cloud_manage_bundles(self):
+        """Open a dark dialog listing cloud bundles with delete buttons."""
+        if not self._cloud_ensure_login():
+            return
+        cm = getattr(self, '_cloud_auth', None)
+        cloud_bundles = cm.list_cloud_bundles()
+        if not cloud_bundles:
+            self.log("\u2601 No bundles in cloud")
+            return
+
+        from PyQt6.QtWidgets import (
+            QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QWidget,
+        )
+        from PyQt6.QtCore import QSize
+        from neoarch.frontend.tokens import Colors
+
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Cloud Bundles")
+        dlg.setMinimumWidth(420)
+        dlg.setStyleSheet(f"""
+            QDialog {{
+                background-color: {Colors.SURFACE};
+                border: 1px solid rgba(255, 255, 255, 0.20);
+                border-radius: 14px;
+            }}
+        """)
+        dlg.setWindowFlags(
+            Qt.WindowType.Dialog | Qt.WindowType.FramelessWindowHint
+        )
+
+        root = QVBoxLayout(dlg)
+        root.setContentsMargins(24, 20, 24, 16)
+        root.setSpacing(12)
+
+        title = QLabel("Cloud Bundles")
+        title.setStyleSheet(f"font-size: 15px; font-weight: 700; color: {Colors.TEXT}; background: transparent; border: none;")
+        root.addWidget(title)
+
+        subtitle = QLabel("Bundles stored in your cloud account.")
+        subtitle.setStyleSheet(f"font-size: 12px; color: {Colors.TEXT_2}; background: transparent; border: none;")
+        root.addWidget(subtitle)
+
+        list_container = QWidget()
+        list_layout = QVBoxLayout(list_container)
+        list_layout.setContentsMargins(0, 4, 0, 0)
+        list_layout.setSpacing(6)
+
+        def rebuild_list():
+            while list_layout.count():
+                item = list_layout.takeAt(0)
+                w = item.widget()
+                if w:
+                    w.deleteLater()
+
+            fresh = cm.list_cloud_bundles()
+            if not fresh:
+                lbl = QLabel("All cloud bundles deleted.")
+                lbl.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: 12px; padding: 16px; background: transparent; border: none;")
+                lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                list_layout.addWidget(lbl)
+                return
+
+            for b in fresh:
+                row_widget = QWidget()
+                row_widget.setObjectName("bundleRow")
+                row_widget.setFixedHeight(42)
+                row_widget.setStyleSheet(f"""
+                    QWidget#bundleRow {{
+                        background: rgba(255, 255, 255, 0.04);
+                        border: 1px solid rgba(255, 255, 255, 0.06);
+                        border-radius: 8px;
+                    }}
+                """)
+
+                row_h = QHBoxLayout(row_widget)
+                row_h.setContentsMargins(12, 0, 8, 0)
+                row_h.setSpacing(8)
+
+                name_text = b.get('name', '?')
+                count_text = b.get('count', 0)
+                info = QLabel(f"{name_text}  ({count_text})")
+                info.setStyleSheet(f"color: {Colors.TEXT}; font-size: 12px; font-weight: 500; background: transparent; border: none;")
+                row_h.addWidget(info, 1)
+
+                del_btn = QPushButton("Delete")
+                del_btn.setFixedHeight(26)
+                del_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+                del_btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background: rgba(255, 80, 80, 0.10);
+                        color: #FF6B6B;
+                        border: 1px solid rgba(255, 80, 80, 0.20);
+                        border-radius: 6px;
+                        padding: 0 12px;
+                        font-size: 11px;
+                        font-weight: 600;
+                    }}
+                    QPushButton:hover {{
+                        background: rgba(255, 80, 80, 0.25);
+                        border: 1px solid rgba(255, 80, 80, 0.40);
+                    }}
+                """)
+
+                def make_delete(key=b["key"], nm=b["name"]):
+                    def do_delete():
+                        if cm.delete_bundle_from_cloud(key):
+                            self.log(f"Deleted '{nm}' from cloud")
+                        rebuild_list()
+                    return do_delete
+
+                del_btn.clicked.connect(make_delete())
+                row_h.addWidget(del_btn)
+                list_layout.addWidget(row_widget)
+
+        rebuild_list()
+        root.addWidget(list_container)
+
+        close_btn = QPushButton("Done")
+        close_btn.setFixedHeight(32)
+        close_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {Colors.WHITE};
+                color: {Colors.TEXT_ON_ACCENT};
+                border: 1px solid rgba(255, 255, 255, 0.9);
+                border-radius: 8px;
+                padding: 7px 18px;
+                font-size: 12px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{ background-color: {Colors.WHITE_HOVER}; }}
+        """)
+        close_btn.clicked.connect(dlg.accept)
+        btn_row = QHBoxLayout()
+        btn_row.addStretch()
+        btn_row.addWidget(close_btn)
+        root.addLayout(btn_row)
+
+        dlg.setMinimumHeight(80 + len(cloud_bundles) * 48)
+        dlg.exec()
 
     def _make_circular_pixmap(self, pixmap, size=36):
         result = QPixmap(size, size)

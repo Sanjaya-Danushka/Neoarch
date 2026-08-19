@@ -93,6 +93,7 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         self._installed_filter_states = {"Updates available": False}
         # Working bundle state (list of {name,id,source,version?})
         self.bundle_items = []
+        self._active_bundle_key = ""
         # Settings state
         self.settings = self.load_settings()
         # Plugins runtime
@@ -169,6 +170,8 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
             self.update_user_avatar(user)
         if hasattr(self, '_update_nav_greeting'):
             self._update_nav_greeting(user)
+        if hasattr(self, '_update_bundle_buttons'):
+            self._update_bundle_buttons()
 
     def _on_theme_changed(self, theme_id):
         """Reapply the main stylesheet when the theme changes."""

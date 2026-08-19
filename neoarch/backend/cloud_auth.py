@@ -365,3 +365,123 @@ class CloudAuthManager(QObject):
             return True
         except Exception:
             return False
+
+    # ── Multi-bundle cloud operations ────────────────────────────────
+
+    def save_bundle_to_cloud(self, bundle_key: str, bundle_name: str, items: list) -> bool:
+        """Upsert a single bundle to cloud (user_bundles table)."""
+        if not self._client or not self._user:
+            return False
+        try:
+            existing = self._client.table("user_bundles") \
+                .select("id") \
+                .eq("user_id", self._user.id) \
+                .eq("bundle_key", bundle_key) \
+                .limit(1) \
+                .execute()
+            row = {
+                "user_id": self._user.id,
+                "bundle_key": bundle_key,
+                "bundle_name": bundle_name,
+                "bundle_data": items,
+                "item_count": len(items),
+                "updated_at": "now()",
+            }
+            if existing.data:
+                self._client.table("user_bundles") \
+                    .update(row) \
+                    .eq("id", existing.data[0]["id"]) \
+                    .execute()
+            else:
+                self._client.table("user_bundles").insert(row).execute()
+            return True
+        except Exception as e:
+            print(f"save_bundle_to_cloud error: {e}")
+            return False
+
+    def load_bundle_from_cloud(self, bundle_key: str) -> list:
+        """Fetch a single bundle's items from cloud."""
+        if not self._client or not self._user:
+            return []
+        try:
+            resp = self._client.table("user_bundles") \
+                .select("bundle_data") \
+                .eq("user_id", self._user.id) \
+                .eq("bundle_key", bundle_key) \
+                .limit(1) \
+                .execute()
+            if resp.data:
+                raw = resp.data[0].get("bundle_data", [])
+                return raw if isinstance(raw, list) else []
+        except Exception:
+            pass
+        return []
+
+    def list_cloud_bundles(self) -> list:
+        """List all user's bundles from cloud. Returns [{key, name, count}]."""
+        if not self._client or not self._user:
+            return []
+        try:
+            resp = self._client.table("user_bundles") \
+                .select("bundle_key, bundle_name, item_count") \
+                .eq("user_id", self._user.id) \
+                .order("bundle_name") \
+                .execute()
+            return [
+                {"key": r["bundle_key"], "name": r["bundle_name"], "count": r["item_count"]}
+                for r in (resp.data or [])
+            ]
+        except Exception:
+            return []
+
+    def delete_bundle_from_cloud(self, bundle_key: str) -> bool:
+        """Delete a single bundle from cloud."""
+        if not self._client or not self._user:
+            return False
+        try:
+            self._client.table("user_bundles") \
+                .delete() \
+                .eq("user_id", self._user.id) \
+                .eq("bundle_key", bundle_key) \
+                .execute()
+            return True
+        except Exception:
+            return False
+
+    def generate_share_code(self, bundle_name: str, items: list) -> str:
+        """Create a share code in shared_bundles table. Returns 8-char code."""
+        if not self._client or not self._user:
+            return ""
+        try:
+            import hashlib, time
+            raw = f"{self._user.id}:{bundle_name}:{time.time()}"
+            code = hashlib.sha256(raw.encode()).hexdigest()[:8]
+            self._client.table("shared_bundles").insert({
+                "share_code": code,
+                "creator_id": self._user.id,
+                "bundle_name": bundle_name,
+                "bundle_data": items,
+                "item_count": len(items),
+            }).execute()
+            return code
+        except Exception as e:
+            print(f"generate_share_code error: {e}")
+            return ""
+
+    def get_shared_bundle(self, code: str) -> dict:
+        """Fetch a shared bundle by share code. Returns {name, items} or {}."""
+        if not self._client:
+            return {}
+        try:
+            resp = self._client.table("shared_bundles") \
+                .select("bundle_name, bundle_data") \
+                .eq("share_code", code.strip()) \
+                .limit(1) \
+                .execute()
+            if resp.data:
+                r = resp.data[0]
+                data = r.get("bundle_data", [])
+                return {"name": r.get("bundle_name", "Shared"), "items": data if isinstance(data, list) else []}
+        except Exception:
+            pass
+        return {}
