@@ -1,101 +1,18 @@
 """Filters and sources mixin for the main window."""
 
 import os
+from threading import Thread
 
 from PyQt6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QWidget, QCheckBox,
-                             QScrollArea, QLabel, QSizePolicy, QPushButton, QMenu)
-from PyQt6.QtCore import Qt, QRectF, pyqtSignal
-from PyQt6.QtGui import QColor, QPainter, QPen, QRadialGradient, QFont
+                             QScrollArea, QLabel, QSizePolicy, QPushButton, QMenu,
+                             QLineEdit)
+from PyQt6.QtCore import Qt, QRectF, pyqtSignal, QSize
+from PyQt6.QtGui import QColor, QPainter, QPen, QRadialGradient, QFont, QPixmap, QIcon
 
 from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.frontend.components.source_card import SourceCard, _ActionRow
 
 
-class _PanelCard(QWidget):
-    """Dark painted card matching SourceCard visual style for sidebar sections."""
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        r = self.rect()
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(9, 9, 10))
-        painter.drawRect(r)
-        glow = QRadialGradient(r.width() / 2.0, 0, r.width() * 0.9)
-        glow.setColorAt(0.0, QColor(124, 58, 237, 16))
-        glow.setColorAt(0.5, QColor(88, 40, 160, 8))
-        glow.setColorAt(1.0, QColor(88, 40, 160, 0))
-        painter.setBrush(glow)
-        painter.drawRect(r)
-        painter.setPen(QPen(QColor(255, 255, 255, 6), 1))
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawRect(QRectF(r).adjusted(0.5, 0.5, -0.5, -0.5))
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(168, 85, 247, 8))
-        painter.drawRect(QRectF(0, 0, r.width(), 1))
-        painter.end()
-
-
-class _BundleActionRow(_ActionRow):
-    """ActionRow variant with white icon for bundles sidebar."""
-
-    def __init__(self, title, icon_text="", parent=None):
-        super().__init__(title, icon_text, parent)
-
-    def paintEvent(self, event):
-        from PyQt6.QtGui import QPainter, QColor, QPen, QFont, QFontMetrics
-        from PyQt6.QtCore import QRectF
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        w = self.width()
-        h = self.height()
-
-        if self._hover:
-            painter.setPen(QPen(QColor(255, 255, 255, 8), 1))
-            painter.setBrush(QColor(Colors.CARD_HOVER))
-            painter.drawRoundedRect(QRectF(self.rect()).adjusted(1, 1, -1, -1), 10, 10)
-
-        icon_size = 16
-        icon_x = 16
-        icon_y = (h - icon_size) // 2
-        font = painter.font()
-        font.setPixelSize(14)
-        painter.setFont(font)
-        painter.setPen(QColor("#FFFFFF"))
-        painter.drawText(
-            QRectF(icon_x, icon_y, icon_size, icon_size),
-            Qt.AlignmentFlag.AlignCenter,
-            self.icon_text,
-        )
-
-        text_x = 40
-        text_w = w - 40 - 24
-
-        font.setPixelSize(11)
-        font.setWeight(QFont.Weight.Medium)
-        painter.setFont(font)
-        painter.setPen(QColor(Colors.TEXT))
-        painter.drawText(
-            QRectF(text_x, 0, text_w, h),
-            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
-            self.title,
-        )
-
-        font.setPixelSize(15)
-        painter.setFont(font)
-        painter.setPen(QColor(255, 255, 255, 40))
-        painter.drawText(
-            QRectF(w - 21, 0, 13, h),
-            Qt.AlignmentFlag.AlignCenter,
-            "\u203A",
-        )
-
-        painter.end()
 from neoarch.frontend.tokens import Colors, SourceColors
 
 from neoarch.backend.services import filter as filters_service
@@ -105,11 +22,11 @@ _BASE_DIR = str(PROJECT_ROOT)
 
 
 class _BundleIcon(QWidget):
-    """Painted bundle/folder icon — 20x20, purple accent."""
+    """Painted bundle/folder icon matching SourceCard's icon language — 18x18."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedSize(20, 20)
+        self.setFixedSize(18, 18)
         self._active = False
 
     def set_active(self, active):
@@ -119,23 +36,33 @@ class _BundleIcon(QWidget):
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        c = QColor("#C084FC") if self._active else QColor("#A855F7")
-        bg = QColor(c.red(), c.green(), c.blue(), 30 if self._active else 18)
+
+        if self._active:
+            accent = QColor("#C084FC")
+            fill_a = 50
+            border_a = 180
+        else:
+            accent = QColor("#A855F7")
+            fill_a = 28
+            border_a = 100
+
         p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(bg)
-        p.drawRoundedRect(QRectF(0, 0, 20, 20), 6, 6)
-        p.setPen(QPen(c, 1.3))
+        p.setBrush(QColor(accent.red(), accent.green(), accent.blue(), fill_a))
+        p.drawRoundedRect(QRectF(0, 0, 18, 18), 5, 5)
+
+        p.setPen(QPen(QColor(accent.red(), accent.green(), accent.blue(), border_a), 1.0))
         p.setBrush(Qt.BrushStyle.NoBrush)
-        p.drawRoundedRect(QRectF(1, 1, 18, 18), 5, 5)
-        tab_w, tab_h = 7, 3
+        p.drawRoundedRect(QRectF(1, 1, 16, 16), 4, 4)
+
         p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QColor(c.red(), c.green(), c.blue(), 40 if self._active else 22))
-        p.drawRoundedRect(QRectF(3, 1, tab_w, tab_h), 2, 2)
+        p.setBrush(QColor(accent.red(), accent.green(), accent.blue(), fill_a + 18))
+        p.drawRoundedRect(QRectF(3, 1, 7, 3), 1.5, 1.5)
+
         p.end()
 
 
 class _BundleDeleteBtn(QPushButton):
-    """Small × button visible on hover for deleting a bundle."""
+    """Small x button visible on hover for deleting a bundle."""
 
     clicked_bundle = pyqtSignal(str)
 
@@ -155,7 +82,7 @@ class _BundleDeleteBtn(QPushButton):
                 padding: 0;
             }}
             QPushButton:hover {{
-                background: rgba(255, 107, 107, 0.15);
+                background: rgba(255, 107, 107, 0.18);
                 color: #FF6B6B;
             }}
         """)
@@ -163,9 +90,9 @@ class _BundleDeleteBtn(QPushButton):
 
 
 class _BundleListRow(QWidget):
-    """macOS-style bundle row: icon + name + count badge + delete btn.
+    """Bundle row matching SourceCard's _RadioRow style — fully painted, no child widgets.
 
-    Layout: [icon]  Bundle Name  [count badge] [× delete]
+    Layout: [indicator] Bundle Name  [count] [x delete]
     """
 
     clicked = pyqtSignal(str)
@@ -179,163 +106,218 @@ class _BundleListRow(QWidget):
         self._count = count
         self._selected = False
         self._hover = False
-        self.setFixedHeight(38)
+        self.setFixedHeight(24)
         self.setMinimumWidth(180)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self._show_menu)
-        self._init_ui()
 
-    def _init_ui(self):
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 3, 6, 3)
-        layout.setSpacing(7)
-        layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+    def paintEvent(self, event):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        w, h = self.width(), self.height()
+        r = QRectF(self.rect())
 
-        self._icon = _BundleIcon()
-        layout.addWidget(self._icon)
+        if self._hover and not self._selected:
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(QColor(Colors.CARD_HOVER))
+            p.drawRoundedRect(r.adjusted(1, 1, -1, -1), 8, 8)
 
-        self._name_label = QLabel(self._name)
-        self._name_label.setStyleSheet(f"""
-            QLabel {{
-                color: {Colors.TEXT};
-                font-size: 12px;
-                font-weight: 500;
-                background: transparent;
-                border: none;
-            }}
-        """)
-        layout.addWidget(self._name_label, 1)
+        if self._selected:
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(QColor(168, 85, 247, 18))
+            p.drawRoundedRect(r.adjusted(1, 1, -1, -1), 8, 8)
 
-        self._count_badge = QLabel()
-        self._count_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._count_badge.setMinimumWidth(22)
-        self._count_badge.setStyleSheet(f"""
-            QLabel {{
-                color: {Colors.TEXT_2};
-                font-size: 10px;
-                font-weight: 600;
-                background: rgba(255, 255, 255, 0.06);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 9px;
-                padding: 1px 6px;
-            }}
-        """)
-        self._update_count()
-        layout.addWidget(self._count_badge)
+        cs = 10
+        cx = 14
+        cy = (h - cs) / 2
 
-        self._del_btn = _BundleDeleteBtn(self.key)
-        self._del_btn.clicked_bundle.connect(self.delete_requested.emit)
-        self._del_btn.setVisible(False)
-        layout.addWidget(self._del_btn)
+        if self._selected:
+            p.setPen(QPen(QColor("#A855F7"), 2))
+        else:
+            p.setPen(QPen(QColor(255, 255, 255, 50), 1.5))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawEllipse(QRectF(cx + 1, cy + 1, cs - 2, cs - 2))
 
-        self._apply_style()
+        if self._selected:
+            dot = 3.5
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(QColor("#A855F7"))
+            center = cs / 2.0
+            p.drawEllipse(QRectF(cx + center - dot, cy + center - dot, dot * 2, dot * 2))
+
+        font = p.font()
+        font.setPixelSize(11)
+        font.setWeight(QFont.Weight.Medium if not self._selected else QFont.Weight.DemiBold)
+        p.setFont(font)
+        p.setPen(QColor("#FFFFFF") if self._selected else QColor(Colors.TEXT_2))
+
+        del_zone_w = 22
+        right_w = 0
+        if self._count > 0:
+            count_font = QFont(font)
+            count_font.setPixelSize(10)
+            count_font.setWeight(QFont.Weight.Medium)
+            p.setFont(count_font)
+            count_text = str(self._count)
+            right_w = p.fontMetrics().horizontalAdvance(count_text) + 6
+            p.setPen(QColor(Colors.TEXT_3))
+            p.drawText(
+                QRectF(w - right_w - del_zone_w, 0, right_w, h),
+                Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight,
+                count_text,
+            )
+            p.setFont(font)
+            p.setPen(QColor("#FFFFFF") if self._selected else QColor(Colors.TEXT_2))
+
+        text_left = cx + cs + 8
+        text_width = w - text_left - right_w - del_zone_w
+        p.drawText(
+            QRectF(text_left, 0, text_width, h),
+            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+            self._name,
+        )
+
+        if self._hover:
+            del_font = QFont(font)
+            del_font.setPixelSize(14)
+            del_font.setWeight(QFont.Weight.Medium)
+            p.setFont(del_font)
+            p.setPen(QColor(Colors.TEXT_3))
+            p.drawText(
+                QRectF(w - del_zone_w, 0, del_zone_w, h),
+                Qt.AlignmentFlag.AlignCenter,
+                "\u00d7",
+            )
+
+        p.end()
 
     def _update_count(self):
-        c = self._count
-        self._count_badge.setText(str(c) if c > 0 else "")
-        self._count_badge.setVisible(c > 0)
+        self.update()
 
     def set_selected(self, selected):
         self._selected = selected
-        self._icon.set_active(selected)
-        self._apply_style()
+        self.update()
 
     def set_info(self, name, count):
         self._name = name
         self._count = count
-        self._name_label.setText(name)
-        self._update_count()
-        self._apply_style()
-
-    def _apply_style(self):
-        if self._selected:
-            bg = "rgba(168, 85, 247, 0.12)"
-            border = "rgba(168, 85, 247, 0.30)"
-            text_color = "#FFFFFF"
-            badge_bg = "rgba(168, 85, 247, 0.18)"
-            badge_border = "rgba(168, 85, 247, 0.35)"
-            badge_color = "#C084FC"
-        elif self._hover:
-            bg = "rgba(255, 255, 255, 0.04)"
-            border = "rgba(255, 255, 255, 0.06)"
-            text_color = Colors.TEXT
-            badge_bg = "rgba(255, 255, 255, 0.08)"
-            badge_border = "rgba(255, 255, 255, 0.10)"
-            badge_color = Colors.TEXT_2
-        else:
-            bg = "transparent"
-            border = "transparent"
-            text_color = Colors.TEXT_2
-            badge_bg = "rgba(255, 255, 255, 0.04)"
-            badge_border = "rgba(255, 255, 255, 0.06)"
-            badge_color = Colors.TEXT_3
-
-        self.setStyleSheet(f"""
-            _BundleListRow {{
-                background: {bg};
-                border: 1px solid {border};
-                border-radius: 10px;
-            }}
-        """)
-        self._name_label.setStyleSheet(f"""
-            QLabel {{
-                color: {text_color};
-                font-size: 12px;
-                font-weight: {"600" if self._selected else "500"};
-                background: transparent;
-                border: none;
-            }}
-        """)
-        self._count_badge.setStyleSheet(f"""
-            QLabel {{
-                color: {badge_color};
-                font-size: 10px;
-                font-weight: 600;
-                background: {badge_bg};
-                border: 1px solid {badge_border};
-                border-radius: 9px;
-                padding: 1px 6px;
-            }}
-        """)
+        self.update()
 
     def enterEvent(self, e):
         self._hover = True
-        self._del_btn.setVisible(True)
-        self._apply_style()
+        self.update()
 
     def leaveEvent(self, e):
         self._hover = False
-        self._del_btn.setVisible(False)
-        self._apply_style()
+        self.update()
 
     def mousePressEvent(self, e):
         if e.button() == Qt.MouseButton.LeftButton:
-            self.clicked.emit(self.key)
+            w = self.width()
+            h = self.height()
+            local = e.position()
+            if w - 22 <= local.x() <= w and 0 <= local.y() <= h:
+                self.delete_requested.emit(self.key)
+            else:
+                self.clicked.emit(self.key)
 
     def _show_menu(self, pos):
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background-color: #1A1A1E;
+                background-color: #171C25;
                 color: {Colors.TEXT};
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 8px;
-                padding: 4px 0;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 10px;
+                padding: 4px;
                 font-size: 12px;
             }}
             QMenu::item {{
-                padding: 6px 20px;
-                border-radius: 4px;
-                margin: 2px 4px;
+                padding: 8px 14px;
+                border-radius: 6px;
+                margin: 1px 0;
             }}
             QMenu::item:selected {{
-                background-color: rgba(255,255,255,0.08);
+                background-color: {Colors.ACCENT_SOFT};
             }}
         """)
         menu.addAction("Rename", lambda: self.rename_requested.emit(self.key))
         menu.addAction("Delete", lambda: self.delete_requested.emit(self.key))
         menu.exec(self.mapToGlobal(pos))
+
+
+class _SvgActionRow(QWidget):
+    """Action row matching SourceCard's _ActionRow but with an SVG icon instead of text."""
+
+    clicked = pyqtSignal()
+
+    def __init__(self, title, icon_path, parent=None):
+        super().__init__(parent)
+        self.title = title
+        self._icon_path = icon_path
+        self._hover = False
+        self.setFixedHeight(32)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setMouseTracking(True)
+        pixmap = QPixmap(icon_path)
+        if pixmap.isNull():
+            pixmap = QPixmap(QSize(16, 16))
+            pixmap.fill(Qt.GlobalColor.transparent)
+        self._pixmap = pixmap.scaled(
+            QSize(16, 16), Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        w, h = self.width(), self.height()
+
+        if self._hover:
+            painter.setPen(QPen(QColor(255, 255, 255, 8), 1))
+            painter.setBrush(QColor(Colors.CARD_HOVER))
+            painter.drawRoundedRect(QRectF(self.rect()).adjusted(1, 1, -1, -1), 10, 10)
+
+        icon_x = 16
+        icon_y = (h - 16) // 2
+        painter.drawPixmap(icon_x, icon_y, 16, 16, self._pixmap)
+
+        font = painter.font()
+        font.setPixelSize(11)
+        font.setWeight(QFont.Weight.Medium)
+        painter.setFont(font)
+        painter.setPen(QColor(Colors.TEXT))
+        painter.drawText(
+            QRectF(40, 0, w - 40 - 24, h),
+            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+            self.title,
+        )
+
+        font.setPixelSize(15)
+        painter.setFont(font)
+        painter.setPen(QColor(255, 255, 255, 40))
+        painter.drawText(
+            QRectF(w - 21, 0, 13, h),
+            Qt.AlignmentFlag.AlignCenter,
+            "\u203A",
+        )
+
+        painter.end()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
+
+    def enterEvent(self, event):
+        self._hover = True
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._hover = False
+        self.update()
+        super().leaveEvent(event)
 
 
 class _BundlesSourcePanel(QWidget):
@@ -352,6 +334,12 @@ class _BundlesSourcePanel(QWidget):
     import_code_clicked = pyqtSignal(str)
     manage_cloud_clicked = pyqtSignal()
 
+    _SECTION_SS = """
+        QWidget#bundSection, QWidget#shareSection, QWidget#importSection, QWidget#actionSection {
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+        }
+    """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._sources = {}
@@ -361,393 +349,58 @@ class _BundlesSourcePanel(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._init_ui()
 
+    def _section_header(self, text):
+        label = QLabel(text.upper())
+        label.setStyleSheet(f"""
+            color: {Colors.ACCENT};
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.0px;
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+        """)
+        return label
+
     def _init_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        header = QLabel("Sources")
-        header.setStyleSheet(f"""
-            color: {Colors.TEXT}; font-size: 15px; font-weight: 700;
-            background: transparent; border: none; padding: 12px 20px 4px 20px;
+        header = QWidget()
+        header_lay = QHBoxLayout(header)
+        header_lay.setContentsMargins(20, 6, 20, 2)
+        title = QLabel("Bundles")
+        title.setStyleSheet(f"""
+            color: {Colors.TEXT};
+            font-size: 15px;
+            font-weight: 700;
+            background: transparent;
+            border: none;
         """)
+        header_lay.addWidget(title)
+        header_lay.addStretch()
         layout.addWidget(header)
 
-        src_widget = QWidget()
-        src_layout = QVBoxLayout(src_widget)
-        src_layout.setContentsMargins(12, 4, 12, 4)
-        src_layout.setSpacing(2)
-        self._src_layout = src_layout
-        layout.addWidget(src_widget)
+        layout.addStretch(1)
 
-        self._src_container = src_widget
+        self._build_sources_container(layout)
+        layout.addStretch(1)
 
-        sep1 = QFrame()
-        sep1.setFrameShape(QFrame.Shape.HLine)
-        sep1.setStyleSheet("color: rgba(255,255,255,0.04);")
-        layout.addWidget(sep1)
-
-        self._build_bundles_table(layout)
-
-        sep2 = QFrame()
-        sep2.setFrameShape(QFrame.Shape.HLine)
-        sep2.setStyleSheet("color: rgba(255,255,255,0.04);")
-        layout.addWidget(sep2)
+        self._build_bundles_section(layout)
+        layout.addStretch(1)
 
         self._build_share_code_section(layout)
-
-        sep3 = QFrame()
-        sep3.setFrameShape(QFrame.Shape.HLine)
-        sep3.setStyleSheet("color: rgba(255,255,255,0.04);")
-        layout.addWidget(sep3)
+        layout.addStretch(1)
 
         self._build_import_code_section(layout)
-
-        sep4 = QFrame()
-        sep4.setFrameShape(QFrame.Shape.HLine)
-        sep4.setStyleSheet("color: rgba(255,255,255,0.04);")
-        layout.addWidget(sep4)
+        layout.addStretch(1)
 
         self._build_actions_section(layout)
+        layout.addStretch(1)
 
         self._build_count_bar(layout)
-
-    def _build_bundles_table(self, layout):
-        hdr_row = QWidget()
-        hdr_lay = QHBoxLayout(hdr_row)
-        hdr_lay.setContentsMargins(20, 8, 12, 4)
-        hdr_lay.setSpacing(0)
-        lbl = QLabel("BUNDLES")
-        lbl.setStyleSheet(f"""
-            color: {Colors.ACCENT}; font-size: 11px; font-weight: 600;
-            letter-spacing: 1.0px; background: transparent; border: none;
-        """)
-        hdr_lay.addWidget(lbl)
-        hdr_lay.addStretch()
-        add_btn = QPushButton("+")
-        add_btn.setFixedSize(22, 22)
-        add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        add_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: rgba(168, 85, 247, 0.15);
-                color: {Colors.ACCENT};
-                border: 1px solid rgba(168, 85, 247, 0.3);
-                border-radius: 5px;
-                font-size: 14px; font-weight: 600;
-            }}
-            QPushButton:hover {{
-                background: rgba(168, 85, 247, 0.3);
-                border-color: rgba(168, 85, 247, 0.5);
-            }}
-        """)
-        add_btn.clicked.connect(self._on_create_bundle)
-        hdr_lay.addWidget(add_btn)
-        layout.addWidget(hdr_row)
-
-        table_header = QWidget()
-        table_header.setFixedHeight(24)
-        th_lay = QHBoxLayout(table_header)
-        th_lay.setContentsMargins(20, 0, 12, 0)
-        th_lay.setSpacing(0)
-        for text, stretch in [("Name", 1), ("", 0), ("", 0)]:
-            col = QLabel(text)
-            col.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: 9px; font-weight: 600; letter-spacing: 0.5px; background: transparent; border: none;")
-            th_lay.addWidget(col, stretch)
-        layout.addWidget(table_header)
-
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.Shape.NoFrame)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll.setStyleSheet("""
-            QScrollArea { background: transparent; border: none; }
-            QScrollBar:vertical {
-                background: transparent; width: 5px; margin: 0;
-            }
-            QScrollBar::handle:vertical {
-                background: rgba(255,255,255,0.10); min-height: 20px; border-radius: 2px;
-            }
-            QScrollBar::handle:vertical:hover { background: rgba(255,255,255,0.18); }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
-        """)
-        container = QWidget()
-        container.setStyleSheet("background: transparent;")
-        self._bundles_list_layout = QVBoxLayout(container)
-        self._bundles_list_layout.setContentsMargins(8, 4, 8, 4)
-        self._bundles_list_layout.setSpacing(1)
-        self._bundles_list_layout.addStretch()
-        scroll.setWidget(container)
-        layout.addWidget(scroll)
-
-    def _build_share_code_section(self, layout):
-        header = QLabel("SHARE CODE")
-        header.setStyleSheet(f"""
-            color: {Colors.ACCENT}; font-size: 11px; font-weight: 600;
-            letter-spacing: 1.0px; background: transparent; border: none;
-            padding: 8px 20px 4px 20px;
-        """)
-        layout.addWidget(header)
-
-        card = _PanelCard()
-        cv = QVBoxLayout(card)
-        cv.setContentsMargins(16, 6, 16, 6)
-        cv.setSpacing(4)
-
-        code_row = QHBoxLayout()
-        code_row.setSpacing(6)
-
-        self._share_code_label = QLabel("")
-        self._share_code_label.setStyleSheet(f"""
-            color: {Colors.TEXT_3}; font-size: 11px;
-            font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-            font-weight: 500; background: transparent; border: none;
-        """)
-        code_row.addWidget(self._share_code_label, 1)
-
-        copy_btn = QPushButton("Copy")
-        copy_btn.setFixedSize(42, 22)
-        copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        copy_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: #FFFFFF;
-                color: #0C0C0E;
-                border: 1px solid rgba(255, 255, 255, 0.9);
-                border-radius: 6px;
-                padding: 0 8px;
-                font-size: 10px;
-                font-weight: 600;
-            }}
-            QPushButton:hover {{ background: #E8EAF0; }}
-            QPushButton:pressed {{ background: #D3D6DE; }}
-        """)
-        copy_btn.clicked.connect(self._on_copy_share_code)
-        code_row.addWidget(copy_btn)
-
-        cv.addLayout(code_row)
-
-        gen_btn = QPushButton("Generate")
-        gen_btn.setFixedHeight(24)
-        gen_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        gen_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: rgba(255, 255, 255, 0.04);
-                color: {Colors.TEXT_2};
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 6px;
-                padding: 0 10px;
-                font-size: 10px;
-                font-weight: 500;
-            }}
-            QPushButton:hover {{
-                background: rgba(255, 255, 255, 0.07);
-                color: #EDEDEF;
-            }}
-            QPushButton:pressed {{
-                background: rgba(255, 255, 255, 0.03);
-            }}
-        """)
-        gen_btn.clicked.connect(self.share_clicked.emit)
-        cv.addWidget(gen_btn)
-
-        layout.addWidget(card)
-
-    def _on_copy_share_code(self):
-        code = self._share_code_label.text()
-        if code:
-            from PyQt6.QtWidgets import QApplication
-            QApplication.clipboard().setText(code)
-            old = self._share_code_label.text()
-            self._share_code_label.setText("Copied!")
-            self._share_code_label.setStyleSheet(f"""
-                color: {Colors.ACCENT}; font-size: 11px;
-                font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-                font-weight: 600; background: transparent; border: none;
-            """)
-            from PyQt6.QtCore import QTimer
-            def _restore():
-                self._share_code_label.setText(old)
-                self._share_code_label.setStyleSheet(f"""
-                    color: {Colors.TEXT_3}; font-size: 11px;
-                    font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-                    font-weight: 500; background: transparent; border: none;
-                """)
-            QTimer.singleShot(1500, _restore)
-
-    def set_share_code(self, code):
-        if hasattr(self, '_share_code_label'):
-            self._share_code_label.setText(code if code else "")
-
-    def _build_import_code_section(self, layout):
-        header = QLabel("IMPORT CODE")
-        header.setStyleSheet(f"""
-            color: {Colors.ACCENT}; font-size: 11px; font-weight: 600;
-            letter-spacing: 1.0px; background: transparent; border: none;
-            padding: 8px 20px 4px 20px;
-        """)
-        layout.addWidget(header)
-
-        card = _PanelCard()
-        cv = QVBoxLayout(card)
-        cv.setContentsMargins(16, 6, 16, 6)
-        cv.setSpacing(4)
-
-        from PyQt6.QtWidgets import QTextEdit
-        self._import_code_input = QTextEdit()
-        self._import_code_input.setPlaceholderText("Paste share code...")
-        self._import_code_input.setFixedHeight(32)
-        self._import_code_input.setStyleSheet(f"""
-            QTextEdit {{
-                background-color: #0E0E10;
-                color: #8B8D97;
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 8px;
-                font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-                font-size: 11px;
-                padding: 6px 8px;
-                selection-background-color: rgba(168, 85, 247, 0.3);
-            }}
-            QTextEdit:focus {{
-                border: 1px solid rgba(168, 85, 247, 0.35);
-            }}
-        """)
-        cv.addWidget(self._import_code_input)
-
-        import_btn = QPushButton("Import")
-        import_btn.setFixedHeight(24)
-        import_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        import_btn.setStyleSheet(f"""
-            QPushButton {{
-                background: #FFFFFF;
-                color: #0C0C0E;
-                border: 1px solid rgba(255, 255, 255, 0.9);
-                border-radius: 6px;
-                padding: 0 10px;
-                font-size: 10px;
-                font-weight: 600;
-            }}
-            QPushButton:hover {{ background: #E8EAF0; }}
-            QPushButton:pressed {{ background: #D3D6DE; }}
-        """)
-        import_btn.clicked.connect(self._on_import_code_submit)
-        cv.addWidget(import_btn)
-
-        layout.addWidget(card)
-
-    def _on_import_code_submit(self):
-        code = self._import_code_input.toPlainText().strip()
-        if code:
-            self.import_code_clicked.emit(code)
-            self._import_code_input.clear()
-
-    def refresh_bundles(self, bundles, active_key=""):
-        self._active_key = active_key
-        lay = self._bundles_list_layout
-        while lay.count():
-            item = lay.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-        self._bundle_rows.clear()
-
-        for b in bundles:
-            row = _BundleListRow(b["key"], b["name"], b["count"])
-            row.set_selected(b["key"] == active_key)
-            row.clicked.connect(self._on_bundle_clicked)
-            row.rename_requested.connect(self._on_bundle_rename)
-            row.delete_requested.connect(self._on_bundle_delete)
-            self._bundle_rows[b["key"]] = row
-            lay.addWidget(row)
-
-        lay.addStretch()
-        self._refresh_count_bar(bundles)
-
-    def _refresh_count_bar(self, bundles):
-        total = sum(b.get("count", 0) for b in bundles)
-        self.update_count_bar(total, len(bundles))
-
-    def _on_create_bundle(self):
-        from neoarch.frontend.components.dark_dialogs import dark_input
-        name, ok = dark_input(self, "New Bundle", "Bundle name:", "My Bundle")
-        if ok and name.strip():
-            from neoarch.backend.services.bundle_storage import create_bundle
-            key = create_bundle(name.strip())
-            self.bundle_created.emit()
-            self.bundle_selected.emit(key)
-
-    def _on_bundle_clicked(self, key):
-        if key != self._active_key:
-            self.bundle_selected.emit(key)
-
-    def _on_bundle_rename(self, key):
-        old_name = ""
-        if key in self._bundle_rows:
-            old_name = self._bundle_rows[key]._name
-        from neoarch.frontend.components.dark_dialogs import dark_input
-        name, ok = dark_input(self, "Rename Bundle", "New name:", old_name)
-        if ok and name.strip():
-            from neoarch.backend.services.bundle_storage import rename_bundle
-            rename_bundle(key, name.strip())
-            self.bundle_renamed.emit(key, name.strip())
-
-    def _on_bundle_delete(self, key):
-        from neoarch.frontend.components.dark_dialogs import dark_confirm
-        if dark_confirm(self, "Delete Bundle", "Delete this bundle? This cannot be undone.", danger=True):
-            from neoarch.backend.services.bundle_storage import delete_bundle
-            delete_bundle(key)
-            self.bundle_deleted.emit(key)
-
-    def _build_actions_section(self, layout):
-        header = QLabel("ACTIONS")
-        header.setStyleSheet(f"""
-            color: {Colors.ACCENT}; font-size: 11px; font-weight: 600;
-            letter-spacing: 1.0px; background: transparent; border: none;
-            padding: 8px 20px 4px 20px;
-        """)
-        layout.addWidget(header)
-
-        actions_widget = QWidget()
-        actions_layout = QVBoxLayout(actions_widget)
-        actions_layout.setContentsMargins(12, 0, 12, 0)
-        actions_layout.setSpacing(0)
-
-        defs = [
-            ("Export", "\U0001f4e4", self.export_clicked),
-            ("Import", "\U0001f4e5", self.import_clicked),
-            ("Manage Cloud", "\u2699", self.manage_cloud_clicked),
-        ]
-        for title, icon, signal in defs:
-            row = _BundleActionRow(title, icon)
-            row.clicked.connect(signal.emit)
-            actions_layout.addWidget(row)
-
-        layout.addWidget(actions_widget)
-
-    def _build_count_bar(self, layout):
-        bar = QWidget()
-        bar.setObjectName("countBar")
-        bar.setFixedHeight(32)
-        bar.setStyleSheet(f"""
-            QWidget#countBar {{
-                background: rgba(255, 255, 255, 0.02);
-                border-top: 1px solid rgba(255, 255, 255, 0.04);
-            }}
-        """)
-        bl = QHBoxLayout(bar)
-        bl.setContentsMargins(20, 0, 20, 0)
-
-        self._count_bar_label = QLabel("0 items · 0 bundles")
-        self._count_bar_label.setStyleSheet(f"""
-            color: {Colors.TEXT_3}; font-size: 10px; font-weight: 500;
-            background: transparent; border: none;
-        """)
-        bl.addWidget(self._count_bar_label)
-
-        layout.addWidget(bar)
-
-    def update_count_bar(self, total_items, total_bundles):
-        if hasattr(self, '_count_bar_label'):
-            self._count_bar_label.setText(f"{total_items} items \u00b7 {total_bundles} bundles")
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -771,6 +424,420 @@ class _BundlesSourcePanel(QWidget):
         painter.end()
         super().paintEvent(event)
 
+    def _build_sources_container(self, layout):
+        self._src_container = QWidget()
+        self._src_layout = QVBoxLayout(self._src_container)
+        self._src_layout.setContentsMargins(12, 2, 12, 4)
+        self._src_layout.setSpacing(2)
+        layout.addWidget(self._src_container)
+
+    def _build_bundles_section(self, layout):
+        sec = QWidget()
+        sec.setObjectName("bundSection")
+        sec_lay = QVBoxLayout(sec)
+        sec_lay.setContentsMargins(16, 4, 16, 4)
+        sec_lay.setSpacing(2)
+
+        hdr_row = QHBoxLayout()
+        hdr_row.setSpacing(0)
+        hdr_row.addWidget(self._section_header("Bundles"))
+        hdr_row.addStretch()
+        add_btn = QPushButton()
+        add_btn.setFixedSize(20, 20)
+        add_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        add_icon_path = os.path.join(_BASE_DIR, "assets", "icons", "ui", "createBundle.svg")
+        add_btn.setIcon(self._get_panel_icon(add_icon_path, 20))
+        add_btn.setIconSize(QSize(18, 18))
+        add_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: transparent;
+                border: none;
+                padding: 0;
+            }}
+            QPushButton:hover {{
+                background: rgba(168, 85, 247, 0.15);
+                border-radius: 5px;
+            }}
+            QPushButton:pressed {{
+                background: rgba(168, 85, 247, 0.25);
+            }}
+        """)
+        add_btn.clicked.connect(self._on_create_bundle)
+        hdr_row.addWidget(add_btn)
+        sec_lay.addLayout(hdr_row)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setStyleSheet("""
+            QScrollArea { background: transparent; border: none; }
+            QScrollBar:vertical {
+                background: transparent; width: 5px; margin: 0;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255,255,255,0.08); min-height: 20px; border-radius: 2px;
+            }
+            QScrollBar::handle:vertical:hover { background: rgba(255,255,255,0.15); }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
+        """)
+        container = QWidget()
+        container.setStyleSheet("background: transparent;")
+        self._bundles_list_layout = QVBoxLayout(container)
+        self._bundles_list_layout.setContentsMargins(4, 0, 4, 0)
+        self._bundles_list_layout.setSpacing(0)
+        self._bundles_list_layout.addStretch()
+        scroll.setWidget(container)
+        sec_lay.addWidget(scroll)
+
+        sec.setStyleSheet(self._SECTION_SS)
+        layout.addWidget(sec)
+
+    def _get_panel_icon(self, path, size=18):
+        pixmap = QPixmap(path)
+        if pixmap.isNull():
+            pixmap = QPixmap(QSize(size, size))
+            pixmap.fill(Qt.GlobalColor.transparent)
+        return QIcon(pixmap.scaled(QSize(size, size),
+                                  Qt.AspectRatioMode.KeepAspectRatio,
+                                  Qt.TransformationMode.SmoothTransformation))
+
+    def _build_share_code_section(self, layout):
+        sec = QWidget()
+        sec.setObjectName("shareSection")
+        sec_lay = QVBoxLayout(sec)
+        sec_lay.setContentsMargins(16, 4, 16, 4)
+        sec_lay.setSpacing(4)
+
+        sec_lay.addWidget(self._section_header("Share Code"))
+
+        code_row = QHBoxLayout()
+        code_row.setSpacing(6)
+
+        self._share_code_label = QLabel("")
+        self._share_code_label.setStyleSheet(f"""
+            color: {Colors.TEXT}; font-size: 11px;
+            font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+            font-weight: 500; background: transparent; border: none;
+        """)
+        code_row.addWidget(self._share_code_label, 1)
+
+        copy_btn = QPushButton("Copy")
+        copy_btn.setFixedSize(42, 22)
+        copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        copy_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: rgba(255, 255, 255, 0.04);
+                color: {Colors.TEXT_2};
+                border: 1px solid {Colors.BORDER};
+                border-radius: 8px;
+                padding: 0 8px;
+                font-size: 10px;
+                font-weight: 500;
+            }}
+            QPushButton:hover {{
+                background: rgba(255, 255, 255, 0.08);
+                color: #EDEDEF;
+            }}
+        """)
+        copy_btn.clicked.connect(self._on_copy_share_code)
+        code_row.addWidget(copy_btn)
+
+        sec_lay.addLayout(code_row)
+
+        gen_btn = QPushButton("Generate")
+        gen_btn.setFixedHeight(22)
+        gen_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        gen_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: rgba(255, 255, 255, 0.04);
+                color: {Colors.TEXT_2};
+                border: 1px solid {Colors.BORDER};
+                border-radius: 8px;
+                padding: 0 10px;
+                font-size: 10px;
+                font-weight: 500;
+            }}
+            QPushButton:hover {{
+                background: rgba(255, 255, 255, 0.08);
+                color: #EDEDEF;
+            }}
+        """)
+        gen_btn.clicked.connect(self.share_clicked.emit)
+        sec_lay.addWidget(gen_btn)
+
+        sec.setStyleSheet(self._SECTION_SS)
+        layout.addWidget(sec)
+
+    def _on_copy_share_code(self):
+        code = self._share_code_label.text()
+        if code:
+            from PyQt6.QtWidgets import QApplication
+            QApplication.clipboard().setText(code)
+            old = self._share_code_label.text()
+            self._share_code_label.setText("Copied!")
+            self._share_code_label.setStyleSheet(f"""
+                color: {Colors.ACCENT}; font-size: 11px;
+                font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+                font-weight: 600; background: transparent; border: none;
+            """)
+            from PyQt6.QtCore import QTimer
+            def _restore():
+                self._share_code_label.setText(old)
+                self._share_code_label.setStyleSheet(f"""
+                    color: {Colors.TEXT}; font-size: 11px;
+                    font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+                    font-weight: 500; background: transparent; border: none;
+                """)
+            QTimer.singleShot(1500, _restore)
+
+    def set_share_code(self, code):
+        if hasattr(self, '_share_code_label'):
+            self._share_code_label.setText(code if code else "")
+
+    def _build_import_code_section(self, layout):
+        sec = QWidget()
+        sec.setObjectName("importSection")
+        sec_lay = QVBoxLayout(sec)
+        sec_lay.setContentsMargins(16, 4, 16, 4)
+        sec_lay.setSpacing(4)
+
+        sec_lay.addWidget(self._section_header("Import Code"))
+
+        self._import_code_input = QLineEdit()
+        self._import_code_input.setPlaceholderText("Paste share code...")
+        self._import_code_input.setFixedHeight(26)
+        self._import_code_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: transparent;
+                color: {Colors.TEXT};
+                border: 1px solid {Colors.BORDER};
+                border-radius: 8px;
+                font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+                font-size: 11px;
+                padding: 0 8px;
+                selection-background-color: rgba(168, 85, 247, 0.3);
+            }}
+            QLineEdit:focus {{
+                border: 1px solid rgba(168, 85, 247, 0.35);
+            }}
+        """)
+        self._import_code_input.returnPressed.connect(self._on_import_code_submit)
+        sec_lay.addWidget(self._import_code_input)
+
+        import_btn = QPushButton("Import")
+        import_btn.setFixedHeight(22)
+        import_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        import_btn.setStyleSheet(f"""
+            QPushButton {{
+                background: rgba(255, 255, 255, 0.04);
+                color: {Colors.TEXT_2};
+                border: 1px solid {Colors.BORDER};
+                border-radius: 8px;
+                padding: 0 10px;
+                font-size: 10px;
+                font-weight: 500;
+            }}
+            QPushButton:hover {{
+                background: rgba(255, 255, 255, 0.08);
+                color: #EDEDEF;
+            }}
+        """)
+        import_btn.clicked.connect(self._on_import_code_submit)
+        sec_lay.addWidget(import_btn)
+
+        sec.setStyleSheet(self._SECTION_SS)
+        layout.addWidget(sec)
+
+    def _on_import_code_submit(self):
+        code = self._import_code_input.text().strip()
+        if code:
+            self.import_code_clicked.emit(code)
+            self._import_code_input.clear()
+
+    def refresh_bundles(self, bundles, active_key=""):
+        self._active_key = active_key
+        lay = self._bundles_list_layout
+        while lay.count():
+            item = lay.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        self._bundle_rows.clear()
+
+        if not bundles:
+            empty = QLabel("Create a bundle to get started")
+            empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            empty.setStyleSheet(f"""
+                color: {Colors.TEXT_3};
+                font-size: 11px;
+                font-weight: 500;
+                background: transparent;
+                border: none;
+                padding: 16px 0;
+            """)
+            lay.addWidget(empty)
+        else:
+            for b in bundles:
+                row = _BundleListRow(b["key"], b["name"], b["count"])
+                row.set_selected(b["key"] == active_key)
+                row.clicked.connect(self._on_bundle_clicked)
+                row.rename_requested.connect(self._on_bundle_rename)
+                row.delete_requested.connect(self._on_bundle_delete)
+                self._bundle_rows[b["key"]] = row
+                lay.addWidget(row)
+
+        lay.addStretch()
+        self._refresh_count_bar(bundles)
+
+    def _refresh_count_bar(self, bundles):
+        total = sum(b.get("count", 0) for b in bundles)
+        self.update_count_bar(total, len(bundles))
+
+    def _on_create_bundle(self):
+        from neoarch.frontend.components.dark_dialogs import dark_input, dark_confirm
+        existing = {r._name.lower() for r in self._bundle_rows.values()}
+        name, ok = dark_input(self, "New Bundle", "Bundle name:", "My Bundle")
+        if ok and name.strip():
+            if name.strip().lower() in existing:
+                dark_confirm(self, "Duplicate Name",
+                             f"A bundle named '{name.strip()}' already exists.",
+                             danger=False)
+                return
+            from neoarch.backend.services.bundle_storage import create_bundle
+            key = create_bundle(name.strip())
+            self.bundle_created.emit()
+            self.bundle_selected.emit(key)
+
+    def _on_bundle_clicked(self, key):
+        if key != self._active_key:
+            self.bundle_selected.emit(key)
+
+    def _on_bundle_rename(self, key):
+        old_name = ""
+        if key in self._bundle_rows:
+            old_name = self._bundle_rows[key]._name
+        from neoarch.frontend.components.dark_dialogs import dark_input, dark_confirm
+        name, ok = dark_input(self, "Rename Bundle", "New name:", old_name)
+        if ok and name.strip():
+            existing = {r._name.lower() for k, r in self._bundle_rows.items() if k != key}
+            if name.strip().lower() in existing:
+                dark_confirm(self, "Duplicate Name",
+                             f"A bundle named '{name.strip()}' already exists.",
+                             danger=False)
+                return
+            from neoarch.backend.services.bundle_storage import rename_bundle
+            rename_bundle(key, name.strip())
+            self.bundle_renamed.emit(key, name.strip())
+
+    def _on_bundle_delete(self, key):
+        from neoarch.frontend.components.dark_dialogs import dark_confirm
+        if dark_confirm(self, "Delete Bundle", "Delete this bundle? This cannot be undone.", danger=True):
+            from neoarch.backend.services.bundle_storage import delete_bundle
+            delete_bundle(key)
+            self.bundle_deleted.emit(key)
+
+    def _build_actions_section(self, layout):
+        sec = QWidget()
+        sec.setObjectName("actionSection")
+        sec_lay = QVBoxLayout(sec)
+        sec_lay.setContentsMargins(16, 4, 16, 4)
+        sec_lay.setSpacing(0)
+
+        sec_lay.addWidget(self._section_header("Actions"))
+
+        ui_dir = os.path.join(_BASE_DIR, "assets", "icons", "ui")
+        defs = [
+            ("Export", os.path.join(ui_dir, "export.svg"), self.export_clicked),
+            ("Import", os.path.join(ui_dir, "import.svg"), self.import_clicked),
+            ("Manage Cloud", os.path.join(ui_dir, "cloud.svg"), self.manage_cloud_clicked),
+        ]
+        for title, icon_path, signal in defs:
+            row = _SvgActionRow(title, icon_path)
+            row.clicked.connect(signal.emit)
+            sec_lay.addWidget(row)
+
+        sec.setStyleSheet(self._SECTION_SS)
+        layout.addWidget(sec)
+
+    def _build_count_bar(self, layout):
+        bar = QWidget()
+        bar.setObjectName("countBar")
+        bar.setMinimumHeight(38)
+        bar.setStyleSheet("""
+            QWidget#countBar {
+                background: rgba(255, 255, 255, 0.02);
+                border-top: 1px solid rgba(255, 255, 255, 0.04);
+            }
+        """)
+        bl = QHBoxLayout(bar)
+        bl.setContentsMargins(16, 6, 16, 6)
+
+        self._count_items_label = QLabel("0")
+        self._count_items_label.setStyleSheet(f"""
+            color: {Colors.TEXT};
+            font-size: 17px;
+            font-weight: 700;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+        self._count_items_caption = QLabel("ITEMS")
+        self._count_items_caption.setStyleSheet("""
+            color: #6B7280;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+
+        items_col = QVBoxLayout()
+        items_col.setSpacing(1)
+        items_col.setContentsMargins(0, 0, 0, 0)
+        items_col.addWidget(self._count_items_label)
+        items_col.addWidget(self._count_items_caption)
+        bl.addLayout(items_col)
+
+        bl.addStretch()
+
+        self._count_bundles_label = QLabel("0")
+        self._count_bundles_label.setStyleSheet(f"""
+            color: {Colors.ACCENT};
+            font-size: 17px;
+            font-weight: 700;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+        self._count_bundles_caption = QLabel("BUNDLES")
+        self._count_bundles_caption.setStyleSheet("""
+            color: #6B7280;
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background: transparent;
+            border: none;
+            padding: 0;
+        """)
+
+        bundles_col = QVBoxLayout()
+        bundles_col.setSpacing(1)
+        bundles_col.setContentsMargins(0, 0, 0, 0)
+        bundles_col.addWidget(self._count_bundles_label, 0, Qt.AlignmentFlag.AlignRight)
+        bundles_col.addWidget(self._count_bundles_caption, 0, Qt.AlignmentFlag.AlignRight)
+        bl.addLayout(bundles_col)
+
+        layout.addWidget(bar)
+
+    def update_count_bar(self, total_items, total_bundles):
+        if hasattr(self, '_count_items_label'):
+            self._count_items_label.setText(str(total_items))
+        if hasattr(self, '_count_bundles_label'):
+            self._count_bundles_label.setText(str(total_bundles))
+
     def add_source(self, name, icon_path, count=0):
         from neoarch.frontend.components.source_item import SourceItem
         item = SourceItem(name, icon_path, count=count)
@@ -787,10 +854,11 @@ class _BundlesSourcePanel(QWidget):
             item.set_count(count)
 
     def set_summary(self, total):
-        if hasattr(self, '_count_bar_label'):
+        if hasattr(self, '_count_items_label'):
+            self._count_items_label.setText(str(total))
+        if hasattr(self, '_count_bundles_label'):
             from neoarch.backend.services.bundle_storage import list_bundles
-            n_bundles = len(list_bundles())
-            self._count_bar_label.setText(f"{total} items \u00b7 {n_bundles} bundles")
+            self._count_bundles_label.setText(str(len(list_bundles())))
 
 
 def _fmt_size(b):
@@ -1594,15 +1662,24 @@ class _FiltersMixin:
             if b["key"] == self._active_bundle_key:
                 bundle_name = b["name"]
                 break
-        code = cm.generate_share_code(bundle_name, self.bundle_items)
-        if code:
-            if hasattr(self, '_bundle_panel') and self._bundle_panel:
-                self._bundle_panel.set_share_code(code)
-            from PyQt6.QtWidgets import QApplication
-            QApplication.clipboard().setText(code)
-            self.log(f"Share code: {code}")
-        else:
-            self.log("Failed to generate share code")
+        items_snapshot = list(self.bundle_items)
+        self.log(f"Generating share code for '{bundle_name}'...")
+
+        def _do():
+            try:
+                code = cm.generate_share_code(bundle_name, items_snapshot)
+                if code:
+                    if hasattr(self, '_bundle_panel') and self._bundle_panel:
+                        self._bundle_panel.set_share_code(code)
+                    from PyQt6.QtWidgets import QApplication
+                    QApplication.clipboard().setText(code)
+                    self.log(f"Share code: {code}")
+                else:
+                    self.log("Failed to generate share code")
+            except Exception as e:
+                self.log(f"Share code error: {e}")
+
+        Thread(target=_do, daemon=True).start()
 
     def _import_by_code(self, code=None):
         """Import a bundle by share code."""
@@ -1618,27 +1695,67 @@ class _FiltersMixin:
             code = code.strip()
         else:
             code = code.strip()
-        data = cm.get_shared_bundle(code)
+        self.log("Fetching shared bundle...")
+
+        def _do():
+            try:
+                data = cm.get_shared_bundle(code)
+                if not data:
+                    self.log("Share code not found or expired")
+                    return
+                self._pending_import_data = data
+                if not hasattr(self, '_cloud_signals'):
+                    from neoarch.frontend.mixins.views import _CloudHelper
+                    self._cloud_signals = _CloudHelper(self)
+                self._cloud_signals.import_apply.emit()
+            except Exception as e:
+                self.log(f"Import error: {e}")
+
+        Thread(target=_do, daemon=True).start()
+
+    def _finish_import_by_code(self):
+        """Apply imported items on the main thread — creates a new bundle."""
+        data = getattr(self, '_pending_import_data', None)
+        self._pending_import_data = None
         if not data:
-            self.log("Share code not found or expired")
             return
         items = data.get("items", [])
         bundle_name = data.get("name", "Shared Bundle")
-        existing = {(i.get('source'), i.get('id') or i.get('name')) for i in self.bundle_items}
+        if not items:
+            self.log("Shared bundle contains no items")
+            return
+        from neoarch.backend.services.bundle_storage import (
+            create_bundle, list_bundles, save_bundle,
+        )
+        existing_names = {b["name"] for b in list_bundles()}
+        name = bundle_name
+        counter = 1
+        while name in existing_names:
+            name = f"{bundle_name} ({counter})"
+            counter += 1
+        new_key = create_bundle(name)
+        self._active_bundle_key = new_key
+        self.bundle_items = []
         added = 0
         for it in items:
             if not isinstance(it, dict):
                 continue
-            key = (it.get('source'), it.get('id') or it.get('name'))
-            if key not in existing:
-                self.bundle_items.append(it)
-                existing.add(key)
-                added += 1
-        self.log(f"Imported {added} items from shared bundle '{bundle_name}'")
-        key = getattr(self, '_active_bundle_key', '')
-        if key:
-            from neoarch.backend.services.bundle_storage import save_bundle
-            save_bundle(key, self.bundle_items)
+            src = (it.get('source') or '').strip()
+            nm = (it.get('name') or '').strip()
+            pid = (it.get('id') or nm).strip()
+            if not src or not nm:
+                continue
+            self.bundle_items.append({
+                'name': nm, 'id': pid or nm,
+                'version': (it.get('version') or '').strip(),
+                'source': src,
+            })
+            added += 1
+        save_bundle(new_key, self.bundle_items)
+        self.log(f"Imported {added} items from shared bundle as '{name}'")
+        panel = getattr(self, '_bundle_panel', None)
+        if panel:
+            panel.refresh_bundles(list_bundles(), new_key)
         self.refresh_bundles_table()
 
     def _on_bundle_source_toggle(self):

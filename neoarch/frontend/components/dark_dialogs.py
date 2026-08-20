@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
 
 from neoarch.frontend.tokens import Colors
 
+
 _DIALOG_STYLE = f"""
 QDialog {{
     background-color: {Colors.SURFACE};
@@ -63,6 +64,7 @@ QComboBox QAbstractItemView {{
 }}
 """
 
+
 _BTN_PRIMARY = f"""
     QPushButton {{
         background-color: {Colors.WHITE};
@@ -110,6 +112,73 @@ _BTN_DANGER = f"""
 """
 
 
+_DIALOG_TITLE_BAR_STYLE = f"""
+QWidget#dialogTitleBar {{
+    background: transparent;
+}}
+QPushButton {{
+    border: none;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 0;
+}}
+"""
+
+
+class _DialogTitleBar(QWidget):
+    """macOS-style traffic light title bar for dialogs."""
+
+    def __init__(self, title="", parent=None):
+        super().__init__(parent)
+        self.setObjectName("dialogTitleBar")
+        self.setFixedHeight(36)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(16, 0, 12, 0)
+        layout.setSpacing(0)
+
+        if title:
+            lbl = QLabel(title)
+            lbl.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: 12px; font-weight: 500; background: transparent; border: none;")
+            lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+            layout.addWidget(lbl)
+
+        layout.addStretch()
+
+        self.close_btn = self._traffic_light("\u2715", "dlgCloseBtn", "#FF5F57")
+        self.close_btn.clicked.connect(lambda: self.window().close())
+        layout.addWidget(self.close_btn)
+
+    def _traffic_light(self, symbol, obj_name, color):
+        btn = QPushButton(symbol)
+        btn.setObjectName(obj_name)
+        btn.setFixedSize(14, 14)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.setStyleSheet(f"""
+            QPushButton {{
+                background: {color};
+                color: transparent;
+                border: none;
+                border-radius: 7px;
+                font-size: 0px;
+            }}
+            QPushButton:hover {{
+                color: rgba(0, 0, 0, 0.6);
+                font-size: 8px;
+            }}
+        """)
+        return btn
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            w = self.window().windowHandle()
+            if w:
+                w.startSystemMove()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+
 def _apply_dialog_flags(dialog):
     dialog.setWindowFlags(
         Qt.WindowType.Dialog
@@ -128,15 +197,23 @@ def dark_input(parent, title, label, text=""):
     _apply_dialog_flags(dlg)
 
     root = QVBoxLayout(dlg)
-    root.setContentsMargins(24, 20, 24, 16)
-    root.setSpacing(14)
+    root.setContentsMargins(0, 0, 0, 0)
+    root.setSpacing(0)
+
+    title_bar = _DialogTitleBar(title)
+    root.addWidget(title_bar)
+
+    content = QWidget()
+    content_layout = QVBoxLayout(content)
+    content_layout.setContentsMargins(24, 4, 24, 16)
+    content_layout.setSpacing(14)
 
     lbl = QLabel(label)
-    root.addWidget(lbl)
+    content_layout.addWidget(lbl)
 
     le = QLineEdit(text)
     le.setPlaceholderText(label)
-    root.addWidget(le)
+    content_layout.addWidget(le)
 
     btn_row = QHBoxLayout()
     btn_row.addStretch()
@@ -148,7 +225,9 @@ def dark_input(parent, title, label, text=""):
     ok.setStyleSheet(_BTN_PRIMARY)
     ok.clicked.connect(dlg.accept)
     btn_row.addWidget(ok)
-    root.addLayout(btn_row)
+    content_layout.addLayout(btn_row)
+
+    root.addWidget(content)
 
     le.returnPressed.connect(dlg.accept)
     le.setFocus()
@@ -167,15 +246,23 @@ def dark_pick(parent, title, label, items):
     _apply_dialog_flags(dlg)
 
     root = QVBoxLayout(dlg)
-    root.setContentsMargins(24, 20, 24, 16)
-    root.setSpacing(14)
+    root.setContentsMargins(0, 0, 0, 0)
+    root.setSpacing(0)
+
+    title_bar = _DialogTitleBar(title)
+    root.addWidget(title_bar)
+
+    content = QWidget()
+    content_layout = QVBoxLayout(content)
+    content_layout.setContentsMargins(24, 4, 24, 16)
+    content_layout.setSpacing(14)
 
     lbl = QLabel(label)
-    root.addWidget(lbl)
+    content_layout.addWidget(lbl)
 
     combo = QComboBox()
     combo.addItems(items)
-    root.addWidget(combo)
+    content_layout.addWidget(combo)
 
     btn_row = QHBoxLayout()
     btn_row.addStretch()
@@ -187,7 +274,9 @@ def dark_pick(parent, title, label, items):
     ok.setStyleSheet(_BTN_PRIMARY)
     ok.clicked.connect(dlg.accept)
     btn_row.addWidget(ok)
-    root.addLayout(btn_row)
+    content_layout.addLayout(btn_row)
+
+    root.addWidget(content)
 
     if dlg.exec() == QDialog.DialogCode.Accepted:
         return combo.currentText(), True
@@ -203,12 +292,20 @@ def dark_confirm(parent, title, message, danger=False):
     _apply_dialog_flags(dlg)
 
     root = QVBoxLayout(dlg)
-    root.setContentsMargins(24, 20, 24, 16)
-    root.setSpacing(14)
+    root.setContentsMargins(0, 0, 0, 0)
+    root.setSpacing(0)
+
+    title_bar = _DialogTitleBar(title)
+    root.addWidget(title_bar)
+
+    content = QWidget()
+    content_layout = QVBoxLayout(content)
+    content_layout.setContentsMargins(24, 4, 24, 16)
+    content_layout.setSpacing(14)
 
     lbl = QLabel(message)
     lbl.setWordWrap(True)
-    root.addWidget(lbl)
+    content_layout.addWidget(lbl)
 
     btn_row = QHBoxLayout()
     btn_row.addStretch()
@@ -220,6 +317,8 @@ def dark_confirm(parent, title, message, danger=False):
     confirm.setStyleSheet(_BTN_DANGER if danger else _BTN_PRIMARY)
     confirm.clicked.connect(dlg.accept)
     btn_row.addWidget(confirm)
-    root.addLayout(btn_row)
+    content_layout.addLayout(btn_row)
+
+    root.addWidget(content)
 
     return dlg.exec() == QDialog.DialogCode.Accepted

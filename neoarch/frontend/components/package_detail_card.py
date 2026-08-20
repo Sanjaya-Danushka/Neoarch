@@ -339,8 +339,8 @@ class PackageDetailCard(QFrame):
         self.up_to_date_label = QLabel("✓  Up to date")
         self.up_to_date_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.up_to_date_label.setStyleSheet(
-            f"color: {"#10B981"}; font-size: 12px; font-weight: 600; "
-            f"background: rgba(16,185,129,0.08); border-radius: 8px; padding: 8px;"
+            "color: #10B981; font-size: 12px; font-weight: 600; "
+            "background: rgba(16,185,129,0.08); border-radius: 8px; padding: 8px;"
         )
         self.action_layout.addWidget(self.up_to_date_label)
 
@@ -379,14 +379,14 @@ class PackageDetailCard(QFrame):
             if has_update:
                 self.status_badge.setText("◉  Update Available")
                 self.status_badge.setStyleSheet(
-                    f"background: rgba(255,138,101,0.12); color: {"#FF8A65"};"
-                    f" font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
+                    "background: rgba(255,138,101,0.12); color: #FF8A65;"
+                    " font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
                 )
             else:
                 self.status_badge.setText("◉  Installed")
                 self.status_badge.setStyleSheet(
-                    f"background: rgba(16,185,129,0.12); color: {"#10B981"};"
-                    f" font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
+                    "background: rgba(16,185,129,0.12); color: #10B981;"
+                    " font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
                 )
         else:
             self.status_badge.setText("○  Not Installed")

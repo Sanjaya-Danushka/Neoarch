@@ -273,6 +273,10 @@ class UpdatesModel(QAbstractTableModel):
         self._sort_asc = True
 
     # ── helpers ───────────────────────────────────────────────────────
+    @staticmethod
+    def _pkg_key(pkg):
+        return (pkg.get("name") or "", pkg.get("source") or "")
+
     def set_packages(self, packages):
         self.beginResetModel()
         self._pkgs = [dict(p) for p in packages]
@@ -300,7 +304,7 @@ class UpdatesModel(QAbstractTableModel):
         self._apply_sort()
 
     def checked_packages(self):
-        return [p for p in self._pkgs if p.get("name") in self._checked]
+        return [p for p in self._pkgs if self._pkg_key(p) in self._checked]
 
     def is_all_checked(self):
         return bool(self._pkgs) and len(self._checked) >= len(self._pkgs)
@@ -308,14 +312,14 @@ class UpdatesModel(QAbstractTableModel):
     def checked_names(self):
         return set(self._checked)
 
-    def is_checked(self, name):
-        return name in self._checked
+    def is_checked(self, pkg):
+        return self._pkg_key(pkg) in self._checked
 
     def set_all_checked(self, state):
         if not self._pkgs:
             return
         if state:
-            self._checked = set(p.get("name") for p in self._pkgs if not p.get("_installed"))
+            self._checked = set(self._pkg_key(p) for p in self._pkgs if not p.get("_installed"))
         else:
             self._checked = set()
         if self.rowCount():
@@ -389,7 +393,7 @@ class UpdatesModel(QAbstractTableModel):
             return None
         col = index.column()
         if role == Qt.ItemDataRole.CheckStateRole and col == 0:
-            return Qt.CheckState.Checked if pkg.get("name") in self._checked else Qt.CheckState.Unchecked
+            return Qt.CheckState.Checked if self._pkg_key(pkg) in self._checked else Qt.CheckState.Unchecked
         if role == Qt.ItemDataRole.UserRole:
             return pkg
         return None
@@ -399,13 +403,13 @@ class UpdatesModel(QAbstractTableModel):
             pkg = self.package_at(index.row())
             if pkg is None:
                 return False
-            name = pkg.get("name")
+            key = self._pkg_key(pkg)
             if value in (Qt.CheckState.Checked, Qt.CheckState.PartiallyChecked) or value is True:
                 if pkg.get("_installed"):
                     return False
-                self._checked.add(name)
+                self._checked.add(key)
             else:
-                self._checked.discard(name)
+                self._checked.discard(key)
             self.dataChanged.emit(index, index, [Qt.ItemDataRole.CheckStateRole])
             self.checked_changed.emit(len(self._checked), len(self._pkgs))
             return True
@@ -1077,9 +1081,8 @@ class UpdatesTable(QTableView):
             return
         if pkg.get("_installed"):
             return
-        name = pkg.get("name")
         idx = self.model.index(row, 0)
-        checked = self.model.is_checked(name)
+        checked = self.model.is_checked(pkg)
         self.model.setData(idx, Qt.CheckState.Unchecked if checked else Qt.CheckState.Checked,
                            Qt.ItemDataRole.CheckStateRole)
         sel_model = self.selectionModel()

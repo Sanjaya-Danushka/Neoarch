@@ -33,6 +33,14 @@ def _auto_save(app):
         save_bundle(key, app.bundle_items)
     except Exception:
         pass
+    try:
+        autosave_path = getattr(app, 'settings', {}).get('bundle_autosave_path')
+        if autosave_path and getattr(app, 'settings', {}).get('bundle_autosave', True):
+            os.makedirs(os.path.dirname(autosave_path), exist_ok=True)
+            with open(autosave_path, 'w', encoding='utf-8') as f:
+                json.dump({'app': 'NeoArch', 'items': list(app.bundle_items)}, f, indent=2)
+    except Exception:
+        pass
 
 
 def add_selected_to_bundle(app):
@@ -82,9 +90,16 @@ def refresh_bundles_table(app):
     table = app.updates_table
     table.set_bundles_mode(True)
     table.set_loading(False)
-    table.set_empty_text(
-        "No packages in bundle",
-        "Add packages from Discover, Updates, or Installed views")
+    if not app.bundle_items:
+        table.set_empty_text(
+            "Your bundle is empty",
+            "Browse packages in Home, check the ones you want,\n"
+            "and click Add to Bundle in the toolbar.",
+            "Sign in to share or sync bundles across devices")
+    else:
+        table.set_empty_text(
+            "No packages in bundle",
+            "Add packages from Discover, Updates, or Installed views")
     mapped = []
     for it in app.bundle_items:
         mapped.append({
@@ -310,7 +325,7 @@ def list_community_bundles():
 
 
 def import_community_bundle(app, bundle_data):
-    """Import a community bundle into the current bundle."""
+    """Import a community bundle — creates a new local bundle with the shared name."""
     if not isinstance(bundle_data, dict) or 'items' not in bundle_data:
         app.display_message("Import Community Bundle", "Invalid bundle data")
         return
@@ -318,28 +333,38 @@ def import_community_bundle(app, bundle_data):
     if not items:
         app.display_message("Import Community Bundle", "Bundle contains no items")
         return
-    existing = {(i.get('source'), i.get('id') or i.get('name')) for i in app.bundle_items}
+    from neoarch.backend.services.bundle_storage import (
+        create_bundle, list_bundles, save_bundle,
+    )
+    bundle_name = bundle_data.get('name', 'Community Bundle')
+    existing_names = {b["name"] for b in list_bundles()}
+    name = bundle_name
+    counter = 1
+    while name in existing_names:
+        name = f"{bundle_name} ({counter})"
+        counter += 1
+    new_key = create_bundle(name)
+    app._active_bundle_key = new_key
+    app.bundle_items = []
     added = 0
     for item in items:
         if not isinstance(item, dict):
             continue
         src = (item.get('source') or '').strip()
-        name = (item.get('name') or '').strip()
-        pkg_id = (item.get('id') or name).strip()
-        if not src or not name:
+        nm = (item.get('name') or '').strip()
+        pid = (item.get('id') or nm).strip()
+        if not src or not nm:
             continue
-        key = (src, pkg_id or name)
-        if key not in existing:
-            app.bundle_items.append({
-                'name': name,
-                'id': pkg_id or name,
-                'version': (item.get('version') or '').strip(),
-                'source': src,
-            })
-            existing.add(key)
-            added += 1
-    bundle_name = bundle_data.get('name', 'Community Bundle')
-    app.display_message("Import Community Bundle", f"Added {added} items from '{bundle_name}' to your bundle")
-    if app.current_view == "bundles":
-        refresh_bundles_table(app)
-    app.log(f"Imported {added} items from community bundle '{bundle_name}'")
+        app.bundle_items.append({
+            'name': nm, 'id': pid or nm,
+            'version': (item.get('version') or '').strip(),
+            'source': src,
+        })
+        added += 1
+    save_bundle(new_key, app.bundle_items)
+    panel = getattr(app, '_bundle_panel', None)
+    if panel:
+        panel.refresh_bundles(list_bundles(), new_key)
+    refresh_bundles_table(app)
+    app.display_message("Import Community Bundle", f"Imported {added} items as '{name}'")
+    app.log(f"Imported {added} items from community bundle as '{name}'")
