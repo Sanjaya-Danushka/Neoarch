@@ -539,7 +539,7 @@ class GitTab(QWidget):
 
         # Clone button
         clone_btn = QPushButton(" Clone Repository")
-        clone_btn.setIcon(_svg_icon("discover/git.svg", 16, "#0C0C0E"))
+        clone_btn.setIcon(_svg_icon("sources/git.svg", 16, "#0C0C0E"))
         clone_btn.setIconSize(QRectF(0, 0, 16, 16).toRect().size())
         clone_btn.setFixedHeight(34)
         clone_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -707,7 +707,7 @@ class GitTab(QWidget):
         el.addWidget(t2)
 
         empty_clone = QPushButton(" Clone Repository")
-        empty_clone.setIcon(_svg_icon("discover/git.svg", 16, "#FFFFFF"))
+        empty_clone.setIcon(_svg_icon("sources/git.svg", 16, "#FFFFFF"))
         empty_clone.setIconSize(QRectF(0, 0, 16, 16).toRect().size())
         empty_clone.setFixedHeight(36)
         empty_clone.setCursor(Qt.CursorShape.PointingHandCursor)

@@ -961,10 +961,10 @@ class _FiltersMixin:
 
         # Add the four main sources (exclude Local from Discover)
         sources = [
-            ("pacman", os.path.join(_BASE_DIR, "assets", "icons", "discover", "pacman.svg")),
-            ("AUR", os.path.join(_BASE_DIR, "assets", "icons", "discover", "aur.svg")),
-            ("Flatpak", os.path.join(_BASE_DIR, "assets", "icons", "discover", "flatpack.svg")),
-            ("npm", os.path.join(_BASE_DIR, "assets", "icons", "discover", "node.svg")),
+            ("pacman", os.path.join(_BASE_DIR, "assets", "icons", "sources", "pacman.svg")),
+            ("AUR", os.path.join(_BASE_DIR, "assets", "icons", "sources", "aur.svg")),
+            ("Flatpak", os.path.join(_BASE_DIR, "assets", "icons", "sources", "flatpack.svg")),
+            ("npm", os.path.join(_BASE_DIR, "assets", "icons", "sources", "node.svg")),
         ]
 
         for source_name, source_icon_path in sources:
@@ -1024,11 +1024,11 @@ class _FiltersMixin:
                 item.widget().deleteLater()
         self.source_card = SourceCard(self)
         sources = [
-            ("pacman", os.path.join(_BASE_DIR, "assets", "icons", "discover", "pacman.svg")),
-            ("AUR", os.path.join(_BASE_DIR, "assets", "icons", "discover", "aur.svg")),
-            ("Flatpak", os.path.join(_BASE_DIR, "assets", "icons", "discover", "flatpack.svg")),
-            ("npm", os.path.join(_BASE_DIR, "assets", "icons", "discover", "node.svg")),
-            ("Local", os.path.join(_BASE_DIR, "assets", "icons", "discover", "local.svg"))
+            ("pacman", os.path.join(_BASE_DIR, "assets", "icons", "sources", "pacman.svg")),
+            ("AUR", os.path.join(_BASE_DIR, "assets", "icons", "sources", "aur.svg")),
+            ("Flatpak", os.path.join(_BASE_DIR, "assets", "icons", "sources", "flatpack.svg")),
+            ("npm", os.path.join(_BASE_DIR, "assets", "icons", "sources", "node.svg")),
+            ("Local", os.path.join(_BASE_DIR, "assets", "icons", "sources", "local.svg"))
         ]
         for source_name, source_icon_path in sources:
             self.source_card.add_source(source_name, source_icon_path)
@@ -1062,10 +1062,10 @@ class _FiltersMixin:
         self.source_card = SourceCard(self)
         self.source_card.source_changed.connect(self.on_installed_source_changed)
         sources = [
-            ("pacman", os.path.join(_BASE_DIR, "assets", "icons", "discover", "pacman.svg")),
-            ("AUR", os.path.join(_BASE_DIR, "assets", "icons", "discover", "aur.svg")),
-            ("Flatpak", os.path.join(_BASE_DIR, "assets", "icons", "discover", "flatpack.svg")),
-            ("npm", os.path.join(_BASE_DIR, "assets", "icons", "discover", "node.svg"))
+            ("pacman", os.path.join(_BASE_DIR, "assets", "icons", "sources", "pacman.svg")),
+            ("AUR", os.path.join(_BASE_DIR, "assets", "icons", "sources", "aur.svg")),
+            ("Flatpak", os.path.join(_BASE_DIR, "assets", "icons", "sources", "flatpack.svg")),
+            ("npm", os.path.join(_BASE_DIR, "assets", "icons", "sources", "node.svg"))
         ]
         for source_name, source_icon_path in sources:
             self.source_card.add_source(source_name, source_icon_path)
@@ -1257,10 +1257,10 @@ class _FiltersMixin:
             pass
 
         sources = [
-            ("pacman", os.path.join(_BASE_DIR, "assets", "icons", "discover", "pacman.svg")),
-            ("AUR", os.path.join(_BASE_DIR, "assets", "icons", "discover", "aur.svg")),
-            ("Flatpak", os.path.join(_BASE_DIR, "assets", "icons", "discover", "flatpack.svg")),
-            ("npm", os.path.join(_BASE_DIR, "assets", "icons", "discover", "node.svg")),
+            ("pacman", os.path.join(_BASE_DIR, "assets", "icons", "sources", "pacman.svg")),
+            ("AUR", os.path.join(_BASE_DIR, "assets", "icons", "sources", "aur.svg")),
+            ("Flatpak", os.path.join(_BASE_DIR, "assets", "icons", "sources", "flatpack.svg")),
+            ("npm", os.path.join(_BASE_DIR, "assets", "icons", "sources", "node.svg")),
         ]
         for source_name, source_icon_path in sources:
             self.source_card.add_source(source_name, source_icon_path, count=counts.get(source_name, 0))
@@ -1518,7 +1518,7 @@ class _FiltersMixin:
         panel.bundle_renamed.connect(self._on_bundle_row_renamed)
         panel.bundle_deleted.connect(self._on_bundle_row_deleted)
 
-        src_icon = os.path.join(_BASE_DIR, "assets", "icons", "discover")
+        src_icon = os.path.join(_BASE_DIR, "assets", "icons", "sources")
         for name, icon_file in [
             ("pacman", "pacman.svg"), ("AUR", "aur.svg"),
             ("Flatpak", "flatpack.svg"), ("npm", "node.svg"),

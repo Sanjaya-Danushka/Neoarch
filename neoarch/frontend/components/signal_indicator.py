@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import QLabel
 from neoarch.backend.services import network_latency
 from neoarch.resources.paths import PROJECT_ROOT
 
-_ICON_DIR = os.path.join(str(PROJECT_ROOT), "assets", "icons", "navbar")
+_ICON_DIR = os.path.join(str(PROJECT_ROOT), "assets", "icons", "status")
 
 _ICONS = {
     "nosignal": "nosignal.png",

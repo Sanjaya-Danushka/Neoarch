@@ -179,7 +179,7 @@ class _SearchMixin:
         # Self-contained pages have no grid/list toggle (except plugins).
         if getattr(self, 'current_view', '') in _SELF_CONTAINED_VIEWS:
             return
-        navbar_dir = os.path.join(str(PROJECT_ROOT), "assets", "icons", "navbar")
+        toolbar_dir = os.path.join(str(PROJECT_ROOT), "assets", "icons", "toolbar")
         if self._view_mode == "table":
             self._view_mode = "grid"
             if getattr(self, 'current_view', '') == "plugins":
@@ -196,7 +196,7 @@ class _SearchMixin:
                 self.package_table.setVisible(False)
                 self.packages_grid.setVisible(True)
             if self._grid_view_btn:
-                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(navbar_dir, "list.svg"), 20))
+                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(toolbar_dir, "list.svg"), 20))
                 self._grid_view_btn.setToolTip("List View")
             if self.current_view != "plugins":
                 self._populate_grid()
@@ -218,7 +218,7 @@ class _SearchMixin:
                 self.packages_grid.setVisible(False)
                 self.package_table.setVisible(True)
             if self._grid_view_btn:
-                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(navbar_dir, "view.svg"), 20))
+                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(toolbar_dir, "view.svg"), 20))
                 self._grid_view_btn.setToolTip("Grid View")
 
     def _populate_grid(self):

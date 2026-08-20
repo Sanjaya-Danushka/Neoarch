@@ -138,7 +138,7 @@ class LargeSearchBox(QWidget):
 
         icon = QLabel()
         icon.setFixedSize(24, 24)
-        self._set_svg_icon(icon, "discover/search.svg", 24, Colors.TEXT_3)
+        self._set_svg_icon(icon, "ui/search.svg", 24, Colors.TEXT_3)
         lay.addWidget(icon)
 
         self.input = QLineEdit()
@@ -277,9 +277,9 @@ class LargeSearchBox(QWidget):
         row.addStretch()
 
         actions = [
-            ("discover/updateall.svg", "Update All", self._on_update_all, True),
-            ("discover/refreshdb.svg", "Refresh Databases", self._on_refresh, False),
-            ("discover/clean.svg", "Clean Cache", self._on_clean, False),
+            ("ui/updateall.svg", "Update All", self._on_update_all, True),
+            ("ui/refreshdb.svg", "Refresh Databases", self._on_refresh, False),
+            ("ui/clean.svg", "Clean Cache", self._on_clean, False),
         ]
 
         for svg_rel, text, cb, primary in actions:
@@ -506,7 +506,7 @@ class LargeSearchBox(QWidget):
 
     @staticmethod
     def _set_image(label: QLabel, rel_path: str, size: int):
-        path = os.path.join(PROJECT_ROOT, "assets", "icons", "discover", rel_path)
+        path = os.path.join(PROJECT_ROOT, "assets", "icons", "screenshots", rel_path)
         try:
             pm = QPixmap(path)
             if not pm.isNull():

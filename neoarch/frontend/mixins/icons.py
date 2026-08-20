@@ -16,7 +16,8 @@ from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.frontend.tokens import Colors, SourceColors
 
 _BASE_DIR = str(PROJECT_ROOT)
-_DISCOVER_ICON_DIR = os.path.join(_BASE_DIR, "assets", "icons", "discover")
+_SOURCES_ICON_DIR = os.path.join(_BASE_DIR, "assets", "icons", "sources")
+_UI_ICON_DIR = os.path.join(_BASE_DIR, "assets", "icons", "ui")
 
 
 def _build_window_icon(icon_path: str) -> QIcon:
@@ -64,7 +65,7 @@ def _build_window_icon(icon_path: str) -> QIcon:
 
 class _IconsMixin:
     def get_fallback_icon(self, icon_path):
-        if "discover" in icon_path:
+        if "sources" in icon_path or "ui" in icon_path:
             return "\U0001f50d"
         elif "updates" in icon_path:
             return "\u2b06\ufe0f"
@@ -80,7 +81,7 @@ class _IconsMixin:
             return "\U0001f4e6"
 
     def get_source_icon(self, source, size=18):
-        icon_dir = _DISCOVER_ICON_DIR
+        icon_dir = _SOURCES_ICON_DIR
         source_colors = SourceColors
         mapping = {
             "pacman": "pacman.svg",

@@ -27,7 +27,7 @@ from neoarch.frontend.mixins.views import _ViewsMixin
 from neoarch.frontend.mixins.operations import _OperationsMixin
 
 _BASE_DIR = str(PROJECT_ROOT)
-_DISCOVER_ICON_DIR = os.path.join(_BASE_DIR, "assets", "icons", "discover")
+_SOURCES_ICON_DIR = os.path.join(_BASE_DIR, "assets", "icons", "sources")
 
 network_latency.install()
 network_latency.start_probing()
@@ -103,8 +103,8 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         self.plugin_timer.timeout.connect(self.run_plugin_tick)
         self._icon_cache = {}
         self._source_icon_cache = {}
-        self._discover_name_icon = self.get_svg_icon(os.path.join(_DISCOVER_ICON_DIR, "packagename.svg"), 20)
-        self._discover_version_icon = self.get_svg_icon(os.path.join(_DISCOVER_ICON_DIR, "version.svg"), 18)
+        self._discover_name_icon = self.get_svg_icon(os.path.join(_SOURCES_ICON_DIR, "packagename.svg"), 20)
+        self._discover_version_icon = self.get_svg_icon(os.path.join(_SOURCES_ICON_DIR, "version.svg"), 18)
         self._flathub_checked = False
         self.plugins_manager = PluginsManager(self)
         self.packages_ready.connect(self.on_packages_loaded)

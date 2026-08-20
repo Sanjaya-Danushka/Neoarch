@@ -479,7 +479,7 @@ class _ViewsMixin:
 
     def _add_right_toolbar_icons(self, layout, show_install_file=False, show_sudo=False, show_bundle=False, show_grid_filter=True):
         """Add common right-side navbar icons to any toolbar layout."""
-        navbar_dir = os.path.join(_BASE_DIR, "assets", "icons", "navbar")
+        navbar_dir = os.path.join(_BASE_DIR, "assets", "icons", "toolbar")
 
         if show_grid_filter:
             self._grid_view_btn = self.create_toolbar_button(
@@ -922,7 +922,7 @@ class _ViewsMixin:
         refresh_btn = QPushButton()
         refresh_btn.setFixedSize(36, 36)
         refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
+        icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "ui")
         refresh_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "refresh.svg"), 18))
         refresh_btn.setToolTip("Refresh")
         refresh_btn.clicked.connect(self.refresh_packages)
@@ -1285,7 +1285,7 @@ class _ViewsMixin:
         self.packages_panel_layout.addWidget(self.packages_content_area, 1)
 
         # Console toggle button (bottom-right)
-        icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "discover")
+        icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "ui")
         self.console_toggle_btn = QPushButton()
         self.console_toggle_btn.setFixedSize(42, 42)
         self.console_toggle_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "terminal.svg"), 20))
@@ -1401,7 +1401,7 @@ class _ViewsMixin:
             refresh_btn = QPushButton(" Check for Updates")
             refresh_btn.setMinimumHeight(36)
             refresh_btn.setStyleSheet(btn_style)
-            refresh_icon = self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "discover", "refresh.svg"), 16)
+            refresh_icon = self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "ui", "refresh.svg"), 16)
             refresh_btn.setIcon(refresh_icon)
             refresh_btn.setIconSize(QSize(16, 16))
             refresh_btn.clicked.connect(self.load_updates)
@@ -1859,9 +1859,9 @@ class _ViewsMixin:
 
         # Update header
         headers = {
-            "updates": (os.path.join(_BASE_DIR, "assets", "icons", "discover", "update12.svg"), "Software Updates", ""),
-            "installed": (os.path.join(_BASE_DIR, "assets", "icons", "discover", "installed.svg"), "Installed Packages", ""),
-            "discover": (os.path.join(_BASE_DIR, "assets", "icons", "discover", "search.svg"), "Home", "Dashboard and package discovery"),
+            "updates": (os.path.join(_BASE_DIR, "assets", "icons", "ui", "update12.svg"), "Software Updates", ""),
+            "installed": (os.path.join(_BASE_DIR, "assets", "icons", "ui", "installed.svg"), "Installed Packages", ""),
+            "discover": (os.path.join(_BASE_DIR, "assets", "icons", "ui", "search.svg"), "Home", "Dashboard and package discovery"),
             "plugins": (os.path.join(_BASE_DIR, "assets", "icons", "plugins.svg"), "Sources & Plugins", "Manage package sources and extensions"),
             "bundles": (os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"), "Bundles", "Create, import, export, and install bundles of packages"),
             "appimage": (os.path.join(_BASE_DIR, "assets", "icons", "appimage.svg"), "AppImages", "Manage AppImage applications"),
@@ -1901,7 +1901,7 @@ class _ViewsMixin:
         if view_id != "plugins" and self._view_mode != "table":
             self._view_mode = "table"
             if hasattr(self, '_grid_view_btn') and self._grid_view_btn:
-                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "navbar", "view.svg"), 20))
+                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "toolbar", "view.svg"), 20))
                 self._grid_view_btn.setToolTip("Grid View")
 
         # Load data for view
@@ -2011,7 +2011,7 @@ class _ViewsMixin:
         elif view_id == "plugins":
             self._view_mode = "grid"
             if hasattr(self, '_grid_view_btn') and self._grid_view_btn:
-                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "navbar", "view.svg"), 20))
+                self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "toolbar", "view.svg"), 20))
                 self._grid_view_btn.setToolTip("List View")
             try:
                 self.loading_widget.setVisible(False)
