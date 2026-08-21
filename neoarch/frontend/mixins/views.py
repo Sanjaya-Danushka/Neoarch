@@ -159,7 +159,7 @@ class _ViewsMixin:
         logo_label = QLabel()
         logo_label.setObjectName("sidebarLogo")
         logo_label.setFixedSize(36, 36)
-        logo_path = os.path.join(_BASE_DIR, "assets", "icons", "app", "logo-beta.png")
+        logo_path = os.path.join(_BASE_DIR, "assets", "icons", "app", "logo.png")
         pm = QPixmap(logo_path)
         if not pm.isNull():
             logo_label.setPixmap(pm.scaled(36, 36, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
@@ -1908,7 +1908,7 @@ class _ViewsMixin:
 
         # Show filters panel for all views except settings, bundles, git, and docker
         if hasattr(self, 'filters_panel'):
-            self.filters_panel.setVisible(view_id not in ("settings", "git", "docker"))
+            self.filters_panel.setVisible(view_id not in ("settings", "git", "docker", "appimage"))
 
         # Update greeting in navbar
         self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
@@ -2116,6 +2116,10 @@ class _ViewsMixin:
                 pass
             self.sources_section.setVisible(False)
             self.filters_section.setVisible(False)
+            if hasattr(self, 'packages_content_area'):
+                self.packages_content_area.setVisible(False)
+            if hasattr(self, 'toolbar_widget'):
+                self.toolbar_widget.setVisible(False)
             try:
                 self.console_label.setVisible(False)
                 self.console.setVisible(False)
