@@ -189,10 +189,16 @@ class _SettingsMixin:
         self.settings_layout.addWidget(container_widget)
 
     def switch_settings_category(self, category):
-        for key, btn in self.settings_nav_buttons.items():
-            btn.setChecked(key == category)
-        for key, widget in self.settings_widgets.items():
-            widget.setVisible(key == category)
+        def _apply():
+            for key, btn in self.settings_nav_buttons.items():
+                try:
+                    btn.setChecked(key == category)
+                except Exception:
+                    pass
+            for key, widget in self.settings_widgets.items():
+                widget.setVisible(key == category)
+        from PyQt6.QtCore import QTimer
+        QTimer.singleShot(0, _apply)
 
     def update_setting(self, key, value):
         self.settings[key] = value

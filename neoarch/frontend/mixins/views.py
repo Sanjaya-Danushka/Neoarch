@@ -35,7 +35,7 @@ from neoarch.backend.package import loader as packages_service
 from neoarch.backend.package import updater as update_service
 from neoarch.backend.package import uninstaller as uninstall_service
 from neoarch.backend.services import ignore as ignore_service
-from neoarch.frontend.tokens import Colors, SourceColors
+from neoarch.frontend.tokens import Colors, Fonts, SourceColors
 
 _BASE_DIR = str(PROJECT_ROOT)
 
@@ -56,7 +56,7 @@ class _CloudHelper(QObject):
 # package table/grid. Background callbacks must never touch the legacy
 # widgets while one of these is active, otherwise a previous page's view can
 # flash over the current one.
-_SELF_CONTAINED_VIEWS = frozenset({"appimage", "git", "docker", "settings"})
+_SELF_CONTAINED_VIEWS = frozenset({"appimage", "git", "docker", "settings", "about"})
 
 
 def _fmt_size(b):
@@ -232,7 +232,8 @@ class _ViewsMixin:
         about_btn_layout = QHBoxLayout(about_btn)
         about_btn_layout.setContentsMargins(0, 0, 0, 0)
         about_btn_layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignCenter)
-        about_btn.clicked.connect(self.show_about)
+        about_btn.clicked.connect(lambda: self._safe_switch("about"))
+        self.nav_buttons["about"] = about_btn
         footer.addWidget(about_btn)
 
         # User avatar / login button (very bottom)
@@ -253,7 +254,7 @@ class _ViewsMixin:
         avatar_layout = QHBoxLayout(self.user_avatar_btn)
         avatar_layout.setContentsMargins(0, 0, 0, 0)
         avatar_layout.addWidget(self.user_avatar_label, 0, Qt.AlignmentFlag.AlignCenter)
-        self.user_avatar_btn.clicked.connect(self._on_avatar_clicked)
+        self.user_avatar_btn.clicked.connect(self._show_account_menu)
         footer.addWidget(self.user_avatar_btn)
 
         layout.addLayout(footer)
@@ -577,6 +578,8 @@ class _ViewsMixin:
             self.updates_table.setVisible(False)
         if hasattr(self, 'package_detail_card'):
             self.package_detail_card.clear()
+        if hasattr(self, 'about_view') and self.about_view:
+            self.about_view.setVisible(False)
 
     def _update_nav_greeting(self, user=None):
         if not hasattr(self, '_greeting_label') or not self._greeting_label:
@@ -1224,6 +1227,7 @@ class _ViewsMixin:
         self.appimage_view = None
         self.git_view = None
         self.docker_view = None
+        self.about_view = None
 
         # Container for table area + detail card side panel
         self.packages_content_area = QWidget()
@@ -1816,6 +1820,13 @@ class _ViewsMixin:
         # Start the animation
         animate_next_message()
 
+    def _safe_switch(self, view_id):
+        try:
+            self.switch_view(view_id)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+
     def switch_view(self, view_id, load=True):
         self.current_view = view_id
         # Any navigation away from the startup page counts as the user having
@@ -1869,9 +1880,15 @@ class _ViewsMixin:
         # Tag the current view as the active loading context
         self.loading_context = view_id
 
-        # Update button states
-        for btn_id, btn in self.nav_buttons.items():
-            btn.setChecked(btn_id == view_id)
+        # Update button states — defer to avoid re-entrancy crash when
+        # called during a button's own mouseReleaseEvent (qFatal in Qt6).
+        def _apply_nav_states(vid=view_id):
+            for btn_id, btn in self.nav_buttons.items():
+                try:
+                    btn.setChecked(btn_id == vid)
+                except Exception:
+                    pass
+        QTimer.singleShot(0, _apply_nav_states)
 
         # Update header
         headers = {
@@ -1884,6 +1901,7 @@ class _ViewsMixin:
             "git": (os.path.join(_BASE_DIR, "assets", "icons", "git.svg"), "Git Repositories", "Clone, build, update, and manage Git repositories"),
             "docker": (os.path.join(_BASE_DIR, "assets", "icons", "docker.svg"), "Docker Containers", "Pull, run, and manage Docker containers"),
             "settings": (os.path.join(_BASE_DIR, "assets", "icons", "settings.svg"), "Settings", "Configure NeoArch settings"),
+            "about": (os.path.join(_BASE_DIR, "assets", "icons", "about.svg"), "About", "About NeoArch"),
         }
 
         header_data = headers.get(view_id, ("NeoArch", ""))
@@ -1908,7 +1926,7 @@ class _ViewsMixin:
 
         # Show filters panel for all views except settings, bundles, git, and docker
         if hasattr(self, 'filters_panel'):
-            self.filters_panel.setVisible(view_id not in ("settings", "git", "docker", "appimage"))
+            self.filters_panel.setVisible(view_id not in ("settings", "git", "docker", "appimage", "about", "user"))
 
         # Update greeting in navbar
         self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
@@ -2240,6 +2258,33 @@ class _ViewsMixin:
             if not getattr(self, '_settings_built', False):
                 self._settings_built = True
                 QTimer.singleShot(0, self.build_settings_ui)
+        elif view_id == "about":
+            try:
+                self.loading_widget.setVisible(False)
+                self.loading_widget.stop_animation()
+            except Exception:
+                pass
+            self.large_search_box.setVisible(False)
+            self._hide_all_package_views()
+            self.load_more_btn.setVisible(False)
+            self.settings_container.setVisible(False)
+            if hasattr(self, 'toolbar_widget'):
+                self.toolbar_widget.setVisible(False)
+            if hasattr(self, 'packages_content_area'):
+                self.packages_content_area.setVisible(False)
+            self.sources_section.setVisible(False)
+            self.filters_section.setVisible(False)
+            try:
+                self.console_label.setVisible(False)
+                self.console.setVisible(False)
+            except Exception:
+                pass
+
+            if getattr(self, 'about_view', None) is None:
+                from neoarch.frontend.components.about_tab import AboutTab
+                self.about_view = AboutTab(self)
+                self.packages_panel_layout.insertWidget(6, self.about_view, 1)
+            self.about_view.setVisible(True)
         # Notify plugins about view change
         try:
             self.run_plugin_hook('on_view_changed', view_id)
@@ -3687,40 +3732,113 @@ class _ViewsMixin:
         except Exception:
             pass
 
-    def _on_avatar_clicked(self):
-        from PyQt6.QtWidgets import QMenu
+    def _show_account_menu(self):
+        """Compact account menu anchored to the sidebar avatar."""
+        from PyQt6.QtCore import QPoint
+        from PyQt6.QtGui import QIcon
+        from PyQt6.QtWidgets import QMenu, QLabel, QWidget, QVBoxLayout
+        from PyQt6.QtWidgets import QWidgetAction
+
+        def _white_icon(svg_body):
+            """White mac-style line icon for menu items."""
+            try:
+                from neoarch.frontend.components.about_tab import (
+                    _mac_icon_pixmap)
+                return QIcon(_mac_icon_pixmap(svg_body, 15))
+            except Exception:
+                return QIcon()
+
+        _ICON_BOX = (
+            '<path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/>'
+            '<path d="M3.3 7.9L12 12.8l8.7-4.9"/>'
+            '<path d="M12 22.1V12.8"/>')
+
         cm = getattr(self, '_cloud_auth', None)
-        if cm and cm.is_logged_in:
-            menu = QMenu(self)
-            menu.setStyleSheet(f"""
-                QMenu {{
-                    background-color: #1C1E24; color: #F3F4F6;
-                    border: 1px solid #373A43; border-radius: 8px; padding: 4px;
-                }}
-                QMenu::item {{ padding: 8px 16px; border-radius: 4px; }}
-                QMenu::item:selected {{ background-color: {Colors.ACCENT}; color: #fff; }}
-            """)
-            save_act = menu.addAction("Save Favourites to Cloud")
-            save_act.triggered.connect(self._cloud_save_favourites)
-            sync_act = menu.addAction("Load Favourites from Cloud")
-            sync_act.triggered.connect(self._cloud_sync_favourites)
-            menu.addSeparator()
-            logout_act = menu.addAction("Sign Out")
-            logout_act.triggered.connect(self._cloud_logout)
-            menu.exec(self.user_avatar_btn.mapToGlobal(self.user_avatar_btn.rect().center()))
+        logged_in = bool(cm and cm.is_logged_in)
+
+        menu = QMenu(self)
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: rgba(20, 21, 25, 0.97);
+                color: {Colors.TEXT};
+                border: 1px solid rgba(255, 255, 255, 0.10);
+                border-radius: 12px;
+                padding: 6px;
+            }}
+            QMenu::item {{
+                padding: 9px 20px;
+                border-radius: 8px;
+                font-size: {Fonts.BASE};
+            }}
+            QMenu::item:selected {{
+                background-color: rgba(0, 191, 174, 0.16);
+                color: {Colors.ACCENT};
+            }}
+            QMenu::item:disabled {{ color: {Colors.TEXT_3}; }}
+            QMenu::separator {{
+                height: 1px;
+                background: rgba(255, 255, 255, 0.07);
+                margin: 5px 8px;
+            }}
+        """)
+
+        header_w = QWidget()
+        hl = QVBoxLayout(header_w)
+        hl.setContentsMargins(12, 8, 12, 8)
+        hl.setSpacing(2)
+
+        if logged_in:
+            user = getattr(cm, 'user', None)
+            name = (getattr(user, 'name', None) or "Account")
+            name_lbl = QLabel(name)
+            st_text = "Signed in"
         else:
-            self._cloud_login()
+            name_lbl = QLabel("Guest")
+            st_text = "Not signed in"
+        name_lbl.setStyleSheet(
+            f"font-size: {Fonts.CARD_TITLE}; font-weight: {Fonts.BOLD};"
+            f" color: {Colors.TEXT}; background: transparent;")
+        hl.addWidget(name_lbl)
+        st_lbl = QLabel(st_text)
+        st_lbl.setStyleSheet(
+            f"font-size: {Fonts.SM};"
+            f" color: {Colors.ACCENT if logged_in else Colors.TEXT_3};"
+            " background: transparent;")
+        hl.addWidget(st_lbl)
+        header_act = QWidgetAction(menu)
+        header_act.setDefaultWidget(header_w)
+        header_act.setEnabled(False)
+        menu.addAction(header_act)
+        menu.addSeparator()
+
+        if not logged_in:
+            act_in = menu.addAction("\u21e5  Sign In")
+            act_in.triggered.connect(self._cloud_login)
+            menu.addSeparator()
+        else:
+            out_act = menu.addAction("\u21aa  Sign Out")
+            out_act.triggered.connect(
+                lambda: cm.logout() if cm else None)
+            menu.addSeparator()
+            manage_act = menu.addAction("Manage Bundles")
+            manage_act.setIcon(_white_icon(_ICON_BOX))
+            manage_act.triggered.connect(
+                lambda: self._safe_switch("bundles"))
+            settings_act = menu.addAction("\u2699  Account Settings")
+            settings_act.setEnabled(False)
+            settings_act.setText("\u2699  Account Settings   \u00b7 soon")
+
+        cloud_act = menu.addAction("\u2601  Cloud Bundles")
+        cloud_act.triggered.connect(self._cloud_manage_bundles)
+
+        btn = self.user_avatar_btn
+        pos = btn.mapToGlobal(QPoint(0, -menu.sizeHint().height() - 8))
+        menu.exec(pos)
 
     def _cloud_login(self):
         cm = getattr(self, '_cloud_auth', None)
         if cm:
             cm.start_login()
-
-    def _cloud_logout(self):
-        cm = getattr(self, '_cloud_auth', None)
-        if cm:
-            cm.logout()
-        self.user_avatar_label.setText("👤")
 
     def _cloud_ensure_login(self):
         cm = getattr(self, '_cloud_auth', None)
