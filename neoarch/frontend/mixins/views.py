@@ -35,7 +35,7 @@ from neoarch.backend.package import loader as packages_service
 from neoarch.backend.package import updater as update_service
 from neoarch.backend.package import uninstaller as uninstall_service
 from neoarch.backend.services import ignore as ignore_service
-from neoarch.frontend.tokens import Colors, Fonts, SourceColors
+from neoarch.frontend.tokens import Colors, Fonts
 
 _BASE_DIR = str(PROJECT_ROOT)
 
@@ -381,48 +381,6 @@ class _ViewsMixin:
             self.header_info.setText(f"{total} packages installed")
         except Exception:
             pass
-
-    def create_bottom_card_button(self, icon_path, text, callback):
-        btn = QPushButton()
-        btn.setObjectName("bottomCardBtn")
-
-        # Create horizontal layout for icon + text
-        layout = QHBoxLayout(btn)
-        layout.setContentsMargins(12, 16, 12, 16)  # Balanced padding
-        layout.setSpacing(8)  # Space between icon and text
-
-        # Icon label - smaller for bottom cards
-        icon_label = QLabel()
-        icon_label.setObjectName("bottomCardIcon")
-        icon_label.setFixedSize(28, 28)  # Smaller than main nav
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Try to load and render SVG in white
-        pixmap = self.get_svg_icon(icon_path, 28).pixmap(28, 28)
-        if pixmap and not pixmap.isNull():
-            icon_label.setPixmap(pixmap)
-        else:
-            # Fallback to black icon or emoji
-            icon = QIcon(icon_path)
-            if not icon.isNull():
-                icon_label.setPixmap(icon.pixmap(28, 28))
-            else:
-                emoji = "⚙️" if "settings" in icon_path else "ℹ️"
-                icon_label.setText(emoji)
-
-        layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        # Text label - right of icon
-        text_label = QLabel(text)
-        text_label.setObjectName("bottomCardText")
-        text_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)  # Left align text, vertically centered
-        layout.addWidget(text_label, alignment=Qt.AlignmentFlag.AlignLeft)
-
-        layout.addStretch()
-
-        btn.clicked.connect(callback)
-
-        return btn
 
     def ensure_flathub_user_remote(self):
         try:
@@ -960,16 +918,6 @@ class _ViewsMixin:
 
         return header
 
-    def show_docker_install_dialog(self):
-        """Open the Docker container management page."""
-        self.switch_view("docker")
-        QTimer.singleShot(50, self._open_docker_run_dialog)
-
-    def _open_docker_run_dialog(self):
-        view = getattr(self, 'docker_view', None)
-        if view is not None:
-            view.run_container()
-
     def show_community_hub(self):
         """Show Community Hub for plugins and extensions"""
         try:
@@ -1056,14 +1004,14 @@ class _ViewsMixin:
     def _sync_plugins_table(self):
         """Populate the shared UpdatesTable with plugin data for list view."""
         try:
-            if not (self.plugins_view and hasattr(self.plugins_view, '_all_card_datas')):
+            if not (self.plugins_view and hasattr(self.plugins_view, '_all_card_data')):
                 return
             self.updates_table.set_plugins_mode(True)
             self.updates_table.set_loading(False)
             self.updates_table.set_empty_text(
                 "No plugins found", "Extensions will appear here after loading")
             mapped = []
-            for card_data in self.plugins_view._all_card_datas():
+            for card_data in self.plugins_view._all_card_data():
                 plugin = card_data.get('plugin', {})
                 installed = card_data.get('installed', False)
                 mapped.append({
@@ -1084,41 +1032,9 @@ class _ViewsMixin:
         except Exception:
             pass
 
-    def open_plugins_folder(self):
-        try:
-            folder = self.get_user_plugins_dir()
-            try:
-                os.makedirs(folder, exist_ok=True)
-            except Exception:
-                pass
-            subprocess.Popen(["xdg-open", folder], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception as e:
-            self._show_message("Plugins", f"Cannot open folder: {e}")
-
-    def show_git_install_dialog(self):
-        """Open the Git repository management page."""
-        self.switch_view("git")
-        QTimer.singleShot(50, self._open_git_install_dialog)
-
-    def _open_git_install_dialog(self):
-        view = getattr(self, 'git_view', None)
-        if view is not None:
-            view.install_from_git()
-
     def show_help(self):
         """Show help dialog"""
         help_service.show_help(self, getattr(self, 'current_view', ''))
-
-    def show_settings(self):
-        self.switch_view("settings")
-
-    def on_plugins_filter_changed(self, text, installed_only):
-        try:
-            if hasattr(self, 'plugins_view') and self.plugins_view:
-                self._plugins_search_query = (text or "")
-                self._apply_plugins_filters()
-        except Exception:
-            pass
 
     def on_plugins_sort_changed(self, mode):
         try:
