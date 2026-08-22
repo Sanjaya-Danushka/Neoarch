@@ -70,7 +70,7 @@ def get_missing_dependencies() -> List[str]:
         missing.append("docker")
     if not cmd_exists("python"):
         missing.append("python")
-    if not cmd_exists("gnome-keyring"):
+    if not cmd_exists("gnome-keyring-daemon"):
         missing.append("gnome-keyring")
 
     # Python modules imported by the app at runtime
@@ -85,10 +85,12 @@ def get_missing_dependencies() -> List[str]:
         if importlib.util.find_spec(module) is None:
             missing.append(pkg)
 
-    # Keyring needs a running SecretService backend to persist sudo creds
-    if cmd_exists("gnome-keyring") and importlib.util.find_spec("keyring") is not None:
+    # Keyring needs a running SecretService backend to persist sudo creds.
+    # A stopped/locked daemon cannot be fixed by pacman, so try starting it
+    # quietly instead of flagging an installable package (that looped forever).
+    if cmd_exists("gnome-keyring-daemon") and importlib.util.find_spec("keyring") is not None:
         if not _keyring_usable():
-            missing.append("gnome-keyring")
+            _start_secret_service()
 
     # GUI password dialogs for AUR helpers / sudo prompts
     missing_auth = get_missing_auth_tools()
@@ -113,6 +115,18 @@ def _keyring_usable() -> bool:
         return ok
     except Exception:
         return False
+
+
+def _start_secret_service() -> None:
+    """Best-effort start of the gnome-keyring secrets daemon."""
+    import subprocess
+    try:
+        subprocess.run(
+            ["gnome-keyring-daemon", "--start", "--components=secrets"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            timeout=5, check=False)
+    except Exception:
+        pass
 
 
 def get_missing_auth_tools() -> List[str]:

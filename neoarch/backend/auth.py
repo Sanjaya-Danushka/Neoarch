@@ -133,19 +133,37 @@ def prepare_askpass_env(env=None) -> Tuple[dict, str]:
         env = env.copy()
 
     askpass_path = get_sudo_askpass(env)
-    if not askpass_path:
-        return env, ""
 
-    # Create askpass script
+    # Prefer NeoArch's own dark dialog; fall back to system tools only if
+    # it fails (e.g. no display) or the user cancels.
+    import sys
+    import tempfile
+
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    python = sys.executable or "python3"
+
     script_content = "#!/bin/sh\n"
-    if 'kdialog' in askpass_path:
-        script_content += f'exec {askpass_path} --password "NeoArch requires administrative privileges" --title "Authentication Required"\n'
-    elif 'zenity' in askpass_path:
-        script_content += f'exec {askpass_path} --password --title="Authentication Required" --text="NeoArch requires administrative privileges:"\n'
-    elif 'yad' in askpass_path:
-        script_content += f'exec {askpass_path} --entry --hide-text --title="Authentication Required" --text="NeoArch requires administrative privileges:"\n'
+    script_content += (
+        f"out=$('{python}' -m neoarch.backend.askpass_gui 2>/dev/null)\n"
+        "if [ $? -eq 0 ] && [ -n \"$out\" ]; then\n"
+        "  printf '%s\\n' \"$out\"\n"
+        "  exit 0\n"
+        "fi\n"
+    )
+    if askpass_path:
+        if 'kdialog' in askpass_path:
+            script_content += f'exec {askpass_path} --password "NeoArch requires administrative privileges" --title "Authentication Required"\n'
+        elif 'zenity' in askpass_path:
+            script_content += f'exec {askpass_path} --password --title="Authentication Required" --text="NeoArch requires administrative privileges:"\n'
+        elif 'yad' in askpass_path:
+            script_content += f'exec {askpass_path} --entry --hide-text --title="Authentication Required" --text="NeoArch requires administrative privileges:"\n'
+        else:
+            script_content += f'exec {askpass_path} "NeoArch requires administrative privileges"\n'
     else:
-        script_content += f'exec {askpass_path} "NeoArch requires administrative privileges"\n'
+        script_content += "exit 1\n"
+
+    env['PYTHONPATH'] = project_root + os.pathsep + env.get('PYTHONPATH', '')
 
     fd, script_path = tempfile.mkstemp(prefix='neoarch_askpass_', suffix='.sh')
     with os.fdopen(fd, 'w') as f:
