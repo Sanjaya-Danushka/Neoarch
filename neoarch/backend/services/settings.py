@@ -27,6 +27,8 @@ DEFAULT_SETTINGS = {
     'accent_color': '#00BFAE',
     'font_size': 13,
     'source_accent_colors': True,
+    'window_glow': False,
+    'window_radius': 8,
     # Notifications
     'notify_desktop': True,
     'notify_inapp': True,

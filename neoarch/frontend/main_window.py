@@ -138,6 +138,7 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         self._cloud_auth.login_changed.connect(self._on_cloud_user_changed)
 
         self.setup_ui()
+        self.apply_window_effects()
         # Set initial nav button state
         for btn_id, btn in self.nav_buttons.items():
             btn.setChecked(btn_id == self.current_view)

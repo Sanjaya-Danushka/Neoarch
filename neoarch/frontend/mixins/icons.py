@@ -140,11 +140,11 @@ class _IconsMixin:
         except Exception:
             return QIcon()
 
-    def get_svg_icon(self, icon_path, size=18):
+    def get_svg_icon(self, icon_path, size=18, tint=None):
         try:
             cache = getattr(self, "_icon_cache", None)
             if isinstance(cache, dict):
-                key = (os.path.abspath(icon_path), int(size))
+                key = (os.path.abspath(icon_path), int(size), str(tint))
                 cached = cache.get(key)
                 if cached is not None and not cached.isNull():
                     return cached
@@ -173,7 +173,7 @@ class _IconsMixin:
                 if renderer.isValid():
                     renderer.render(painter, QRectF(pixmap.rect()))
                     painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
-                    painter.fillRect(pixmap.rect(), QColor("white"))
+                    painter.fillRect(pixmap.rect(), QColor(tint) if tint else QColor("white"))
                     painter.end()
                     icon = QIcon(pixmap)
                 else:
@@ -182,7 +182,7 @@ class _IconsMixin:
 
             try:
                 if isinstance(getattr(self, "_icon_cache", None), dict):
-                    self._icon_cache[(os.path.abspath(icon_path), int(size))] = icon
+                    self._icon_cache[(os.path.abspath(icon_path), int(size), str(tint))] = icon
             except Exception:
                 pass
             return icon

@@ -1,5 +1,7 @@
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QFrame, QLabel, QPushButton, QWidget,
+    QScrollArea,
 )
 
 from neoarch.backend.services import settings as settings_service
@@ -161,7 +163,28 @@ class _SettingsMixin:
         content_area.setObjectName("settingsContent")
         content_area.setStyleSheet(f"QFrame#settingsContent {{ background-color: #0C0C0E; }}")
 
-        self.settings_content_layout = QVBoxLayout(content_area)
+        content_outer = QVBoxLayout(content_area)
+        content_outer.setContentsMargins(0, 0, 0, 0)
+        content_outer.setSpacing(0)
+
+        # Scroll wrapper so no category ever clips on small windows / DPI scaling
+        content_scroll = QScrollArea()
+        content_scroll.setWidgetResizable(True)
+        content_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        content_scroll.setStyleSheet(
+            "QScrollArea { background: transparent; border: none; }"
+            "QScrollBar:vertical { background: transparent; width: 6px; }"
+            "QScrollBar::handle:vertical { background: rgba(255,255,255,0.08);"
+            "  border-radius: 3px; min-height: 30px; }"
+            "QScrollBar::handle:vertical:hover { background: rgba(255,255,255,0.14); }"
+            "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"
+            "QWidget#settingsInner { background-color: #0C0C0E; }")
+
+        settings_inner = QWidget()
+        settings_inner.setObjectName("settingsInner")
+
+        self.settings_content_layout = QVBoxLayout(settings_inner)
         self.settings_content_layout.setContentsMargins(24, 24, 24, 24)
         self.settings_content_layout.setSpacing(20)
 
@@ -180,6 +203,9 @@ class _SettingsMixin:
             self.settings_content_layout.addWidget(widget)
 
         self.settings_content_layout.addStretch()
+
+        content_scroll.setWidget(settings_inner)
+        content_outer.addWidget(content_scroll)
 
         main_layout.addWidget(sidebar)
         main_layout.addWidget(content_area, 1)
@@ -203,6 +229,31 @@ class _SettingsMixin:
     def update_setting(self, key, value):
         self.settings[key] = value
         self.save_settings()
+
+    def apply_window_effects(self):
+        """Apply the window glow-border and corner-radius settings live.
+
+        The glow rim renders on a translucent frameless window, which can
+        leave stray lines on some compositors/GPU drivers — hence it is
+        opt-in (default OFF) and switchable without restarting.
+        """
+        from neoarch.frontend import tokens
+        tokens.WINDOW_GLOW = bool(self.settings.get('window_glow', False))
+        try:
+            radius = int(self.settings.get('window_radius', 8))
+        except (TypeError, ValueError):
+            radius = 8
+        tokens.WINDOW_RADIUS = max(0, min(radius, 24))
+
+        outer = self.centralWidget()
+        if outer is not None:
+            lay = outer.layout()
+            if lay is not None:
+                m = 12 if tokens.WINDOW_GLOW else 0
+                lay.setContentsMargins(m, m, m, m)
+
+        tokens.rebuild_stylesheet()
+        self.setStyleSheet(tokens.DARK_STYLESHEET)
 
     def export_settings(self):
         return settings_service.export_settings(self)

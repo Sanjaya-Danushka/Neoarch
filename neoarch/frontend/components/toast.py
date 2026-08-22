@@ -49,14 +49,20 @@ class Toast(QWidget):
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._dismiss)
         self._fade.finished.connect(self._on_faded_out)
+        self._fading_out = False
 
-    def show_toast(self, text, level="info", duration=4000):
+        self._on_click = None
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def show_toast(self, text, level="info", duration=4000, on_click=None):
         self._text = text
         self._level = level if level in _LEVEL_COLORS else "info"
         self._duration = int(duration)
+        self._on_click = on_click
         self._label.setText(text)
         self.adjustSize()
         self._reposition()
+        self._fading_out = False
         self.setWindowOpacity(0.0)
         self.show()
         self._fade.stop()
@@ -83,15 +89,25 @@ class Toast(QWidget):
             geo = screen.availableGeometry()
             self.move(geo.right() - self.width() - 24, geo.bottom() - self.height() - 24)
 
+    def mousePressEvent(self, event):
+        cb = self._on_click
+        if cb:
+            self._on_click = None
+            self._dismiss()
+            QTimer.singleShot(0, cb)
+        super().mousePressEvent(event)
+
     def _dismiss(self):
         self._timer.stop()
         self._fade.stop()
+        self._fading_out = True
         self._fade.setStartValue(self.windowOpacity())
         self._fade.setEndValue(0.0)
         self._fade.start()
 
     def _on_faded_out(self):
-        self.hide()
+        if self._fading_out:
+            self.hide()
 
     def paintEvent(self, event):
         painter = QPainter(self)

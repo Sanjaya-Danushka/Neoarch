@@ -100,11 +100,13 @@ class _ViewsMixin:
 
     def setup_ui(self):
         # Outer container with margins for glow visibility
+        glow = bool(self.settings.get('window_glow', False))
+        gm = 12 if glow else 0
         outer = QWidget()
         outer.setObjectName("appOuter")
         self.setCentralWidget(outer)
         outer_layout = QVBoxLayout(outer)
-        outer_layout.setContentsMargins(12, 12, 12, 12)
+        outer_layout.setContentsMargins(gm, gm, gm, gm)
         outer_layout.setSpacing(0)
 
         # Content wrapper with glow border effect
@@ -229,9 +231,24 @@ class _ViewsMixin:
         icon = self.get_svg_icon(about_icon_path, 24)
         if not icon.isNull():
             icon_label.setPixmap(icon.pixmap(24, 24))
+        self._about_icon_label = icon_label
         about_btn_layout = QHBoxLayout(about_btn)
         about_btn_layout.setContentsMargins(0, 0, 0, 0)
         about_btn_layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignCenter)
+
+        # Red count badge for missing dependencies
+        dep_badge = QLabel("", about_btn)
+        dep_badge.setStyleSheet(f"""
+            background-color: {Colors.RED}; color: #FFFFFF;
+            border: none; border-radius: 9px;
+            font-size: 10px; font-weight: {Fonts.BOLD};
+        """)
+        dep_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        dep_badge.setFixedSize(18, 18)
+        dep_badge.move(28, 1)
+        dep_badge.hide()
+        self._about_dep_badge = dep_badge
+
         about_btn.clicked.connect(lambda: self._safe_switch("about"))
         self.nav_buttons["about"] = about_btn
         footer.addWidget(about_btn)
@@ -2200,7 +2217,13 @@ class _ViewsMixin:
                 from neoarch.frontend.components.about_tab import AboutTab
                 self.about_view = AboutTab(self)
                 self.packages_panel_layout.insertWidget(6, self.about_view, 1)
+                # Apply any pending dependency alert now that UI exists
+                self.about_view.set_dep_alert(
+                    getattr(self, '_dep_missing', []))
             self.about_view.setVisible(True)
+            if getattr(self, '_dep_missing', None):
+                # Alert active: land on Diagnostics where the fix lives
+                self.about_view.show_diagnostics()
         # Notify plugins about view change
         try:
             self.run_plugin_hook('on_view_changed', view_id)
@@ -2378,10 +2401,6 @@ class _ViewsMixin:
             except Exception:
                 pass
             self.update_updates_header_counts()
-            try:
-                self._notify_updates_available(len(self.updates_all or []))
-            except Exception:
-                pass
         elif self.current_view == "installed":
             self.update_installed_header_counts()
         elif getattr(self, 'updates_all', None) is not None:
@@ -3511,18 +3530,6 @@ class _ViewsMixin:
             self._toast = Toast(self)
         self._toast.show_toast(text, level)
 
-    def _notify_updates_available(self, count):
-        """Fire a one-shot 'updates available' notification when the count changes."""
-        if count <= 0:
-            return
-        last = getattr(self, '_updates_notified_count', 0)
-        if count == last:
-            return
-        self._updates_notified_count = count
-        noun = "update is" if count == 1 else "updates are"
-        self._notify(f"{count} {noun} available", "Software updates are ready to install.",
-                     level="info", event="updates")
-
     # ── live selection summary (Updates / Installed toolbars) ──────────
 
     def _on_table_checks_changed(self, checked, total):
@@ -3647,6 +3654,51 @@ class _ViewsMixin:
                 self.large_search_box.recent_activity.setVisible(not new_state)
         except Exception:
             pass
+
+    def _update_dep_alert(self, missing):
+        """Reflect missing dependencies on the About sidebar icon.
+
+        Swaps between about.svg and about-fail.svg and forwards the list
+        to the About page's Diagnostics tab indicator.
+        """
+        try:
+            self._dep_missing = [m for m in (missing or []) if m]
+        except Exception:
+            self._dep_missing = []
+        has_issue = bool(self._dep_missing)
+
+        lbl = getattr(self, '_about_icon_label', None)
+        if lbl is not None:
+            if has_issue:
+                icon = self.get_svg_icon(
+                    os.path.join(_BASE_DIR, "assets", "icons",
+                                 "about-fail.svg"), 24, tint=Colors.RED)
+            else:
+                icon = self.get_svg_icon(
+                    os.path.join(_BASE_DIR, "assets", "icons", "about.svg"),
+                    24)
+            if not icon.isNull():
+                lbl.setPixmap(icon.pixmap(24, 24))
+
+        about_btn = getattr(self, 'nav_buttons', {}).get('about')
+        if about_btn is not None:
+            about_btn.setToolTip(
+                "About \u2014 dependencies need attention"
+                if has_issue else "About")
+
+        av = getattr(self, 'about_view', None)
+        if av is not None:
+            av.set_dep_alert(self._dep_missing)
+
+        badge = getattr(self, '_about_dep_badge', None)
+        if badge is not None:
+            if has_issue:
+                badge.setText(str(len(self._dep_missing)))
+                badge.adjustSize()
+                badge.setFixedSize(18, 18)
+                badge.show()
+            else:
+                badge.hide()
 
     def _show_account_menu(self):
         """Compact account menu anchored to the sidebar avatar."""

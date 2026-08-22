@@ -325,7 +325,18 @@ QSS._regenerate()
 
 # ── Main window stylesheet (rebuilt on theme change) ───────────────
 
+# Window frame effects — runtime-overridden from user settings by
+# the main window's apply_window_effects(). Glow border is OFF by
+# default because translucent rims can leave artifacts on some
+# compositors/GPU drivers.
+WINDOW_GLOW = False
+WINDOW_RADIUS = 8
+
+
 def _build_main_stylesheet():
+    frame_border = (
+        f"border: 1px solid {Colors.ACCENT_SOFT};" if WINDOW_GLOW
+        else "border: none;")
     return f"""
 QMainWindow {{
     background-color: transparent;
@@ -338,15 +349,15 @@ QWidget#appOuter {{
 
 QFrame#appWindow {{
     background-color: rgba(12, 12, 14, 0.75);
-    border: 1px solid {Colors.ACCENT_SOFT};
-    border-radius: 14px;
+    {frame_border}
+    border-radius: {WINDOW_RADIUS}px;
 }}
 
 QWidget#appTitleBar {{
     background-color: transparent;
     border-bottom: 1px solid {Colors.BORDER};
-    border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
+    border-top-left-radius: {WINDOW_RADIUS}px;
+    border-top-right-radius: {WINDOW_RADIUS}px;
 }}
 
 QLabel#titleBarLabel {{

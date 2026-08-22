@@ -3,12 +3,12 @@
 from typing import Any
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QPushButton,
-    QScrollArea,
+    QScrollArea, QCheckBox, QComboBox,
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QPainter, QPen
 
-from neoarch.frontend.tokens import Colors, Fonts, Radii
+from neoarch.frontend.tokens import Colors, Fonts, Radii, QSS
 from neoarch.frontend.themes import THEMES
 
 
@@ -75,6 +75,8 @@ class _ThemeCard(QFrame):
         super().__init__(parent)
         self.theme_id = theme_id
         self._on_select = on_select
+        # Uniform width so all theme cards match each other in the grid
+        self.setFixedSize(210, 190)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.setStyleSheet(f"""
@@ -117,6 +119,7 @@ class _ThemeCard(QFrame):
         layout.addLayout(label_row)
 
         desc = QLabel(theme_data["description"])
+        desc.setWordWrap(True)
         desc.setStyleSheet(f"""
             color: {Colors.TEXT_2}; font-size: {Fonts.SM}; border: none;
         """)
@@ -172,7 +175,84 @@ class AppearanceSettingsWidget(QWidget):
 
         grid.addStretch()
         self.layout.addLayout(grid)
+
+        self._build_window_section()
         self.layout.addStretch()
+
+    def _build_window_section(self):
+        """Window frame options: glow border (off by default) + corner radius.
+
+        Uses the same settingsCard pattern as the General tab so widths
+        and styling match the rest of the settings pages.
+        """
+        section = QFrame()
+        section.setObjectName("settingsCard")
+        section.setStyleSheet(QSS.CARD)
+        sl = QVBoxLayout(section)
+        sl.setContentsMargins(20, 18, 20, 20)
+        sl.setSpacing(16)
+
+        head = QLabel("Window frame")
+        head.setStyleSheet(
+            f"font-size: {Fonts.CARD_TITLE}; font-weight: {Fonts.SEMI};"
+            f" color: {Colors.TEXT}; background: transparent; border: none;")
+        sl.addWidget(head)
+
+        # ── Glow border toggle ──
+        glow_row = QHBoxLayout()
+        glow_row.setSpacing(12)
+        glow_lbl = QLabel("Glow border around the window")
+        glow_lbl.setToolTip(
+            "Decorative teal rim on the translucent window frame.\n"
+            "Off by default \u2014 it can leave stray lines on some\n"
+            "compositors and GPU drivers.")
+        glow_lbl.setStyleSheet(
+            f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
+            " background: transparent; border: none;")
+        glow_row.addWidget(glow_lbl)
+        glow_row.addStretch()
+
+        self._glow_cb = QCheckBox()
+        self._glow_cb.setStyleSheet(QSS.CHECKBOX)
+        self._glow_cb.setChecked(
+            bool(self.app.settings.get('window_glow', False)))
+        self._glow_cb.toggled.connect(self._on_glow_toggled)
+        glow_row.addWidget(self._glow_cb)
+        sl.addLayout(glow_row)
+
+        # ── Corner radius selector ──
+        rad_row = QHBoxLayout()
+        rad_row.setSpacing(12)
+        rad_lbl = QLabel("Window corner radius")
+        rad_lbl.setStyleSheet(
+            f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
+            " background: transparent; border: none;")
+        rad_row.addWidget(rad_lbl)
+        rad_row.addStretch()
+
+        self._radius_cb = QComboBox()
+        self._radius_cb.setStyleSheet(QSS.COMBO)
+        for label, value in (("Sharp \u2014 4 px", 4), ("Round \u2014 8 px", 8),
+                             ("Large \u2014 14 px", 14)):
+            self._radius_cb.addItem(label, value)
+        current = self.app.settings.get('window_radius', 8)
+        idx = self._radius_cb.findData(int(current) if current else 8)
+        self._radius_cb.setCurrentIndex(idx if idx >= 0 else 1)
+        self._radius_cb.currentIndexChanged.connect(self._on_radius_changed)
+        rad_row.addWidget(self._radius_cb)
+        sl.addLayout(rad_row)
+
+        self.layout.addWidget(section)
+
+    def _on_glow_toggled(self, checked):
+        self.app.update_setting('window_glow', bool(checked))
+        self.app.apply_window_effects()
+
+    def _on_radius_changed(self, index):
+        value = self._radius_cb.itemData(index)
+        if value is not None:
+            self.app.update_setting('window_radius', int(value))
+            self.app.apply_window_effects()
 
     def _apply_theme(self, theme_id):
         manager = getattr(self.app, '_theme_manager', None)

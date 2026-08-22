@@ -7,7 +7,7 @@ import os
 import subprocess
 import platform as _platform
 
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QRectF, QSize
+from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal, QRectF, QSize
 from PyQt6.QtGui import QPixmap, QPainter, QColor, QIcon
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import (
@@ -761,8 +761,18 @@ _DOC_SECTIONS = [
          [
              ("Overview", "Version, edition and project links"),
              ("Release notes", "Changelog built from Git history"),
-             ("Diagnostics", "Verify tools and plugin health"),
+             ("Diagnostics",
+              "Dependency list with one-click install, plus system health"),
              ("Contributors & sponsors", "Meet and support the community"),
+         ], [
+             ("Open About from the bottom of the sidebar — if anything "
+              "is missing, its icon turns into a warning bell", False),
+             ("Diagnostics opens automatically, listing every dependency "
+              "and what it powers", False),
+             ("Press Install on any row, or Install All Missing once",
+              True),
+             ("The red dot clears by itself when every check passes",
+              False),
          ]),
     ]),
 ]
@@ -1004,6 +1014,61 @@ class _DocumentationTab(QWidget):
 
 # ── Tab: Diagnostics ───────────────────────────────────────────────
 
+class _AlertNavButton(QPushButton):
+    """Sidebar nav button with an optional red alert dot."""
+
+    def __init__(self, label, parent=None):
+        super().__init__(label, parent)
+        self.setCheckable(True)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._dot = QLabel("\u25cf", self)
+        self._dot.setStyleSheet(
+            f"color: {Colors.RED}; font-size: 9px; font-weight: {Fonts.BOLD};"
+            "background: transparent; border: none;")
+        self._dot.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self._dot.hide()
+
+    def set_alert(self, active):
+        self._dot.setVisible(bool(active))
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._dot.adjustSize()
+        self._dot.move(
+            self.width() - self._dot.width() - 12,
+            (self.height() - self._dot.height()) // 2)
+
+
+class _DepInstallWorker(QThread):
+    """Installs missing dependencies via the main app's setup flow."""
+
+    done = pyqtSignal(list)  # names attempted
+    line = pyqtSignal(str)   # status output for the tab console
+
+    def __init__(self, main_app, names):
+        super().__init__()
+        self._app = main_app
+        self._names = list(names)
+
+    def run(self):
+        # Never touch GUI/shared state here except queued signals —
+        # avoids races between this thread and the main event loop.
+        try:
+            self.line.emit(
+                f"$ neoarch setup \u2192 {', '.join(self._names)}")
+            self._app.install_dependencies(self._names)
+        except Exception as e:
+            self.line.emit(f"\u2717 Setup failed: {e}")
+        else:
+            self.line.emit("\u2713 Setup finished \u2014 re-checking")
+        finally:
+            try:
+                self.done.emit(list(self._names))
+            except Exception:
+                pass
+
+
 class _DiagWorker(QThread):
     finished = pyqtSignal(list)
 
@@ -1072,21 +1137,86 @@ class _StatusDot(QLabel):
 
 
 class _DiagnosticsTab(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, main_app=None, parent=None):
         super().__init__(parent)
+        self.main_app = main_app
+        self._dep_worker = None
+        self._missing_deps = []
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(24)
+        layout.setSpacing(16)
 
         layout.addWidget(_page_title("Diagnostics"))
-        layout.addWidget(_page_subtitle("System checks and diagnostic information"))
+        layout.addWidget(_page_subtitle(
+            "Dependencies, system checks, and diagnostic information"))
 
         scroll = _scroll_area()
         content = QWidget()
         cl = QVBoxLayout(content)
         cl.setContentsMargins(0, 0, 0, 0)
-        cl.setSpacing(20)
+        cl.setSpacing(14)
 
+        # ── Dependencies card ──
+        self._deps_card = _card()
+        dpl = QVBoxLayout(self._deps_card)
+        dpl.setContentsMargins(20, 18, 20, 20)
+        dpl.setSpacing(10)
+
+        dep_head = QHBoxLayout()
+        dep_head.setSpacing(12)
+        dep_head.addWidget(_card_title("Dependencies"))
+        dep_head.addStretch()
+        refresh_btn = _secondary_btn("Refresh", lambda: None)
+        refresh_btn.clicked.disconnect()
+        refresh_btn.clicked.connect(lambda checked=False: self._refresh_deps())
+        dep_head.addWidget(refresh_btn)
+        install_all_btn = _accent_btn("Install All Missing", lambda: None)
+        install_all_btn.clicked.disconnect()
+        install_all_btn.clicked.connect(
+            lambda checked=False: self._install_missing())
+        dep_head.addWidget(install_all_btn)
+        self._install_all_btn = install_all_btn
+        dpl.addLayout(dep_head)
+
+        self._dep_summary = QLabel("Checking\u2026")
+        self._dep_summary.setStyleSheet(
+            f"font-size: {Fonts.SM}; color: {Colors.TEXT_3};"
+            "background: transparent; border: none;")
+        dpl.addWidget(self._dep_summary)
+
+        self._deps_rows_layout = QVBoxLayout()
+        self._deps_rows_layout.setSpacing(6)
+        rows_host = QWidget()
+        rows_host.setLayout(self._deps_rows_layout)
+        rows_host.setStyleSheet("background: transparent;")
+        self._deps_rows_scroll = _scroll_area()
+        self._deps_rows_scroll.setWidget(rows_host)
+        self._deps_rows_scroll.setFixedHeight(190)
+        dpl.addWidget(self._deps_rows_scroll)
+
+        # Live output so installs are visibly doing something
+        from PyQt6.QtWidgets import QTextEdit
+        self._dep_console = QTextEdit()
+        self._dep_console.setReadOnly(True)
+        self._dep_console.setFixedHeight(110)
+        self._dep_console.setPlaceholderText(
+            "Install output appears here \u2014 press Install to begin")
+        self._dep_console.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {Colors.BG};
+                color: {Colors.TEXT_2};
+                border: 1px solid {Colors.BORDER};
+                border-radius: {Radii.SM}px;
+                font-family: 'monospace';
+                font-size: 11px;
+                padding: 8px;
+            }}
+        """)
+        dpl.addWidget(self._dep_console)
+
+        cl.addWidget(self._deps_card)
+
+        # ── System checks card ──
         btn_row = QHBoxLayout()
         btn_row.setSpacing(12)
         btn_row.addWidget(_accent_btn("Run Diagnostics", lambda: None))
@@ -1184,6 +1314,155 @@ class _DiagnosticsTab(QWidget):
                 f"{name}: {value} [{status.upper()}]")
 
         self._report_text = "\n".join(self._report_lines)
+
+    # ── Dependencies ──
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not self._deps_rows_layout.count():
+            QTimer.singleShot(0, self._refresh_deps)
+
+    def _clear_dep_rows(self):
+        while self._deps_rows_layout.count():
+            item = self._deps_rows_layout.takeAt(0)
+            w = item.widget()
+            if w:
+                w.deleteLater()
+            elif item.layout():
+                child = item.layout()
+                while child.count():
+                    sub = child.takeAt(0)
+                    if sub.widget():
+                        sub.widget().deleteLater()
+
+    def _refresh_deps(self):
+        try:
+            from neoarch.backend.sys_utils import (
+                get_dependency_catalog, fake_missing_active)
+            catalog = get_dependency_catalog()
+            simulated = fake_missing_active()
+        except Exception as e:
+            self._dep_summary.setText(f"Check failed: {e}")
+            return
+
+        self._clear_dep_rows()
+        missing = []
+        for dep in catalog:
+            present = dep["present"]
+            if not present:
+                missing.append(dep["name"])
+            row = QHBoxLayout()
+            row.setSpacing(12)
+
+            name_lbl = QLabel(dep["name"])
+            name_lbl.setFixedWidth(170)
+            name_lbl.setStyleSheet(
+                f"font-size: {Fonts.BASE}; font-weight: {Fonts.MEDIUM};"
+                f" color: {Colors.TEXT}; background: transparent;"
+                " border: none;")
+            row.addWidget(name_lbl)
+
+            feat_lbl = QLabel(dep["feature"])
+            feat_lbl.setStyleSheet(
+                f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
+                "background: transparent; border: none;")
+            row.addWidget(feat_lbl, 1)
+
+            if present:
+                row.addWidget(_StatusDot("ok"))
+            else:
+                status = "error" if dep["required"] else "warn"
+                row.addWidget(_StatusDot(status))
+                install_btn = _secondary_btn("Install", lambda: None)
+                install_btn.clicked.disconnect()
+                install_btn.clicked.connect(
+                    lambda checked=False, n=dep["name"]: self._install_missing([n]))
+                row.addWidget(install_btn)
+
+            self._deps_rows_layout.addLayout(row)
+
+        self._missing_deps = missing
+        req_missing = [d["name"] for d in catalog
+                       if d["required"] and not d["present"]]
+        if not missing:
+            self._dep_summary.setText("All dependencies installed")
+            self._dep_summary.setStyleSheet(
+                f"font-size: {Fonts.SM}; color: {Colors.GREEN};"
+                f" font-weight: {Fonts.SEMI};"
+                "background: transparent; border: none;")
+        elif req_missing:
+            self._dep_summary.setText(
+                f"{len(missing)} missing \u2014 {len(req_missing)} required "
+                "for NeoArch to work")
+            self._dep_summary.setStyleSheet(
+                f"font-size: {Fonts.SM}; color: {Colors.RED};"
+                f" font-weight: {Fonts.SEMI};"
+                "background: transparent; border: none;")
+        else:
+            self._dep_summary.setText(
+                f"{len(missing)} optional component(s) missing \u2014 "
+                "features above will stay hidden until installed")
+            self._dep_summary.setStyleSheet(
+                f"font-size: {Fonts.SM}; color: {Colors.ORANGE};"
+                f" font-weight: {Fonts.SEMI};"
+                "background: transparent; border: none;")
+        self._install_all_btn.setEnabled(bool(missing))
+
+        if simulated and missing:
+            self._dep_log_line(
+                "\u26a0 Simulated test mode (NEOARCH_FAKE_MISSING) \u2014 "
+                "these rows never clear; unset the env var for real checks")
+
+        app = self.main_app
+        if app is not None and hasattr(app, "_update_dep_alert"):
+            app._update_dep_alert(missing)
+
+    def _install_missing(self, names=None):
+        targets = list(names or self._missing_deps)
+        app = self.main_app
+        if not targets or app is None:
+            return
+        if self._dep_worker is not None and self._dep_worker.isRunning():
+            self._dep_log_line("A setup is already running \u2014 wait for it")
+            return
+
+        # Use the standard session auth prompt (same as Updates page).
+        # Must run here on the GUI thread; if the user closes it once,
+        # do not keep asking.
+        if hasattr(app, "ensure_session_auth"):
+            self._dep_log_line("$ authentication required\u2026")
+            if not app.ensure_session_auth():
+                self._dep_log_line(
+                    "\u2717 Cancelled \u2014 authenticate to enable installs")
+                return
+
+        self._install_all_btn.setEnabled(False)
+        self._install_all_btn.setText("Installing\u2026")
+        self._dep_summary.setText(
+            f"Installing {', '.join(targets)}\u2026 watch output below")
+        self._dep_worker = _DepInstallWorker(app, targets)
+        self._dep_worker.line.connect(self._dep_log_line)
+        self._dep_worker.done.connect(self._on_install_done)
+        self._dep_worker.start()
+
+    def _on_install_done(self, names):
+        try:
+            self._install_all_btn.setText("Install All Missing")
+            if self._missing_deps:
+                self._install_all_btn.setEnabled(True)
+            self._dep_log_line(
+                "\u2500" * 42 + " re-checking")
+        except Exception:
+            pass
+        self._refresh_deps()
+
+    def _dep_log_line(self, text):
+        try:
+            self._dep_console.append(str(text))
+            sb = self._dep_console.verticalScrollBar()
+            sb.setValue(sb.maximum())
+        except Exception:
+            pass
 
 
 # ── Tab: Community ─────────────────────────────────────────────────
@@ -1382,12 +1661,22 @@ class AboutTab(QWidget):
         self._init_ui()
 
     def _make_nav_btn(self, label, index):
-        btn = QPushButton(label)
-        btn.setCheckable(True)
-        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn = _AlertNavButton(label)
         btn.clicked.connect(lambda _, i=index: self._switch_tab(i))
         self._nav_btns.append(btn)
         return btn
+
+    def set_dep_alert(self, missing):
+        """Red dot on the Diagnostics nav while dependencies are missing."""
+        if len(self._nav_btns) > 3:
+            self._nav_btns[3].set_alert(bool(missing))
+
+    def show_diagnostics(self):
+        self._switch_tab(3)
+        # Force a fresh dependency check regardless of showEvent timing
+        diag = self._stack.widget(3)
+        if hasattr(diag, "_refresh_deps"):
+            QTimer.singleShot(0, diag._refresh_deps)
 
     def _switch_tab(self, index):
         self._stack.setCurrentIndex(index)
@@ -1500,12 +1789,12 @@ class AboutTab(QWidget):
         content_layout.setSpacing(0)
 
         self._stack = QStackedWidget()
-        tab_classes = [
-            _OverviewTab, _ReleaseNotesTab, _DocumentationTab,
-            _DiagnosticsTab, _CommunityTab,
+        tabs = [
+            _OverviewTab(), _ReleaseNotesTab(), _DocumentationTab(),
+            _DiagnosticsTab(self.main_app), _CommunityTab(),
         ]
-        for cls in tab_classes:
-            self._stack.addWidget(cls())
+        for w in tabs:
+            self._stack.addWidget(w)
         content_layout.addWidget(self._stack)
 
         root.addWidget(content, 1)

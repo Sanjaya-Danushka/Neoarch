@@ -6,7 +6,6 @@ method (pkexec, sudo -A) for GUI password prompts.
 
 import os
 import shutil
-import subprocess
 from typing import Tuple
 
 from neoarch.backend import session_auth
@@ -15,78 +14,20 @@ __all__ = ["get_auth_command", "get_sudo_askpass", "prepare_askpass_env", "get_a
 
 
 def get_auth_command(env=None):
-    """Determine the appropriate authentication command based on desktop environment.
+    """Return the privilege elevation command for internal operations.
 
-    Detects Hyprland, Wayland, GNOME, KDE, XFCE and selects pkexec or sudo -A
-    accordingly. Ensures GUI password dialogs work properly.
-
-    When session auth has cached credentials, always prefer sudo -A so the
-    cached password is reused instead of prompting the user again.
+    NeoArch always elevates via 'sudo -A' so authentication is handled by
+    its own themed askpass dialog instead of the system polkit agent.
+    When the session credential cache is active, the stored password is
+    reused silently without any prompt.
 
     Args:
-        env: Environment dictionary to check for desktop variables.
+        env: Unused; kept for backward compatibility with callers.
 
     Returns:
-        list: Authentication command as a list (e.g., ["pkexec"] or ["sudo", "-A"])
+        list: The authentication command prefix (["sudo", "-A"]).
     """
-    if env is None:
-        env = os.environ
-
-    # If session auth has cached credentials, always use sudo -A
-    # to avoid redundant password prompts from pkexec
-    if session_auth.is_session_active():
-        return ["sudo", "-A"]
-
-    desktop = env.get('XDG_CURRENT_DESKTOP', '').lower()
-    session_type = env.get('XDG_SESSION_TYPE', '').lower()
-    wayland_display = env.get('WAYLAND_DISPLAY', '')
-    hyprland_instance = env.get('HYPRLAND_INSTANCE_SIGNATURE', '')
-
-    try:
-        polkit_agent_running = subprocess.run(['pgrep', '-f', 'polkit.*agent'], capture_output=True).returncode == 0
-    except Exception:
-        polkit_agent_running = False
-
-    is_hyprland = (
-        'hyprland' in desktop
-        or hyprland_instance
-        or (session_type == 'wayland' and 'hypr' in wayland_display.lower())
-    )
-
-    if is_hyprland:
-        return ["sudo", "-A"]
-
-    elif session_type == 'wayland' and not polkit_agent_running:
-        if 'SUDO_ASKPASS' in env:
-            return ["sudo", "-A"]
-        else:
-            return ["pkexec"]
-
-    elif polkit_agent_running:
-        try:
-            test_result = subprocess.run(['pkexec', '--version'],
-                                         capture_output=True, timeout=5)
-            if test_result.returncode == 0:
-                if desktop in ['gnome', 'kde', 'xfce']:
-                    return ["pkexec"]
-                else:
-                    return ["pkexec", "--disable-internal-agent"]
-            else:
-                if 'SUDO_ASKPASS' in env:
-                    return ["sudo", "-A"]
-                else:
-                    return ["sudo", "-A"]
-        except Exception:
-            if 'SUDO_ASKPASS' in env:
-                return ["sudo", "-A"]
-            else:
-                return ["sudo", "-A"]
-
-    elif 'SUDO_ASKPASS' in env:
-        return ["sudo", "-A"]
-
-    else:
-        return ["sudo", "-A"]
+    return ["sudo", "-A"]
 
 
 def get_sudo_askpass(env=None) -> str:

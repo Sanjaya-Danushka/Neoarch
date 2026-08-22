@@ -12,10 +12,13 @@ from neoarch.backend import config_utils, sys_utils
 from neoarch.backend.auth import get_askpass_env as _get_askpass_env
 from neoarch.backend.workers import CommandWorker
 from neoarch.backend.package.updater import update_core_tools
+
+
+class DependencyAuthCancelled(RuntimeError):
+    """User closed the authentication prompt — setup must stop, not fake success."""
 from neoarch.backend.services.snapshot import (
     create_snapshot,
     revert_to_snapshot,
-    restore_snapshot,
     delete_snapshots,
 )
 
@@ -43,18 +46,56 @@ class _AuthMixin:
         return sys_utils.get_missing_dependencies()
 
     def run_first_run_checks(self):
-        missing = self.get_missing_dependencies()
-        if not missing:
+        """Silent dependency audit — prompt only when REQUIRED parts miss.
+
+        Optional integrations (flatpak, docker, npm, ...) never block
+        startup; they surface as an alert on About > Diagnostics.
+        """
+        import os as _os
+        _fake = _os.environ.get("NEOARCH_FAKE_MISSING", "").strip()
+        if _fake:
+            self.log(f"[test] Simulating missing dependencies: {_fake}")
+        try:
+            missing_required = sys_utils.get_missing_required()
+            missing_optional = sys_utils.get_missing_optional()
+        except Exception as e:
+            self.log(f"Dependency check failed: {e}")
+            return
+
+        self._update_dep_alert(missing_required + missing_optional)
+
+        if not missing_required and not missing_optional:
             self.log("All required dependencies present")
             return
-        text = "The following dependencies are missing and are required for best experience:\n\n" + "\n".join(f"\u2022 {m}" for m in missing) + "\n\nInstall now?"
+
+        if missing_optional:
+            self.log(
+                "Optional components missing: "
+                f"{', '.join(missing_optional)} "
+                "(see About > Diagnostics)")
+
+        if not missing_required:
+            return
+        text = ("The following components are required for NeoArch to work:\n\n"
+                + "\n".join(f"\u2022 {m}" for m in missing_required)
+                + "\n\nInstall now?")
         reply = QMessageBox.question(self, "Setup Environment", text, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.Yes)
         if reply == QMessageBox.StandardButton.Yes:
-            Thread(target=self.install_dependencies, args=(missing,), daemon=True).start()
+            if not self.ensure_session_auth():
+                self.log("Dependency setup cancelled: authentication required.")
+                return
+            Thread(target=self.install_dependencies, args=(missing_required,), daemon=True).start()
 
     def install_dependencies(self, missing):
         try:
+            from neoarch.backend.session_auth import is_session_active
             self.log(f"Installing missing dependencies: {', '.join(missing)}")
+            if not is_session_active():
+                # Auth is handled up-front on the GUI thread; reaching this
+                # point without a session means the user closed the prompt,
+                # so stop instead of re-asking for every command.
+                raise DependencyAuthCancelled(
+                    "authentication cancelled \u2014 no session password cached")
             if not self.cmd_exists("git"):
                 self.log("Installing git first...")
                 self._run_sudo_install(["git"])
@@ -66,11 +107,18 @@ class _AuthMixin:
             if ("yay or paru" in missing or "yay" in missing or "paru" in missing) and self.cmd_exists("git"):
                 self.install_aur_helper()
             remaining = self.get_missing_dependencies()
+            self._update_dep_alert(remaining)
             if remaining:
                 self.log(f"Still missing after setup: {', '.join(remaining)}")
                 self.show_message.emit("Environment", f"Dependency setup incomplete. Still missing: {', '.join(remaining)}")
             else:
                 self.show_message.emit("Environment", "Dependency setup completed")
+        except DependencyAuthCancelled as e:
+            self.log(f"Dependency setup cancelled: {e}")
+            self.show_message.emit(
+                "Environment",
+                "Dependency setup cancelled \u2014 authentication required")
+            raise
         except Exception as e:
             self.log(f"Setup failed: {str(e)}")
             self.show_message.emit("Environment", f"Setup failed: {str(e)}")
@@ -128,31 +176,6 @@ class _AuthMixin:
             except Exception:
                 pass
 
-    def _startup_auth_and_sync(self):
-        try:
-            self._startup_auth_and_sync_impl()
-        except Exception as e:
-            self.log(f"Session auth skipped: {e}")
-            self._finish_startup_no_auth()
-
-    def _startup_auth_and_sync_impl(self):
-        from neoarch.backend.session_auth import setup_session_auth, is_session_active
-
-        if is_session_active():
-            QTimer.singleShot(50, self._startup_updates_load)
-            return
-
-        success = setup_session_auth(self)
-        if success:
-            self.log("Session authentication established")
-            QTimer.singleShot(50, self._startup_updates_load)
-        else:
-            self.log("Session authentication declined or failed")
-            self._finish_startup_no_auth()
-
-    def _finish_startup_no_auth(self):
-        self._startup_updates_load()
-
     def ensure_session_auth(self) -> bool:
         """Lazily ensure an authenticated session exists.
 
@@ -200,9 +223,6 @@ class _AuthMixin:
 
     def revert_to_snapshot(self):
         return revert_to_snapshot(self)
-
-    def _restore_snapshot(self, snapshot_num):
-        return restore_snapshot(self, snapshot_num)
 
     def delete_snapshots(self):
         return delete_snapshots(self)

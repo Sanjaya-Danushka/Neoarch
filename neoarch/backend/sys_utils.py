@@ -11,14 +11,25 @@ from typing import List, Tuple, Optional
 
 __all__ = [
     "cmd_exists", "get_available_aur_helpers", "get_aur_helper",
-    "get_missing_dependencies", "get_missing_auth_tools",
-    "check_aur_authentication_support",
+    "get_dependency_catalog", "get_missing_required",
+    "get_missing_optional", "get_missing_dependencies",
+    "get_missing_auth_tools", "check_aur_authentication_support",
+]
+
+# GUI-launched apps often inherit a trimmed PATH; probe these directly.
+_GUI_FALLBACK_PATHS = [
+    "/usr/local/bin", "/usr/bin", "/bin",
+    "/usr/local/sbin", "/usr/sbin", "/sbin",
 ]
 
 
 def cmd_exists(cmd: str) -> bool:
-    """Check if a command is available in the system PATH."""
-    return shutil.which(cmd) is not None
+    """Check if a command is available, tolerating GUI-trimmed PATH."""
+    if shutil.which(cmd):
+        return True
+    return any(
+        os.path.isfile(os.path.join(d, cmd)) for d in _GUI_FALLBACK_PATHS
+    )
 
 
 def get_available_aur_helpers() -> List[str]:
@@ -49,42 +60,72 @@ def get_aur_helper(preferred: Optional[str] = None) -> Optional[str]:
     return available[0]
 
 
+def get_dependency_catalog() -> List[dict]:
+    """Return the full dependency catalog with live presence checks.
+
+    Each entry: {name, pkg, required, feature, present} where ``name``
+    is the install-facing identifier (also used by the setup flow),
+    ``pkg`` the pacman/pip package, ``feature`` what breaks without it.
+    """
+    cat: List[dict] = []
+
+    def add(name, pkg, required, feature, present):
+        cat.append({"name": name, "pkg": pkg, "required": required,
+                    "feature": feature, "present": bool(present)})
+
+    # Core — the app cannot function without these
+    add("pacman", "pacman", True, "Package operations", cmd_exists("pacman"))
+    add("git", "git", True, "AUR builds and Git projects", cmd_exists("git"))
+
+    # Optional integrations — features degrade gracefully
+    add("flatpak", "flatpak", False, "Flatpak page", cmd_exists("flatpak"))
+    add("nodejs", "nodejs", False, "Discover page (npm)", cmd_exists("node"))
+    add("npm", "npm", False, "Discover page (npm)", cmd_exists("npm"))
+    add("docker", "docker", False, "Docker page", cmd_exists("docker"))
+    add("gnome-keyring", "gnome-keyring", False,
+        "Saving sudo password", cmd_exists("gnome-keyring-daemon"))
+    add("curl", "curl", False, "Network downloads", cmd_exists("curl"))
+    add("yay or paru", "yay", False, "AUR updates",
+        bool(get_available_aur_helpers()))
+    add("kdialog", "kdialog", False, "Password prompts",
+        not get_missing_auth_tools())
+
+    python_mods = {
+        "keyring": ("python-keyring", "Saving sudo password"),
+        "httpx": ("python-httpx", "Cloud sync"),
+        "supabase": ("python-supabase", "Cloud sync"),
+    }
+    for module, (pkg, feature) in python_mods.items():
+        add(pkg, pkg, False, feature,
+            importlib.util.find_spec(module) is not None)
+
+    # Test hook: NEOARCH_FAKE_MISSING="a,b" simulates absent dependencies
+    fake = os.environ.get("NEOARCH_FAKE_MISSING", "")
+    for name in [n.strip() for n in fake.split(",") if n.strip()]:
+        add(name, name, False, "Simulated missing dependency (test)", False)
+
+    return cat
+
+
+def get_missing_required() -> List[str]:
+    """Names of required dependencies that are missing."""
+    return [d["name"] for d in get_dependency_catalog()
+            if d["required"] and not d["present"]]
+
+
+def fake_missing_active() -> bool:
+    """True while the NEOARCH_FAKE_MISSING test hook injects entries."""
+    return bool(os.environ.get("NEOARCH_FAKE_MISSING", "").strip())
+
+
+def get_missing_optional() -> List[str]:
+    """Names of optional integrations that are missing."""
+    return [d["name"] for d in get_dependency_catalog()
+            if not d["required"] and not d["present"]]
+
+
 def get_missing_dependencies() -> List[str]:
     """Check for missing system dependencies and return their names."""
-    missing = []
-
-    # Core runtime binaries the app shells out to
-    if not cmd_exists("pacman"):
-        missing.append("pacman")
-    if not cmd_exists("flatpak"):
-        missing.append("flatpak")
-    if not cmd_exists("git"):
-        missing.append("git")
-    if not cmd_exists("curl"):
-        missing.append("curl")
-    if not cmd_exists("node"):
-        missing.append("nodejs")
-    if not cmd_exists("npm"):
-        missing.append("npm")
-    if not cmd_exists("docker"):
-        missing.append("docker")
-    if not cmd_exists("python"):
-        missing.append("python")
-    if not cmd_exists("gnome-keyring-daemon"):
-        missing.append("gnome-keyring")
-
-    # Python modules imported by the app at runtime
-    python_pkg_map = {
-        "PyQt6": "python-pyqt6",
-        "keyring": "python-keyring",
-        "requests": "python-requests",
-        "httpx": "python-httpx",
-        "supabase": "python-supabase",
-    }
-    for module, pkg in python_pkg_map.items():
-        if importlib.util.find_spec(module) is None:
-            missing.append(pkg)
-
     # Keyring needs a running SecretService backend to persist sudo creds.
     # A stopped/locked daemon cannot be fixed by pacman, so try starting it
     # quietly instead of flagging an installable package (that looped forever).
@@ -92,14 +133,7 @@ def get_missing_dependencies() -> List[str]:
         if not _keyring_usable():
             _start_secret_service()
 
-    # GUI password dialogs for AUR helpers / sudo prompts
-    missing_auth = get_missing_auth_tools()
-    if missing_auth:
-        missing.append(missing_auth[0])
-
-    if not get_available_aur_helpers():
-        missing.append("yay or paru")
-    return missing
+    return get_missing_required() + get_missing_optional()
 
 
 def _keyring_usable() -> bool:
