@@ -16,7 +16,7 @@ ICONS_DIR = ASSETS_DIR / "icons"
 CONFIG_DIR = Path.home() / ".config" / "neoarch"
 
 APP_NAME = "NeoArch"
-APP_VERSION = os.environ.get("NEOARCH_VERSION", "3.0.0-beta")
+APP_VERSION = os.environ.get("NEOARCH_VERSION", "3.1.1")
 APP_EDITION = "Lynx"
 APP_ICON = str(ASSETS_DIR / "icons" / "app.png")
 
