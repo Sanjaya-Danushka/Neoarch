@@ -35,6 +35,26 @@ def _installed_ts(name, version):
         return 0
 
 
+def _parse_qu_output(stdout):
+    """Parse `pacman -Qu` / `checkupdates` lines into update entries."""
+    packages = []
+    for line in (stdout or '').strip().split('\n'):
+        if line.strip() and ' -> ' in line:
+            parts = line.split(' -> ')
+            if len(parts) == 2:
+                package_info = parts[0].strip().split()
+                new_version = parts[1].strip()
+                if len(package_info) >= 2:
+                    packages.append({
+                        'name': package_info[0],
+                        'version': package_info[1],
+                        'new_version': new_version,
+                        'id': package_info[0],
+                        'source': 'pacman'
+                    })
+    return packages
+
+
 def _check_pacman_updates():
     """List available pacman updates.
 
@@ -42,17 +62,47 @@ def _check_pacman_updates():
     into a temporary directory with fakeroot, so checking for updates works
     without root and without asking for the sudo password. Falls back to the
     local `pacman -Qu` (which reflects the last synced DB) when unavailable.
+
+    `checkupdates` can transiently fail right after boot/login while the
+    mirror fetch races other clients ("Cannot fetch updates", rc=1) — that
+    used to surface as a silently empty repo-update list, so it is retried
+    once before falling back to the local DB.
     """
     import shutil
-    cmd = ["pacman", "-Qu"]
-    timeout = 60
+    import time as _time
     if shutil.which("checkupdates") and shutil.which("fakeroot"):
-        cmd = ["checkupdates", "--nocolor"]
-        timeout = 180
-    result = _run_cmd(cmd, timeout=timeout)
-    packages = []
+        for attempt in range(2):
+            result = _run_cmd(["checkupdates", "--nocolor"], timeout=180)
+            if result and result.returncode in (0, 2) and result.stdout:
+                return _parse_qu_output(result.stdout)
+            if result is not None and result.returncode in (0, 2):
+                return []  # genuinely no updates
+            if attempt == 0:
+                _time.sleep(2)  # transient fetch failure — retry once
+    result = _run_cmd(["pacman", "-Qu"], timeout=60)
     if result and result.returncode in (0, 2) and result.stdout:
-        for line in result.stdout.strip().split('\n'):
+        return _parse_qu_output(result.stdout)
+    return []
+
+
+def _check_aur_updates():
+    """List available AUR updates via the first AUR helper that reports any.
+
+    Helpers are probed concurrently, but only binaries that actually exist
+    are spawned. The whole sweep is retried once when every helper fails or
+    comes back empty — right after login they race the same mirror/network
+    contention that breaks `checkupdates`, which used to silently hide AUR
+    updates for the entire session.
+    """
+    import shutil as _shutil
+    import time as _time
+    helpers = [h for h in ('yay', 'paru', 'trizen', 'pikaur') if _shutil.which(h)]
+    if not helpers:
+        return []
+
+    def _parse(result):
+        packages = []
+        for line in (result.stdout or '').strip().split('\n'):
             if line.strip() and ' -> ' in line:
                 parts = line.split(' -> ')
                 if len(parts) == 2:
@@ -64,35 +114,28 @@ def _check_pacman_updates():
                             'version': package_info[1],
                             'new_version': new_version,
                             'id': package_info[0],
-                            'source': 'pacman'
+                            'source': 'AUR'
                         })
-    return packages
+        return packages
 
+    def _sweep():
+        with ThreadPoolExecutor(max_workers=len(helpers)) as ex:
+            fut_map = {ex.submit(_run_cmd, [h, "-Qua"], 60): h for h in helpers}
+            best = []
+            for fut in as_completed(fut_map):
+                result = fut.result()
+                if result and result.returncode in (0, 1) and result.stdout:
+                    packages = _parse(result)
+                    if len(packages) > len(best):
+                        best = packages
+            return best
 
-def _check_aur_updates():
-    helpers = ['yay', 'paru', 'trizen', 'pikaur']
-    with ThreadPoolExecutor(max_workers=len(helpers)) as ex:
-        fut_map = {ex.submit(_run_cmd, [h, "-Qua"], 60): h for h in helpers}
-        for fut in as_completed(fut_map):
-            result = fut.result()
-            if result and result.returncode in (0, 1) and result.stdout:
-                packages = []
-                for line in result.stdout.strip().split('\n'):
-                    if line.strip() and ' -> ' in line:
-                        parts = line.split(' -> ')
-                        if len(parts) == 2:
-                            package_info = parts[0].strip().split()
-                            new_version = parts[1].strip()
-                            if len(package_info) >= 2:
-                                packages.append({
-                                    'name': package_info[0],
-                                    'version': package_info[1],
-                                    'new_version': new_version,
-                                    'id': package_info[0],
-                                    'source': 'AUR'
-                                })
-                if packages:
-                    return packages
+    for attempt in range(2):
+        packages = _sweep()
+        if packages:
+            return packages
+        if attempt == 0:
+            _time.sleep(3)  # transient failure — retry once
     return []
 
 
@@ -378,15 +421,23 @@ def load_updates(app):
                             or app.current_view != 'updates'
                             or getattr(app, '_updates_load_id', 0) != load_id)
 
+                def _safe_result(fut, label):
+                    """Collect a source's results; never raise, never stay silent."""
+                    try:
+                        return fut.result() or []
+                    except Exception as e:
+                        try:
+                            app.log(f"Updates: {label} check failed: {e}")
+                        except Exception:
+                            pass
+                        return []
+
                 # First paint: pacman updates land as soon as their check
                 # finishes (the first-run DB sync is the slow part), so the
                 # table shows data immediately instead of a long loading
                 # animation. AUR/Flatpak/npm results follow in the final emit.
-                initial = []
-                try:
-                    initial = finalize(fut_pacman.result() or [])
-                except Exception:
-                    initial = []
+                pacman_pkgs = _safe_result(fut_pacman, "pacman")
+                initial = finalize(list(pacman_pkgs))
                 if not is_stale():
                     try:
                         app._updates_loading = False
@@ -394,13 +445,24 @@ def load_updates(app):
                         pass
                     app.packages_ready.emit(initial, load_id, False)
 
-                packages = list(initial)
-                for fut in as_completed([fut_aur, fut_flatpak, fut_npm]):
+                # Final merge must include EVERY source — including pacman
+                # again. Consuming fut_pacman only for the early paint meant
+                # a transient empty/slow check permanently dropped repo
+                # updates from the merged list.
+                packages = list(pacman_pkgs)
+                for fut, label in ((fut_aur, "AUR"), (fut_flatpak, "Flatpak"),
+                                   (fut_npm, "npm")):
+                    packages.extend(_safe_result(fut, label))
+                packages = finalize(packages, add_local=False)
+
+                sources = {p.get("source") for p in packages}
+                if "pacman" not in sources:
                     try:
-                        packages.extend(fut.result() or [])
+                        app.log(
+                            "Updates: no repository updates found this "
+                            "check (checkupdates may have raced the DB sync)")
                     except Exception:
                         pass
-                packages = finalize(packages, add_local=False)
 
             if not is_stale():
                 try:
