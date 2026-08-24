@@ -23,6 +23,7 @@ from glob import glob
 from typing import Dict, List, Optional
 
 from neoarch.resources.paths import APP_VERSION
+from neoarch.backend.services.network import urlopen as _net_urlopen
 
 __all__ = [
     "APPIMAGE_DIR", "METADATA_PATH", "DESKTOP_DIR", "ICON_DIR",
@@ -265,7 +266,6 @@ def add_from_file(path: str, name: Optional[str] = None) -> Dict:
 def _download(url: str, dest: str, timeout: int = 120) -> bool:
     req = urllib.request.Request(url, headers={"User-Agent": _UA})
     try:
-        from neoarch.backend.services.network import urlopen as _net_urlopen
         with _net_urlopen(req, timeout=timeout) as resp, \
                 open(dest, "wb") as out:
             shutil.copyfileobj(resp, out)
