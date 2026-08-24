@@ -1,7 +1,8 @@
 """Authentication utilities for package management operations.
 
-Detects desktop environment and selects the appropriate privilege elevation
-method (pkexec, sudo -A) for GUI password prompts.
+All privilege elevation goes through 'sudo -A' with NeoArch's own themed
+authentication dialog and session credential cache — one prompt per
+session, silent afterwards.
 """
 
 import os
@@ -10,7 +11,7 @@ from typing import Tuple
 
 from neoarch.backend import session_auth
 
-__all__ = ["get_auth_command", "get_sudo_askpass", "prepare_askpass_env", "get_askpass_env"]
+__all__ = ["get_auth_command", "prepare_askpass_env", "get_askpass_env"]
 
 
 def get_auth_command(env=None):
@@ -30,34 +31,15 @@ def get_auth_command(env=None):
     return ["sudo", "-A"]
 
 
-def get_sudo_askpass(env=None) -> str:
-    """Get the path to a GUI askpass program for sudo password prompts.
-
-    Searches for available GUI authentication tools in order of preference:
-    kdialog, zenity, yad.
-
-    Args:
-        env: Environment dictionary to search in.
-
-    Returns:
-        str: Path to the askpass program, or empty string if none found.
-    """
-    if env is None:
-        env = os.environ
-    path_env = env.get('PATH', os.defpath)
-    for cmd in ['kdialog', 'zenity', 'yad']:
-        fp = shutil.which(cmd, path=path_env)
-        if fp:
-            return fp
-    return ""
-
-
 def prepare_askpass_env(env=None) -> Tuple[dict, str]:
     """Create a temporary SUDO_ASKPASS script and prepare environment.
 
-    Generates a shell script that uses a GUI dialog (kdialog/zenity/yad)
-    to ask for the sudo password, then returns the modified environment
-    and the path to the cleanup file.
+    The script delegates entirely to NeoArch's own authentication flow
+    (``python -m neoarch.backend.askpass_gui``): it serves any cached
+    session credential silently, and otherwise shows the themed dialog,
+    caches the password, and hands it to sudo. System tools (kdialog,
+    zenity, yad) are no longer used — they were the old, inconsistent
+    prompt design that re-asked on every command.
 
     Args:
         env: Base environment to extend. If None, uses os.environ copy.
@@ -65,20 +47,13 @@ def prepare_askpass_env(env=None) -> Tuple[dict, str]:
     Returns:
         tuple: (env_dict, temp_script_path)
     """
-    import shutil
+    import sys
     import tempfile
 
     if env is None:
         env = os.environ.copy()
     else:
         env = env.copy()
-
-    askpass_path = get_sudo_askpass(env)
-
-    # Prefer NeoArch's own dark dialog; fall back to system tools only if
-    # it fails (e.g. no display) or the user cancels.
-    import sys
-    import tempfile
 
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -91,18 +66,8 @@ def prepare_askpass_env(env=None) -> Tuple[dict, str]:
         "  printf '%s\\n' \"$out\"\n"
         "  exit 0\n"
         "fi\n"
+        "exit 1\n"
     )
-    if askpass_path:
-        if 'kdialog' in askpass_path:
-            script_content += f'exec {askpass_path} --password "NeoArch requires administrative privileges" --title "Authentication Required"\n'
-        elif 'zenity' in askpass_path:
-            script_content += f'exec {askpass_path} --password --title="Authentication Required" --text="NeoArch requires administrative privileges:"\n'
-        elif 'yad' in askpass_path:
-            script_content += f'exec {askpass_path} --entry --hide-text --title="Authentication Required" --text="NeoArch requires administrative privileges:"\n'
-        else:
-            script_content += f'exec {askpass_path} "NeoArch requires administrative privileges"\n'
-    else:
-        script_content += "exit 1\n"
 
     env['PYTHONPATH'] = project_root + os.pathsep + env.get('PYTHONPATH', '')
 

@@ -1,14 +1,20 @@
 from typing import Any
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
                              QLabel, QPushButton, QSpinBox)
 
+from neoarch.backend.services.hygiene import news_unseen_count
 from neoarch.frontend.tokens import QSS, Colors, Fonts, Radii
 
 
 class MaintenanceSettingsWidget(QWidget):
+    # Emitted from the news-count worker thread; updates the button label.
+    _news_count_ready = pyqtSignal(int)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.app: Any = parent
+        self._news_count_ready.connect(self._set_news_badge)
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(24)
@@ -156,16 +162,35 @@ class MaintenanceSettingsWidget(QWidget):
 
         row = self._row()
         btn = QPushButton("Show News")
-        try:
-            from neoarch.backend.services.hygiene import news_unseen_count
-            n = news_unseen_count()
-            if n:
-                btn.setText(f"Show News ({n} new)")
-        except Exception:
-            pass
         btn.setStyleSheet(QSS.BTN_OUTLINE)
         btn.clicked.connect(self.app.show_arch_news)
         row.addWidget(btn)
+        self._news_btn = btn
+        self._load_news_count_async()
         row.addStretch()
         card_layout.addLayout(row)
         self.layout.addWidget(card)
+
+    def _load_news_count_async(self):
+        """Resolve the unread-news badge off the UI thread.
+
+        news_unseen_count() performs a synchronous RSS fetch; running it
+        inline used to freeze the first Settings open for seconds.
+        """
+        from threading import Thread
+
+        def task():
+            try:
+                n = news_unseen_count()
+            except Exception:
+                return
+            if n:
+                self._news_count_ready.emit(int(n))
+
+        Thread(target=task, daemon=True).start()
+
+    def _set_news_badge(self, n: int):
+        try:
+            self._news_btn.setText(f"Show News ({n} new)")
+        except RuntimeError:
+            pass  # widget already destroyed

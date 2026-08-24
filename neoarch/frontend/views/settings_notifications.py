@@ -18,11 +18,7 @@ class NotificationsSettingsWidget(QWidget):
     def _make_card(self, title_text):
         card = QFrame()
         card.setObjectName("settingsCard")
-        card.setStyleSheet(f"""
-            QFrame#settingsCard {{
-                {QSS.CARD}
-            }}
-        """)
+        card.setStyleSheet(QSS.CARD)
         card_layout = QVBoxLayout(card)
         card_layout.setContentsMargins(20, 18, 20, 20)
         card_layout.setSpacing(16)

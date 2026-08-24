@@ -153,13 +153,24 @@ class Spacing:
 
 # ── Shared QSS blocks for settings views ───────────────────────────
 
+import os as _os
+
+_CHECK_ICON = _os.path.normpath(_os.path.join(
+    _os.path.dirname(__file__), "..", "..", "assets", "icons", "ui", "check.svg"))
+
+
 def _build_qss():
     """Generate QSS blocks from current Colors/Fonts/Radii values."""
     return {
+        # NOTE: scoped to the card frame itself. An unscoped declaration
+        # block leaks border/background onto EVERY child widget (labels,
+        # checkboxes...) via Qt stylesheet inheritance.
         "CARD": f"""
-            background-color: {Colors.SURFACE};
-            border: 1px solid {Colors.BORDER};
-            border-radius: {Radii.XL}px;
+            QFrame#settingsCard {{
+                background-color: {Colors.SURFACE};
+                border: 1px solid {Colors.BORDER};
+                border-radius: {Radii.XL}px;
+            }}
         """,
         "CHECKBOX": f"""
             QCheckBox {{
@@ -170,16 +181,25 @@ def _build_qss():
             QCheckBox::indicator {{
                 width: 18px;
                 height: 18px;
-                border-radius: {Radii.CHECKBOX}px;
-                border: 1.5px solid {Colors.TEXT_3};
+                border-radius: 6px;
+                border: 1px solid {Colors.BORDER_INPUT};
                 background-color: {Colors.INPUT_BG};
-            }}
-            QCheckBox::indicator:checked {{
-                background-color: {Colors.ACCENT};
-                border: 1.5px solid {Colors.ACCENT};
             }}
             QCheckBox::indicator:hover {{
                 border-color: {Colors.ACCENT};
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {Colors.ACCENT};
+                border: 1px solid {Colors.ACCENT};
+                image: url("{_CHECK_ICON}");
+            }}
+            QCheckBox::indicator:checked:hover {{
+                background-color: {Colors.ACCENT_HOVER};
+                border-color: {Colors.ACCENT_HOVER};
+            }}
+            QCheckBox::indicator:disabled {{
+                border-color: {Colors.BORDER_INPUT};
+                background-color: transparent;
             }}
         """,
         "COMBO": f"""

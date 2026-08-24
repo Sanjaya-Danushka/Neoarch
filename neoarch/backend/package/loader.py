@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
 
 from neoarch.backend import session_auth
+from neoarch.backend import sys_utils
 from neoarch.backend.auth import get_askpass_env
 from neoarch.backend.workers import CommandWorker
 
@@ -206,21 +207,25 @@ def _check_flatpak_updates():
 def _check_npm_updates():
     packages = []
     try:
-        env_user = os.environ.copy()
-        try:
-            npm_prefix = os.path.join(os.path.expanduser('~'), '.npm-global')
-            os.makedirs(npm_prefix, exist_ok=True)
-            env_user['npm_config_prefix'] = npm_prefix
-            env_user['NPM_CONFIG_PREFIX'] = npm_prefix
-            env_user['PATH'] = os.path.join(npm_prefix, 'bin') + os.pathsep + env_user.get('PATH', '')
-        except Exception:
-            pass
+        env_user = None
+        if sys_utils.npm_user_mode_enabled():
+            env_user = None
+            if sys_utils.npm_user_mode_enabled():
+                env_user = os.environ.copy()
+                try:
+                    npm_prefix = os.path.join(os.path.expanduser('~'), '.npm-global')
+                    os.makedirs(npm_prefix, exist_ok=True)
+                    env_user['npm_config_prefix'] = npm_prefix
+                    env_user['NPM_CONFIG_PREFIX'] = npm_prefix
+                    env_user['PATH'] = os.path.join(npm_prefix, 'bin') + os.pathsep + env_user.get('PATH', '')
+                except Exception:
+                    pass
 
         results = []
         np_def = _run_cmd(["npm", "outdated", "-g", "--json"], timeout=60)
         if np_def:
             results.append((np_def.returncode, np_def.stdout))
-        np_user = _run_cmd(["npm", "outdated", "-g", "--json"], timeout=60, env=env_user)
+        np_user = _run_cmd(["npm", "outdated", "-g", "--json"], timeout=60, env=env_user) if env_user else None
         if np_user:
             results.append((np_user.returncode, np_user.stdout))
 
@@ -366,7 +371,7 @@ def load_updates(app):
                 def finalize(pkgs, add_local=True):
                     """Merge local update entries, drop ignored ones, and dedupe."""
                     out = list(pkgs or [])
-                    if add_local:
+                    if add_local and sys_utils.local_source_enabled():
                         try:
                             entries = app.load_local_update_entries()
                             for e in entries:
@@ -620,7 +625,7 @@ def load_installed_packages(app):
                 np_def = _run_cmd(["npm", "ls", "-g", "--depth=0", "--json"], timeout=60)
                 if np_def:
                     results.append((np_def.returncode, np_def.stdout))
-                np_user = _run_cmd(["npm", "ls", "-g", "--depth=0", "--json"], timeout=60, env=env_user)
+                np_user = _run_cmd(["npm", "ls", "-g", "--depth=0", "--json"], timeout=60, env=env_user) if env_user else None
                 if np_user:
                     results.append((np_user.returncode, np_user.stdout))
 
@@ -661,7 +666,7 @@ def load_installed_packages(app):
                 np_def = _run_cmd(["npm", "outdated", "-g", "--json"], timeout=60)
                 if np_def:
                     results.append((np_def.returncode, np_def.stdout))
-                np_user = _run_cmd(["npm", "outdated", "-g", "--json"], timeout=60, env=env_user)
+                np_user = _run_cmd(["npm", "outdated", "-g", "--json"], timeout=60, env=env_user) if env_user else None
                 if np_user:
                     results.append((np_user.returncode, np_user.stdout))
 
@@ -705,7 +710,8 @@ def load_installed_packages(app):
                         pkg['new_version'] = outdated[pkg['name']]
 
             try:
-                entries = app.load_local_update_entries()
+                entries = app.load_local_update_entries() \
+                    if sys_utils.local_source_enabled() else []
                 for e in entries:
                     name = (e.get('name') or '').strip()
                     if not name:

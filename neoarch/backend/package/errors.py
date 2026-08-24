@@ -104,7 +104,7 @@ _TIMEOUT_PATTERNS = [
 _AUTH_PATTERNS = [
     (re.compile(r'no askpass program specified', re.I),
      "authentication_required", "Authentication required",
-     "No GUI authentication tool found. Install kdialog, zenity, or yad.",
+     "Authentication failed. Start the operation again and enter your password in the NeoArch dialog.",
      False, "authenticate"),
     (re.compile(r'authentication (?:failed|agent)', re.I),
      "authentication_required", "Authentication required",

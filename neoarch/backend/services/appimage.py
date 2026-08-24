@@ -265,7 +265,8 @@ def add_from_file(path: str, name: Optional[str] = None) -> Dict:
 def _download(url: str, dest: str, timeout: int = 120) -> bool:
     req = urllib.request.Request(url, headers={"User-Agent": _UA})
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp, \
+        from neoarch.backend.services.network import urlopen as _net_urlopen
+        with _net_urlopen(req, timeout=timeout) as resp, \
                 open(dest, "wb") as out:
             shutil.copyfileobj(resp, out)
         return True
@@ -330,7 +331,7 @@ def _latest_release(host: str, owner: str, repo: str) -> Dict:
         return {}
     req = urllib.request.Request(api, headers={"User-Agent": _UA})
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with _net_urlopen(req) as resp:
             data = json.loads(resp.read().decode("utf-8"))
     except Exception:
         return {}

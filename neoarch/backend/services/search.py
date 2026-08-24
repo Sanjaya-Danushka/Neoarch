@@ -89,7 +89,8 @@ def search_aur(query: str, limit: int = 8) -> List[Dict]:
     try:
         url = "https://aur.archlinux.org/rpc/?v=5&type=search&arg=" + urllib.parse.quote(query)
         req = urllib.request.Request(url, headers={"User-Agent": f"neoarch/{_UA_VERSION}"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        from neoarch.backend.services.network import urlopen as _net_urlopen
+        with _net_urlopen(req) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         for r in data.get("results", []):
             pkg = r.get("Name", "")

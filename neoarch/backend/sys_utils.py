@@ -87,8 +87,6 @@ def get_dependency_catalog() -> List[dict]:
     add("curl", "curl", False, "Network downloads", cmd_exists("curl"))
     add("yay or paru", "yay", False, "AUR updates",
         bool(get_available_aur_helpers()))
-    add("kdialog", "kdialog", False, "Password prompts",
-        not get_missing_auth_tools())
 
     python_mods = {
         "keyring": ("python-keyring", "Saving sudo password"),
@@ -116,6 +114,28 @@ def get_missing_required() -> List[str]:
 def fake_missing_active() -> bool:
     """True while the NEOARCH_FAKE_MISSING test hook injects entries."""
     return bool(os.environ.get("NEOARCH_FAKE_MISSING", "").strip())
+
+
+def npm_user_mode_enabled() -> bool:
+    """Setting ▸ General ▸ 'Use npm user mode for global installs'.
+
+    When disabled, npm queries/operations skip the per-user prefix
+    (~/.npm-global) and only touch the system-wide default prefix.
+    """
+    try:
+        from neoarch.backend.services.settings import load_settings
+        return bool(load_settings().get('npm_user_mode', True))
+    except Exception:
+        return True
+
+
+def local_source_enabled() -> bool:
+    """Setting ▸ General ▸ 'Include Local source (custom scripts)'."""
+    try:
+        from neoarch.backend.services.settings import load_settings
+        return bool(load_settings().get('include_local_source', True))
+    except Exception:
+        return True
 
 
 def get_missing_optional() -> List[str]:
@@ -164,18 +184,13 @@ def _start_secret_service() -> None:
 
 
 def get_missing_auth_tools() -> List[str]:
-    """Get list of missing GUI authentication tools.
+    """Deprecated: external GUI auth tools are no longer required.
 
-    At least one of kdialog, zenity, or yad is needed for AUR
-    package sudo password prompts.
+    NeoArch authenticates via its built-in themed dialog and session cache.
 
     Returns:
-        list: Missing tool names, or empty list if at least one is available.
+        list: Always empty.
     """
-    auth_tools = ['kdialog', 'zenity', 'yad']
-    available = [tool for tool in auth_tools if cmd_exists(tool)]
-    if not available:
-        return auth_tools
     return []
 
 
@@ -185,12 +200,4 @@ def check_aur_authentication_support() -> Tuple[bool, str]:
     Returns:
         tuple: (is_supported, message)
     """
-    missing_auth = get_missing_auth_tools()
-    if missing_auth:
-        message = (
-            "Warning: No GUI authentication tools found for AUR packages.\n"
-            f"Please install one of: {', '.join(missing_auth)}\n"
-            "Example: sudo pacman -S kdialog (or zenity/yad)"
-        )
-        return False, message
-    return True, "AUR authentication is properly configured"
+    return True, "NeoArch uses its built-in authentication dialog."

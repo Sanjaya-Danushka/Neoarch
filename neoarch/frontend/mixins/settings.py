@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QFrame, QLabel, QPushButton, QWidget,
     QScrollArea,
 )
+import os
 
 from neoarch.backend.services import settings as settings_service
 from neoarch.resources.paths import APP_VERSION, APP_EDITION
@@ -229,6 +230,30 @@ class _SettingsMixin:
     def update_setting(self, key, value):
         self.settings[key] = value
         self.save_settings()
+        self.apply_logging_config()
+        if key in ('proxy_type', 'proxy_host', 'proxy_port',
+                   'verify_ssl', 'request_timeout'):
+            try:
+                from neoarch.backend.services import network
+                network.refresh()
+            except Exception:
+                pass
+
+    def apply_logging_config(self):
+        """Push the Logging-tab settings into the logging service."""
+        try:
+            from neoarch.backend.services import logging_service
+            s = self.settings
+            default_log = os.path.join(os.path.expanduser('~'), '.config',
+                                       'neoarch', 'neoarch.log')
+            logging_service.reconfigure(
+                level=s.get('log_level', 'INFO'),
+                console=s.get('log_to_console', False),
+                path=s.get('log_file_path') or '',
+                max_mb=s.get('log_max_size_mb', 5),
+            )
+        except Exception:
+            pass
 
     def apply_window_effects(self):
         """Apply the window glow-border and corner-radius settings live.

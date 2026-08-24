@@ -37,7 +37,9 @@ class Toast(QWidget):
         self._label.setMaximumWidth(420)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(18, 12, 18, 12)
+        # Left margin reserves space for the level dot painted in paintEvent
+        # (dot spans x 18..26; 12px gap -> text starts at 40).
+        layout.setContentsMargins(40, 12, 18, 12)
         layout.setSpacing(12)
         layout.addWidget(self._label)
 

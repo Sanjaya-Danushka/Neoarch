@@ -101,6 +101,7 @@ def _page_subtitle(text):
 
 def _card():
     card = QFrame()
+    card.setObjectName("settingsCard")
     card.setStyleSheet(QSS.CARD)
     return card
 

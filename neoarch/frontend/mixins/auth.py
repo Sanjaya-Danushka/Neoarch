@@ -201,10 +201,6 @@ class _AuthMixin:
             return
         return update_core_tools(self)
 
-    def get_sudo_askpass(self):
-        from neoarch.backend.auth import get_sudo_askpass
-        return get_sudo_askpass()
-
     def prepare_askpass_env(self):
         from neoarch.backend.auth import prepare_askpass_env
         return prepare_askpass_env()
@@ -213,10 +209,9 @@ class _AuthMixin:
         return _get_askpass_env()
 
     def check_authentication_tools(self):
+        # NeoArch ships its own themed authentication dialog with session
+        # caching; no external GUI auth tools are required anymore.
         pass
-        is_supported, message = sys_utils.check_aur_authentication_support()
-        if not is_supported:
-            QTimer.singleShot(2000, lambda: self.show_message.emit("AUR Authentication Warning", message))
 
     def create_snapshot(self):
         return create_snapshot(self)

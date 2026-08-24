@@ -96,6 +96,7 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         self._active_bundle_key = ""
         # Settings state
         self.settings = self.load_settings()
+        self.apply_logging_config()
         # Plugins runtime
         self.plugins = []
         self.plugin_timer = QTimer()

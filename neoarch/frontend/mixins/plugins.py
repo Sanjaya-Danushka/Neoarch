@@ -118,8 +118,6 @@ def on_view_changed(app, view_id):
             ),
             'notify_install.py': (
                 """
-from PyQt6.QtWidgets import QMessageBox
-
 def on_startup(app):
     try:
         app.installation_progress.connect(lambda status, can_cancel: _on_status(app, status))
@@ -127,23 +125,29 @@ def on_startup(app):
         pass
 
 def _on_status(app, status):
-    try:
-        op = getattr(app, '_last_operation', 'install')
-        labels = {
-            'install': ('Install', 'Installation'),
-            'update': ('Update', 'Update'),
-            'uninstall': ('Uninstall', 'Uninstall'),
-        }
-        title, verb = labels.get(op, ('Operation', 'Operation'))
-        if status == "success":
-            QMessageBox.information(app, title, f"{verb} complete.")
-        elif status == "failed":
-            QMessageBox.warning(app, title, f"{verb} failed. See console for details.")
-        elif status == "cancelled":
-            QMessageBox.information(app, title, f"{verb} cancelled.")
-    except Exception:
+    # Console-only reporting: completion toasts / desktop notifications are
+    # handled by the core notification system (Settings > Notifications).
+    # This plugin must never open modal popups mid-operation.
+    op = getattr(app, '_last_operation', 'install')
+    labels = {
+        'install': 'Installation',
+        'update': 'Update',
+        'uninstall': 'Uninstallation',
+    }
+    verb = labels.get(op, 'Operation')
+    if status == "success":
         try:
-            app._show_message("Install", status)
+            app.log(f"{verb} complete.")
+        except Exception:
+            pass
+    elif status == "failed":
+        try:
+            app.log(f"{verb} failed. See console output for details.")
+        except Exception:
+            pass
+    elif status == "cancelled":
+        try:
+            app.log(f"{verb} cancelled.")
         except Exception:
             pass
                 """.strip()
@@ -230,6 +234,9 @@ import subprocess
 import os
 import json
 
+from neoarch.backend.auth import get_auth_command, get_askpass_env
+from neoarch.backend import sys_utils
+
 _last_update = 0
 _last_check = 0
 _state_file = os.path.join(os.path.expanduser('~'), '.config', 'neoarch', 'last_update.json')
@@ -290,7 +297,7 @@ def on_tick(app):
                             lines = result.stdout.strip().split('\\n')
                             snapshot_count = sum(1 for line in lines if line.strip() and not line.startswith('Num') and not line.startswith('---'))
                             if snapshot_count > 2:
-                                delete_result = subprocess.run(["pkexec", "timeshift", "--delete-all", "--skip", "2"], capture_output=True, text=True, timeout=300)
+                                delete_result = subprocess.run(get_auth_command() + ["timeshift", "--delete-all", "--skip", "2"], capture_output=True, text=True, timeout=300, env=get_askpass_env())
                                 if delete_result.returncode == 0:
                                     app.log("Auto-update: Cleaned up old snapshots (kept latest 2)")
                                 else:
@@ -299,7 +306,7 @@ def on_tick(app):
                         app.log(f"Auto-update: Error checking snapshots: {e}")
                     timestamp = subprocess.run(["date", "+%Y-%m-%d_%H-%M-%S"], capture_output=True, text=True).stdout.strip()
                     comment = f"NeoArch pre-update snapshot {timestamp}"
-                    result = subprocess.run(["pkexec", "timeshift", "--create", "--comments", comment], capture_output=True, text=True, timeout=300)
+                    result = subprocess.run(get_auth_command() + ["timeshift", "--create", "--comments", comment], capture_output=True, text=True, timeout=300, env=get_askpass_env())
                     if result.returncode == 0:
                         app.log(f"Auto-update: Pre-update snapshot created: {comment}")
                         app.show_message.emit("Snapshot", f"Pre-update snapshot created: {comment}")

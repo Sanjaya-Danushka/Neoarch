@@ -215,6 +215,15 @@ def install_bundle(app):
     if not app.bundle_items:
         app.display_message("Install Bundle", "Bundle is empty")
         return
+    # Authenticate up-front with the unified session dialog so the actual
+    # install runs without per-command password prompts.
+    try:
+        if hasattr(app, 'ensure_session_auth') and not app.ensure_session_auth():
+            app.display_message("Install Bundle",
+                                "Authentication is required to install packages.")
+            return
+    except Exception:
+        pass
     by_src = {}
     for it in list(app.bundle_items):
         src = it.get('source') or 'pacman'

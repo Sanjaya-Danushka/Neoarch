@@ -63,6 +63,30 @@ class AutoUpdateSettingsWidget(QWidget):
         interval_row.addStretch()
 
         update_layout.addLayout(interval_row)
+
+        refresh_row = QHBoxLayout()
+        refresh_row.setSpacing(12)
+        refresh_label = QLabel("Re-check for updates every:")
+        refresh_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
+        refresh_row.addWidget(refresh_label)
+
+        self.refresh_spin = QSpinBox()
+        self.refresh_spin.setStyleSheet(QSS.SPINBOX)
+        self.refresh_spin.setRange(0, 360)
+        self.refresh_spin.setSuffix(" min")
+        self.refresh_spin.setSpecialValueText("Off")
+        try:
+            self.refresh_spin.setValue(int(self.app.settings.get('auto_refresh_updates_minutes', 0) or 0))
+        except (TypeError, ValueError):
+            self.refresh_spin.setValue(0)
+        self.refresh_spin.valueChanged.connect(lambda v: self.app.update_setting('auto_refresh_updates_minutes', v))
+        refresh_row.addWidget(self.refresh_spin)
+        refresh_hint = QLabel("Background re-check while the app is open")
+        refresh_hint.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: {Fonts.SM}; border: none;")
+        refresh_row.addWidget(refresh_hint)
+        refresh_row.addStretch()
+
+        update_layout.addLayout(refresh_row)
         self.layout.addWidget(update_card)
 
         # ── Scheduled Checks Card ──

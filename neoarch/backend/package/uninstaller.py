@@ -10,6 +10,7 @@ from threading import Thread
 from PyQt6.QtCore import QTimer
 
 from neoarch.backend.workers import CommandWorker
+from neoarch.backend import sys_utils
 
 __all__ = ["uninstall_packages"]
 
@@ -61,6 +62,8 @@ def uninstall_packages(app, packages_by_source: dict):
                     emit_progress(f"Completed {source} uninstall", cnt)
                 elif source == 'npm':
                     def _build_user_env():
+                        if not sys_utils.npm_user_mode_enabled():
+                            return None
                         e = os.environ.copy()
                         try:
                             npm_prefix = os.path.join(os.path.expanduser('~'), '.npm-global')

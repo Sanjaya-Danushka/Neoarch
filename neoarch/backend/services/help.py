@@ -102,7 +102,7 @@ def show_help(parent, current_view: str):
         "- Package tables use pagination (Load More) for large lists\n"
         "- Background threads keep the UI responsive during operations\n\n"
         "TROUBLESHOOTING:\n"
-        "- If AUR installation fails, ensure kdialog/zenity/yad is installed\n"
+        "- If AUR installation fails, re-run it and complete the NeoArch authentication dialog\n"
         "- For permission issues with npm, try installing with sudo mode\n"
         "- If Flatpak isn't working, ensure Flathub remote is configured\n"
         "- Check the console output at the bottom of the window for details\n\n"

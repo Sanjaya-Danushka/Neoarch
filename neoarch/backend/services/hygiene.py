@@ -545,7 +545,8 @@ def _fetch_news_xml() -> str:
     """Download the Arch news feed XML, with a short timeout."""
     import urllib.request
     req = urllib.request.Request(NEWS_URL, headers={"User-Agent": f"neoarch/{APP_VERSION}"})
-    with urllib.request.urlopen(req, timeout=15) as resp:
+    from neoarch.backend.services.network import urlopen as _net_urlopen
+    with _net_urlopen(req) as resp:
         return resp.read().decode("utf-8")
 
 

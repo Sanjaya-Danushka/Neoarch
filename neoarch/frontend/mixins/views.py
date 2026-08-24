@@ -1743,7 +1743,14 @@ class _ViewsMixin:
 
         def animate_next_message():
             if self.welcome_index < len(welcome_messages):
-                self.log(welcome_messages[self.welcome_index])
+                # UI flavor for the in-app console only — never routed
+                # through the logging service (no file/stdout echo).
+                try:
+                    self.ui_call.emit(
+                        lambda m=welcome_messages[self.welcome_index]:
+                        self._append_console_line(m))
+                except Exception:
+                    pass
                 self.welcome_index += 1
                 QTimer.singleShot(800, animate_next_message)  # 800ms delay between messages
             else:
@@ -2495,7 +2502,7 @@ class _ViewsMixin:
             ntitle, ntext = labels.get(op, ("Operation", "Operation complete."))
             self._notify(ntitle, ntext, level="success", event="install")
             # Keep spinner visible briefly to show success, then hide
-            QTimer.singleShot(1500, lambda: self.finish_installation_progress())
+            QTimer.singleShot(1000, lambda: self.finish_installation_progress())
         elif status == "failed":
             try:
                 self._installing = False
@@ -2528,7 +2535,7 @@ class _ViewsMixin:
             self.cancel_install_btn.setVisible(False)
             self._notify("Installation cancelled", "The operation was cancelled.", level="warning", event="errors")
             # Keep spinner visible briefly to show cancellation, then hide
-            QTimer.singleShot(1500, lambda: self.finish_installation_progress())
+            QTimer.singleShot(1000, lambda: self.finish_installation_progress())
 
     def on_progress_update(self, message, percent):
         try:
@@ -3526,6 +3533,19 @@ class _ViewsMixin:
             pass
 
     def _toast_notify(self, text, level="info"):
+        # Enforce the Notifications ▸ cooldown setting: identical toasts
+        # within the window are dropped so bursts don't stack up.
+        import time as _time
+        try:
+            cooldown = int(self.settings.get('notify_cooldown', 10))
+        except (TypeError, ValueError):
+            cooldown = 10
+        if cooldown > 0:
+            now = _time.monotonic()
+            last = getattr(self, '_last_toast', None)
+            if last and last[0] == text and now - last[1] < cooldown:
+                return
+            self._last_toast = (text, now)
         if not hasattr(self, '_toast') or self._toast is None:
             self._toast = Toast(self)
         self._toast.show_toast(text, level)
@@ -3597,7 +3617,12 @@ class _ViewsMixin:
         except Exception:
             pass
 
-    def log(self, message):
+    def log(self, message, level: str = ""):
+        try:
+            from neoarch.backend.services import logging_service
+            logging_service.log_message(str(message), level)
+        except Exception:
+            pass
         try:
             self.ui_call.emit(lambda: self._append_console_line(message))
         except Exception:

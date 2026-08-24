@@ -8,6 +8,12 @@ import subprocess
 from threading import Thread
 from PyQt6.QtWidgets import QMessageBox, QLabel, QComboBox, QVBoxLayout, QDialog, QDialogButtonBox
 from PyQt6.QtCore import QTimer
+from neoarch.backend.auth import get_auth_command, get_askpass_env
+
+def _is_rooted():
+    import os
+    return hasattr(os, "geteuid") and os.geteuid() == 0
+
 
 __all__ = ["create_snapshot", "revert_to_snapshot", "restore_snapshot", "delete_snapshots"]
 
@@ -32,7 +38,7 @@ def create_snapshot(app):
         try:
             timestamp = subprocess.run(["date", "+%Y-%m-%d_%H-%M-%S"], capture_output=True, text=True).stdout.strip()
             comment = f"NeoArch manual snapshot {timestamp}"
-            result = subprocess.run(["pkexec", "timeshift", "--create", "--comments", comment],
+            result = subprocess.run(get_auth_command() + ["timeshift", "--create", "--comments", comment],
                                     capture_output=True, text=True, timeout=300)
             if result.returncode == 0:
                 app.show_message.emit("Snapshot", f"Snapshot created successfully: {comment}")
@@ -112,11 +118,11 @@ def restore_snapshot(app, snapshot_num):
 
     def do_restore():
         try:
-            result = subprocess.run(["pkexec", "timeshift", "--restore", "--snapshot", snapshot_num],
+            result = subprocess.run(get_auth_command() + ["timeshift", "--restore", "--snapshot", snapshot_num],
                                     capture_output=True, text=True, timeout=600)
             if result.returncode == 0:
                 app.show_message.emit("Snapshot", "Snapshot restoration initiated. System will reboot.")
-                QTimer.singleShot(3000, lambda: subprocess.run(["pkexec", "reboot"]))
+                QTimer.singleShot(3000, lambda: subprocess.run(["reboot"] if _is_rooted() else get_auth_command() + ["reboot"], env=get_askpass_env()))
             else:
                 app.show_message.emit("Snapshot", f"Failed to restore snapshot: {result.stderr}")
         except Exception as e:
@@ -149,7 +155,7 @@ def delete_snapshots(app):
 
     def do_delete():
         try:
-            result = subprocess.run(["pkexec", "timeshift", "--delete-all", "--skip", "2"],
+            result = subprocess.run(get_auth_command() + ["timeshift", "--delete-all", "--skip", "2"],
                                     capture_output=True, text=True, timeout=300)
             if result.returncode == 0:
                 app.show_message.emit("Snapshot", "Old snapshots deleted successfully")

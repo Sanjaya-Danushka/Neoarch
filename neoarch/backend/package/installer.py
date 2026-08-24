@@ -173,7 +173,7 @@ def install_packages(app, packages_by_source: dict):
                     else:
                         cmd = ["flatpak", "--user", "install", "-y", "--noninteractive", "flathub"] + packages
                 elif source == 'npm':
-                    if not force_sudo:
+                    if not force_sudo and sys_utils.npm_user_mode_enabled():
                         try:
                             npm_prefix = os.path.join(os.path.expanduser('~'), '.npm-global')
                             os.makedirs(npm_prefix, exist_ok=True)
@@ -396,8 +396,7 @@ def install_packages(app, packages_by_source: dict):
                             if source == 'AUR' and ("cancelled" in stderr_collected.lower() or "authentication failed" in stderr_collected.lower() or process.returncode == 1):
                                 if "sudo: no askpass program specified" in stderr_collected.lower() or "authentication agent" in stderr_collected.lower():
                                     app.log_signal.emit("Error: Authentication failed - no GUI password dialog available")
-                                    app.log_signal.emit("This usually means you need to install a GUI authentication tool.")
-                                    app.log_signal.emit("Please install: sudo pacman -S kdialog (or zenity/yad)")
+                                    app.log_signal.emit("Start the operation again and authenticate in the NeoArch dialog.")
                                 else:
                                     app.log_signal.emit("AUR installation cancelled by user")
                                 _emit_terminal("cancelled")

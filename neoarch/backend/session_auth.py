@@ -526,10 +526,9 @@ def setup_session_auth(parent_widget=None) -> bool:
         _validate()
 
     def on_cancel():
-        # Cancel re-prompts instead of quitting; Esc is the real skip.
-        pw_input.clear()
-        _set_status("Authentication is required. Press Esc to skip for now.")
-        pw_input.setFocus()
+        # Cancel aborts the dialog; the caller decides how to proceed
+        # (operations log "authentication declined" and stop gracefully).
+        dlg.reject()
 
     confirm_btn.clicked.connect(on_confirm)
     pw_input.returnPressed.connect(on_confirm)

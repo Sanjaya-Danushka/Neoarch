@@ -30,7 +30,7 @@ from neoarch.backend.config_utils import (
     get_ignore_file_path, get_local_updates_file_path,
     load_ignored_updates, load_local_update_entries, save_ignored_updates,
 )
-from neoarch.backend.auth import get_sudo_askpass, prepare_askpass_env
+from neoarch.backend.auth import prepare_askpass_env
 from neoarch.backend.workers import CommandWorker
 
 # Package operations
@@ -124,7 +124,6 @@ update_service.update_core_tools = update_core_tools
 update_service.update_packages = update_packages
 
 askpass_service = types.SimpleNamespace()
-askpass_service.get_sudo_askpass = get_sudo_askpass
 askpass_service.prepare_askpass_env = prepare_askpass_env
 
 if __name__ == "__main__":

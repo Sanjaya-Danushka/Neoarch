@@ -239,22 +239,24 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                         cancelled = True
                         break
                 elif source == 'npm':
-                    env_user = os.environ.copy()
-                    try:
-                        npm_prefix = os.path.join(os.path.expanduser('~'), '.npm-global')
-                        os.makedirs(npm_prefix, exist_ok=True)
-                        env_user['npm_config_prefix'] = npm_prefix
-                        env_user['NPM_CONFIG_PREFIX'] = npm_prefix
-                        env_user['PATH'] = os.path.join(npm_prefix, 'bin') + os.pathsep + env_user.get('PATH', '')
-                    except Exception:
-                        pass
+                    env_user = None
+                    if sys_utils.npm_user_mode_enabled():
+                        env_user = os.environ.copy()
+                        try:
+                            npm_prefix = os.path.join(os.path.expanduser('~'), '.npm-global')
+                            os.makedirs(npm_prefix, exist_ok=True)
+                            env_user['npm_config_prefix'] = npm_prefix
+                            env_user['NPM_CONFIG_PREFIX'] = npm_prefix
+                            env_user['PATH'] = os.path.join(npm_prefix, 'bin') + os.pathsep + env_user.get('PATH', '')
+                        except Exception:
+                            pass
                     env_sys = os.environ.copy()
 
                     user_pkgs, sys_pkgs, unknown_pkgs = [], [], []
                     for name in pkgs:
                         placed = False
                         try:
-                            r_user = subprocess.run(["npm", "ls", "-g", name, "--depth=0", "--json"], capture_output=True, text=True, env=env_user, timeout=30)
+                            r_user = subprocess.run(["npm", "ls", "-g", name, "--depth=0", "--json"], capture_output=True, text=True, env=env_user, timeout=30) if env_user else None
                             if r_user.returncode in (0, 1) and r_user.stdout:
                                 try:
                                     data = json.loads(r_user.stdout)
@@ -478,14 +480,15 @@ def _update_npm(app):
     """Update npm global packages."""
     if app.cmd_exists("npm"):
         env = os.environ.copy()
-        try:
-            npm_prefix = os.path.join(os.path.expanduser('~'), '.npm-global')
-            os.makedirs(npm_prefix, exist_ok=True)
-            env['npm_config_prefix'] = npm_prefix
-            env['NPM_CONFIG_PREFIX'] = npm_prefix
-            env['PATH'] = os.path.join(npm_prefix, 'bin') + os.pathsep + env.get('PATH', '')
-        except Exception:
-            pass
+        if sys_utils.npm_user_mode_enabled():
+            try:
+                npm_prefix = os.path.join(os.path.expanduser('~'), '.npm-global')
+                os.makedirs(npm_prefix, exist_ok=True)
+                env['npm_config_prefix'] = npm_prefix
+                env['NPM_CONFIG_PREFIX'] = npm_prefix
+                env['PATH'] = os.path.join(npm_prefix, 'bin') + os.pathsep + env.get('PATH', '')
+            except Exception:
+                pass
         w3 = CommandWorker(["npm", "update", "-g"], sudo=False, env=env)
         w3.output.connect(app.log)
         w3.line_update.connect(app.log_line_update)

@@ -43,7 +43,8 @@ def _download(url: str, dest: str, progress_cb: Optional[Callable]) -> bool:
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
             return False
         req = urllib.request.Request(url, headers={"User-Agent": f"neoarch/{APP_VERSION}"})
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        from neoarch.backend.services.network import urlopen as _net_urlopen
+        with _net_urlopen(req) as resp:
             total = int(resp.headers.get("Content-Length") or 0)
             received = 0
             with open(dest, "wb") as f:
