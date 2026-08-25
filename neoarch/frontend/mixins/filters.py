@@ -192,9 +192,6 @@ class _BundleListRow(QWidget):
 
         p.end()
 
-    def _update_count(self):
-        self.update()
-
     def set_selected(self, selected):
         self._selected = selected
         self.update()

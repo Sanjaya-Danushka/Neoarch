@@ -267,15 +267,6 @@ class ThemeManager(QObject):
     def current_id(self):
         return self._current_id
 
-    @property
-    def current_theme(self):
-        return THEMES[self._current_id]
-
-    def get_all_themes(self):
-        """Return list of (id, name, description, is_dark) for all themes."""
-        return [(k, v["name"], v["description"], v["is_dark"])
-                for k, v in THEMES.items()]
-
     def apply_theme(self, theme_id):
         """Apply a theme by id. Updates Colors, Fonts, Radii, SourceColors,
         and regenerates QSS blocks."""

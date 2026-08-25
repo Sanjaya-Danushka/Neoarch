@@ -1723,9 +1723,6 @@ class SourceCard(QWidget):
         self.search_mode = radio_id
         self.search_mode_changed.emit(radio_id)
 
-    def _on_segment_clicked(self, seg_id):
-        self._on_radio_clicked(seg_id)
-
     def add_source(self, source_name, icon_path, count=None, size=None):
         source_item = SourceItem(source_name, icon_path, self, count=count, size=size)
         source_item.toggle.toggled.connect(lambda checked=False, s=source_name: self.on_source_changed())
@@ -1733,9 +1730,6 @@ class SourceCard(QWidget):
         self.sources_layout.addWidget(source_item)
         self.update_toggle_all_button()
         self.on_source_changed()
-
-    def get_sources(self):
-        return {name: item for name, item in self.sources.items()}
 
     def on_source_changed(self):
         states = {name: item.is_checked() for name, item in self.sources.items()}

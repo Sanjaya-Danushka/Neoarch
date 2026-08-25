@@ -49,10 +49,6 @@ class DockerManager(QObject):
         except Exception:
             self._container_count = 0
 
-    def get_container_count(self):
-        """Return the number of currently running containers."""
-        return self._container_count
-
     def load_containers(self, include_all=False):
         """Return the list of Docker containers (all if include_all)."""
         containers = []
@@ -795,38 +791,6 @@ class DockerManager(QObject):
             self.log_signal.emit(f"Error stopping containers: {str(e)}")
         self.load_containers(include_all=True)
 
-    def clean_docker_containers(self):
-        """Clean up Docker resources (stopped containers, unused networks, dangling images)."""
-        reply = QMessageBox.question(None, "Clean Docker Containers",
-                                     "This will clean up:\n"
-                                     "- Stopped containers\n"
-                                     "- Unused networks\n"
-                                     "- Dangling images\n\n"
-                                     "This cannot be undone.\n\n"
-                                     "Proceed?",
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                     QMessageBox.StandardButton.No)
-        if reply != QMessageBox.StandardButton.Yes:
-            return
-        self.log_signal.emit("Cleaning Docker containers...")
-
-        def clean_thread():
-            steps = [
-                ("Removing stopped containers...", [DOCKER_PATH, "container", "prune", "-f"]),
-                ("Removing unused networks...", [DOCKER_PATH, "network", "prune", "-f"]),
-                ("Removing dangling images...", [DOCKER_PATH, "image", "prune", "-f"]),
-            ]
-            for msg, cmd in steps:
-                try:
-                    self.log_signal.emit(msg)
-                    subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=60)
-                except Exception as e:
-                    self.log_signal.emit(f"Error: {e}")
-            self.log_signal.emit("Docker cleanup complete")
-            QTimer.singleShot(0, lambda: self.show_message.emit("Docker Clean Complete", "Docker containers cleaned successfully"))
-            self.load_containers(include_all=True)
-        Thread(target=clean_thread, daemon=True).start()
-
     # ── data-fetching helpers for the new tab UI ──────────────────────
 
     def list_images(self):
@@ -1032,44 +996,4 @@ class DockerManager(QObject):
             QTimer.singleShot(0, lambda: self.containers_changed.emit())
         Thread(target=task, daemon=True).start()
 
-    def inspect_container(self, cid):
-        """Return container inspect data as dict."""
-        try:
-            result = subprocess.run(
-                [DOCKER_PATH, "inspect", cid],
-                check=False, capture_output=True, text=True, timeout=15,
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                import json
-                data = json.loads(result.stdout)
-                if data:
-                    return data[0]
-        except Exception:
-            pass
-        return {}
 
-    def get_cleanup_stats(self):
-        """Return cleanup stats for unused Docker resources."""
-        stats = {'images': '0', 'containers': '0', 'volumes': '0', 'build_cache': '0'}
-        try:
-            result = subprocess.run(
-                [DOCKER_PATH, "system", "df", "--format", "{{.Type}}\t{{.Reclaimable}}"],
-                check=False, capture_output=True, text=True, timeout=15,
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                for line in result.stdout.strip().split('\n'):
-                    parts = line.split('\t')
-                    if len(parts) >= 2:
-                        t = parts[0].lower()
-                        r = parts[1]
-                        if 'images' in t:
-                            stats['images'] = r
-                        elif 'containers' in t:
-                            stats['containers'] = r
-                        elif 'volumes' in t:
-                            stats['volumes'] = r
-                        elif 'build' in t:
-                            stats['build_cache'] = r
-        except Exception:
-            pass
-        return stats

@@ -1022,15 +1022,6 @@ class UpdatesTable(QTableView):
     def menu_hover_row(self):
         return self._menu_hover_row
 
-    def arrow_progress(self, row):
-        return self._arrow.progress_for(row)
-
-    def _row_at(self, pos):
-        return self.indexAt(pos).row()
-
-    def _col_at(self, pos):
-        return self.indexAt(pos).column()
-
     def mouseMoveEvent(self, event):
         pos = event.position().toPoint() if hasattr(event, "position") else event.pos()
         row = self.indexAt(pos).row()

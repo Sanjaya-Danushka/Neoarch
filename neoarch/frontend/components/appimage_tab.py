@@ -544,10 +544,6 @@ class AppImageTab(QWidget):
 
     # ── Filtering / sorting ─────────────────────────────────────────
 
-    def _on_search(self, text):
-        self._search_text = text
-        self._render_apps()
-
     def _get_filtered_sorted(self):
         entries = list(self._entries)
         if self._search_text:

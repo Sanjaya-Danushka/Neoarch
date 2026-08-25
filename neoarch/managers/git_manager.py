@@ -457,41 +457,6 @@ class GitManager(QObject):
 
         Thread(target=_task, daemon=True).start()
 
-    def clean_git_repos(self):
-        """Clean build artifacts from Git repositories."""
-        git_repos_dir = os.path.expanduser("~/git-repos")
-        if not os.path.exists(git_repos_dir):
-            return
-        repos = [d for d in os.listdir(git_repos_dir)
-                 if os.path.isdir(os.path.join(git_repos_dir, d)) and
-                 os.path.exists(os.path.join(git_repos_dir, d, ".git"))]
-        if not repos:
-            return
-        reply = QMessageBox.question(
-            None, "Clean Git Repositories",
-            f"This will run 'git clean -fdx' on {len(repos)} repositories.\n"
-            "Are you sure?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No)
-        if reply != QMessageBox.StandardButton.Yes:
-            return
-
-        def _task():
-            cleaned = failed = 0
-            for repo in repos:
-                r = subprocess.run(
-                    ["git", "-C", os.path.join(git_repos_dir, repo), "clean", "-fdx"],
-                    capture_output=True, text=True, timeout=30)
-                if r.returncode == 0:
-                    cleaned += 1
-                else:
-                    failed += 1
-            QTimer.singleShot(0, lambda: self.show_message.emit(
-                "Git Clean Complete", f"Cleaned {cleaned} repos, {failed} failed"))
-            self._emit_repos_changed()
-
-        Thread(target=_task, daemon=True).start()
-
     def build_repo(self, repo_path):
         """Build a repository using its detected build system."""
         name = os.path.basename(repo_path.rstrip("/"))

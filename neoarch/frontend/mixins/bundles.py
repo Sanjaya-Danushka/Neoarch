@@ -4,10 +4,6 @@ from neoarch.backend.services import bundle as bundle_service
 
 
 class _BundlesMixin:
-    def go_to_bundles(self):
-        """Switch to bundles view"""
-        self.switch_view("bundles")
-
     def add_selected_to_bundle(self):
         return bundle_service.add_selected_to_bundle(self)
 

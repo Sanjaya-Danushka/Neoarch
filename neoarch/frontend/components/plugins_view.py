@@ -348,14 +348,6 @@ class PluginsView(QWidget):
         self._calc_grid_metrics()
         self._render_current_page()
 
-    def _render_grid_after_show(self):
-        try:
-            self._scroll_area.verticalScrollBar().setValue(0)
-        except Exception:
-            pass
-        self._calc_grid_metrics()
-        self._render_current_page()
-
     def _refresh_content(self):
         self._render_current_page()
 
@@ -533,44 +525,6 @@ class PluginsView(QWidget):
             pixmap = QPixmap(size, size)
             pixmap.fill(Qt.GlobalColor.transparent)
             return pixmap
-
-    def _source_badge(self, source):
-        """Create a source badge widget with icon and label"""
-        color = SourceColors.get(source, Colors.TEXT_2)
-
-        badge = QWidget()
-        badge.setObjectName("sourceBadge")
-        badge.setStyleSheet(f"""
-            QWidget#sourceBadge {{
-                background-color: rgba(255, 255, 255, 0.04);
-                border: 1px solid rgba(255, 255, 255, 0.06);
-                border-radius: 6px;
-            }}
-        """)
-        layout = QHBoxLayout(badge)
-        layout.setContentsMargins(6, 2, 6, 2)
-        layout.setSpacing(4)
-
-        icon_pixmap = self._render_source_icon(source, 12)
-        if not icon_pixmap.isNull():
-            icon_label = QLabel()
-            icon_label.setPixmap(icon_pixmap)
-            icon_label.setFixedSize(12, 12)
-            icon_label.setStyleSheet("background: transparent; border: none;")
-            layout.addWidget(icon_label)
-
-        text = QLabel(source)
-        text.setStyleSheet(f"""
-            QLabel {{
-                color: {color};
-                font-size: 9px;
-                font-weight: 600;
-                border: none;
-                background: transparent;
-            }}
-        """)
-        layout.addWidget(text)
-        return badge
 
     @staticmethod
     def _get_source_icon(source):
@@ -1020,9 +974,6 @@ class PluginsView(QWidget):
         self._calc_grid_metrics()
         if self._current_cols != old_cols:
             self._render_current_page()
-
-    def _update_grid_layout(self):
-        self._refresh_content()
 
     def apply_filters(self, filter_states):
         """Apply Available/Installed filters to the plugins view"""

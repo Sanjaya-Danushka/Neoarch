@@ -228,13 +228,6 @@ class _IconsMixin:
             """
         )
 
-    def _apply_neumorphic_shadow(self, widget):
-        s = QGraphicsDropShadowEffect()
-        s.setBlurRadius(18)
-        s.setColor(QColor(0, 0, 0, 160))
-        s.setOffset(3, 4)
-        widget.setGraphicsEffect(s)
-
     def ensure_flathub_user_remote(self):
         try:
             result = subprocess.run([

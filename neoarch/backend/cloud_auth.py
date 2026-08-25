@@ -316,25 +316,6 @@ class CloudAuthManager(QObject):
             threading.Thread(target=self._httpd.shutdown, daemon=True).start()
             self._httpd = None
 
-    def get_favorites(self) -> list:
-        if not self._client or not self._user:
-            return []
-        try:
-            resp = self._client.table("user_favorites") \
-                .select("bundle_data") \
-                .eq("user_id", self._user.id) \
-                .order("created_at", desc=True) \
-                .limit(1) \
-                .execute()
-            if resp.data and len(resp.data) > 0:
-                raw = resp.data[0].get("bundle_data", [])
-                if isinstance(raw, str):
-                    return json.loads(raw)
-                return raw
-        except Exception:
-            pass
-        return []
-
     def save_favorites(self, bundle_name: str, bundle_data: list) -> bool:
         if not self._client or not self._user:
             return False
@@ -352,18 +333,6 @@ class CloudAuthManager(QObject):
             return True
         except Exception as e:
             print(f"Save favorites error: {e}")
-            return False
-
-    def delete_all_favorites(self) -> bool:
-        if not self._client or not self._user:
-            return False
-        try:
-            self._client.table("user_favorites") \
-                .delete() \
-                .eq("user_id", self._user.id) \
-                .execute()
-            return True
-        except Exception:
             return False
 
     # ── Multi-bundle cloud operations ────────────────────────────────

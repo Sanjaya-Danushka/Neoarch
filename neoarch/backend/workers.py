@@ -267,6 +267,3 @@ class CommandWorker(QObject):
             if stripped:
                 self.output.emit(stripped)
 
-    def _command_exists(self, cmd):
-        """Check if a command exists in PATH."""
-        return subprocess.run(['which', cmd], capture_output=True).returncode == 0
