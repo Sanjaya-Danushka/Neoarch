@@ -409,8 +409,8 @@ class _ViewsMixin:
                     "flatpak", "--user", "remote-add", "--if-not-exists",
                     "flathub", "https://flathub.org/repo/flathub.flatpakrepo"
                 ], capture_output=True, text=True, timeout=30)
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Flathub remote setup failed: {e}")
         try:
             self._flathub_checked = True
         except Exception:
@@ -2356,8 +2356,9 @@ class _ViewsMixin:
             try:
                 self.updates_table.set_loading(False)
                 self._sync_updates_table()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error rendering updates table: {e}")
+                self._notify("Updates", "Failed to render update list.", level="error", event="errors")
         elif self.current_view == "installed":
             try:
                 self.updates_table.set_loading(False)
@@ -2365,8 +2366,9 @@ class _ViewsMixin:
                 pass
             try:
                 self._sync_installed_table()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error rendering installed table: {e}")
+                self._notify("Installed", "Failed to render installed packages.", level="error", event="errors")
         if not is_final:
             return
 
@@ -2376,8 +2378,9 @@ class _ViewsMixin:
         if self.current_view != "installed":
             try:
                 self.display_page()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error displaying packages: {e}")
+                self._notify("Display", "Failed to display packages.", level="error", event="errors")
         if self.current_view == "updates" and hasattr(self, 'source_card') and self.source_card:
             try:
                 states = self.source_card.get_selected_sources()
@@ -2430,13 +2433,13 @@ class _ViewsMixin:
             if self.current_view == "updates" and hasattr(self, 'updates_table'):
                 self.updates_table.set_loading(False)
                 self._sync_updates_table()
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Error rendering updates on load error: {e}")
         try:
             if self.current_view == "installed":
                 self.updates_table.set_loading(False)
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Error clearing installed loading state: {e}")
         try:
             if self.current_view in ("updates", "installed") and hasattr(self, 'console_toggle_btn'):
                 self.console_toggle_btn.setVisible(True)
@@ -2447,10 +2450,7 @@ class _ViewsMixin:
 
     def on_installation_progress(self, status, can_cancel):
         if status == "start":
-            try:
-                self._installing = True
-            except Exception:
-                pass
+            self._installing = True
             self.load_more_btn.setVisible(False)
             self.loading_widget.set_message("Processing...")
             self.loading_widget.set_progress(-1)
@@ -2486,10 +2486,7 @@ class _ViewsMixin:
                 pass
             self.cancel_install_btn.setVisible(can_cancel)
         elif status == "success":
-            try:
-                self._installing = False
-            except Exception:
-                pass
+            self._installing = False
             self._install_succeeded = True
             self.loading_widget.set_message("Success")
             self.cancel_install_btn.setVisible(False)
@@ -2504,10 +2501,7 @@ class _ViewsMixin:
             # Keep spinner visible briefly to show success, then hide
             QTimer.singleShot(1000, lambda: self.finish_installation_progress())
         elif status == "failed":
-            try:
-                self._installing = False
-            except Exception:
-                pass
+            self._installing = False
             installed = getattr(self, '_installed_packages', None) or {}
             is_update = getattr(self, 'updates_all', None) is not None
             if installed:
@@ -2527,10 +2521,7 @@ class _ViewsMixin:
             self._last_install_result = None
             QTimer.singleShot(2000, lambda: self.finish_installation_progress())
         elif status == "cancelled":
-            try:
-                self._installing = False
-            except Exception:
-                pass
+            self._installing = False
             self.loading_widget.set_message("Installation cancelled")
             self.cancel_install_btn.setVisible(False)
             self._notify("Installation cancelled", "The operation was cancelled.", level="warning", event="errors")
@@ -2560,10 +2551,7 @@ class _ViewsMixin:
             pass
 
     def finish_installation_progress(self):
-        try:
-            self._installing = False
-        except Exception:
-            pass
+        self._installing = False
         self.loading_widget.setVisible(False)
         self.loading_widget.stop_animation()
         self.loading_widget.hide_progress()
@@ -2574,8 +2562,8 @@ class _ViewsMixin:
             pass
         try:
             self._show_active_view()
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Error restoring view after operation: {e}")
         self.update_load_more_visibility()
         if self.current_view == "discover":
             installed = getattr(self, '_installed_packages', None)
