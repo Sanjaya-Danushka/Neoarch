@@ -1,5 +1,4 @@
 """Tests for neoarch.backend.package.uninstaller – thread-based uninstall."""
-import subprocess
 import threading
 
 from tests.conftest import FakeCompletedProcess
@@ -14,12 +13,13 @@ from neoarch.backend.package.uninstaller import uninstall_packages
 class Emitter:
     def __init__(self):
         self.calls = []
+        self.connected = None
 
     def emit(self, *args):
         self.calls.append(args)
 
     def connect(self, cb):
-        pass
+        self.connected = cb
 
 
 class FakeApp:
@@ -34,7 +34,7 @@ class FakeApp:
         self.logs.append(msg)
 
     def load_installed_packages(self):
-        pass
+        ...
 
 
 _workers_captured = []
@@ -50,13 +50,13 @@ class FakeWorker:
         _workers_captured.append(self)
 
     def run(self):
-        pass
+        ...
 
 
 class FakeQTimer:
     @staticmethod
     def singleShot(ms, cb):
-        pass
+        ...
 
 
 def _install_patches(monkeypatch, done_event):

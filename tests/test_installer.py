@@ -54,7 +54,7 @@ def test_process_single_line():
     worker = WorkerStub()
 
     result = _process_pty_buf(
-        "pkg done\n", lambda l: parse_calls.append(l), worker
+        "pkg done\n", parse_calls.append, worker
     )
 
     assert result == ""
@@ -68,7 +68,7 @@ def test_process_multiple_lines():
     worker = WorkerStub()
 
     result = _process_pty_buf(
-        "a\nb\n", lambda l: parse_calls.append(l), worker
+        "a\nb\n", parse_calls.append, worker
     )
 
     assert result == ""
@@ -81,7 +81,7 @@ def test_process_skips_blank():
     worker = WorkerStub()
 
     result = _process_pty_buf(
-        "\n\n", lambda l: parse_calls.append(l), worker
+        "\n\n", parse_calls.append, worker
     )
 
     assert result == ""
@@ -95,7 +95,7 @@ def test_process_progress_cr():
     worker = WorkerStub()
 
     result = _process_pty_buf(
-        "pre\r50%", lambda l: parse_calls.append(l), worker, final=False
+        "pre\r50%", parse_calls.append, worker, final=False
     )
 
     assert parse_calls == ["50%"]
@@ -109,7 +109,7 @@ def test_process_partial_line_not_final():
     worker = WorkerStub()
 
     result = _process_pty_buf(
-        "half", lambda l: parse_calls.append(l), worker, final=False
+        "half", parse_calls.append, worker, final=False
     )
 
     assert result == "half"
@@ -123,7 +123,7 @@ def test_process_partial_line_final():
     worker = WorkerStub()
 
     result = _process_pty_buf(
-        "half", lambda l: parse_calls.append(l), worker, final=True
+        "half", parse_calls.append, worker, final=True
     )
 
     assert result == ""
@@ -137,8 +137,8 @@ def test_process_crlf_progress_with_ansi():
     worker = WorkerStub()
     buf = "\033[31m50%\033[0m\r\033[32m60%\033[0m"
 
-    result = _process_pty_buf(
-        buf, lambda l: parse_calls.append(l), worker, final=False
+    _process_pty_buf(
+        buf, parse_calls.append, worker, final=False
     )
 
     assert parse_calls == ["60%"]
@@ -150,7 +150,7 @@ def test_process_cr_within_newline():
     worker = WorkerStub()
 
     result = _process_pty_buf(
-        "first\rsecond\n", lambda l: parse_calls.append(l), worker
+        "first\rsecond\n", parse_calls.append, worker
     )
 
     assert result == ""

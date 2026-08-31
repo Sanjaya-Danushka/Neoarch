@@ -35,7 +35,8 @@ def test_download_writes_file(monkeypatch, tmp_path):
         def __exit__(self, *exc):
             return False
 
-        def read(self, size):
+        @staticmethod
+        def read(size):
             calls.append(True)
             return b"hello" if len(calls) == 1 else b""
 
@@ -97,7 +98,7 @@ def test_install_from_url_async(monkeypatch):
     monkeypatch.setattr(iu, "_install", lambda path: True)
     results = []
     ok = iu.install_from_url("https://example.com/a.pkg.tar.zst",
-                             finished_cb=lambda r: results.append(r))
+                             finished_cb=results.append)
     assert ok is True  # launched on a thread
     import time
     for _ in range(50):
