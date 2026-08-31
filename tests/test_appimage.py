@@ -67,14 +67,14 @@ def test_latest_release_github(monkeypatch):
             {"browser_download_url": "https://github.com/x/y/releases/download/v2.0.0/app-2.0.0.tar.gz"},
         ],
     }
-    monkeypatch.setattr(urllib_request(), "urlopen", _urlopen(json.dumps(payload)))
+    monkeypatch.setattr(appimage, "_net_urlopen", _urlopen(json.dumps(payload)))
     info = appimage._latest_release("github", "x", "y")
     assert info["tag"] == "v2.0.0"
     assert "app-2.0.0.AppImage" in info["url"]
 
 
 def test_latest_release_empty(monkeypatch):
-    monkeypatch.setattr(urllib_request(), "urlopen", _urlopen("{}"))
+    monkeypatch.setattr(appimage, "_net_urlopen", _urlopen("{}"))
     assert appimage._latest_release("github", "x", "y") == {"tag": "", "url": ""}
 
 
@@ -251,11 +251,6 @@ def test_sync_from_disk_removes_missing(tmp_path, monkeypatch):
 
 
 # ── helpers ──────────────────────────────────────────────────────────────
-
-def urllib_request():
-    import urllib.request
-    return urllib.request
-
 
 def _urlopen(body):
     class _Resp:

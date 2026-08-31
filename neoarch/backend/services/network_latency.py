@@ -37,9 +37,11 @@ class _Recorder:
 
     def average(self):
         with self._lock:
-            latencies = [s for _, s in self._samples if s is not None]
-            if not latencies:
+            if not self._samples:
                 return None
+            if self._samples[-1][1] is None:
+                return None
+            latencies = [s for _, s in self._samples if s is not None]
             return sum(latencies) / len(latencies)
 
     def has_samples(self):

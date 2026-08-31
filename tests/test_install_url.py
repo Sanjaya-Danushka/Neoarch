@@ -3,7 +3,6 @@
 import os
 import subprocess
 import sys
-import urllib.request
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -40,8 +39,8 @@ def test_download_writes_file(monkeypatch, tmp_path):
             calls.append(True)
             return b"hello" if len(calls) == 1 else b""
 
-    monkeypatch.setattr(urllib.request, "urlopen",
-                        lambda req, timeout=60: FakeResp())
+    monkeypatch.setattr("neoarch.backend.services.network.urlopen",
+                        lambda req, timeout=None: FakeResp())
     dest = str(tmp_path / "out.pkg")
     assert iu._download("https://example.com/a.pkg.tar.zst", dest, None) is True
     with open(dest, "rb") as f:
@@ -49,9 +48,9 @@ def test_download_writes_file(monkeypatch, tmp_path):
 
 
 def test_download_failure(monkeypatch, tmp_path):
-    def boom(req, timeout=60):
+    def boom(req, timeout=None):
         raise OSError("no net")
-    monkeypatch.setattr(urllib.request, "urlopen", boom)
+    monkeypatch.setattr("neoarch.backend.services.network.urlopen", boom)
     assert iu._download("https://example.com/a.pkg.tar.zst",
                         str(tmp_path / "out"), None) is False
 
