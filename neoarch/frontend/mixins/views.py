@@ -332,8 +332,8 @@ class _ViewsMixin:
         try:
             if self.current_view == "updates":
                 self.load_updates()
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Startup update load failed: {e}")
 
     def set_updates_count(self, count):
         """Update the updates count in nav and header."""
@@ -411,10 +411,7 @@ class _ViewsMixin:
                 ], capture_output=True, text=True, timeout=30)
         except Exception as e:
             self.log(f"Flathub remote setup failed: {e}")
-        try:
-            self._flathub_checked = True
-        except Exception:
-            pass
+        self._flathub_checked = True
 
     def create_toolbar_button(self, icon_path, tooltip, callback, icon_size=22):
         """Create a reusable toolbar button with icon and tooltip"""
@@ -547,8 +544,8 @@ class _ViewsMixin:
         if hasattr(self, 'package_table'):
             try:
                 self.package_table.set_loading(False)
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error clearing package table loading: {e}")
         if hasattr(self, 'updates_table'):
             self.updates_table.setVisible(False)
         if hasattr(self, 'package_detail_card'):
@@ -624,8 +621,8 @@ class _ViewsMixin:
                 b.setVisible(logged_in)
         try:
             self.update_bundle_source_counts()
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Error updating bundle source counts: {e}")
 
     def _remove_from_bundle(self, pkg):
         """Remove a single package from the bundle by name+source."""
@@ -700,21 +697,21 @@ class _ViewsMixin:
             """Restore the discover view after install completes or fails."""
             try:
                 self.loading_widget.stop_animation()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error stopping loading animation: {e}")
             try:
                 self.loading_widget.setVisible(False)
                 self.loading_container.setVisible(False)
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error hiding loading widgets: {e}")
             try:
                 if self.current_view == "discover":
                     self.large_search_box.setVisible(True)
                     self._hide_all_package_views()
                 else:
                     self._show_active_view()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error restoring view: {e}")
 
         def run(assume):
             cmd = base + assume + [file_path]
@@ -1046,8 +1043,8 @@ class _ViewsMixin:
                 })
             self.updates_table.set_enrich(False)
             self.updates_table.set_packages(mapped)
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Error syncing plugins table: {e}")
 
     def show_help(self):
         """Show help dialog"""
@@ -1912,8 +1909,8 @@ class _ViewsMixin:
                 self._installed_loading = True
                 self.updates_table.setVisible(True)
                 self.updates_table.set_loading(True, "Loading packages\u2026")
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error showing installed loading state: {e}")
             self.load_installed_packages()
         elif view_id == "discover":
             self.large_search_box.setVisible(True)
@@ -2070,8 +2067,8 @@ class _ViewsMixin:
             try:
                 self.loading_widget.setVisible(False)
                 self.loading_widget.stop_animation()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error hiding loading widget: {e}")
             self.sources_section.setVisible(False)
             self.filters_section.setVisible(False)
             if hasattr(self, 'packages_content_area'):
@@ -2164,8 +2161,8 @@ class _ViewsMixin:
             try:
                 self.loading_widget.setVisible(False)
                 self.loading_widget.stop_animation()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error hiding loading widget: {e}")
             self.large_search_box.setVisible(False)
             self._hide_all_package_views()
             self.load_more_btn.setVisible(False)
@@ -2202,8 +2199,8 @@ class _ViewsMixin:
             try:
                 self.loading_widget.setVisible(False)
                 self.loading_widget.stop_animation()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error hiding loading widget: {e}")
             self.large_search_box.setVisible(False)
             self._hide_all_package_views()
             self.load_more_btn.setVisible(False)
@@ -2234,8 +2231,8 @@ class _ViewsMixin:
         # Notify plugins about view change
         try:
             self.run_plugin_hook('on_view_changed', view_id)
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Plugin hook on_view_changed failed: {e}")
         # Other views: ensure console visible (not in settings/plugins/discover)
         if view_id in ("",):
             try:
@@ -2385,18 +2382,18 @@ class _ViewsMixin:
             try:
                 states = self.source_card.get_selected_sources()
                 self.on_updates_source_changed(states)
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error applying updates source filter: {e}")
         elif self.current_view == "installed" and hasattr(self, 'source_card') and self.source_card:
             try:
                 states = self.source_card.get_selected_sources()
                 self.on_installed_source_changed(states)
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error applying installed source filter: {e}")
             try:
                 self._refresh_installed_sources()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error refreshing installed sources: {e}")
         # Show console toggle button for updates view like Discover
         try:
             if self.current_view in ("updates", "installed") and hasattr(self, 'console_toggle_btn'):
@@ -2408,16 +2405,16 @@ class _ViewsMixin:
         if self.current_view == "updates":
             try:
                 self.set_updates_count(len(self.updates_all or []))
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error setting updates count: {e}")
             self.update_updates_header_counts()
         elif self.current_view == "installed":
             self.update_installed_header_counts()
         elif getattr(self, 'updates_all', None) is not None:
             try:
                 self.set_updates_count(len(self.updates_all))
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error setting updates count: {e}")
 
     def on_load_error(self):
         # Hide loading spinner, stop animation, and show packages table (empty)
@@ -2532,8 +2529,8 @@ class _ViewsMixin:
         try:
             self.loading_widget.set_message(message)
             self.loading_widget.set_progress(percent)
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Error updating progress display: {e}")
 
     def _show_operation_spinner(self, message):
         """Show loading spinner for an ongoing operation."""
@@ -2674,8 +2671,8 @@ class _ViewsMixin:
             try:
                 if hasattr(self, 'updates_table') and self.updates_table:
                     self.updates_table.append_packages(mapped)
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Error appending discover rows: {e}")
         else:
             self.package_table.setUpdatesEnabled(False)
             for pkg in page_packages:
@@ -2884,8 +2881,9 @@ class _ViewsMixin:
             self.updates_table.set_discover_mode(False)
             self.updates_table.set_packages(rows)
             self.updates_table.set_loading(False)
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Error syncing updates table: {e}")
+            self.updates_table.set_loading(False)
 
     def _map_discover_pkg(self, pkg):
         """Map a Discover search-result dict to the shared updates-table contract."""
@@ -2893,8 +2891,8 @@ class _ViewsMixin:
         installed = False
         try:
             installed = self.is_package_installed(pkg)
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Error checking install status: {e}")
         return {
             'name': name,
             'id': pkg.get('id') or name,
@@ -2968,10 +2966,11 @@ class _ViewsMixin:
                 asc = self.source_card.get_sort_asc() if hasattr(self, 'source_card') and self.source_card else True
                 col_map = {"name": 1, "size": 3, "version": 2, "status": 5, "source": 4, "date": 6}
                 self.updates_table.sort_by_column(col_map.get(field, 1), asc)
-            except Exception:
-                pass
-        except Exception:
-            pass
+            except Exception as e:
+                self.log(f"Error sorting installed table: {e}")
+        except Exception as e:
+            self.log(f"Error syncing installed table: {e}")
+            self.updates_table.set_loading(False)
 
     def _on_updates_table_row_selected(self, pkg):
         if self.current_view == "discover":
@@ -3136,8 +3135,8 @@ class _ViewsMixin:
         import webbrowser
         try:
             webbrowser.open(url)
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Failed to open browser: {e}")
 
     # ── package context menu (downgrade / marks / install reason) ────────
 
@@ -3405,8 +3404,8 @@ class _ViewsMixin:
                         parts = r.stdout.strip().split()
                         if len(parts) >= 2:
                             new_ver = parts[1]
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Update check failed for {name}: {e}")
 
             card.updates_check_completed.emit(name, new_ver, has_updates, check_ok)
 
@@ -3442,8 +3441,8 @@ class _ViewsMixin:
                     if not pkg.get('_installed'):
                         has_checked = True
                         break
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Error reading checked packages: {e}")
         self.discover_install_btn.setEnabled(has_checked)
 
     def on_checkbox_changed(self, row, state):
@@ -3491,20 +3490,20 @@ class _ViewsMixin:
             if settings.get('notify_desktop', True):
                 try:
                     self._desktop_notify(title, text)
-                except Exception:
-                    pass
+                except Exception as e:
+                    self.log(f"Desktop notification failed: {e}")
             if settings.get('notify_inapp', True):
                 try:
                     self._toast_notify(text, level)
-                except Exception:
-                    pass
+                except Exception as e:
+                    self.log(f"In-app notification failed: {e}")
             if settings.get('notify_sound', False):
                 try:
                     QApplication.beep()
-                except Exception:
-                    pass
-        except Exception:
-            pass
+                except Exception as e:
+                    self.log(f"Notification beep failed: {e}")
+        except Exception as e:
+            self.log(f"Notification dispatch failed: {e}")
 
     def _desktop_notify(self, title, text):
         try:
@@ -3517,8 +3516,8 @@ class _ViewsMixin:
                 cmd += ["-i", icon]
             cmd += [title, text]
             subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"notify-send failed: {e}")
 
     def _toast_notify(self, text, level="info"):
         # Enforce the Notifications ▸ cooldown setting: identical toasts
@@ -3572,8 +3571,8 @@ class _ViewsMixin:
         try:
             for pkg in self.updates_table.checked_packages():
                 total += _parse_size(pkg.get('download_size') or '')
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Error computing download size: {e}")
         return total
 
     def display_message(self, title, text):
@@ -3597,8 +3596,9 @@ class _ViewsMixin:
                 if dlg.clickedButton() == retry_btn:
                     try:
                         retry_action()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        self.log(f"Retry action failed: {e}")
+                        self._notify("Retry failed", "The operation could not be retried.", level="error", event="errors")
             else:
                 dlg.setStandardButtons(QMessageBox.StandardButton.Ok)
                 dlg.exec()
@@ -3845,8 +3845,8 @@ class _ViewsMixin:
                 if b["key"] == key:
                     bundle_name = b["name"]
                     break
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Cloud sync: could not look up bundle name: {e}")
         items_snapshot = list(self.bundle_items)
         self.log(f"\u2601 Syncing '{bundle_name}' ({len(items_snapshot)} items) to cloud...")
 
@@ -3908,15 +3908,15 @@ class _ViewsMixin:
 
         try:
             save_bundle(key, self.bundle_items)
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Cloud sync: failed to save bundle: {e}")
 
         if hasattr(self, '_bundle_panel') and self._bundle_panel:
             try:
                 from neoarch.backend.services.bundle_storage import list_bundles as lb
                 self._bundle_panel.refresh_bundles(lb(), self._active_bundle_key)
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"Cloud sync: failed to refresh bundles panel: {e}")
 
         from neoarch.backend.services.bundle import refresh_bundles_table
         refresh_bundles_table(self)
@@ -4166,8 +4166,8 @@ class _ViewsMixin:
                     self.user_avatar_label.setStyleSheet("")
                     self.user_avatar_btn.setToolTip(f"Signed in as {name}")
                     return True
-        except Exception:
-            pass
+        except Exception as e:
+            self.log(f"Avatar load failed: {e}")
         return False
 
     def update_user_avatar(self, user):
