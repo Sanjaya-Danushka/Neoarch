@@ -1,4 +1,3 @@
-import pytest
 from neoarch.backend.package.updater import parse_aur_failures, _classify_aur_hint
 
 

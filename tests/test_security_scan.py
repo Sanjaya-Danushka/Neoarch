@@ -1,7 +1,5 @@
 """Tests for the PKGBUILD security scanner (Phase 2 roadmap)."""
 
-import os
-
 import pytest
 
 from neoarch.backend.services.security_scan import (

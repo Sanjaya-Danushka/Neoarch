@@ -2,8 +2,6 @@
 
 import subprocess
 
-import pytest
-
 
 def _fake_result(stdout="", returncode=0):
     return subprocess.CompletedProcess([], returncode, stdout, "")

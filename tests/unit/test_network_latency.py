@@ -2,7 +2,6 @@
 
 import http.server
 import threading
-import time
 
 import pytest
 
@@ -43,13 +42,7 @@ def test_install_patches_urlopen_and_records_latency():
         pytest.skip("already installed by app import")
     network_latency.install()
 
-    handler = http.server.SimpleHTTPRequestHandler
-
-    class QuietHandler(handler):
-        def log_message(self, *args):
-            pass
-
-    server = http.server.HTTPServer(("127.0.0.1", 0), QuietHandler)
+    server = http.server.HTTPServer(("127.0.0.1", 0), http.server.SimpleHTTPRequestHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
@@ -70,11 +63,7 @@ def test_probe_records_success_and_failure():
         pytest.skip("already installed by app import")
     network_latency.install()
 
-    class QuietHandler(http.server.SimpleHTTPRequestHandler):
-        def log_message(self, *args):
-            pass
-
-    server = http.server.HTTPServer(("127.0.0.1", 0), QuietHandler)
+    server = http.server.HTTPServer(("127.0.0.1", 0), http.server.SimpleHTTPRequestHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:

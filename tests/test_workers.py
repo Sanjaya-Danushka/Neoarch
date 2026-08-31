@@ -1,4 +1,3 @@
-import pytest
 from neoarch.backend.workers import CommandWorker, PackageLoaderWorker
 
 

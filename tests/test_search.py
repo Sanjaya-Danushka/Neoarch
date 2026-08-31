@@ -1,4 +1,3 @@
-import pytest
 from neoarch.backend.services.search import _parse_pacman_ss, merge_results
 
 
