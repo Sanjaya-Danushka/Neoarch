@@ -12,10 +12,14 @@ from neoarch.frontend.components.signal_indicator import _state_for, _fmt
 @pytest.fixture(autouse=True)
 def _clean_recorder():
     network_latency._recorder._samples = []
-    network_latency._recorder._in_flight = None
+    network_latency._recorder._consecutive_failures = 0
+    network_latency._online = True
+    network_latency._socket_failures = 0
     yield
     network_latency._recorder._samples = []
-    network_latency._recorder._in_flight = None
+    network_latency._recorder._consecutive_failures = 0
+    network_latency._online = True
+    network_latency._socket_failures = 0
 
 
 def test_average_rolling_window():
@@ -31,8 +35,16 @@ def test_average_keeps_last_n_samples():
     assert network_latency.average() == pytest.approx(0.2)
 
 
-def test_failure_maps_to_no_signal():
+def test_single_failure_keeps_previous_signal():
     network_latency.record(0.1)
+    network_latency.record_failure()
+    assert network_latency.average() == pytest.approx(0.1)
+
+
+def test_consecutive_failures_map_to_no_signal():
+    network_latency.record(0.1)
+    network_latency.record(0.1)
+    network_latency.record_failure()
     network_latency.record_failure()
     assert network_latency.average() is None
 
@@ -59,9 +71,8 @@ def test_install_patches_urlopen_and_records_latency():
 
 
 def test_probe_records_success_and_failure():
-    if network_latency._recorder._installed:
-        pytest.skip("already installed by app import")
-    network_latency.install()
+    if not network_latency._recorder._installed:
+        network_latency.install()
 
     server = http.server.HTTPServer(("127.0.0.1", 0), http.server.SimpleHTTPRequestHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -74,16 +85,9 @@ def test_probe_records_success_and_failure():
         server.shutdown()
         thread.join()
 
-    network_latency.probe("http://127.0.0.1:1/", timeout=2)  # unreachable port
+    network_latency.probe("http://127.0.0.1:1/", timeout=2)
+    network_latency.probe("http://127.0.0.1:1/", timeout=2)  # 2nd consecutive failure
     assert network_latency.average() is None
-
-
-def test_in_flight_tracking():
-    assert network_latency.in_flight_elapsed() is None
-    network_latency.begin()
-    assert network_latency.in_flight_elapsed() is not None
-    network_latency.end()
-    assert network_latency.in_flight_elapsed() is None
 
 
 def test_state_mapping():

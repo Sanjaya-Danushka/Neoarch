@@ -60,7 +60,6 @@ class SignalIndicator(QLabel):
         self.setFixedSize(36, 36)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setCursor(Qt.CursorShape.ArrowCursor)
-        self._prev_state = None
 
         self._pixmaps = {}
         for state, filename in _ICONS.items():
@@ -70,36 +69,39 @@ class SignalIndicator(QLabel):
                 self._pixmaps[state] = pixmap
 
         self._state = "nosignal"
+        self._prev_state = None
         self._render(self._state, None)
 
         self._timer = QTimer(self)
         self._timer.setInterval(600)
         self._timer.timeout.connect(self.refresh_state)
         self._baseline_set = False
+        self._suppress_next_notify = False
         self._timer.start()
 
     def refresh_state(self):
-        avg = network_latency.average()
-        new_state = _state_for(avg)
         if not self._baseline_set:
             if not network_latency.has_samples():
-                self._state = new_state
                 return
             self._baseline_set = True
-            self._prev_state = new_state
-            self._state = new_state
-            if new_state == "nosignal":
-                QTimer.singleShot(500, self.no_signal.emit)
-            self._render(new_state, avg)
+            self._suppress_next_notify = True
+
+        if not network_latency.is_online():
+            self._render("nosignal", None)
             return
-        self._render(new_state, avg)
+
+        avg = network_latency.average()
+        self._render(_state_for(avg), avg)
 
     def _render(self, state, avg):
-        if self._prev_state is not None and state != self._prev_state:
+        if (self._prev_state is not None
+                and state != self._prev_state
+                and not self._suppress_next_notify):
             if state == "nosignal" and self._prev_state != "nosignal":
                 self.no_signal.emit()
             elif state != "nosignal" and self._prev_state == "nosignal":
                 self.connection_restored.emit()
+        self._suppress_next_notify = False
         self._prev_state = state
         self._state = state
         pixmap = self._pixmaps.get(state)
