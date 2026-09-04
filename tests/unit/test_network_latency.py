@@ -13,13 +13,13 @@ from neoarch.frontend.components.signal_indicator import _state_for, _fmt
 def _clean_recorder():
     network_latency._recorder._samples = []
     network_latency._recorder._consecutive_failures = 0
-    network_latency._online = True
-    network_latency._socket_failures = 0
+    network_latency._conn_state["online"] = True
+    network_latency._conn_state["failures"] = 0
     yield
     network_latency._recorder._samples = []
     network_latency._recorder._consecutive_failures = 0
-    network_latency._online = True
-    network_latency._socket_failures = 0
+    network_latency._conn_state["online"] = True
+    network_latency._conn_state["failures"] = 0
 
 
 def test_average_rolling_window():

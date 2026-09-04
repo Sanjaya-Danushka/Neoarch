@@ -13,6 +13,7 @@ import os
 import socket
 import threading
 import time
+import urllib.parse
 import urllib.request
 
 _MAX_SAMPLES = 10
@@ -75,11 +76,18 @@ class _Recorder:
         with self._lock:
             self._in_flight = None
 
+    def mark_installed(self):
+        with self._lock:
+            self._installed = True
+
+    def is_installed(self):
+        with self._lock:
+            return self._installed
+
 
 _recorder = _Recorder()
 
-_online = True
-_socket_failures = 0
+_conn_state = {"online": True, "failures": 0}
 
 
 def record(seconds):
@@ -108,7 +116,7 @@ def is_online():
     Returns a cached boolean updated by a background thread (see
     ``_connectivity_loop``). Safe to call from the UI thread on every tick.
     """
-    return _online
+    return _conn_state["online"]
 
 
 def _socket_check():
@@ -120,7 +128,7 @@ def _socket_check():
         )
         sock.close()
         return True
-    except (OSError, socket.timeout):
+    except OSError:
         return False
 
 
@@ -131,16 +139,15 @@ def _connectivity_loop():
     ``_SOCKET_DEBOUNCE_FAILURES`` consecutive socket failures. Transitions
     to online on the first success (instant restore).
     """
-    global _online, _socket_failures
     while True:
         reachable = _socket_check()
         if reachable:
-            _socket_failures = 0
-            _online = True
+            _conn_state["failures"] = 0
+            _conn_state["online"] = True
         else:
-            _socket_failures += 1
-            if _socket_failures >= _SOCKET_DEBOUNCE_FAILURES:
-                _online = False
+            _conn_state["failures"] += 1
+            if _conn_state["failures"] >= _SOCKET_DEBOUNCE_FAILURES:
+                _conn_state["online"] = False
         time.sleep(_CONNECTIVITY_CHECK_INTERVAL)
 
 
@@ -150,6 +157,9 @@ def probe(url=_PROBE_URL, timeout=_PROBE_TIMEOUT):
     Goes through the patched ``urlopen``, so it records a success or failure
     sample automatically.
     """
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return
     req = urllib.request.Request(
         url, headers={"User-Agent": "NeoArch-signal-probe"}
     )
@@ -186,9 +196,9 @@ def start_probing(interval=30.0):
 
 def install():
     """Wrap ``urllib.request.urlopen`` and ``requests.get`` once."""
-    if _recorder._installed:
+    if _recorder.is_installed():
         return
-    _recorder._installed = True
+    _recorder.mark_installed()
 
     _urlopen_original = urllib.request.urlopen
 
