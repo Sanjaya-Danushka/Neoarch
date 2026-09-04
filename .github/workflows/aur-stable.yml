@@ -17,7 +17,9 @@ jobs:
         id: version
         run: |
           TAG="${GITHUB_REF#refs/tags/v}"
-          echo "version=$TAG" >> "$GITHUB_OUTPUT"
+          # Strip -N suffix if present (pkgrel is set in PKGBUILD.stable)
+          VERSION="${TAG%-*}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Generate PKGBUILD and .SRCINFO
         run: |
