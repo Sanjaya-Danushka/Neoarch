@@ -3829,8 +3829,7 @@ class _ViewsMixin:
             manage_act.triggered.connect(
                 lambda: self._safe_switch("bundles"))
             settings_act = menu.addAction("\u2699  Account Settings")
-            settings_act.setEnabled(False)
-            settings_act.setText("\u2699  Account Settings   \u00b7 soon")
+            settings_act.triggered.connect(self._open_account_settings)
 
         cloud_act = menu.addAction("\u2601  Cloud Bundles")
         cloud_act.triggered.connect(self._cloud_manage_bundles)
@@ -3843,6 +3842,14 @@ class _ViewsMixin:
         cm = getattr(self, '_cloud_auth', None)
         if cm:
             cm.start_login()
+
+    def _open_account_settings(self):
+        """Open the Clerk account portal on the website in the browser."""
+        import webbrowser
+        from neoarch.backend.cloud_auth import _website_url
+        url = f"{_website_url()}/account"
+        self.log(f"Opening account settings: {url}")
+        webbrowser.open(url)
 
     def _cloud_ensure_login(self):
         cm = getattr(self, '_cloud_auth', None)

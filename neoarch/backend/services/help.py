@@ -135,7 +135,7 @@ def show_help(parent, current_view: str):
         "• Timeshift snapshot integration<br>"
         "• Plugin system with community sharing<br>"
         "• Desktop-environment-aware authentication</p>"
-        '<p>Website: <a href="https://neoarch.netlify.app/" style="color: #00BFAE;">neoarch.netlify.app</a><br>'
+        '<p>Website: <a href="https://neoarch.dpdns.org/" style="color: #00BFAE;">neoarch.dpdns.org</a><br>'
         'Repository: <a href="https://github.com/Sanjaya-Danushka/Neoarch" style="color: #00BFAE;">github.com/Sanjaya-Danushka/Neoarch</a><br>'
         "License: MIT</p>"
     )
@@ -190,7 +190,7 @@ def show_about(parent):
         "A modern graphical package manager for Arch Linux<br>"
         "with AUR support, bundle management, and more.<br><br>"
         "Built with PyQt6<br>"
-        'Website: <a href="https://neoarch.netlify.app/" style="color: #00BFAE;">neoarch.netlify.app</a><br>'
+        'Website: <a href="https://neoarch.dpdns.org/" style="color: #00BFAE;">neoarch.dpdns.org</a><br>'
         'Repository: <a href="https://github.com/Sanjaya-Danushka/Neoarch" style="color: #00BFAE;">github.com/Sanjaya-Danushka/Neoarch</a>'
     )
     desc.setTextFormat(Qt.TextFormat.RichText)

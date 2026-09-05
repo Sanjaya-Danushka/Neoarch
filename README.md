@@ -2,7 +2,7 @@
 
 Modern Package Manager for Arch Linux
 
-[![Website](https://img.shields.io/badge/Website-neoarch.netlify.app-00BFAE?style=for-the-badge&logo=netlify&logoColor=white)](https://neoarch.netlify.app/)
+[![Website](https://img.shields.io/badge/Website-neoarch.dpdns.org-00BFAE?style=for-the-badge&logo=netlify&logoColor=white)](https://neoarch.dpdns.org/)
 [![Version](https://img.shields.io/github/v/release/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE&label=Version)](https://github.com/Sanjaya-Danushka/Neoarch/releases)
 [![License](https://img.shields.io/github/license/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE)](LICENSE)
 [![Issues](https://img.shields.io/github/issues/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE)](https://github.com/Sanjaya-Danushka/Neoarch/issues)
@@ -257,6 +257,6 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 Built with ❤️ by [Sanjaya Danushka](https://github.com/Sanjaya-Danushka)
 
-[Website](https://neoarch.netlify.app/) • [Issues](https://github.com/Sanjaya-Danushka/Neoarch/issues) • [Discussions](https://github.com/Sanjaya-Danushka/Neoarch/discussions) • [Releases](https://github.com/Sanjaya-Danushka/Neoarch/releases)
+[Website](https://neoarch.dpdns.org/) • [Issues](https://github.com/Sanjaya-Danushka/Neoarch/issues) • [Discussions](https://github.com/Sanjaya-Danushka/Neoarch/discussions) • [Releases](https://github.com/Sanjaya-Danushka/Neoarch/releases)
 
 [![Buy me a coffee](https://img.buymeacoffee.com/button-api/?text=Buy+me+a+coffee&emoji=&slug=sanjayadanushka&button_colour=FF5F5F&font_colour=ffffff&font_family=Cookie&outline_colour=000000&coffee_colour=FFDD00)](https://www.buymeacoffee.com/sanjayadanushka)

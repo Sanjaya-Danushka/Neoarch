@@ -26,7 +26,7 @@ __all__ = ["AboutTab"]
 _REPO_URL = "https://github.com/Sanjaya-Danushka/Neoarch"
 _SPONSORS_URL = "https://github.com/sponsors/Sanjaya-Danushka"
 _BUYMEACOFFEE_URL = "https://www.buymeacoffee.com/sanjayadanushka"
-_WEBSITE_URL = "https://neoarch.netlify.app"
+_WEBSITE_URL = "https://neoarch.dpdns.org"
 _AUR_URL = "https://aur.archlinux.org/packages/neoarch-git"
 
 _BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "..")
