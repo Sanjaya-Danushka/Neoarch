@@ -123,6 +123,7 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         self._updating_selection = False
         self._view_mode = "table"
         self._grid_view_btn = None
+        self._news_btn = None
         self.cancel_discover_search = False
         # Nav badges (e.g., updates count)
         self.nav_badges = {}

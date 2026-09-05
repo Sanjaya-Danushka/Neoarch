@@ -13,7 +13,9 @@ urllib directly inside the backend.
 """
 
 import os
+import socket
 import ssl
+import time
 import urllib.request
 import threading
 
@@ -22,6 +24,28 @@ __all__ = ["urlopen", "default_timeout", "build_opener", "apply_network_env",
 
 _lock = threading.Lock()
 _opener = None
+
+_PROXY_CHECK_TTL = 60.0
+_PROXY_CHECK_TIMEOUT = 1.5
+_proxy_health = {"url": None, "ok": True, "checked": 0.0}
+
+
+def _proxy_reachable(purl: str) -> bool:
+    """Cheap TCP health-check of a proxy, cached for a short TTL."""
+    now = time.monotonic()
+    if purl == _proxy_health["url"] and now - _proxy_health["checked"] < _PROXY_CHECK_TTL:
+        return _proxy_health["ok"]
+    ok = False
+    try:
+        from urllib.parse import urlsplit
+        u = urlsplit(purl)
+        with socket.create_connection((u.hostname, u.port or 80),
+                                      timeout=_PROXY_CHECK_TIMEOUT):
+            ok = True
+    except OSError:
+        ok = False
+    _proxy_health.update(url=purl, ok=ok, checked=now)
+    return ok
 
 
 def default_timeout() -> int:
@@ -62,16 +86,30 @@ def proxy_url(cfg=None):
 
 
 def build_opener(cfg=None) -> urllib.request.OpenerDirector:
-    """Opener honouring proxy + SSL settings."""
+    """Opener honouring proxy + SSL settings.
+
+    If a proxy is configured but unreachable, falls back to a direct opener
+    instead of letting every in-app request (and the signal probe, which uses
+    the process-wide opener) fail.
+    """
     cfg = cfg or _read_network_settings()
     handlers = []
     purl = proxy_url(cfg)
-    if purl:
+    if purl and _proxy_reachable(purl):
         handlers.append(urllib.request.ProxyHandler({
             "http": purl,
             "https": purl,
         }))
     else:
+        if purl:
+            try:
+                from neoarch.backend.services.logging_service import log_message
+                log_message(
+                    f"Proxy {purl} is unreachable; falling back to a direct connection.",
+                    "WARNING",
+                )
+            except Exception:
+                pass
         handlers.append(urllib.request.ProxyHandler({}))  # direct, ignore env
     if not cfg["verify_ssl"]:
         ctx = ssl.create_default_context()
@@ -92,7 +130,7 @@ def apply_network_env(env: dict = None) -> dict:
     for key in ("http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY"):
         target.pop(key, None)
     target.pop("no_proxy", None)
-    if purl:
+    if purl and _proxy_reachable(purl):
         target["http_proxy"] = purl
         target["https_proxy"] = purl
     return target

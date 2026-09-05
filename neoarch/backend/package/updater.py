@@ -199,23 +199,43 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                         overall_success = False
                         continue
                     env = get_askpass_env()
-                    cmd = [aur_helper, "-S", "--noconfirm"] + pkgs
-                    worker = CommandWorker(cmd, sudo=False, env=env, cancel_event=app.install_cancel_event)
-                    worker.output.connect(app.log)
-                    worker.line_update.connect(app.log_line_update)
-                    def _on_err_aur(msg):
-                        nonlocal overall_success, aur_hint
-                        app.log(msg)
-                        overall_success = False
-                        if 'AUR' not in failed_sources:
-                            failed_sources.append('AUR')
-                        failed, hint = parse_aur_failures(msg)
-                        aur_failures.update(failed)
-                        if hint and not aur_hint:
-                            aur_hint = hint
-                    worker.error.connect(_on_err_aur)
-                    worker.run()
-                    emit_progress(f"Completed {source} packages", source_count)
+                    total = len(pkgs)
+                    for pkg_idx, pkg in enumerate(pkgs, start=1):
+                        if app.install_cancel_event.is_set():
+                            app.log("Update cancelled by user")
+                            cancelled = True
+                            break
+                        app.log(f"Updating AUR package: {pkg} ({pkg_idx}/{total})")
+                        # Update one package at a time so a single build
+                        # failure or dependency conflict does not abort the
+                        # installation of the remaining AUR packages.
+                        cmd = [aur_helper, "-S", "--noconfirm", pkg]
+                        worker = CommandWorker(cmd, sudo=False, env=env, cancel_event=app.install_cancel_event)
+                        worker.output.connect(app.log)
+                        worker.line_update.connect(app.log_line_update)
+
+                        def _on_err_aur(msg, _pkg=pkg):
+                            nonlocal overall_success, aur_hint
+                            app.log(msg)
+                            overall_success = False
+                            if 'AUR' not in failed_sources:
+                                failed_sources.append('AUR')
+                            failed, hint = parse_aur_failures(msg)
+                            if failed:
+                                aur_failures.update(failed)
+                            else:
+                                aur_failures.setdefault(_pkg, msg or 'package failed to update')
+                            if hint and not aur_hint:
+                                aur_hint = hint
+                        worker.error.connect(_on_err_aur)
+                        worker.run()
+                        emit_progress(f"Completed AUR: {pkg} ({pkg_idx}/{total})", 1)
+                        if app.install_cancel_event.is_set():
+                            app.log("Update cancelled by user")
+                            cancelled = True
+                            break
+                    if not cancelled:
+                        emit_progress(f"Completed {source} packages")
                     if app.install_cancel_event.is_set():
                         app.log("Update cancelled by user")
                         cancelled = True

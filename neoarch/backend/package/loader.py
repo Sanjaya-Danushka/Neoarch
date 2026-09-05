@@ -443,7 +443,7 @@ def load_updates(app):
                 # animation. AUR/Flatpak/npm results follow in the final emit.
                 pacman_pkgs = _safe_result(fut_pacman, "pacman")
                 initial = finalize(list(pacman_pkgs))
-                if not is_stale():
+                if initial and not is_stale():
                     try:
                         app._updates_loading = False
                     except Exception:

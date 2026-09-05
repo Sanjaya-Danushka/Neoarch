@@ -540,6 +540,7 @@ class PackagesGridView(QScrollArea):
             item = self._grid.takeAt(i)
         n = len(self._cards)
         if not n:
+            self._sync_empty()
             return
         vw = self.viewport().width() - 20
         spacing = self._grid.spacing()
@@ -553,6 +554,7 @@ class PackagesGridView(QScrollArea):
             card.setFixedWidth(card_w)
             r, c = divmod(i, self._cols)
             self._grid.addWidget(card, r, c)
+        self._sync_empty()
 
     def populate(self, packages: list[dict]):
         self.clear()

@@ -464,7 +464,7 @@ class _ViewsMixin:
 
         return btn
 
-    def _add_right_toolbar_icons(self, layout, show_install_file=False, show_sudo=False, show_bundle=False, show_grid_filter=True):
+    def _add_right_toolbar_icons(self, layout, show_install_file=False, show_sudo=False, show_bundle=False, show_grid_filter=True, show_news=False):
         """Add common right-side navbar icons to any toolbar layout."""
         navbar_dir = os.path.join(_BASE_DIR, "assets", "icons", "toolbar")
 
@@ -499,6 +499,14 @@ class _ViewsMixin:
                 self.sudo_install_selected
             )
             layout.addWidget(self._sudo_btn)
+
+        if show_news:
+            self._news_btn = self.create_toolbar_button(
+                os.path.join(navbar_dir, "news.svg"),
+                "Arch News",
+                self.show_arch_news
+            )
+            layout.addWidget(self._news_btn)
 
     def _show_active_view(self):
         # Views that render their own content must never re-show the legacy
@@ -1319,6 +1327,7 @@ class _ViewsMixin:
         self._bundle_clear_btn = None
         self._bundle_install_btn = None
         self._sudo_btn = None
+        self._news_btn = None
         self._greeting_label = None
         self._selection_summary_label = None
         self._updates_selected_btn = None
@@ -1523,7 +1532,7 @@ class _ViewsMixin:
 
             layout.addStretch()  # Push remaining buttons to the right
 
-            self._add_right_toolbar_icons(layout, show_install_file=True, show_bundle=True, show_sudo=False)
+            self._add_right_toolbar_icons(layout, show_install_file=True, show_bundle=True, show_sudo=False, show_news=True)
 
             # Hide grid/bundle until search results are shown
             if self._grid_view_btn:
@@ -1920,6 +1929,9 @@ class _ViewsMixin:
             self.load_more_btn.setVisible(False)
             self.package_table.setRowCount(0)
             self.header_info.setText("Search and discover new packages to install")
+            news_btn = getattr(self, '_news_btn', None)
+            if news_btn is not None:
+                news_btn.setVisible(True)
             try:
                 self.search_input.setPlaceholderText("Search for packages")
             except Exception:
@@ -2351,6 +2363,11 @@ class _ViewsMixin:
         self._show_active_view()
         if self.current_view == "updates" and hasattr(self, 'updates_table'):
             try:
+                if not is_final and not packages:
+                    # First partial batch is empty (AUR/Flatpak/npm still
+                    # running). Keep the loading skeleton instead of flashing
+                    # the "All caught up" empty state before data arrives.
+                    return
                 self.updates_table.set_loading(False)
                 self._sync_updates_table()
             except Exception as e:
@@ -3467,6 +3484,12 @@ class _ViewsMixin:
 
     def _show_message(self, title, text):
         self.log(f"{title}: {text}")
+        dlg = QMessageBox(self)
+        dlg.setIcon(QMessageBox.Icon.Information)
+        dlg.setWindowTitle(title)
+        dlg.setText(str(text))
+        dlg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        dlg.exec()
 
     # ── notification dispatch (desktop + in-app toast channels) ────────
 

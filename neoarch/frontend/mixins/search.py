@@ -140,6 +140,9 @@ class _SearchMixin:
                     tb = getattr(self, attr, None)
                     if tb is not None:
                         tb.setVisible(False)
+                news_btn = getattr(self, '_news_btn', None)
+                if news_btn is not None:
+                    news_btn.setVisible(True)
                 try:
                     if hasattr(self, 'source_card') and self.source_card:
                         self.source_card.clear_results()
@@ -286,6 +289,9 @@ class _SearchMixin:
                         self.source_card.clear_results()
                 except Exception:
                     pass
+                news_btn = getattr(self, '_news_btn', None)
+                if news_btn is not None:
+                    news_btn.setVisible(True)
                 self._update_nav_greeting(getattr(self, '_cloud_auth', None).user if hasattr(self, '_cloud_auth') and self._cloud_auth else None)
             elif self.current_view == "installed":
                 self.search_results = None
@@ -725,6 +731,10 @@ class _SearchMixin:
                 tb = getattr(self, attr, None)
                 if tb is not None:
                     tb.setVisible(has_results)
+            # News button belongs to the idle front view only
+            news_btn = getattr(self, '_news_btn', None)
+            if news_btn is not None:
+                news_btn.setVisible(not has_results)
             if hasattr(self, '_greeting_label') and self._greeting_label:
                 self._greeting_label.setVisible(not has_results)
         try:

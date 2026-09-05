@@ -106,7 +106,7 @@ def on_view_changed(app, view_id):
             except Exception:
                 pass
             try:
-                app._show_message("Bundle", f"Loaded {added} items from default bundle")
+                app.log(f"Loaded {added} items from default bundle")
             except Exception:
                 pass
     except Exception as e:
@@ -182,7 +182,7 @@ def _save(app):
             json.dump({'app': 'NeoArch', 'items': items}, f, indent=2)
         _last_hash = h
         try:
-            app._show_message('Bundle', f'Autosaved bundle to {path}')
+            app.log(f"Bundle autosaved to {path}")
         except Exception:
             pass
     except Exception as e:

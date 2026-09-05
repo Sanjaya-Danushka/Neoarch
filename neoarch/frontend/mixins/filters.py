@@ -1055,6 +1055,9 @@ class _FiltersMixin:
         self.source_card.configure_sections(
             show_search=True, show_counts=True, show_sort=True, show_installed_filter=True,
             show_storage=True, show_summary=True)
+        # Front view (large search box) must not show the "0" summary row;
+        # it only appears after a search populates results.
+        self.source_card.clear_results()
         self._refresh_discover_storage_async()
 
     def _refresh_discover_storage_async(self):
