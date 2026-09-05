@@ -42,12 +42,6 @@ Thumbs.db
 node_modules
 package-lock.json
 package.json
-!/website/package.json
-!/website/package-lock.json
-website/.env.local
-website/.next/
-website/out/
-!/website/lib/
 
 # Build artifacts
 pkg/
