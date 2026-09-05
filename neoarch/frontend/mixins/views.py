@@ -3739,9 +3739,7 @@ class _ViewsMixin:
     def _show_account_menu(self):
         """Compact account menu anchored to the sidebar avatar."""
         from PyQt6.QtCore import QPoint
-        from PyQt6.QtGui import QIcon
-        from PyQt6.QtWidgets import QMenu, QLabel, QWidget, QVBoxLayout
-        from PyQt6.QtWidgets import QWidgetAction
+        from PyQt6.QtWidgets import QMenu, QWidgetAction
 
         def _white_icon(svg_body):
             """White mac-style line icon for menu items."""
@@ -3943,8 +3941,7 @@ class _ViewsMixin:
 
         if hasattr(self, '_bundle_panel') and self._bundle_panel:
             try:
-                from neoarch.backend.services.bundle_storage import list_bundles as lb
-                self._bundle_panel.refresh_bundles(lb(), self._active_bundle_key)
+                self._bundle_panel.refresh_bundles(list_bundles(), self._active_bundle_key)
             except Exception as e:
                 self.log(f"Cloud sync: failed to refresh bundles panel: {e}")
 
