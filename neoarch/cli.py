@@ -50,6 +50,7 @@ import re
 import shutil
 import subprocess
 import sys
+import textwrap
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -76,15 +77,106 @@ def _emit(data, as_json: bool):
     if as_json:
         print(json.dumps(data, indent=2, default=str))
     elif isinstance(data, list):
-        for item in data:
-            if isinstance(item, dict):
-                print(_fmt_dict(item))
-            else:
-                print(item)
+        if data and all(isinstance(item, dict) for item in data):
+            print(_render_table(data))
+        else:
+            for item in data:
+                if isinstance(item, dict):
+                    print(_fmt_dict(item))
+                else:
+                    print(item)
     elif isinstance(data, dict):
         print(_fmt_dict(data))
     else:
         print(data)
+
+
+_COLUMN_ORDER = (
+    "name", "pkg", "id", "title",
+    "version",
+    "repo", "source", "provider", "category", "action", "status",
+    "desc", "summary", "message", "updated", "published",
+)
+
+_LABELS = {
+    "name": "NAME", "pkg": "PACKAGE", "id": "ID", "title": "TITLE",
+    "version": "VERSION",
+    "repo": "REPO", "source": "SOURCE", "provider": "PROVIDER",
+    "category": "CATEGORY", "action": "ACTION", "status": "STATUS",
+    "desc": "DESCRIPTION", "summary": "SUMMARY", "message": "MESSAGE",
+    "updated": "UPDATED", "published": "PUBLISHED",
+}
+
+
+def _render_table(rows: List[Dict]) -> str:
+    """Render a list of record dicts as aligned columns.
+
+    The description/long columns get the remaining terminal width; overflow is
+    wrapped under the same column so lines never wrap ragged.
+    """
+    def text(row, key) -> str:
+        value = row.get(key)
+        if value is None:
+            return ""
+        return str(value).replace("\t", " ").split("\n")[0].strip()
+
+    present = {key for row in rows for key in row}
+    present = {key for key in present if any(text(row, key) for row in rows)}
+    keys = [k for k in _COLUMN_ORDER if k in present]
+    keys += [k for k in sorted(present - set(_COLUMN_ORDER))]
+    if not keys:
+        return ""
+
+    term_cols = max(shutil.get_terminal_size((100, 24)).columns, 40)
+    gap = 3
+    padding = 2  # left indent
+
+    # All columns except the last share their own content width; the last
+    # (usually the description) stretches to fill the terminal.
+    widths = {}
+    for key in keys[:-1]:
+        w = max((len(text(row, key)) for row in rows), default=0)
+        widths[key] = min(w, 28)
+    fixed = sum(widths.values()) + gap * (len(keys) - 1) + padding
+    widths[keys[-1]] = max(term_cols - fixed, 24)
+
+    starts = {}
+    offset = padding
+    for key in keys:
+        starts[key] = offset
+        offset += widths[key] + gap
+
+    def chop(s: str, width: int) -> List[str]:
+        """Word-wrap to width, falling back to hard breaks for long tokens."""
+        parts = textwrap.wrap(s, width=width)
+        out = []
+        for part in parts:
+            if len(part) > width:
+                out.extend(part[i : i + width] for i in range(0, len(part), width))
+            else:
+                out.append(part)
+        return out or [s[:width]]
+
+    lines = []
+    if len(keys) > 1:
+        head = [(_LABELS.get(k, k.upper())).ljust(widths[k]) for k in keys]
+        lines.append(" " * padding + (" " * gap).join(head).rstrip())
+    for row in rows:
+        cells = []
+        continuations: List[str] = []
+        for key in keys:
+            s = text(row, key)
+            w = widths[key]
+            if len(s) > w:
+                chunks = chop(s, w - 1)
+                cells.append(chunks[0] + "…")
+                for chunk in chunks[1:]:
+                    continuations.append(" " * starts[key] + chunk)
+            else:
+                cells.append(s)
+        lines.append(" " * padding + (" " * gap).join(c.ljust(widths[k]) for k, c in zip(keys, cells)).rstrip())
+        lines.extend(continuations)
+    return "\n".join(lines)
 
 
 def _fmt_dict(d: Dict) -> str:
