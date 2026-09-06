@@ -25,6 +25,7 @@ package() {
   # Fix entry point reference from aurora_home.py to -m neoarch
   sed -i 's|aurora_home.py|-m neoarch|' "$pkgdir/opt/neoarch/Neoarch/bin/neoarch.sh"
   # CLI on PATH (both the long and short name)
+  install -d "$pkgdir/usr/bin"
   ln -s /opt/neoarch/Neoarch/bin/neoarch-cli "$pkgdir/usr/bin/neoarch-cli"
   ln -s /opt/neoarch/Neoarch/bin/neoarch-cli "$pkgdir/usr/bin/neo"
   # Install desktop file
