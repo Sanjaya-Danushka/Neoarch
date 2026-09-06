@@ -14,7 +14,7 @@
 
 </div>
 
-<img width="1808" height="870" alt="banner1" src="https://github.com/user-attachments/assets/c6c0c08a-d744-4e0a-8b5b-b080381ffc85" />
+<img style="width:100%;border-radius:12px;border:1px solid #30363d" alt="banner1" src="https://github.com/user-attachments/assets/c6c0c08a-d744-4e0a-8b5b-b080381ffc85" />
 
 
 > **One app for everything you install.** Search, install, update, and clean across **pacman, AUR (live search), Flatpak, and npm** — from a native PyQt6 desktop app or a headless `neo` CLI with `--json` automation.
@@ -50,9 +50,9 @@
 
 ### Screenshots
 
-<img width="1302" height="871" alt="1" src="https://github.com/user-attachments/assets/76e910aa-5d23-4668-b0fc-afce8e9af7e2" />
-<img width="1294" height="868" alt="2" src="https://github.com/user-attachments/assets/026e87b5-3268-44c6-97a9-722b47290d69" />
-<img width="1300" height="864" alt="4" src="https://github.com/user-attachments/assets/588ff48a-4601-4ace-aa17-e1a777a815df" />
+| | | |
+| :---: | :---: | :---: |
+| <img width="100%" alt="1" src="https://github.com/user-attachments/assets/76e910aa-5d23-4668-b0fc-afce8e9af7e2" style="border-radius:10px;border:1px solid #30363d"/> | <img width="100%" alt="2" src="https://github.com/user-attachments/assets/026e87b5-3268-44c6-97a9-722b47290d69" style="border-radius:10px;border:1px solid #30363d"/> | <img width="100%" alt="4" src="https://github.com/user-attachments/assets/588ff48a-4601-4ace-aa17-e1a777a815df" style="border-radius:10px;border:1px solid #30363d"/> |
 
 
 ### Under the hood
