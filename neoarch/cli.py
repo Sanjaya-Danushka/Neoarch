@@ -109,16 +109,22 @@ _LABELS = {
 
 
 def _render_table(rows: List[Dict]) -> str:
-    """Render a list of record dicts as aligned columns.
+    """Render a list of record dicts as aligned columns or compact lines.
 
-    The description/long columns get the remaining terminal width; overflow is
-    wrapped under the same column so lines never wrap ragged.
+    Wide terminals get a full aligned table with headers; narrow terminals get
+    a compact, yay-style layout so lines never squeeze into single-word wraps.
+    ANSI colors are added only when stdout is a TTY and NO_COLOR is unset.
     """
     def text(row, key) -> str:
         value = row.get(key)
         if value is None:
             return ""
         return str(value).replace("\t", " ").split("\n")[0].strip()
+
+    def color(s: str, code: int) -> str:
+        if (not sys.stdout.isatty()) or os.environ.get("NO_COLOR"):
+            return s
+        return f"\x1b[{code}m{s}\x1b[0m"
 
     present = {key for row in rows for key in row}
     present = {key for key in present if any(text(row, key) for row in rows)}
@@ -127,18 +133,54 @@ def _render_table(rows: List[Dict]) -> str:
     if not keys:
         return ""
 
+    # Description-ish columns always land last so the wide column is the end one.
+    desc_keys = {"desc", "summary", "message"}
+    detail = next((k for k in keys if k in desc_keys), None)
+    if detail:
+        keys = [k for k in keys if k != detail] + [detail]
+
     term_cols = max(shutil.get_terminal_size((100, 24)).columns, 40)
     gap = 3
     padding = 2  # left indent
 
-    # All columns except the last share their own content width; the last
-    # (usually the description) stretches to fill the terminal.
+    meta = keys[:-1] if detail else keys
+
+    # ── Compact layout for narrow terminals ──────────────────────────────
+    if term_cols < 100:
+        lines = []
+        for row in rows:
+            if meta:
+                name = text(row, meta[0])
+                cells = [color(name, 1)]
+                for k in meta[1:]:
+                    v = text(row, k)
+                    if not v:
+                        continue
+                    cells.append(color(v, 36 if k == "version" else 33))
+                head = "  " + "  ".join(cells)
+                if len(head) <= term_cols:
+                    lines.append(head)
+                else:
+                    lines.append(" " * padding + color(name, 1))
+                    for k in meta[1:]:
+                        v = text(row, k)
+                        if v:
+                            lines.append(" " * (padding + padding) + color(v, 36 if k == "version" else 33))
+            else:
+                lines.append(" " * padding + color(text(row, keys[0]), 1))
+            if detail:
+                desc = text(row, detail)
+                if desc:
+                    lines.extend(" " * 4 + segment for segment in textwrap.wrap(desc, width=max(term_cols - 4, 24)))
+        return "\n".join(lines)
+
+    # ── Full aligned table for wide terminals ─────────────────────────────
     widths = {}
-    for key in keys[:-1]:
+    for key in meta:
         w = max((len(text(row, key)) for row in rows), default=0)
         widths[key] = min(w, 28)
     fixed = sum(widths.values()) + gap * (len(keys) - 1) + padding
-    widths[keys[-1]] = max(term_cols - fixed, 24)
+    widths[detail or keys[-1]] = max(term_cols - fixed, 24)
 
     starts = {}
     offset = padding
@@ -157,6 +199,15 @@ def _render_table(rows: List[Dict]) -> str:
                 out.append(part)
         return out or [s[:width]]
 
+    def cell_color(key: str) -> int:
+        if key == keys[0]:
+            return 1
+        if key == "version":
+            return 36
+        if key in ("source", "repo", "category"):
+            return 33
+        return 0
+
     lines = []
     if len(keys) > 1:
         head = [(_LABELS.get(k, k.upper())).ljust(widths[k]) for k in keys]
@@ -165,11 +216,11 @@ def _render_table(rows: List[Dict]) -> str:
         cells = []
         continuations: List[str] = []
         for key in keys:
-            s = text(row, key)
+            s = color(text(row, key), cell_color(key))
             w = widths[key]
             if len(s) > w:
-                chunks = chop(s, w - 1)
-                cells.append(chunks[0] + "…")
+                chunks = chop(text(row, key), w - 1)
+                cells.append(color(chunks[0] + "…", cell_color(key)))
                 for chunk in chunks[1:]:
                     continuations.append(" " * starts[key] + chunk)
             else:
@@ -253,7 +304,22 @@ def cmd_search(args) -> None:
     if not specs:
         print("No results found.")
         return
-    _emit(specs, args.json)
+    if args.json:
+        _emit(specs, True)
+        return
+    rows = []
+    for spec in specs:
+        row = {
+            "name": spec.get("name") or spec.get("pkg"),
+            "source": spec.get("source"),
+        }
+        for key in ("version", "repo", "installed"):
+            if spec.get(key) is not None:
+                row[key] = spec[key]
+        if spec.get("desc"):
+            row["desc"] = spec["desc"]
+        rows.append(row)
+    _emit(rows, False)
 
 
 def _search_flatpak(query: str, limit: int) -> List[Dict]:
