@@ -12,39 +12,57 @@
 [![Last commit](https://img.shields.io/github/last-commit/Sanjaya-Danushka/Neoarch?style=flat-square&label=Last%20commit&color=00BFAE&labelColor=161B22)](https://github.com/Sanjaya-Danushka/Neoarch/commits/dev)
 [![License](https://img.shields.io/github/license/Sanjaya-Danushka/Neoarch?style=flat-square&label=License&color=00BFAE&labelColor=161B22)](LICENSE)
 
-<br/>
-
-<img src="https://github.com/user-attachments/assets/a4e13e1b-8626-401d-b600-60e758a9623d" alt="NeoArch" width="95%" style="border-radius:12px;border:1px solid #30363d;box-shadow:0 8px 24px rgba(0,0,0,.4)"/>
-
-<br/>
-
-**Search** · **Install** · **Update everything** · **Stay clean**
-
-<br/>
-
-[Website](https://neoarch.dpdns.org/) · [Issues](https://github.com/Sanjaya-Danushka/Neoarch/issues) · [Releases](https://github.com/Sanjaya-Danushka/Neoarch/releases)
-
 </div>
+
+<img src="https://github.com/user-attachments/assets/a4e13e1b-8626-401d-b600-60e758a9623d" alt="NeoArch banner" width="100%" style="border-radius:12px;border:1px solid #30363d"/>
+
+> **One app for everything you install.** Search, install, update, and clean across **pacman, AUR (live search), Flatpak, and npm** — from a native PyQt6 desktop app or a headless `neo` CLI with `--json` automation.
 
 ---
 
-NeoArch unifies **pacman, AUR, Flatpak, and npm** in one native PyQt6 app — and the headless **`neo`** CLI mirrors every GUI feature. Indexed search, source badges, confirm-before-install, snapshots, backups, and `--json` automation built in.
+<sup>Jump to: <kbd>App features</kbd> · <kbd>CLI reference</kbd> · [<kbd>Install</kbd>](#install) · [<kbd>Support</kbd>](#support) · [<kbd>License</kbd>](#license)</sup>
 
-## Features
+<details open>
+<summary><b>App — GUI &amp; features</b> <i>(click to view)</i></summary>
 
-- **Multi-source** — unified search, install, and updates for pacman, AUR (live search), Flatpak, and npm.
-- **Safety net** — Timeshift snapshots before risky updates, Btrfs system backups, and a static PKGBUILD security scanner.
-- **System hygiene** — orphan removal, `.pacnew`/`.pacsave` management, cache + BleachBit cleaning, Arch news.
-- **Workspace** — Docker manager, Git manager, portable bundles, 50+ plugins with Python lifecycle hooks.
-- **Cloud sync** — Supabase OAuth sign-in; favorites and bundles follow you across devices.
-- **Scheduled updates** — auto-update intervals (1–30 days) with optional snapshot-before-update.
-- **Credential caching** — secure session-based sudo caching with pexpect askpass; auto-cleaned on exit.
+### Discover and manage everything
 
-## Command line
+- **Unified search** — browse pacman, AUR (live RPC search), Flatpak, and npm in one list, with filters per source.
+- **One-click actions** — install, remove, hold, downgrade, mark-as-dependency, view package details, and manage `IgnorePkg`/`HoldPkg` — all from a single screen.
+- **Update center** — see updates from every source with snapshot-before-update and ignition for staged updates.
+- **Local files** — install `.pkg.tar.zst`, `.pacman`, `.AppImage`, and `.flatpakref` by drag-and-drop with automatic type detection.
+
+### Safety and maintenance
+
+- **Snapshots** — Timeshift integration (list, create, restore, prune) before risky operations.
+- **System backups** — Btrfs-aware backups (package list + config export) with auto-prune keeping the last 5.
+- **Hygiene tools** — orphan removal, `.pacnew`/`.pacsave` diffs and merging, cache + BleachBit cleaning, and Arch news with offline caching.
+- **PKGBUILD scanner** — static analysis mode flags risky post-install tools, elevation, dynamic shell, local binaries, and Unicode homograph spoofing.
+
+### Workspace &amp; cloud
+
+- **Docker manager** — pull, run, stop, clean containers; port mappings, volumes, env, GPU passthrough, restart policies.
+- **Git manager** — clone, build, update, clean; auto-detects Cargo, Autotools, Makefile, and custom builds.
+- **Bundles** — portable package bundles; export, import, install, share locally or as community bundles.
+- **Plugin system** — 50+ built-in plugins with Python lifecycle hooks (`on_startup`, `on_tick`, `on_view_changed`) and a community store.
+- **Cloud sync** — Supabase OAuth sign-in; favorites and bundles sync across devices with exp-aware token caching.
+
+### Screenshots
+
+<img width="45%" align="top" src="https://github.com/user-attachments/assets/7d63dca2-15cc-406a-bd0a-a5b60ad9d652" alt="Search and Discover Packages" style="border-radius:12px;border:1px solid #30363d"/> <img width="45%" align="top" src="https://github.com/user-attachments/assets/d4bbb403-7a8a-4693-86e7-38e810c94b05" alt="Installed Packages View" style="border-radius:12px;border:1px solid #30363d"/>
+
+### Under the hood
+
+Python 3.8+ · PyQt6 (Signals &amp; Slots, QThread workers) · subprocess-bounded `pacman` calls · AUR RPC live search (rate-limited) · Flatpak user remotes · npm globals · Supabase Auth with cached session tokens · `SUDO_ASKPASS`/pexpect credential caching · config at `~/.config/neoarch` · ignored updates at `~/.config/neoarch/ignored_updates.json`.
+
+</details>
+
+<details>
+<summary><b>CLI — full command reference</b> <i>(click to view)</i></summary>
 
 `neo` is the shorthand for `neoarch-cli`; both are identical. Every command accepts `--json`, `-y/--yes`, and `--no-confirm`.
 
-**Search & install**
+**Search &amp; install**
 
 ```bash
 neo search cmatrix                    # indexed results + source badges
@@ -61,7 +79,7 @@ neo down firefox -p                   # downgrade + pin to IgnorePkg
 neo build yay --check --install       # AUR build (chroot/check/commit)
 ```
 
-**Updates & upgrades**
+**Updates &amp; upgrades**
 
 ```bash
 neo upgrade                           # full system upgrade
@@ -74,7 +92,7 @@ neo list -e                           # explicitly installed packages
 neo list -m                           # foreign (AUR) packages
 ```
 
-**Marks, ignores & keys**
+**Marks, ignores &amp; keys**
 
 ```bash
 neo hold list                         # show IgnorePkg / HoldPkg
@@ -90,7 +108,7 @@ neo keys refresh                      # refresh from keyserver
 neo keys sign <KEYID>                 # locally sign a key
 ```
 
-**Hygiene & safety**
+**Hygiene &amp; safety**
 
 ```bash
 neo clean orphans                     # remove orphaned packages
@@ -105,7 +123,7 @@ neo doctor                            # system health check
 neo scan ./PKGBUILD                   # static security scan
 ```
 
-**System & automation**
+**System &amp; automation**
 
 ```bash
 neo reboot --check --json             # is a reboot recommended?
@@ -126,7 +144,7 @@ neo config get theme                  # read a config key
 neo config set theme dark             # write a config key
 ```
 
-Worked example — search, then install by number, with the source confirmed before anything runs:
+Worked example — search, then install by number:
 
 ```console
 $ neo search cmatrix
@@ -141,14 +159,13 @@ $ neo install 3
 Install cmatrix-git? [y/N]
 ```
 
-Terminal output adapts to width — aligned tables on wide screens, compact numbered lists on small ones — and colors are used when supported (set `NO_COLOR=1` to disable). AppImage files are stored at `~/.local/share/neoarch/appimages` with desktop entries, and tracked for updates.
+Output adapts to terminal width (tables on wide, compact lists on small), and colors turn off with `NO_COLOR=1`.
+
+</details>
+
+---
 
 ## Install
-
-```bash
-yay -S neoarch        # stable          (or paru -S neoarch)
-yay -S neoarch-git    # latest dev build — adds `neo` to PATH
-```
 
 **Requirements:** Arch Linux · Python 3.8+ · PyQt6 · sudo.
 
@@ -157,14 +174,23 @@ sudo pacman -S --needed python python-pyqt6 python-requests qt6-svg git flatpak 
 python Neoarch.py
 ```
 
+AUR packages — `neoarch` is the stable release, `neoarch-git` tracks latest dev (adds `neo`/`neoarch-cli` to PATH):
+
+```bash
+yay -S neoarch        # or paru -S neoarch
+yay -S neoarch-git    # latest development build
+```
+
 Virtual environment: `python -m venv .venv && source .venv/bin/activate && pip install -r requirements_pyqt.txt`.
-(Arch's system `pip` triggers "externally-managed-environment" — prefer pacman, a venv, or `pipx`.)
+On Arch, system `pip` usually triggers "externally-managed-environment" — prefer pacman, a venv, or `pipx`.
 
 ---
 
 <div align="center">
 
-Found a bug or want a feature — [open an issue](https://github.com/Sanjaya-Danushka/Neoarch/issues). Pull requests welcome — fork, branch, submit.
+<a name="support"></a>
+
+<sub>Something missing or broken? [Open an issue](https://github.com/Sanjaya-Danushka/Neoarch/issues) — or [pull request](https://github.com/Sanjaya-Danushka/Neoarch/pulls) it.</sub>
 
 <br/>
 
@@ -172,6 +198,8 @@ Found a bug or want a feature — [open an issue](https://github.com/Sanjaya-Dan
 
 <br/>
 
-<sub>MIT License · Built by [Sanjaya Danushka](https://github.com/Sanjaya-Danushka)</sub>
+<a name="license"></a>
+
+<sub>MIT License · [Project](https://github.com/Sanjaya-Danushka/Neoarch) · [Website](https://neoarch.dpdns.org/) · Built by [Sanjaya Danushka](https://github.com/Sanjaya-Danushka)</sub>
 
 </div>
