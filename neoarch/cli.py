@@ -145,33 +145,47 @@ def _render_table(rows: List[Dict]) -> str:
 
     meta = keys[:-1] if detail else keys
 
-    # ── Compact layout for narrow terminals ──────────────────────────────
+    # ── Compact card layout for narrow terminals ──────────────────────
     if term_cols < 100:
         lines = []
         for row in rows:
-            if meta:
-                name = text(row, meta[0])
-                cells = [color(name, 1)]
-                for k in meta[1:]:
-                    v = text(row, k)
-                    if not v:
+            name = text(row, meta[0]) if meta else text(row, keys[0])
+            tags = []
+            for k in meta[1:]:
+                v = text(row, k)
+                if not v:
+                    continue
+                if k == "installed":
+                    if v.lower() not in ("true", "1", "yes", "installed"):
                         continue
-                    cells.append(color(v, 36 if k == "version" else 33))
-                head = "  " + "  ".join(cells)
-                if len(head) <= term_cols:
-                    lines.append(head)
+                    v, code = "installed", 32
+                elif k == "version":
+                    code = 36
+                elif k in ("source", "repo", "category"):
+                    code = 33
                 else:
-                    lines.append(" " * padding + color(name, 1))
-                    for k in meta[1:]:
-                        v = text(row, k)
-                        if v:
-                            lines.append(" " * (padding + padding) + color(v, 36 if k == "version" else 33))
+                    code = 0
+                tags.append((v, code))
+            tag_plain = " · ".join(v for v, _ in tags)
+            head_plain = "  ■ " + name + ("  " + tag_plain if tag_plain else "")
+            if len(head_plain) > term_cols:
+                avail = term_cols - len("  ■ ")
+                nm = name if len(name) <= avail else name[: avail - 1] + "…"
+                head = "  ■ " + color(nm, 1)
             else:
-                lines.append(" " * padding + color(text(row, keys[0]), 1))
+                tag_col = " · ".join(color(v, c) for v, c in tags)
+                head = "  ■ " + color(name, 1) + ("  " + tag_col if tag_col else "")
+            lines.append(head)
             if detail:
                 desc = text(row, detail)
                 if desc:
-                    lines.extend(" " * 4 + segment for segment in textwrap.wrap(desc, width=max(term_cols - 4, 24)))
+                    lines.extend(
+                        "    " + color(segment, 90)
+                        for segment in textwrap.wrap(desc, width=max(term_cols - 4, 24))
+                    )
+                lines.append("")
+        if lines and lines[-1] == "":
+            lines.pop()
         return "\n".join(lines)
 
     # ── Full aligned table for wide terminals ─────────────────────────────
