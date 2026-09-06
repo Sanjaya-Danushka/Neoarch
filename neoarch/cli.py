@@ -108,6 +108,56 @@ _LABELS = {
 }
 
 
+def _color(s: str, code: int) -> str:
+    if (not sys.stdout.isatty()) or os.environ.get("NO_COLOR"):
+        return s
+    return f"\x1b[{code}m{s}\x1b[0m"
+
+
+_SOURCE_COLOR = {"pacman": 34, "aur": 33, "flatpak": 36, "extra": 34, "core": 34}
+
+
+def _render_indexed(rows: List[Dict]) -> str:
+    """Render record dicts as a numbered, single-line-per-result list.
+
+    Each line shows the number, name, source badge and description truncated
+    to the terminal width — no table columns, safe on small screens.
+    """
+    records = []
+    for row in rows:
+        name = next((str(row[k]) for k in ("name", "pkg", "id") if row.get(k)), "")
+        source = str(row.get("source") or "").lower()
+        version = str(row.get("version") or "")
+        desc = next((str(row[k]) for k in ("desc", "summary") if row.get(k)), "")
+        tag = source if source in _SOURCE_COLOR else row.get("repo") or source
+        records.append({"name": name, "tag": tag, "version": version, "desc": desc})
+
+    term_cols = max(shutil.get_terminal_size((100, 24)).columns, 40)
+    idx_w = len(str(len(records)))
+    name_w = min(max((len(r["name"]) for r in records), default=0), 26)
+
+    lines = []
+    for n, r in enumerate(records, 1):
+        name = _color(r["name"], 1)
+        tag = _color(f"[{r['tag']}]", _SOURCE_COLOR.get(r["tag"], 33)) if r["tag"] else ""
+        vers = _color(r["version"], 36) if r["version"] else ""
+        idx = _color(f"[{n}]".rjust(idx_w + 2), 90)
+        slot = name + " " * (name_w - len(r["name"]))
+        parts = [idx, " ", slot]
+        if tag:
+            parts += ["  ", tag]
+        if vers:
+            parts += ["  ", vers]
+        plain_len = sum(len(p) for p in parts)
+        budget = term_cols - plain_len - (0 if not r["desc"] else 2)
+        if r["desc"] and budget > 6:
+            parts += ["  ", (r["desc"] if len(r["desc"]) <= budget else r["desc"][: budget - 1] + "…")]
+        elif r["desc"]:
+            parts += [" ", r["desc"][:6] + "…"]
+        lines.append("".join(parts).rstrip())
+    return "\n".join(lines)
+
+
 def _render_table(rows: List[Dict]) -> str:
     """Render a list of record dicts as aligned columns or compact lines.
 
@@ -122,9 +172,7 @@ def _render_table(rows: List[Dict]) -> str:
         return str(value).replace("\t", " ").split("\n")[0].strip()
 
     def color(s: str, code: int) -> str:
-        if (not sys.stdout.isatty()) or os.environ.get("NO_COLOR"):
-            return s
-        return f"\x1b[{code}m{s}\x1b[0m"
+        return _color(s, code)
 
     present = {key for row in rows for key in row}
     present = {key for key in present if any(text(row, key) for row in rows)}
@@ -333,7 +381,7 @@ def cmd_search(args) -> None:
         if spec.get("desc"):
             row["desc"] = spec["desc"]
         rows.append(row)
-    _emit(rows, False)
+    print(_render_indexed(rows))
 
 
 def _search_flatpak(query: str, limit: int) -> List[Dict]:
@@ -359,6 +407,20 @@ def _search_flatpak(query: str, limit: int) -> List[Dict]:
 
 def _is_url(s: str) -> bool:
     return s.startswith(("http://", "https://"))
+
+
+def _plot_install(packages: List[str]) -> None:
+    """Print which repo each package will come from before it's run."""
+    for pkg in packages:
+        r = _run(["pacman", "-Si", pkg], timeout=60)
+        if r.returncode == 0 and r.stdout:
+            m = re.search(r"^Repository\s*:\s*(.+)$", r.stdout, re.M)
+            repo = (m.group(1).strip() if m else "repos")
+        else:
+            repo = "aur"
+        badge = _color(f"[{repo}]", _SOURCE_COLOR.get(repo, 33))
+        print(f"  → {pkg}  {badge}")
+    print()
 
 
 def cmd_install(args) -> None:
@@ -387,6 +449,11 @@ def cmd_install(args) -> None:
         target = "aur" if args.aur else ("flatpak" if args.flatpak else "npm")
 
     if target == "pacman":
+        print(f"[neoarch] resolving where each package comes from...", file=sys.stderr)
+        _plot_install(packages)
+        if not no_confirm and not _confirm(f"Install {', '.join(packages)}?"):
+            print("Aborted.", file=sys.stderr)
+            return
         cmd = ["pacman", "-S"] + (["--noconfirm"] if no_confirm else []) + packages
         code = _stream(cmd, sudo=True, check=False)
         if code != 0:
