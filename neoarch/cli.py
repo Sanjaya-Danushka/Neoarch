@@ -116,6 +116,41 @@ def _color(s: str, code: int) -> str:
 
 _SOURCE_COLOR = {"pacman": 34, "aur": 33, "flatpak": 36, "extra": 34, "core": 34}
 
+_CACHE_DIR = os.path.expanduser("~/.cache/neoarch")
+_LAST_SEARCH = os.path.join(_CACHE_DIR, "last-search.json")
+
+
+def _save_last_search(rows: List[Dict]) -> None:
+    try:
+        os.makedirs(_CACHE_DIR, exist_ok=True)
+        with open(_LAST_SEARCH, "w") as fh:
+            json.dump({"ts": time.time(), "rows": rows}, fh)
+    except OSError:
+        pass
+
+
+def _resolve_index_arg(arg: str) -> tuple:
+    """Map a plain number to (name, source) from the last search.
+
+    Returns (arg, None) for plain package names; (None, None) for a number
+    that can't be matched to the last search (so callers can warn).
+    """
+    if not arg.isdigit():
+        return arg, None
+    try:
+        with open(_LAST_SEARCH) as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return None, None
+    if time.time() - data.get("ts", 0) > 86400:
+        return None, None
+    rows = data.get("rows") or []
+    n = int(arg)
+    if not 1 <= n <= len(rows):
+        return None, None
+    row = rows[n - 1]
+    return (row.get("name") or row.get("pkg") or arg), (row.get("source") or "").lower()
+
 
 def _render_indexed(rows: List[Dict]) -> str:
     """Render record dicts as a numbered, single-line-per-result list.
@@ -381,7 +416,9 @@ def cmd_search(args) -> None:
         if spec.get("desc"):
             row["desc"] = spec["desc"]
         rows.append(row)
+    _save_last_search(rows)
     print(_render_indexed(rows))
+    print(_color("  Tip: neo install <number> installs that result", 90))
 
 
 def _search_flatpak(query: str, limit: int) -> List[Dict]:
@@ -431,7 +468,24 @@ def cmd_install(args) -> None:
     no_confirm = args.no_confirm or args.yes
 
     urls = [p for p in args.packages if _is_url(p)]
-    packages = [p for p in args.packages if not _is_url(p)]
+    packages = []
+    for p in args.packages:
+        if _is_url(p):
+            continue
+        name, src = _resolve_index_arg(p)
+        if name is None:
+            print(
+                f"error: \"{p}\" looks like a search index, but there is no usable last search.\n"
+                "       Run 'neo search <query>' first, then 'neo install <number>' —"
+                " or pass the package name directly.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        if name != p:
+            print(f"[neoarch] selected [{p}] {name}"
+                  + (f"  {_color('[' + src + ']', _SOURCE_COLOR.get(src, 33))}" if src else ""),
+                  file=sys.stderr)
+        packages.append(name)
 
     for url in urls:
         from neoarch.backend.services import install_url

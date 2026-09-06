@@ -7,166 +7,121 @@ Modern Package Manager for Arch Linux
 [![License](https://img.shields.io/github/license/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE)](LICENSE)
 [![Issues](https://img.shields.io/github/issues/Sanjaya-Danushka/Neoarch?style=for-the-badge&color=00BFAE)](https://github.com/Sanjaya-Danushka/Neoarch/issues)
 
-[Features](#features) • [Installation](#installation) • [Usage](#usage) • [Contributing](#contributing) • [License](#license)
+[Features](#features) • [Screenshots](#screenshots) • [Installation](#installation) • [Usage](#usage) • [Command-Line](#command-line-usage) • [Contributing](#contributing) • [License](#license)
 
-<img width="1295" height="860" alt="Screenshot_20260815_114444" src="https://github.com/user-attachments/assets/a4e13e1b-8626-401d-b600-60e758a9623d" />
+<img width="1295" height="860" alt="NeoArch main window" src="https://github.com/user-attachments/assets/a4e13e1b-8626-401d-b600-60e758a9623d" />
 
-
-
+NeoArch combines pacman, AUR, Flatpak, and npm in one desktop app — with a fully scriptable CLI (`neo`) for the terminal. Install packages from anywhere, keep your system clean, and automate everything with JSON output.
 
 ---
 
 ## Features
 
-### Multi-Source Management
+### Multi-source package management
 
-Unify pacman, AUR, Flatpak, and npm under one interface. Search, install, update, and remove packages from any source seamlessly.
+Unify pacman, AUR, Flatpak, and npm under one interface. Search, install, update, and remove packages from any source — with live AUR search and one-click local package install (`.pkg.tar.zst`, `.pacman`, `.AppImage`, `.flatpakref`).
 
-### Plugin System
+### System hygiene
 
-50+ built-in plugins with an extensible Python hook system supporting lifecycle hooks (on_startup, on_tick, on_view_changed). Browse and install community plugins from the store.
+Keep your system clean: one-click orphaned package removal (`pacman -Qtdq`), manage leftover `.pacnew`/`.pacsave` files (view diff, accept, or delete), BleachBit and pacman cache cleaning, and the latest Arch Linux news via a built-in RSS reader with offline caching.
 
-### Bundle System
+### Safety net
 
-Create portable package bundles for easy deployment. Export, import, install, and share bundles locally or as community bundles.
+- **Timeshift snapshots** — snapshot before risky updates; restore if anything goes wrong. Automatic cleanup of old snapshots.
+- **Btrfs system backups** — full backups (package list + config export) with snapshot support and auto-prune (keeps last 5).
+- **PKGBUILD scanner** — statically reviews a PKGBUILD and its `.install` scriptlets for risky post-install tools, privilege elevation, dynamic shell construction, local binary sources, obfuscated names, and Unicode homograph spoofing. Exits with code 2 on critical findings, so it is safe to gate scripts on.
 
-### Docker Manager
+### GUI workspace
 
-Pull, run, list, stop, and clean containers with port mappings, volumes, environment variables, GPU passthrough, and restart policies.
+- **Docker manager** — pull, run, list, stop, and clean containers with port mappings, volumes, environment variables, GPU passthrough, and restart policies.
+- **Git manager** — clone, build, update, and clean Git projects. Auto-detects build methods: Cargo, Autotools, Makefile, and custom commands.
+- **Bundle system** — create portable package bundles for deployment. Export, import, install, and share bundles locally or as community bundles.
+- **Plugin system** — 50+ built-in plugins with an extensible Python hook system (`on_startup`, `on_tick`, `on_view_changed`), plus a community plugin store.
 
-### Git Manager
+### Cloud and credentials
 
-Clone, build, update, and clean Git projects with a click. Auto-detects build methods: Cargo, Autotools, Makefile, and custom build commands.
+- **Cloud sync** — sign in with Supabase via OAuth to sync bundle favorites across devices. Session tokens are cached for seamless re-authentication.
+- **Credential caching** — secure session-based sudo credential caching with auto-cleaning on exit, and a GUI password dialog with `SUDO_ASKPASS` support.
 
-### Snapshot Integration
+### Scheduled updates
 
-Create and restore Timeshift snapshots before updates. Revert to a known good state if anything goes wrong. Automatic cleanup of old snapshots.
+Set-and-forget auto-updates with configurable intervals (1–30 days), auto-refresh, and optional snapshot-before-update.
 
-### Cloud Sync
-
-Sign in with Supabase via OAuth to sync bundle favorites across devices. Session tokens are cached securely for seamless re-authentication.
-
-### Scheduled Updates
-
-Set and forget with configurable auto-update intervals (1-30 days), auto-refresh, and optional snapshot-before-update via built-in plugins.
-
-### Command-Line Interface
-
-Scriptable package management from the terminal. Search, install, remove, upgrade, list updates, read Arch news, create backups, purge orphans, and run system checks — all with `--json` output for automation. Runs headless (no GUI required).
-
-The everyday commands are short and easy to remember (`neo install yay` just works — AUR packages are found automatically). The full command is `neoarch-cli`; `neo` is the shorthand, both are identical:
-
-```bash
-neo search browserpass        # search pacman + AUR
-neo install yay               # install (auto-falls back to AUR)
-neo upgrade                   # full system upgrade
-neo updates --json            # machine-readable updates
-neo news                      # latest Arch Linux news
-neo doctor                    # system health check
-neo scan ./PKGBUILD           # security scan (risky tools, elevation, homographs)
-neo down firefox -l           # list cached versions
-neo down firefox -p           # downgrade + pin to IgnorePkg
-neo hold list                 # show IgnorePkg / HoldPkg
-neo hold linux                # hold a package
-neo hold reason firefox explicit  # set install reason
-neo appimage list             # managed AppImages
-neo appimage add-repo Obsidian obsidianmd/obsidian-releases
-neo appimage check --json     # check for AppImage updates
-neo backup                    # create a backup (defaults to create)
-neo clean orphans             # remove orphaned packages
-neo keys list                 # trusted pacman keys
-neo keys init                 # official Arch keyrings
-neo clean corrupt             # find corrupted cache archives
-neo clean cache --keep 2      # paccache retention
-neo clean flatpak             # remove unused Flatpak runtimes
-neo clean merge /etc/x.pacnew --accept  # three-way .pacnew merge
-neo reboot --check --json     # is a reboot recommended?
-neo parallel                  # show ParallelDownloads
-neo parallel 10               # set it in /etc/pacman.conf (root)
-neo schedule                  # weekly update schedule
-neo schedule set --days 1,3,5 --time 05:30 --enable
-neo recommend -n 5            # curated package recommendations
-neo install https://host/pkg.pkg.tar.zst  # install from URL
-neo build yay --check         # AUR build (chroot/check/commit)
-neo news --mark-read          # read news + mark as read
-```
-
-The longer `neoarch-cli` spellings (`neoarch-cli list-updates`,
-`neoarch-cli purify cache --keep 2`, `neoarch-cli aur-build ...`, etc.)
-still work — `neo` is a friendlier alias layer on top.
-
-The `appimage` subcommands manage a NeoArch-owned AppImage store at
-`~/.local/share/neoarch/appimages`: `add` (local file), `add-url`
-(static URL), and `add-repo` (GitHub/GitLab/Codeberg/Forgejo latest
-release). Each gets a desktop entry + icon and is tracked for updates
-via `check`/`update`.
-
-The `scan` command statically reviews a PKGBUILD (and its `.install` scriptlets) without executing it, flagging risky post-install tools, privilege elevation, dynamic shell construction, local binary sources, obfuscated tool names, and Unicode homograph spoofing. It exits with code 2 if any critical finding is present, making it safe to gate scripts on.
-
-### System Backup
-
-Create full system backups (package list + config export) with Btrfs snapshot support on Btrfs roots. Restore packages from any backup, list snapshots, and auto-prune old backups (keeps last 5).
-
-### System Hygiene
-
-Keep your system clean: one-click orphaned package removal (`pacman -Qtdq`), manage leftover `.pacnew`/`.pacsave` files (view diff, accept, or delete), and read the latest Arch Linux news via the built-in RSS reader with offline caching.
-
-### Local Package Install
-
-Install `.pkg.tar.zst`, `.pacman`, `.AppImage`, and `.flatpakref` files with a single click. Auto-detects package type and handles installation with appropriate privileges. Missing-dependency resolution with `--assume-installed` retry for local packages.
-
-### Auth and Credential Caching
-
-Secure session-based sudo credential caching with auto-cleaning on exit. GUI password dialog with SUDO_ASKPASS support for polkit and sudo-A.
-
-### System Cache Cleaning
-
-One-click BleachBit cache cleaning and pacman package cache cleanup (`pacman -Sc`). Reclaim disk space without leaving the app.
-
-### Ignore Updates
+### Ignore updates
 
 Mark specific packages to ignore during updates. Persisted to `~/.config/neoarch/ignored_updates.json` — survives reboots and updates.
 
+### Command-line interface
+
+A scriptable terminal frontend that runs headless (no GUI required). `neo` is the friendly shorthand; `neoarch-cli` is the identical full name. Every command supports `--json` output for automation, and search results are indexed so you can act on them by number:
+
+```bash
+neo search browserpass                # search pacman + AUR (indexed list)
+neo install 3                         # install result #3 from your last search
+neo install yay                       # install from any source (auto AUR fallback)
+neo install https://host/pkg.pkg.tar.zst   # install a package archive from URL
+neo upgrade                           # full system upgrade
+neo updates                           # list available updates
+neo update pkg                        # update specific packages
+neo remove pkg                        # remove packages
+neo list                              # list installed packages
+neo doctor                            # system health check
+neo news                              # latest Arch Linux news
+neo scan ./PKGBUILD                   # security scan (risky tools, elevation, homographs)
+neo down firefox -l                   # list cached versions
+neo down firefox -p                   # downgrade + pin to IgnorePkg
+neo hold list                         # show IgnorePkg / HoldPkg
+neo hold linux                        # hold a package
+neo hold reason firefox explicit      # set install reason
+neo keys list                         # trusted pacman keys
+neo keys init                         # official Arch keyrings
+neo reboot --check --json             # is a reboot recommended?
+neo backup                            # create a backup (defaults to create)
+neo clean orphans                     # remove orphaned packages
+neo clean cache --keep 2              # paccache retention
+neo clean corrupt                     # find corrupted cache archives
+neo clean flatpak                     # remove unused Flatpak runtimes
+neo clean merge /etc/x.pacnew --accept  # three-way .pacnew merge
+neo parallel                          # show ParallelDownloads
+neo parallel 10                       # set it in /etc/pacman.conf (root)
+neo schedule                          # weekly update schedule
+neo schedule set --days 1,3,5 --time 05:30 --enable
+neo recommend -n 5                    # curated package recommendations
+neo appimage list                     # managed AppImages
+neo appimage add-repo Obsidian obsidianmd/obsidian-releases
+neo appimage check --json             # check for AppImage updates
+neo build yay --check                 # AUR build (chroot/check/commit)
+neo news --mark-read                  # read news + mark as read
+```
+
+Before executing, `neo install` resolves where each package comes from and asks for confirmation, so you always see the source (`[extra]`, `[aur]`, `[flatpak]`) first.
+
+- **Search results** show a source badge and an index — number `1`..`10`; `neo install <number>` installs that exact result. Indexes only apply to the most recent search (and an invalid/out-of-date number is rejected with a hint).
+- **`--json`** switches any listing command to machine-readable output.
+- The longer `neoarch-cli` spellings (`neoarch-cli list-updates`, `neoarch-cli purify cache`, `neoarch-cli aur-build ...`) still work; `neo` is an alias layer on top.
+
+#### AppImage store
+
+The `appimage` subcommands manage a NeoArch-owned store at `~/.local/share/neoarch/appimages`: `add` (local file), `add-url` (static URL), and `add-repo` (GitHub/GitLab/Codeberg/Forgejo latest release). Each AppImage gets a desktop entry + icon and is tracked for updates via `check`/`update`.
+
 ## Screenshots
 
-<img width="1211" height="811" alt="Screenshot_20260813_222846" src="https://github.com/user-attachments/assets/7d63dca2-15cc-406a-bd0a-a5b60ad9d652" />
+<img width="1211" height="811" alt="Search and Discover Packages" src="https://github.com/user-attachments/assets/7d63dca2-15cc-406a-bd0a-a5b60ad9d652" />
 *Search and Discover Packages*
 
-<img width="1203" height="812" alt="Screenshot_20260813_222645" src="https://github.com/user-attachments/assets/d4bbb403-7a8a-4693-86e7-38e810c94b05" />
+<img width="1203" height="812" alt="Installed Packages View" src="https://github.com/user-attachments/assets/d4bbb403-7a8a-4693-86e7-38e810c94b05" />
 *Installed Packages View*
-
-## Comparison with Shelly-ALPM
-
-NeoArch compared to [Shelly-ALPM](https://github.com/Seafoam-Labs/Shelly-ALPM), another modern Arch Linux package manager:
-
-| | Shelly-ALPM | NeoArch |
-| --- | --- | --- |
-| **License** | GPL-3.0 (copyleft) | MIT (permissive) |
-| **Stack** | Zig + Vala + .NET, GTK4 native Wayland | Python + PyQt6 |
-| **Core package mgmt** | pacman (`libalpm`) | pacman + AUR + Flatpak + npm |
-| **CLI** | Yes (`shelly`/`shelly-cli`) | neoarch-cli |
-| **Flatpak** | Optional separate backend | Built-in |
-| **AUR support** | Yes | Yes (incl. live search) |
-| **Plugin system** | No | Yes (50+ built-in, Python hooks) |
-| **Bundle system** | No | Yes (portable bundles) |
-| **Docker manager** | No | Yes |
-| **Git manager** | No | Yes |
-| **Snapshots** | No | Yes (Timeshift) |
-| **System backup** | No | Yes (Btrfs) |
-| **System hygiene** | No | Yes (orphans, `.pacnew`, news) |
-| **Cloud sync** | No | Yes (Supabase) |
-| **Scheduled updates** | No | Yes |
-| **Local package install** | AppImage only | `.pkg.tar.zst`, `.pacman`, `.AppImage`, `.flatpakref` |
-
-Shelly is a fast native GTK4/`libalpm` frontend with a strong CLI and a clean codebase. NeoArch covers more package sources and a wider feature set, while keeping a permissive MIT license.
 
 ## Installation
 
-### From AUR (Recommended)
+Two AUR packages are published — `neoarch` is the stable release, `neoarch-git` tracks the latest development build:
 
 ```bash
-yay -S neoarch-git    # or paru -S neoarch-git
+yay -S neoarch        # stable    (or paru -S neoarch)
+yay -S neoarch-git    # latest dev build
 ```
+
+Installing `neoarch-git` also puts both `neo` and `neoarch-cli` on your PATH.
 
 ### Prerequisites
 
@@ -175,7 +130,7 @@ yay -S neoarch-git    # or paru -S neoarch-git
 - **PyQt6**
 - **Administrative privileges** (sudo) for package operations
 
-### Install Dependencies
+### Install dependencies
 
 #### Option A — Arch packages (recommended)
 
@@ -191,7 +146,7 @@ source .venv/bin/activate
 pip install -r requirements_pyqt.txt
 ```
 
-> **Note:** On Arch, using system `pip` often triggers the "externally-managed-environment" error. Prefer Option A (pacman) or use a virtual environment (Option B). You can also use `pipx` (`sudo pacman -S python-pipx`) which manages a dedicated venv for each app.
+> **Note:** On Arch, using system `pip` often triggers the "externally-managed-environment" error. Prefer Option A (pacman) or use a virtual environment (Option B). You can also use `pipx` (`sudo pacman -S python-pipx`), which manages a dedicated venv for each app.
 
 ### Run NeoArch
 
@@ -221,7 +176,23 @@ chmod +x Neoarch.py && ./Neoarch.py
 | Hygiene | Remove orphaned packages, manage `.pacnew` files, read Arch news |
 | Local Files | Install `.pkg.tar.zst`, `.pacman`, `.AppImage`, `.flatpakref` files directly |
 | Cloud Sync | Sign in with Supabase to sync favorites across devices |
-| CLI | Scriptable `neoarch-cli` with `--json` output for search/install/backup/etc. |
+| CLI | Scriptable `neo` with `--json` output for search/install/backup/etc. |
+
+## Command-line usage
+
+Everything above the GUI is available in the terminal. Use `neo -h` (or `neo <command> -h`) for the full list, and `--json` anywhere a listing is printed to get structured output for scripts.
+
+```bash
+neo search cmatrix
+#  [1] cmatrix         [pacman]  A curses-based scrolling 'Matrix'-like screen
+#  [2] libcmatrix      [pacman]  Matrix client library written in GObject
+#  [3] cmatrix-git     [aur]     A curses-based scrolling 'Matrix'-like screen
+#  Tip: neo install <number> installs that result
+
+neo install 3   # → selected [3] cmatrix-git  [aur]  → confirm → installs
+```
+
+Output adapts to your terminal: wide screens get an aligned table, smaller terminals get a compact numbered list, and colors are used when supported (`NO_COLOR=1` disables them). When piping, a plain single-line format is used automatically.
 
 ## Development
 
@@ -232,6 +203,12 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements_pyqt.txt
 python Neoarch.py
+```
+
+Run the test suite:
+
+```bash
+python -m pytest tests/ -q
 ```
 
 ## Contributing
@@ -261,7 +238,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 ---
 
-Built with ❤️ by [Sanjaya Danushka](https://github.com/Sanjaya-Danushka)
+Built by [Sanjaya Danushka](https://github.com/Sanjaya-Danushka)
 
 [Website](https://neoarch.dpdns.org/) • [Issues](https://github.com/Sanjaya-Danushka/Neoarch/issues) • [Discussions](https://github.com/Sanjaya-Danushka/Neoarch/discussions) • [Releases](https://github.com/Sanjaya-Danushka/Neoarch/releases)
 
