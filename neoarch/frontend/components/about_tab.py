@@ -623,7 +623,7 @@ _DOC_SECTIONS = [
              ("Unified workflows",
               "Packages, Git, Docker, AppImages and bundles in one app"),
              ("Companion CLI",
-              "Automate NeoArch from the terminal with neoarch-cli"),
+              "Automate NeoArch from the terminal with `neo` (or neoarch-cli)"),
              ("Instant theming",
               "Switch appearance anytime from Settings"),
          ]),

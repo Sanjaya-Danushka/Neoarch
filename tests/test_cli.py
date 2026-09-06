@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from neoarch.cli import (
     _build_parser,
     _scan_global_flags,
+    _normalize_argv,
     _list_pacman,
     _fmt_dict,
     _load_config,
@@ -29,6 +30,46 @@ def test_parser_has_all_commands():
         "aur-build", "doctor",
     ):
         assert expected in subs, f"missing command {expected}"
+
+
+def test_normalize_simple_aliases():
+    assert _normalize_argv(["updates", "--json"]) == ["list-updates", "--json"]
+    assert _normalize_argv(["down", "firefox", "-l"]) == ["downgrade", "firefox", "-l"]
+    assert _normalize_argv(["keys", "list"]) == ["keyring", "list"]
+    assert _normalize_argv(["keys", "init"]) == ["keyring", "init"]
+    assert _normalize_argv(["build", "yay", "--check"]) == ["aur-build", "yay", "--check"]
+    assert _normalize_argv(["reboot", "--check", "--json"]) == ["restart", "check", "--json"]
+    assert _normalize_argv(["search", "browserpass"]) == ["search", "browserpass"]
+
+
+def test_normalize_hold():
+    assert _normalize_argv(["hold", "linux"]) == ["marks", "hold", "linux"]
+    assert _normalize_argv(["hold", "list"]) == ["marks", "list"]
+    assert _normalize_argv(["hold"]) == ["marks", "list"]
+    assert _normalize_argv(["hold", "reason", "firefox", "explicit"]) == \
+        ["marks", "reason", "firefox", "explicit"]
+
+
+def test_normalize_clean():
+    assert _normalize_argv(["clean", "orphans"]) == ["purge", "-o"]
+    assert _normalize_argv(["clean", "cache", "--keep", "2"]) == ["purify", "cache", "--keep", "2"]
+    assert _normalize_argv(["clean", "corrupt"]) == ["purify", "corrupt"]
+    assert _normalize_argv(["clean", "flatpak"]) == ["purify", "flatpak"]
+    assert _normalize_argv(["clean", "merge", "/etc/x.pacnew", "--accept"]) == \
+        ["purify", "merge", "/etc/x.pacnew", "--accept"]
+
+
+def test_normalize_default_actions():
+    assert _normalize_argv(["backup"]) == ["backup", "-c"]
+    assert _normalize_argv(["backup", "-l"]) == ["backup", "-l"]
+    assert _normalize_argv(["schedule"]) == ["schedule", "show"]
+    assert _normalize_argv(["schedule", "set", "--days", "1,3,5"]) == \
+        ["schedule", "set", "--days", "1,3,5"]
+
+
+def test_normalize_keeps_global_flags():
+    assert _normalize_argv(["--json", "updates"]) == ["--json", "list-updates"]
+    assert _normalize_argv(["--json", "hold", "list"]) == ["--json", "marks", "list"]
 
 
 def test_global_flags_accepted_before_and_after_subcommand():

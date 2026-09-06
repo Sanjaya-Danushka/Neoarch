@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Resolve repo root (bin/..)
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+# Resolve repo root (bin/..), following symlinks so `neo`/installed copies work
+SCRIPT="$(readlink -f "${BASH_SOURCE[0]}")"
+REPO_DIR="$(cd "$(dirname "$SCRIPT")"/.. && pwd)"
 
 # Activate local venv if present
 if [[ -f "$REPO_DIR/.venv/bin/activate" ]]; then

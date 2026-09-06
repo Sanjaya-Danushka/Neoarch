@@ -35,6 +35,11 @@ def main():
     window = ArchPkgManagerUniGetUI()
     window.show()
 
+    # Make sure the very first mapped frame is complete (content + border
+    # painted together) before the window manager fades the window in.
+    app.processEvents()
+    window.repaint()
+
     window.check_authentication_tools()
 
     sys.exit(app.exec())

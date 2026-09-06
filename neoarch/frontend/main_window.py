@@ -187,6 +187,13 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
             app = QApplication.instance()
             if app is not None:
                 app.removeEventFilter(self)
+            # Force one full synchronous repaint before accepting the close so
+            # the compositor's close fade composites the complete frame
+            # (content + rounded border) instead of the border lagging a few
+            # frames behind the disappearing body.
+            self.repaint()
+            if app is not None:
+                app.processEvents()
         except Exception:
             pass
         super().closeEvent(event)

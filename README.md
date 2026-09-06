@@ -54,40 +54,46 @@ Set and forget with configurable auto-update intervals (1-30 days), auto-refresh
 
 Scriptable package management from the terminal. Search, install, remove, upgrade, list updates, read Arch news, create backups, purge orphans, and run system checks — all with `--json` output for automation. Runs headless (no GUI required).
 
+The everyday commands are short and easy to remember (`neo install yay` just works — AUR packages are found automatically). The full command is `neoarch-cli`; `neo` is the shorthand, both are identical:
+
 ```bash
-neoarch-cli search browserpass        # search pacman + AUR
-neoarch-cli install --aur yay         # install from AUR
-neoarch-cli upgrade --all             # full system upgrade
-neoarch-cli list-updates --json       # machine-readable updates
-neoarch-cli news                      # latest Arch Linux news
-neoarch-cli doctor                    # system health check
-neoarch-cli scan ./PKGBUILD           # security scan (risky tools, elevation, homographs)
-neoarch-cli downgrade firefox -l      # list cached versions
-neoarch-cli downgrade firefox -p      # downgrade + pin to IgnorePkg
-neoarch-cli marks list                # show IgnorePkg / HoldPkg
-neoarch-cli marks hold linux          # hold a package
-neoarch-cli marks reason firefox explicit  # set install reason
-neoarch-cli appimage list             # managed AppImages
-neoarch-cli appimage add-repo Obsidian obsidianmd/obsidian-releases
-neoarch-cli appimage check --json     # check for AppImage updates
- neoarch-cli backup -c                 # create a backup
- neoarch-cli purge -o                  # remove orphaned packages
- neoarch-cli keyring list              # trusted pacman keys
- neoarch-cli keyring populate          # official Arch keyrings
- neoarch-cli purify corrupt            # find corrupted cache archives
- neoarch-cli purify cache --keep 2     # paccache retention
- neoarch-cli purify flatpak            # remove unused Flatpak runtimes
- neoarch-cli purify merge /etc/x.pacnew --accept  # three-way .pacnew merge
- neoarch-cli restart check --json      # is a reboot recommended?
- neoarch-cli parallel                  # show ParallelDownloads
- neoarch-cli parallel 10               # set it in /etc/pacman.conf (root)
- neoarch-cli schedule show             # weekly update schedule
- neoarch-cli schedule set --days 1,3,5 --time 05:30 --enable
- neoarch-cli recommend --limit 5       # curated package recommendations
- neoarch-cli install-url https://host/pkg.pkg.tar.zst  # install from URL
- neoarch-cli aur-build yay --check     # AUR build (chroot/check/commit)
- neoarch-cli news --mark-read          # read news + mark as read
+neo search browserpass        # search pacman + AUR
+neo install yay               # install (auto-falls back to AUR)
+neo upgrade                   # full system upgrade
+neo updates --json            # machine-readable updates
+neo news                      # latest Arch Linux news
+neo doctor                    # system health check
+neo scan ./PKGBUILD           # security scan (risky tools, elevation, homographs)
+neo down firefox -l           # list cached versions
+neo down firefox -p           # downgrade + pin to IgnorePkg
+neo hold list                 # show IgnorePkg / HoldPkg
+neo hold linux                # hold a package
+neo hold reason firefox explicit  # set install reason
+neo appimage list             # managed AppImages
+neo appimage add-repo Obsidian obsidianmd/obsidian-releases
+neo appimage check --json     # check for AppImage updates
+neo backup                    # create a backup (defaults to create)
+neo clean orphans             # remove orphaned packages
+neo keys list                 # trusted pacman keys
+neo keys init                 # official Arch keyrings
+neo clean corrupt             # find corrupted cache archives
+neo clean cache --keep 2      # paccache retention
+neo clean flatpak             # remove unused Flatpak runtimes
+neo clean merge /etc/x.pacnew --accept  # three-way .pacnew merge
+neo reboot --check --json     # is a reboot recommended?
+neo parallel                  # show ParallelDownloads
+neo parallel 10               # set it in /etc/pacman.conf (root)
+neo schedule                  # weekly update schedule
+neo schedule set --days 1,3,5 --time 05:30 --enable
+neo recommend -n 5            # curated package recommendations
+neo install https://host/pkg.pkg.tar.zst  # install from URL
+neo build yay --check         # AUR build (chroot/check/commit)
+neo news --mark-read          # read news + mark as read
 ```
+
+The longer `neoarch-cli` spellings (`neoarch-cli list-updates`,
+`neoarch-cli purify cache --keep 2`, `neoarch-cli aur-build ...`, etc.)
+still work — `neo` is a friendlier alias layer on top.
 
 The `appimage` subcommands manage a NeoArch-owned AppImage store at
 `~/.local/share/neoarch/appimages`: `add` (local file), `add-url`

@@ -9,7 +9,7 @@ Usage:
 
 Commands:
     search        Search pacman/AUR/Flatpak repositories
-    install       Install packages (pacman/AUR/Flatpak/npm)
+    install       Install packages (pacman with AUR/URL fallback)
     remove        Remove installed packages
     upgrade       Upgrade all sources or a specific source
     update        Update specific packages
@@ -33,6 +33,14 @@ Commands:
     install-url   Install a package archive from an HTTP(S) URL
     aur-build     Clone and build an AUR package (chroot/check/commit)
     doctor        Check the system for missing prerequisites
+
+Short aliases (also available as `neo`):
+    updates = list-updates      down = downgrade    hold = marks
+    keys  = keyring             reboot = restart    build = aur-build
+    clean orphans/cache/corrupt/flatpak/merge  (purge/purify shortcuts)
+    install <package> finds AUR packages automatically
+    install <https://...> installs a package archive from a URL
+    backup defaults to creating a backup      schedule defaults to show
 """
 
 import argparse
@@ -177,32 +185,60 @@ def _search_flatpak(query: str, limit: int) -> List[Dict]:
 
 # ── install ───────────────────────────────────────────────────────────────
 
+def _is_url(s: str) -> bool:
+    return s.startswith(("http://", "https://"))
+
+
 def cmd_install(args) -> None:
     if not args.packages:
         print("error: install requires at least one package", file=sys.stderr)
         sys.exit(1)
+
     no_confirm = args.no_confirm or args.yes
+
+    urls = [p for p in args.packages if _is_url(p)]
+    packages = [p for p in args.packages if not _is_url(p)]
+
+    for url in urls:
+        from neoarch.backend.services import install_url
+        if install_url.install_from_url(url):
+            print(f"Installed {url}.")
+        else:
+            print(f"Failed to install from URL: {url}", file=sys.stderr)
+            sys.exit(1)
+    if not packages:
+        return
+
     if not args.aur and not args.flatpak and not args.npm:
         target = "pacman"
     else:
         target = "aur" if args.aur else ("flatpak" if args.flatpak else "npm")
 
     if target == "pacman":
-        cmd = ["pacman", "-S"] + (["--noconfirm"] if no_confirm else []) + args.packages
-        _stream(cmd, sudo=True, check=True)
+        cmd = ["pacman", "-S"] + (["--noconfirm"] if no_confirm else []) + packages
+        code = _stream(cmd, sudo=True, check=False)
+        if code != 0:
+            helper = sys_utils.get_aur_helper()
+            if helper:
+                print("[neoarch] not found in official repos; trying AUR helper...",
+                      file=sys.stderr)
+                _stream([helper, "-S"] + (["--noconfirm"] if no_confirm else []) + packages,
+                        check=True)
+            else:
+                sys.exit(code)
     elif target == "aur":
         helper = sys_utils.get_aur_helper()
         if not helper:
             print("error: no AUR helper available (install yay/paru)", file=sys.stderr)
             sys.exit(1)
-        cmd = [helper, "-S"] + args.packages
+        cmd = [helper, "-S"] + packages
         if no_confirm:
             cmd.insert(1, "--noconfirm")
         _stream(cmd, check=True)
     elif target == "flatpak":
-        _stream(["flatpak", "install", "--user", "-y"] + args.packages, check=True)
+        _stream(["flatpak", "install", "--user", "-y"] + packages, check=True)
     elif target == "npm":
-        _stream(["npm", "install", "-g"] + args.packages, check=True)
+        _stream(["npm", "install", "-g"] + packages, check=True)
 
 
 # ── remove ────────────────────────────────────────────────────────────────
@@ -1326,7 +1362,7 @@ def _build_parser() -> argparse.ArgumentParser:
     sp.set_defaults(func=cmd_schedule)
 
     sp = sub.add_parser("recommend", parents=[common], help="curated package recommendations")
-    sp.add_argument("--limit", type=int, default=20, help="max entries (default 20)")
+    sp.add_argument("-n", "--limit", type=int, default=20, help="max entries (default 20)")
     sp.add_argument("--installed", action="store_true", help="include installed packages")
     sp.set_defaults(func=cmd_recommend)
 
@@ -1347,12 +1383,87 @@ def _build_parser() -> argparse.ArgumentParser:
     return p
 
 
+# ──────────────────────────────────────────────────────────────────────────
+# Shorthand aliases
+# ──────────────────────────────────────────────────────────────────────────
+
+# Short names so the everyday commands are easy to type and remember.
+# Both spellings work: `neoarch-cli <long>` and `neo <short>`.
+_ALIASES = {
+    "updates": "list-updates",
+    "down": "downgrade",
+    "keys": "keyring",
+    "reboot": "restart",
+    "build": "aur-build",
+}
+
+_HOLD_ACTIONS = ("list", "ignore", "unignore", "hold", "unhold", "reason")
+_CLEAN_ACTIONS = {
+    "orphans": ("purge", ("-o",)),
+    "corrupt": ("purify", ("corrupt",)),
+    "cache": ("purify", ("cache",)),
+    "flatpak": ("purify", ("flatpak",)),
+    "merge": ("purify", ("merge",)),
+}
+
+
+def _normalize_argv(argv: List[str]) -> List[str]:
+    """Rewrite shorthand `neo` invocations into canonical commands."""
+    argv = list(argv)
+
+    # Skip leading global flags (--json/-y/--no-confirm) before the command.
+    idx = 0
+    while idx < len(argv) and argv[idx].startswith("-"):
+        idx += 1
+    prefix = argv[:idx]
+    if idx >= len(argv):
+        return argv
+    first = argv[idx]
+    rest = argv[idx + 1:]
+
+    if first == "schedule":
+        if not rest or rest[0].startswith("-"):
+            rest = ["show"] + rest
+        return prefix + ["schedule"] + rest
+
+    if first == "backup":
+        if not rest or rest[0].startswith("-"):
+            if not any(flag in rest for flag in
+                       ("-c", "--create", "-l", "--list", "-r", "--restore")):
+                rest = ["-c"] + rest
+        return prefix + ["backup"] + rest
+
+    if first == "hold":
+        if not rest or rest[0].startswith("-"):
+            return prefix + ["marks", "list"] + rest
+        action = rest[0]
+        if action in _HOLD_ACTIONS:
+            return prefix + ["marks"] + rest
+        return prefix + ["marks", "hold"] + rest
+
+    if first == "clean":
+        action = rest[0] if rest else None
+        if action in _CLEAN_ACTIONS:
+            cmd, extra = _CLEAN_ACTIONS[action]
+            return prefix + [cmd] + list(extra) + rest[1:]
+        if action is None:
+            return prefix + ["purify", "--help"]
+        print(f"error: 'clean' takes one of: "
+              f"{', '.join(sorted(_CLEAN_ACTIONS))}", file=sys.stderr)
+        sys.exit(2)
+
+    cmd = _ALIASES.get(first, first)
+    if first == "reboot":
+        return prefix + [cmd] + ["check" if t == "--check" else t for t in rest]
+    return prefix + [cmd] + rest
+
+
 parser = _build_parser()
 
 
 def main(argv: Optional[List[str]] = None) -> None:
     """CLI entry point."""
-    argv = list(sys.argv[1:] if argv is None else argv)
+    argv = _normalize_argv(list(sys.argv[1:] if argv is None else argv))
     flags = _scan_global_flags(argv)
     args = parser.parse_args(argv)
     if hasattr(args, "func"):
