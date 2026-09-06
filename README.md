@@ -14,7 +14,8 @@
 
 </div>
 
-<img src="https://github.com/user-attachments/assets/a4e13e1b-8626-401d-b600-60e758a9623d" alt="NeoArch banner" width="100%" style="border-radius:12px;border:1px solid #30363d"/>
+<img width="1808" height="870" alt="banner1" src="https://github.com/user-attachments/assets/c6c0c08a-d744-4e0a-8b5b-b080381ffc85" />
+
 
 > **One app for everything you install.** Search, install, update, and clean across **pacman, AUR (live search), Flatpak, and npm** — from a native PyQt6 desktop app or a headless `neo` CLI with `--json` automation.
 
@@ -49,7 +50,9 @@
 
 ### Screenshots
 
-<img width="45%" align="top" src="https://github.com/user-attachments/assets/7d63dca2-15cc-406a-bd0a-a5b60ad9d652" alt="Search and Discover Packages" style="border-radius:12px;border:1px solid #30363d"/> <img width="45%" align="top" src="https://github.com/user-attachments/assets/d4bbb403-7a8a-4693-86e7-38e810c94b05" alt="Installed Packages View" style="border-radius:12px;border:1px solid #30363d"/>
+<img width="1294" height="868" alt="2" src="https://github.com/user-attachments/assets/026e87b5-3268-44c6-97a9-722b47290d69" />
+<img width="1300" height="864" alt="4" src="https://github.com/user-attachments/assets/588ff48a-4601-4ace-aa17-e1a777a815df" />
+
 
 ### Under the hood
 
