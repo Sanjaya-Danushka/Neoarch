@@ -5,10 +5,8 @@ the rest of the app (``ensure_session_auth`` + the shared install/uninstall
 services), so the password prompt is always the standard NeoArch dialog.
 """
 
-import os
 import shutil
 import subprocess
-from threading import Thread
 from PyQt6.QtCore import QTimer
 
 from neoarch.backend.package import installer as install_service
@@ -193,17 +191,6 @@ class PluginsManager:
             app.installation_progress.connect(on_progress)
         except Exception:
             pass
-
-    def open_plugins_folder(self):
-        try:
-            folder = self.app.get_user_plugins_dir()
-            try:
-                os.makedirs(folder, exist_ok=True)
-            except Exception:
-                pass
-            subprocess.Popen(["xdg-open", folder], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception as e:
-            self._message("Plugins", f"Cannot open folder: {e}")
 
     def _log(self, msg):
         try:

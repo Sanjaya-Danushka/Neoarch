@@ -16,10 +16,6 @@ def _ensure_dir():
     os.makedirs(_BUNDLES_DIR, exist_ok=True)
 
 
-def _safe_name(name):
-    return "".join(c if c.isalnum() or c in "._-" else "_" for c in name).strip("_") or "bundle"
-
-
 def list_bundles():
     """Return list of {"key": str, "name": str, "count": int} sorted by name."""
     _ensure_dir()
@@ -115,28 +111,3 @@ def _save_items(key, items):
     path = os.path.join(_BUNDLES_DIR, f"{key}.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(items, f, indent=2)
-
-
-def export_bundle_json(key):
-    """Export a bundle as a JSON string for file export."""
-    manifest = _load_manifest()
-    meta = manifest.get(key, {})
-    items = _load_items(key)
-    return json.dumps({
-        "app": "NeoArch",
-        "bundle_name": meta.get("name", key),
-        "items": items,
-    }, indent=2)
-
-
-def import_bundle_json(json_str):
-    """Import bundle items from a JSON string. Returns (name, items) or (None, [])."""
-    try:
-        data = json.loads(json_str)
-        items = data.get("items") if isinstance(data, dict) else None
-        if not isinstance(items, list):
-            return None, []
-        name = data.get("bundle_name", "Imported Bundle")
-        return name, items
-    except Exception:
-        return None, []

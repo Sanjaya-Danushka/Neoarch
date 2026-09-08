@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QDialog, QMessageBox,
 )
-from PyQt6.QtCore import pyqtSignal, pyqtSlot, QObject, QTimer, QMetaObject, Qt
+from PyQt6.QtCore import pyqtSignal, QObject, QTimer
 
 __all__ = ["GitManager"]
 
@@ -377,21 +377,6 @@ class GitManager(QObject):
     # Actions
     # ------------------------------------------------------------------
 
-    def open_git_repos_dir(self):
-        """Open the git-repos directory in the file manager."""
-        git_repos_dir = os.path.expanduser("~/git-repos")
-        try:
-            if os.path.exists(git_repos_dir):
-                subprocess.run(["xdg-open", git_repos_dir], check=True)
-                self.log_signal.emit("Opened git-repos directory")
-            else:
-                QMessageBox.information(
-                    None, "No Repos Yet",
-                    "You haven't cloned any Git repositories yet.\n"
-                    "Use '+ Clone Repository' to get started!")
-        except Exception as e:
-            self.log_signal.emit(f"Failed to open directory: {e}")
-
     def open_repo(self, repo_path):
         """Open a single repository directory in the file manager."""
         if os.path.exists(repo_path):
@@ -429,33 +414,6 @@ class GitManager(QObject):
         except Exception as e:
             self.log_signal.emit(f"Failed to remove repository: {e}")
         self.repos_changed.emit()
-
-    def update_all_git_repos(self):
-        """Update all Git repositories in ~/git-repos."""
-        git_repos_dir = os.path.expanduser("~/git-repos")
-        if not os.path.exists(git_repos_dir):
-            return
-        repos = [d for d in os.listdir(git_repos_dir)
-                 if os.path.isdir(os.path.join(git_repos_dir, d)) and
-                 os.path.exists(os.path.join(git_repos_dir, d, ".git"))]
-        if not repos:
-            return
-
-        def _task():
-            updated = failed = 0
-            for repo in repos:
-                r = subprocess.run(
-                    ["git", "-C", os.path.join(git_repos_dir, repo), "pull"],
-                    capture_output=True, text=True, timeout=60)
-                if r.returncode == 0:
-                    updated += 1
-                else:
-                    failed += 1
-            QTimer.singleShot(0, lambda: self.show_message.emit(
-                "Git Update Complete", f"Updated {updated} repos, {failed} failed"))
-            self._emit_repos_changed()
-
-        Thread(target=_task, daemon=True).start()
 
     def build_repo(self, repo_path):
         """Build a repository using its detected build system."""

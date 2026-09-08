@@ -238,25 +238,6 @@ class CloudAuthManager(QObject):
 
     # ── Cloud bundle operations ─────────────────────────────────────
 
-    def save_favorites(self, bundle_name: str, bundle_data: list) -> bool:
-        if not self._client or not self._user:
-            return False
-        try:
-            self._client.table("user_favorites") \
-                .delete() \
-                .eq("user_id", self._user.id) \
-                .execute()
-            self._client.table("user_favorites").insert({
-                "user_id": self._user.id,
-                "bundle_name": bundle_name,
-                "bundle_data": bundle_data,
-                "item_count": len(bundle_data),
-            }).execute()
-            return True
-        except Exception as e:
-            print(f"Save favorites error: {e}")
-            return False
-
     def save_bundle_to_cloud(self, bundle_key: str, bundle_name: str, items: list) -> bool:
         if not self._client or not self._user:
             return False

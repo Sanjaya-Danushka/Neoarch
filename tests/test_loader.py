@@ -5,6 +5,9 @@ from tests.conftest import FakeCompletedProcess
 from neoarch.backend.package.loader import (
     _parse_qu_output,
     _installed_ts,
+    _flatpak_install_ts,
+    _npm_install_ts,
+    _attach_installed_dates,
     _check_pacman_updates,
     _check_aur_updates,
     _check_flatpak_updates,
@@ -15,6 +18,62 @@ from neoarch.backend.package.loader import (
 # ---------------------------------------------------------------------------
 # Pure function tests — no mocking needed
 # ---------------------------------------------------------------------------
+
+def test_flatpak_install_ts_user_deploy(tmp_path, monkeypatch):
+    deploy = tmp_path / ".local" / "share" / "flatpak" / "app" / "org.foo.App" / "x86_64" / "stable" / "active"
+    deploy.parent.mkdir(parents=True)
+    deploy.write_text("v1")
+    monkeypatch.setattr(
+        "neoarch.backend.package.loader.os.path.expanduser",
+        lambda p: str(tmp_path) if p.startswith("~") else p,
+    )
+    ts = _flatpak_install_ts("org.foo.App")
+    assert ts > 0
+
+
+def test_flatpak_install_ts_missing_returns_zero():
+    assert _flatpak_install_ts("does.not.Exist") == 0
+    assert _flatpak_install_ts("") == 0
+
+
+def test_npm_install_ts(tmp_path):
+    pkg_dir = tmp_path / "somepkg"
+    pkg_dir.mkdir()
+    ts = _npm_install_ts("somepkg", str(tmp_path))
+    assert ts > 0
+    assert _npm_install_ts("missingpkg", str(tmp_path)) == 0
+
+
+def test_attach_installed_dates(monkeypatch):
+    monkeypatch.setattr(
+        "neoarch.backend.package.loader._npm_roots",
+        lambda: ["/nonexistent-root"],
+    )
+    monkeypatch.setattr(
+        "neoarch.backend.package.loader._installed_ts",
+        lambda name, version: 1111111,
+    )
+    monkeypatch.setattr(
+        "neoarch.backend.package.loader._flatpak_install_ts",
+        lambda name: 2222222,
+    )
+    monkeypatch.setattr(
+        "neoarch.backend.package.loader._npm_install_ts",
+        lambda name, root: 3333333,
+    )
+    rows = _attach_installed_dates([
+        {"name": "a", "source": "pacman", "version": "1.0"},
+        {"name": "b", "source": "Flatpak"},
+        {"name": "c", "source": "npm"},
+        {"name": "d", "source": "Local"},
+        {"name": "e", "source": "pacman", "installed_date": 9},
+    ])
+    by_name = {r["name"]: r for r in rows}
+    assert by_name["a"]["installed_date"] == 1111111
+    assert by_name["b"]["installed_date"] == 2222222
+    assert by_name["c"]["installed_date"] == 3333333
+    assert by_name["d"].get("installed_date", 0) == 0
+    assert by_name["e"]["installed_date"] == 9
 
 def test_parse_qu_output_basic():
     stdout = "pkg 1.0 -> 2.0\nother 2.3 -> 2.4"
@@ -175,13 +234,27 @@ def test_aur_retry_all_empty(monkeypatch):
 def test_flatpak_dedupes(monkeypatch):
     def fake_run_cmd(cmd, **kw):
         if "--updates" not in cmd:
-            return FakeCompletedProcess(stdout="com.app.Test\t1.0")
+            return FakeCompletedProcess(stdout="com.app.Test\t1.0\t12.3 MB")
         return FakeCompletedProcess(stdout="com.app.Test\t2.0")
     monkeypatch.setattr("neoarch.backend.package.loader._run_cmd", fake_run_cmd)
 
     result = _check_flatpak_updates()
     names = [p["name"] for p in result]
     assert names.count("com.app.Test") == 1
+
+
+def test_flatpak_updates_include_download_size(monkeypatch):
+    def fake_run_cmd(cmd, **kw):
+        if any("download-size" in x for x in cmd):
+            return FakeCompletedProcess(stdout="com.app.A\t203.5 MB\ncom.app.B\t8.0 MB")
+        if "--updates" not in cmd:
+            return FakeCompletedProcess(stdout="com.app.A\t1.0")
+        return FakeCompletedProcess(stdout="com.app.A\t2.0")
+    monkeypatch.setattr("neoarch.backend.package.loader._run_cmd", fake_run_cmd)
+
+    result = _check_flatpak_updates()
+    by_name = {p["name"]: p for p in result}
+    assert by_name["com.app.A"].get("download_size") == "203.5 MB"
 
 
 def test_flatpak_empty(monkeypatch):

@@ -1929,6 +1929,11 @@ class _ViewsMixin:
             self.load_more_btn.setVisible(False)
             self.package_table.setRowCount(0)
             self.header_info.setText("Search and discover new packages to install")
+            try:
+                if hasattr(self, 'filters_panel'):
+                    self.filters_panel.setVisible(False)
+            except Exception:
+                pass
             news_btn = getattr(self, '_news_btn', None)
             if news_btn is not None:
                 news_btn.setVisible(True)
@@ -2893,9 +2898,10 @@ class _ViewsMixin:
                 self.updates_table.set_empty_text(
                     "All caught up", "Your system is up to date",
                     "Updates will appear here automatically when available")
-            self.updates_table.show_installed_date(False)
+            self.updates_table.show_installed_date(True)
             self.updates_table.set_installed_mode(False)
             self.updates_table.set_discover_mode(False)
+            self.updates_table.set_enrich(True)
             self.updates_table.set_packages(rows)
             self.updates_table.set_loading(False)
         except Exception as e:
@@ -3101,6 +3107,8 @@ class _ViewsMixin:
         elif action == "update":
             if not name:
                 return
+            if not self._confirm_partial_update({source: [name]}):
+                return
             if not self.ensure_session_auth():
                 self.log("Update cancelled: authentication required.")
                 return
@@ -3124,6 +3132,8 @@ class _ViewsMixin:
             self._show_detail_for_updates(pkg)
         elif action == "browser":
             self._open_package_page(pkg)
+        elif action in ("pkgbuild", "changes", "snapshot"):
+            self._open_aur_page(pkg, action)
         elif action == "launch":
             pid = pkg.get('id') or pkg.get('name')
             if pid:
@@ -3149,6 +3159,24 @@ class _ViewsMixin:
         url = urls.get(source)
         if not url:
             url = f"https://www.google.com/search?q={name}+update"
+        import webbrowser
+        try:
+            webbrowser.open(url)
+        except Exception as e:
+            self.log(f"Failed to open browser: {e}")
+
+    def _open_aur_page(self, pkg, kind):
+        name = (pkg.get('name') or '').strip()
+        if not name:
+            return
+        urls = {
+            "pkgbuild": f"https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h={name}",
+            "changes": f"https://aur.archlinux.org/cgit/aur.git/log/?h={name}",
+            "snapshot": f"https://aur.archlinux.org/cgit/aur.git/snapshot/{name}.tar.gz",
+        }
+        url = urls.get(kind)
+        if not url:
+            return
         import webbrowser
         try:
             webbrowser.open(url)

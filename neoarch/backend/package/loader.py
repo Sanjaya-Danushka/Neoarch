@@ -36,6 +36,89 @@ def _installed_ts(name, version):
         return 0
 
 
+def _flatpak_install_ts(app_id):
+    """Best-effort install/last-update timestamp for a flatpak app from its
+    deploy directory mtime (user + system installations)."""
+    if not app_id:
+        return 0
+    bases = (
+        os.path.join(os.path.expanduser("~"), ".local", "share", "flatpak"),
+        "/var/lib/flatpak",
+    )
+    best = 0
+    for base in bases:
+        app_dir = os.path.join(base, "app", app_id)
+        try:
+            if not os.path.isdir(app_dir):
+                continue
+            for arch in os.listdir(app_dir):
+                arch_dir = os.path.join(app_dir, arch)
+                if not os.path.isdir(arch_dir):
+                    continue
+                for branch in os.listdir(arch_dir):
+                    try:
+                        m = os.path.getmtime(os.path.join(arch_dir, branch, "active"))
+                        if m > best:
+                            best = m
+                    except Exception:
+                        pass
+        except Exception:
+            continue
+    return int(best) if best else 0
+
+
+def _npm_install_ts(name, root):
+    """Best-effort install timestamp for a global npm package directory."""
+    try:
+        return int(os.path.getmtime(os.path.join(root, name)))
+    except Exception:
+        return 0
+
+
+def _npm_roots():
+    """Best-effort global npm package roots (default + user prefix)."""
+    roots = []
+    try:
+        rr = _run_cmd(["npm", "root", "-g"], timeout=15)
+        if rr and rr.returncode == 0 and (rr.stdout or '').strip():
+            roots.append((rr.stdout or '').strip())
+    except Exception:
+        pass
+    try:
+        prefix = os.path.join(os.path.expanduser('~'), '.npm-global')
+        env = os.environ.copy()
+        env['npm_config_prefix'] = prefix
+        rr = _run_cmd(["npm", "root", "-g"], timeout=15, env=env)
+        if rr and rr.returncode == 0 and (rr.stdout or '').strip():
+            root = (rr.stdout or '').strip()
+            if root not in roots:
+                roots.append(root)
+    except Exception:
+        pass
+    return roots
+
+
+def _attach_installed_dates(packages):
+    """Best-effort installed-date timestamps for update/installed rows."""
+    npm_roots = _npm_roots()
+    for p in packages:
+        if p.get('installed_date'):
+            continue
+        src = p.get('source')
+        name = p.get('name') or ''
+        if src in ('pacman', 'AUR'):
+            p['installed_date'] = _installed_ts(name, p.get('version') or '')
+        elif src == 'Flatpak':
+            p['installed_date'] = _flatpak_install_ts(name)
+        elif src == 'npm':
+            for root in npm_roots:
+                ts = _npm_install_ts(name, root)
+                if ts:
+                    p['installed_date'] = ts
+                    break
+    return packages
+
+
 def _parse_qu_output(stdout):
     """Parse `pacman -Qu` / `checkupdates` lines into update entries."""
     packages = []
@@ -199,6 +282,24 @@ def _check_flatpak_updates():
                             seen_apps.add(app_id)
             except Exception:
                 pass
+
+        size_map = {}
+        for scope in ([], ["--user"], ["--system"]):
+            try:
+                rs = _run_cmd(
+                    ["flatpak"] + scope + ["remote-ls", "--updates", "--columns=application,download-size"],
+                    timeout=60)
+                if rs and rs.returncode == 0 and rs.stdout:
+                    for ln in [x for x in rs.stdout.strip().split('\n') if x.strip()]:
+                        c = ln.split('\t')
+                        if len(c) >= 2 and c[0].strip():
+                            size_map.setdefault(c[0].strip(), c[1].strip())
+            except Exception:
+                continue
+        if size_map:
+            for pkg in packages:
+                if pkg.get('source') == 'Flatpak' and pkg.get('name') in size_map:
+                    pkg['download_size'] = size_map[pkg['name']]
     except Exception:
         pass
     return packages
@@ -418,7 +519,7 @@ def load_updates(app):
                             continue
                         seen.add(key)
                         deduped.append(p)
-                    return deduped
+                    return _attach_installed_dates(deduped)
 
                 def is_stale():
                     return (app.cancel_update_load
@@ -566,13 +667,14 @@ def load_installed_packages(app):
                 installed_map = {}
                 seen = set()
                 for scope in ([], ["--user"], ["--system"]):
-                    cmd = ["flatpak"] + scope + ["list", "--app", "--columns=application,version"]
+                    cmd = ["flatpak"] + scope + ["list", "--app", "--columns=application,version,size"]
                     fp_result = _run_cmd(cmd, timeout=60)
                     if fp_result and fp_result.returncode == 0 and fp_result.stdout:
                         for ln in [x for x in fp_result.stdout.strip().split('\n') if x.strip()]:
                             c = ln.split('\t')
                             app_id = c[0].strip() if len(c) > 0 else ''
                             ver = c[1].strip() if len(c) > 1 else ''
+                            size = c[2].strip() if len(c) > 2 else ''
                             if app_id:
                                 installed_map[app_id] = ver
                             if app_id and app_id not in seen:
@@ -581,7 +683,8 @@ def load_installed_packages(app):
                                     'version': ver,
                                     'id': app_id,
                                     'source': 'Flatpak',
-                                    'has_update': False
+                                    'has_update': False,
+                                    'download_size': size
                                 })
                                 seen.add(app_id)
                 return fp_packages, installed_map
@@ -630,6 +733,12 @@ def load_installed_packages(app):
                     results.append((np_user.returncode, np_user.stdout))
 
                 seen = set()
+                npm_roots = []
+                for env in (None, env_user):
+                    rr = _run_cmd(["npm", "root", "-g"], timeout=15, env=env)
+                    if rr and rr.returncode == 0 and (rr.stdout or '').strip():
+                        npm_roots.append((rr.stdout or '').strip())
+
                 for code, out in results:
                     if code == 0 and out and out.strip():
                         try:
@@ -638,12 +747,18 @@ def load_installed_packages(app):
                             for name, info in deps.items():
                                 ver = (info.get('version') or '').strip()
                                 if name and ver and (name, ver) not in seen:
+                                    installed_date = 0
+                                    for root in npm_roots:
+                                        _ts = _npm_install_ts(name, root)
+                                        if _ts > installed_date:
+                                            installed_date = _ts
                                     npm_pkg.append({
                                         'name': name,
                                         'version': ver,
                                         'id': name,
                                         'source': 'npm',
-                                        'has_update': False
+                                        'has_update': False,
+                                        'installed_date': installed_date
                                     })
                                     seen.add((name, ver))
                         except Exception:
@@ -757,6 +872,8 @@ def load_installed_packages(app):
             for pkg in packages:
                 if pkg.get('source') in ('pacman', 'AUR'):
                     pkg['installed_date'] = _installed_ts(pkg.get('name') or '', pkg.get('version') or '')
+                elif pkg.get('source') == 'Flatpak':
+                    pkg['installed_date'] = _flatpak_install_ts(pkg.get('name') or '')
 
             app.packages_ready.emit(packages, load_id, True)
         except Exception as e:

@@ -132,6 +132,11 @@ class _SearchMixin:
                         self.updates_table.set_discover_mode(False)
                 except Exception:
                     pass
+                try:
+                    if hasattr(self, 'filters_panel'):
+                        self.filters_panel.setVisible(False)
+                except Exception:
+                    pass
                 self.header_info.setText("Search and discover new packages to install")
                 install_btn = getattr(self, 'discover_install_btn', None)
                 if install_btn is not None:
@@ -173,6 +178,11 @@ class _SearchMixin:
                 self._greeting_label.setVisible(False)
             if hasattr(self, 'packages_content_area'):
                 self.packages_content_area.setVisible(True)
+            try:
+                if hasattr(self, 'filters_panel'):
+                    self.filters_panel.setVisible(True)
+            except Exception:
+                pass
             self._show_active_view()
             self.search_discover_packages(query)
         else:

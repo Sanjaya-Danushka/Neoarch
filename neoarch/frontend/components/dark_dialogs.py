@@ -3,7 +3,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QComboBox, QWidget,
+    QPushButton, QWidget,
 )
 
 from neoarch.frontend.tokens import Colors
@@ -234,52 +234,6 @@ def dark_input(parent, title, label, text=""):
 
     if dlg.exec() == QDialog.DialogCode.Accepted:
         return le.text(), True
-    return "", False
-
-
-def dark_pick(parent, title, label, items):
-    """Dark-themed combo-picker dialog. Returns (selected_text, ok)."""
-    dlg = QDialog(parent)
-    dlg.setWindowTitle(title)
-    dlg.setMinimumWidth(360)
-    dlg.setStyleSheet(_DIALOG_STYLE)
-    _apply_dialog_flags(dlg)
-
-    root = QVBoxLayout(dlg)
-    root.setContentsMargins(0, 0, 0, 0)
-    root.setSpacing(0)
-
-    title_bar = _DialogTitleBar(title)
-    root.addWidget(title_bar)
-
-    content = QWidget()
-    content_layout = QVBoxLayout(content)
-    content_layout.setContentsMargins(24, 4, 24, 16)
-    content_layout.setSpacing(14)
-
-    lbl = QLabel(label)
-    content_layout.addWidget(lbl)
-
-    combo = QComboBox()
-    combo.addItems(items)
-    content_layout.addWidget(combo)
-
-    btn_row = QHBoxLayout()
-    btn_row.addStretch()
-    cancel = QPushButton("Cancel")
-    cancel.setStyleSheet(_BTN_SECONDARY)
-    cancel.clicked.connect(dlg.reject)
-    btn_row.addWidget(cancel)
-    ok = QPushButton("OK")
-    ok.setStyleSheet(_BTN_PRIMARY)
-    ok.clicked.connect(dlg.accept)
-    btn_row.addWidget(ok)
-    content_layout.addLayout(btn_row)
-
-    root.addWidget(content)
-
-    if dlg.exec() == QDialog.DialogCode.Accepted:
-        return combo.currentText(), True
     return "", False
 
 

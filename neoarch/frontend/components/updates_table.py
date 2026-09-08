@@ -29,7 +29,6 @@ from PyQt6.QtCore import (
     QRectF,
     QSize,
     Qt,
-    QTimer,
     QVariantAnimation,
     pyqtSignal,
 )
@@ -48,7 +47,6 @@ from PyQt6.QtGui import (
 )
 from PyQt6.QtWidgets import (
     QAbstractItemView,
-    QApplication,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -423,11 +421,6 @@ class UpdatesModel(QAbstractTableModel):
     def apply_sort(self):
         self._apply_sort()
 
-    def set_sort_column(self, col, asc=True):
-        self._sort_col = col
-        self._sort_asc = asc
-        self._apply_sort()
-
     def get_sort_column(self):
         return self._sort_col
 
@@ -442,9 +435,6 @@ class UpdatesModel(QAbstractTableModel):
         self._sort_col = 1
         self._sort_asc = True
         self._apply_sort()
-
-    def header_labels(self):
-        return list(_HEADERS)
 
 
 class _UpdatesHeader(QHeaderView):
@@ -669,9 +659,6 @@ class _ArrowAnimator(QObject):
     def _on_value(self, v):
         self._progress = float(v)
         self._table.viewport().update()
-
-    def progress_for(self, row):
-        return self._progress if row == self._row else 0.0
 
 
 class UpdatesTable(QTableView):
@@ -1172,6 +1159,15 @@ class UpdatesTable(QTableView):
             act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
             act_copy = menu.addAction("Copy name")
             act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
+
+        if (pkg.get("source") or "").upper() == "AUR":
+            menu.addSeparator()
+            act_pkgbuild = menu.addAction("View PKGBUILD")
+            act_pkgbuild.triggered.connect(lambda: self.menu_action.emit("pkgbuild", pkg))
+            act_changes = menu.addAction("View Changes")
+            act_changes.triggered.connect(lambda: self.menu_action.emit("changes", pkg))
+            act_snapshot = menu.addAction("Download snapshot")
+            act_snapshot.triggered.connect(lambda: self.menu_action.emit("snapshot", pkg))
         return menu
 
     # ── enrichment ────────────────────────────────────────────────────

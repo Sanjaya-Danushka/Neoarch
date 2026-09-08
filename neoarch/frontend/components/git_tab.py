@@ -9,17 +9,17 @@ import os
 import time
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel,
-    QPushButton, QLineEdit, QScrollArea, QMenu, QMessageBox,
+    QPushButton, QScrollArea, QMenu, QMessageBox,
 )
 from PyQt6.QtCore import (
-    Qt, QTimer, pyqtSignal, QRectF, QPoint,
+    Qt, pyqtSignal, QRectF, QPoint,
 )
 from PyQt6.QtGui import (
-    QColor, QPainter, QPen, QCursor, QIcon, QPixmap,
+    QColor, QPainter, QCursor, QIcon, QPixmap,
 )
 from PyQt6.QtSvg import QSvgRenderer
 from neoarch.resources.paths import PROJECT_ROOT
-from neoarch.frontend.tokens import Colors, Fonts, Radii, Spacing
+from neoarch.frontend.tokens import Colors, Radii
 
 __all__ = ["GitTab"]
 
@@ -465,7 +465,6 @@ class GitTab(QWidget):
         self._repos = []
         self._search_text = ""
         self._sort_mode = "updated"
-        self._show_grid = False
         self._init_ui()
         self.manager.repos_changed.connect(self.refresh)
         self.refresh()
@@ -966,12 +965,6 @@ class GitTab(QWidget):
         idx = (idx + 1) % len(modes)
         self._sort_mode = modes[idx]
         self._sort_btn.setText(labels[idx])
-        self._render_projects()
-
-    def _toggle_view(self):
-        self._show_grid = not self._show_grid
-        self._toggle_btn.setText("☰" if not self._show_grid else "≡")
-        self._toggle_btn.setToolTip("Grid View" if not self._show_grid else "List View")
         self._render_projects()
 
     def resizeEvent(self, event):

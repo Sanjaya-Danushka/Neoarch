@@ -10,83 +10,15 @@ from PyQt6.QtCore import Qt, QRectF, pyqtSignal, QSize
 from PyQt6.QtGui import QColor, QPainter, QPen, QRadialGradient, QFont, QPixmap, QIcon
 
 from neoarch.resources.paths import PROJECT_ROOT
-from neoarch.frontend.components.source_card import SourceCard, _ActionRow
+from neoarch.frontend.components.source_card import SourceCard
 
 
-from neoarch.frontend.tokens import Colors, SourceColors
+from neoarch.frontend.tokens import Colors
 
 from neoarch.backend.services import filter as filters_service
 from neoarch.frontend.components.updates_table import classify_update, _parse_size, _parse_version
 
 _BASE_DIR = str(PROJECT_ROOT)
-
-
-class _BundleIcon(QWidget):
-    """Painted bundle/folder icon matching SourceCard's icon language — 18x18."""
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setFixedSize(18, 18)
-        self._active = False
-
-    def set_active(self, active):
-        self._active = active
-        self.update()
-
-    def paintEvent(self, event):
-        p = QPainter(self)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        if self._active:
-            accent = QColor("#C084FC")
-            fill_a = 50
-            border_a = 180
-        else:
-            accent = QColor("#A855F7")
-            fill_a = 28
-            border_a = 100
-
-        p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QColor(accent.red(), accent.green(), accent.blue(), fill_a))
-        p.drawRoundedRect(QRectF(0, 0, 18, 18), 5, 5)
-
-        p.setPen(QPen(QColor(accent.red(), accent.green(), accent.blue(), border_a), 1.0))
-        p.setBrush(Qt.BrushStyle.NoBrush)
-        p.drawRoundedRect(QRectF(1, 1, 16, 16), 4, 4)
-
-        p.setPen(Qt.PenStyle.NoPen)
-        p.setBrush(QColor(accent.red(), accent.green(), accent.blue(), fill_a + 18))
-        p.drawRoundedRect(QRectF(3, 1, 7, 3), 1.5, 1.5)
-
-        p.end()
-
-
-class _BundleDeleteBtn(QPushButton):
-    """Small x button visible on hover for deleting a bundle."""
-
-    clicked_bundle = pyqtSignal(str)
-
-    def __init__(self, key, parent=None):
-        super().__init__("\u00d7", parent)
-        self.key = key
-        self.setFixedSize(18, 18)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet(f"""
-            QPushButton {{
-                background: transparent;
-                color: {Colors.TEXT_3};
-                border: none;
-                border-radius: 9px;
-                font-size: 13px;
-                font-weight: 600;
-                padding: 0;
-            }}
-            QPushButton:hover {{
-                background: rgba(255, 107, 107, 0.18);
-                color: #FF6B6B;
-            }}
-        """)
-        self.clicked.connect(lambda: self.clicked_bundle.emit(key))
 
 
 class _BundleListRow(QWidget):
@@ -194,11 +126,6 @@ class _BundleListRow(QWidget):
 
     def set_selected(self, selected):
         self._selected = selected
-        self.update()
-
-    def set_info(self, name, count):
-        self._name = name
-        self._count = count
         self.update()
 
     def enterEvent(self, e):
@@ -996,19 +923,6 @@ class _FiltersMixin:
             self.sources_section.setVisible(True)
             self.filters_section.setVisible(True)
 
-    def on_filter_selection_changed(self, filter_states):
-        """Handle changes in filter selection"""
-        # Apply filtering based on current view
-        if self.current_view == "installed":
-            self._installed_filter_states = filter_states.copy()
-            self.apply_filters()
-        elif self.current_view == "updates":
-            self._recompute_updates()
-        elif self.current_view == "plugins":
-            # Apply plugin status filters (Available/Installed)
-            if hasattr(self, 'plugins_view') and self.plugins_view:
-                self.plugins_view.apply_filters(filter_states)
-
     def update_discover_sources(self):
         """Update the discover sources using the new SourceCard component"""
         # Clear existing sources layout
@@ -1141,12 +1055,27 @@ class _FiltersMixin:
         self.source_card.health_action.connect(self.on_installed_health_action)
         self.source_card.sort_changed.connect(self.apply_filters)
         self.source_card.maintenance_action.connect(self.on_installed_maintenance_action)
+        self.source_card.update_status_changed.connect(self.on_installed_updates_filter_changed)
         self.source_card.configure_sections(
             show_search=False, show_health=True, show_counts=True, show_summary=True, show_sort=True,
-            show_quick_actions=True,
+            show_quick_actions=True, show_updates_filter=True,
         )
+        try:
+            states = getattr(self, '_installed_filter_states', None) or {}
+            self.source_card.set_updates_available_filter(
+                bool(states.get("Updates available", False)), emit=False)
+        except Exception:
+            pass
         self._refresh_installed_sources()
         self._refresh_installed_health_async()
+
+    def on_installed_updates_filter_changed(self, checked):
+        """Installed-page 'Updates available' toggle -> re-filter the table."""
+        try:
+            self._installed_filter_states = {"Updates available": bool(checked)}
+        except Exception:
+            pass
+        self.apply_filters()
 
     def on_installed_maintenance_action(self, action):
         if action == "purge_cache":

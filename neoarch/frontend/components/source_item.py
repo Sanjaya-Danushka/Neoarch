@@ -27,10 +27,6 @@ class ToggleSwitch(QWidget):
         self._animation.setDuration(180)
         self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
 
-    def set_accent_color(self, color):
-        self._on_color = QColor(color)
-        self.update()
-
     def get_knob_pos(self):
         return self._knob_pos
 

@@ -28,7 +28,7 @@ from neoarch.backend.services.network import urlopen as _net_urlopen
 __all__ = [
     "APPIMAGE_DIR", "METADATA_PATH", "DESKTOP_DIR", "ICON_DIR",
     "list_appimages", "add_from_file", "add_from_url", "add_from_repo",
-    "remove_appimage", "check_update", "check_all_updates",
+    "remove_appimage", "check_update",
     "install_update", "sync_from_disk",
 ]
 
@@ -424,16 +424,6 @@ def check_update(app_id: str) -> Optional[Dict]:
     _update_entry(app_id, fields)
     entry.update(fields)
     return entry
-
-
-def check_all_updates() -> List[Dict]:
-    """Run update checks for every managed AppImage."""
-    results = []
-    for entry in _load_db():
-        updated = check_update(entry["id"])
-        if updated:
-            results.append(updated)
-    return results
 
 
 def _is_newer(latest: str, current: str) -> bool:

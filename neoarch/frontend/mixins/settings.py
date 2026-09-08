@@ -10,6 +10,7 @@ from neoarch.resources.paths import APP_VERSION, APP_EDITION
 from neoarch.frontend.views.settings_general import GeneralSettingsWidget
 from neoarch.frontend.views.settings_auto_update import AutoUpdateSettingsWidget
 from neoarch.frontend.views.settings_notifications import NotificationsSettingsWidget
+from neoarch.frontend.views.settings_security import SecuritySettingsWidget
 from neoarch.frontend.views.settings_logging import LoggingSettingsWidget
 from neoarch.frontend.views.settings_proxy import ProxySettingsWidget
 from neoarch.frontend.views.settings_maintenance import MaintenanceSettingsWidget
@@ -114,6 +115,12 @@ class _SettingsMixin:
         self.settings_nav_buttons["notifications"] = btn_notifications
         sidebar_layout.addWidget(btn_notifications)
 
+        btn_security = QPushButton("Security")
+        btn_security.setCheckable(True)
+        btn_security.clicked.connect(lambda: self.switch_settings_category("security"))
+        self.settings_nav_buttons["security"] = btn_security
+        sidebar_layout.addWidget(btn_security)
+
         btn_logging = QPushButton("Logging")
         btn_logging.setCheckable(True)
         btn_logging.clicked.connect(lambda: self.switch_settings_category("logging"))
@@ -134,26 +141,32 @@ class _SettingsMixin:
 
         sidebar_layout.addStretch()
 
-        # Version badge with edition
+        ## Version badge with edition
         version_container = QHBoxLayout()
         version_container.setContentsMargins(16, 4, 16, 8)
-        version_container.setSpacing(6)
+        version_container.setSpacing(0)
 
-        version_text = QLabel(f"NeoArch {APP_VERSION}")
-        version_text.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: {Fonts.SM}; background: transparent;")
+        version_text = QLabel(f"NeoArch {APP_VERSION} \u00b7")
+        version_text.setStyleSheet(
+            f"color: {Colors.TEXT_3}; font-size: {Fonts.XS};"
+            f" font-weight: {Fonts.MEDIUM};"
+            " background: transparent; border: none;")
         version_container.addWidget(version_text)
+
+        version_container.addSpacing(8)
 
         edition_badge = QLabel(APP_EDITION)
         edition_badge.setStyleSheet(f"""
-            color: #0C0C0E;
-            background-color: {Colors.ACCENT};
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            padding: 2px 8px;
-            border-radius: 10px;
+            color: {Colors.ACCENT};
+            background-color: rgba(0, 191, 174, 0.08);
+            border: 1px solid rgba(0, 191, 174, 0.18);
+            font-size: {Fonts.XS};
+            font-weight: {Fonts.SEMI};
+            letter-spacing: 0.3px;
+            padding: 2px 7px;
+            border-radius: 6px;
         """)
-        edition_badge.setFixedHeight(18)
+        edition_badge.setFixedHeight(16)
         version_container.addWidget(edition_badge)
         version_container.addStretch()
 
@@ -194,6 +207,7 @@ class _SettingsMixin:
             "appearance": AppearanceSettingsWidget(self),
             "auto_update": AutoUpdateSettingsWidget(self),
             "notifications": NotificationsSettingsWidget(self),
+            "security": SecuritySettingsWidget(self),
             "logging": LoggingSettingsWidget(self),
             "proxy": ProxySettingsWidget(self),
             "maintenance": MaintenanceSettingsWidget(self),

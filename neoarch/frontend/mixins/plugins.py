@@ -3,10 +3,9 @@
 import os
 import importlib
 import traceback
-import shutil
 
 from PyQt6.QtCore import QTimer
-from PyQt6.QtWidgets import QFileDialog, QTabWidget
+from PyQt6.QtWidgets import QTabWidget
 
 
 class _PluginsMixin:
@@ -431,16 +430,6 @@ def on_tick(app):
     def reload_plugins(self):
         self.plugins = self.load_enabled_plugins()
 
-    def reload_plugins_and_notify(self):
-        self.reload_plugins()
-        self._show_message("Plugins", f"Reloaded {len(self.plugins)} plugin(s)")
-
-    def install_default_plugins(self):
-        self.ensure_default_plugins(force_enable=True)
-        self.refresh_plugins_table()
-        self.reload_plugins()
-        self._show_message("Plugins", "Default plugins installed and enabled")
-
     def run_plugin_hook(self, hook_name, *args, **kwargs):
         for mod in self.plugins:
             try:
@@ -455,31 +444,6 @@ def on_tick(app):
             self.run_plugin_hook('on_tick')
         except Exception:
             pass
-
-    def install_plugin(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Install Plugin", os.path.expanduser('~'), "Python Plugin (*.py)")
-        if not path:
-            return
-        try:
-            dst = os.path.join(self.get_user_plugins_dir(), os.path.basename(path))
-            shutil.copy2(path, dst)
-            self._show_message("Install Plugin", f"Installed: {os.path.basename(path)}")
-            # Refresh plugins table if it exists
-            try:
-                # Find the plugins widget and refresh it
-                if hasattr(self, 'settings_container'):
-                    tabs = self.settings_container.widget().findChild(QTabWidget)
-                    if tabs:
-                        for i in range(tabs.count()):
-                            widget = tabs.widget(i)
-                            if hasattr(widget, 'refresh_plugins_table'):
-                                widget.refresh_plugins_table()
-                                break
-            except Exception:
-                # Handle UI widget access errors gracefully
-                pass
-        except Exception as e:
-            self._show_message("Install Plugin", f"Failed: {e}")
 
     def remove_selected_plugins(self):
         # This method needs to be called from the plugins settings widget

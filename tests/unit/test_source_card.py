@@ -134,11 +134,28 @@ def test_status_mode_click_emits(qapp):
     assert emitted == ["installed"]
 
 
-def test_configure_stats_and_set_stats(qapp):
+def test_updates_filter_toggle(qapp):
     from neoarch.frontend.components.source_card import SourceCard
 
     sc = SourceCard()
-    sc.configure_stats("Extension Stats", [("total", "Total"), ("installed", "Installed")])
-    sc.set_stats(total=183, installed=28)
-    assert sc._stat_labels["total"].text() == "183"
-    assert sc._stat_labels["installed"].text() == "28"
+    assert sc._updates_filter_checked is False
+
+    emitted = []
+    sc.update_status_changed.connect(emitted.append)
+    sc.set_updates_available_filter(True, emit=True)
+    assert sc._updates_filter_checked is True
+    assert emitted == [True]
+
+    sc.set_updates_available_filter(False, emit=True)
+    assert sc._updates_filter_checked is False
+    assert emitted == [True, False]
+
+
+def test_updates_filter_section_visibility(qapp):
+    from neoarch.frontend.components.source_card import SourceCard
+
+    sc = SourceCard()
+    sc.show()
+    sc.configure_sections(show_updates_filter=True)
+    assert sc.updates_filter_widget.isVisible() is True
+    assert sc.installed_filter_widget.isVisible() is False

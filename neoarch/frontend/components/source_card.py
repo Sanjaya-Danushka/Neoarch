@@ -597,6 +597,7 @@ class SourceCard(QWidget):
     status_filter_changed = pyqtSignal(list)
     sort_changed = pyqtSignal(str)
     installed_filter_changed = pyqtSignal(bool)
+    update_status_changed = pyqtSignal(bool)
     health_action = pyqtSignal(str)
     maintenance_action = pyqtSignal(str)
     category_changed = pyqtSignal(str)
@@ -644,6 +645,8 @@ class SourceCard(QWidget):
         layout.addStretch(1)
         self._build_installed_filter(layout)
         layout.addStretch(1)
+        self._build_updates_filter(layout)
+        layout.addStretch(1)
         self._build_storage(layout)
         layout.addStretch(1)
         self._build_stats(layout)
@@ -656,7 +659,7 @@ class SourceCard(QWidget):
 
         for w in (self.sources_container, self.status_mode_widget, self.categories_widget, self.health_widget, self.search_mode_widget,
                   self.status_widget, self.sort_widget, self.installed_filter_widget,
-                  self.storage_widget,
+                  self.updates_filter_widget, self.storage_widget,
                   self.stats_widget, self.quick_actions_widget, self.actions_widget,
                   self.summary_widget):
             w.setSizePolicy(w.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Maximum)
@@ -1073,11 +1076,6 @@ class SourceCard(QWidget):
             row.setChecked(rid == mode_id)
         self.status_mode_changed.emit(mode_id)
 
-    def set_status_mode(self, mode_id):
-        if hasattr(self, '_status_mode_rows'):
-            for rid, row in self._status_mode_rows:
-                row.setChecked(rid == mode_id)
-
     def set_status_counts(self, counts=None):
         """Set right-aligned counts on the Status rows (All/Available/Installed)."""
         if not hasattr(self, '_status_mode_rows'):
@@ -1240,14 +1238,42 @@ class SourceCard(QWidget):
     def get_hide_installed(self):
         return bool(self.hide_installed)
 
-    def set_hide_installed(self, checked, emit=True):
-        self.hide_installed = bool(checked)
+    # ── Updates-available status filter (Installed page) ──────────────────
+
+    def _build_updates_filter(self, layout):
+        self._updates_filter_checked = False
+        self.updates_filter_widget = QWidget()
+        self.updates_filter_widget.setObjectName("updatesFilterWidget")
+        ul = QVBoxLayout(self.updates_filter_widget)
+        ul.setContentsMargins(16, 6, 16, 4)
+        ul.setSpacing(4)
+
+        ul.addWidget(self._section_header("Status"))
+
+        self.updates_available_row = _ToggleRow(
+            "Updates available", accent_color=Colors.ORANGE)
+        self.updates_available_row.toggled.connect(
+            self._on_updates_available_toggled)
+        ul.addWidget(self.updates_available_row)
+
+        self.updates_filter_widget.setStyleSheet("""
+            QWidget#updatesFilterWidget {
+                border-top: 1px solid rgba(255, 255, 255, 0.03);
+            }
+        """)
+        self.updates_filter_widget.setVisible(False)
+        layout.addWidget(self.updates_filter_widget)
+
+    def _on_updates_available_toggled(self, checked):
+        self._updates_filter_checked = bool(checked)
+        self.update_status_changed.emit(bool(checked))
+
+    def set_updates_available_filter(self, checked, emit=True):
+        self._updates_filter_checked = bool(checked)
         try:
-            self.hide_installed_row.setChecked(checked, emit=emit)
+            self.updates_available_row.setChecked(bool(checked), emit=emit)
         except Exception:
             pass
-        if emit:
-            self.installed_filter_changed.emit(self.hide_installed)
 
     def _build_storage(self, layout):
         self.storage_widget = QWidget()
@@ -1394,38 +1420,6 @@ class SourceCard(QWidget):
         row.addWidget(val, 0)
         self._stats_layout.addLayout(row)
         self._stat_labels[key] = val
-
-    def configure_stats(self, header="Package Stats", rows=None):
-        """Redefine the stats section. `rows` is a list of (key, title)."""
-        if not hasattr(self, '_stats_layout'):
-            return
-        while self._stats_layout.count():
-            item = self._stats_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-        self._stats_header = self._section_header(header or "Stats")
-        self._stats_layout.addWidget(self._stats_header)
-        self._stat_labels = {}
-        for key, title in (rows or [
-            ("explicit", "Explicit"),
-            ("deps", "Dependencies"),
-            ("outdated", "Updates Available"),
-        ]):
-            self._add_stat_row(key, title)
-
-    def set_stats(self, explicit=None, deps=None, outdated=None, **extra):
-        values = {"explicit": explicit, "deps": deps, "outdated": outdated}
-        values.update(extra)
-        for key, value in values.items():
-            label = self._stat_labels.get(key)
-            if value is None or label is None:
-                continue
-            label.setText(f"{int(value):,}")
-            if key == "outdated":
-                label.setStyleSheet(
-                    "color: #60A5FA; font-size: 12px; font-weight: 700;"
-                    "background: transparent; border: none; padding: 0;"
-                )
 
     def _build_quick_actions(self, layout):
         self.quick_actions_widget = QWidget()
@@ -1673,7 +1667,7 @@ class SourceCard(QWidget):
                            show_summary=False, show_search=True, show_counts=False,
                            show_health=False, show_storage=False, show_quick_actions=False,
                            show_stats=False, show_installed_filter=False, show_categories=False,
-                           show_status_mode=False):
+                           show_status_mode=False, show_updates_filter=False):
         self.status_widget.setVisible(show_status)
         self.categories_widget.setVisible(show_categories)
         self.status_mode_widget.setVisible(show_status_mode)
@@ -1686,6 +1680,7 @@ class SourceCard(QWidget):
         self.quick_actions_widget.setVisible(show_quick_actions)
         self.stats_widget.setVisible(show_stats)
         self.installed_filter_widget.setVisible(show_installed_filter)
+        self.updates_filter_widget.setVisible(show_updates_filter)
         self._balance_sections()
         if not show_counts:
             for item in self.sources.values():
@@ -1764,8 +1759,3 @@ class SourceCard(QWidget):
 
     def get_search_mode(self):
         return self.search_mode
-
-    def set_search_mode(self, mode):
-        self.search_mode = mode
-        for rid, row in self._radio_rows:
-            row.setChecked(rid == mode)

@@ -136,6 +136,3 @@ class LoadingSpinner(QWidget):
         self._progress_bar.setVisible(False)
         self._progress_bar.setRange(0, 0)
         self._progress_bar.setValue(0)
-
-    def is_animating(self):
-        return self._anim.state() == QPropertyAnimation.State.Running

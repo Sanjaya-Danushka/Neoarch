@@ -344,6 +344,42 @@ class PackageDetailCard(QFrame):
         )
         self.action_layout.addWidget(self.up_to_date_label)
 
+        self.aur_sep = _make_sep()
+        self.action_layout.addWidget(self.aur_sep)
+
+        self.aur_actions = QWidget()
+        self.aur_actions.setStyleSheet("background: transparent;")
+        aur_row = QHBoxLayout(self.aur_actions)
+        aur_row.setContentsMargins(0, 0, 0, 0)
+        aur_row.setSpacing(6)
+
+        self.aur_pkgbuild_btn = QPushButton("View PKGBUILD")
+        self.aur_pkgbuild_btn.setMinimumHeight(36)
+        self.aur_pkgbuild_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.aur_pkgbuild_btn.setToolTip(
+            "Open the PKGBUILD recipe this package builds from")
+        self.aur_pkgbuild_btn.setStyleSheet(_nav_btn_stylesheet(Colors.ORANGE))
+        self.aur_pkgbuild_btn.clicked.connect(lambda: self._open_aur("pkgbuild"))
+        aur_row.addWidget(self.aur_pkgbuild_btn, 1)
+
+        self.aur_changes_btn = QPushButton("View Changes")
+        self.aur_changes_btn.setMinimumHeight(36)
+        self.aur_changes_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.aur_changes_btn.setToolTip("Open the commit history for this package")
+        self.aur_changes_btn.setStyleSheet(_nav_btn_stylesheet(Colors.TEXT_2))
+        self.aur_changes_btn.clicked.connect(lambda: self._open_aur("changes"))
+        aur_row.addWidget(self.aur_changes_btn, 1)
+
+        self.aur_snapshot_btn = QPushButton("Download snapshot")
+        self.aur_snapshot_btn.setMinimumHeight(36)
+        self.aur_snapshot_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.aur_snapshot_btn.setToolTip("Download the current source tarball")
+        self.aur_snapshot_btn.setStyleSheet(_nav_btn_stylesheet(Colors.TEXT_2))
+        self.aur_snapshot_btn.clicked.connect(lambda: self._open_aur("snapshot"))
+        aur_row.addWidget(self.aur_snapshot_btn, 1)
+
+        self.action_layout.addWidget(self.aur_actions)
+
         content.addWidget(self.action_container)
         layout.addWidget(scroll)
 
@@ -465,6 +501,10 @@ class PackageDetailCard(QFrame):
             self.check_updates_btn.setVisible(False)
             self.up_to_date_label.setVisible(False)
 
+        is_aur = source.upper() == "AUR"
+        self.aur_sep.setVisible(is_aur)
+        self.aur_actions.setVisible(is_aur)
+
         self.setVisible(True)
 
     @staticmethod
@@ -474,6 +514,24 @@ class PackageDetailCard(QFrame):
             if isinstance(w, QLabel) and i == 1:
                 w.setText(value)
                 break
+
+    def _open_aur(self, kind):
+        name = (self._pkg_data or {}).get("name", "").strip()
+        if not name:
+            return
+        urls = {
+            "pkgbuild": f"https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h={name}",
+            "changes": f"https://aur.archlinux.org/cgit/aur.git/log/?h={name}",
+            "snapshot": f"https://aur.archlinux.org/cgit/aur.git/snapshot/{name}.tar.gz",
+        }
+        url = urls.get(kind)
+        if not url:
+            return
+        import webbrowser
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
 
     def set_extra_info(self, info: dict):
         """Populate async-loaded installed-only extras (reason, size, reverse deps)."""
@@ -504,4 +562,6 @@ class PackageDetailCard(QFrame):
         self.version_row.clear()
         self.desc_label.clear()
         self.status_badge.setVisible(False)
+        self.aur_sep.setVisible(False)
+        self.aur_actions.setVisible(False)
         self.setVisible(False)

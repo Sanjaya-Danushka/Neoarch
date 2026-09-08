@@ -9,7 +9,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
 
-from PyQt6.QtWidgets import QMessageBox, QLabel
+from PyQt6.QtWidgets import QMessageBox, QLabel, QDialog
 from PyQt6.QtCore import QTimer
 
 from neoarch.backend.package import installer as install_service
@@ -123,6 +123,14 @@ class _OperationsMixin:
         if not updates:
             self.log("No updates available or updates not yet loaded.")
             return
+        try:
+            from neoarch.frontend.components.update_review_dialog import UpdateReviewDialog
+            dlg = UpdateReviewDialog(updates, self)
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                self.log("Update review cancelled.")
+                return
+        except Exception as e:
+            self.log(f"Update review unavailable, continuing: {e}")
         packages_by_source = {}
         for pkg in updates:
             source = pkg.get('source', 'pacman')
@@ -207,8 +215,7 @@ class _OperationsMixin:
 
     def update_selected(self):
         if self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
-            self._update_selected_updates_table()
-            return
+            return self._update_selected_updates_table()
         packages_by_source = {}
         for row in range(self.package_table.rowCount()):
             checkbox = self.get_row_checkbox(row)
@@ -227,6 +234,8 @@ class _OperationsMixin:
                 packages_by_source[source].append(token)
         if not packages_by_source:
             self.log("No packages selected for update")
+            return
+        if not self._confirm_partial_update(packages_by_source):
             return
         if not self.ensure_session_auth():
             self.log("Update cancelled: authentication required.")
@@ -253,12 +262,60 @@ class _OperationsMixin:
         if not packages_by_source:
             self.log("No packages selected for update")
             return
+        if not self._confirm_partial_update(packages_by_source):
+            return
         if not self.ensure_session_auth():
             self.log("Update cancelled: authentication required.")
             return
         self.log(f"Selected packages for update: {', '.join([f'{pkg} ({source})' for source, pkgs in packages_by_source.items() for pkg in pkgs])}")
         self.installation_progress.emit("start", True)
         update_service.update_packages(self, packages_by_source)
+
+    def _confirm_partial_update(self, packages_by_source):
+        """Warn once before applying a *partial* Arch update.
+
+        A partial update is any Arch selection smaller than the full set of
+        available pacman/AUR upgrades. Full selections (and selections that
+        are exactly the whole set) skip the dialog. Returns False if the
+        user cancels. Applies to every update entry point, so a single
+        package updated from the detail card or the row menu is not silent
+        either.
+        """
+        try:
+            from neoarch.frontend.components.partial_update_dialog import (
+                is_partial_update, PartialUpdateDialog)
+            available = self._available_arch_updates()
+            if not is_partial_update(available, packages_by_source):
+                return True
+            dlg = PartialUpdateDialog(available, packages_by_source, self)
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                self.log("Partial update cancelled by user.")
+                return False
+        except Exception as e:
+            self.log(f"Partial-update check skipped: {e}")
+        return True
+
+    def _available_arch_updates(self):
+        """The pacman/AUR update set for the current page.
+
+        Prefers the loaded ``updates_all`` list (Updates page); otherwise
+        falls back to rows in the shared updates table that still have a
+        pending upgrade, which covers the Installed page.
+        """
+        updates = getattr(self, 'updates_all', None) or []
+        arch = [p for p in updates
+                if (p.get('source') or '').upper() in ('PACMAN', 'AUR')]
+        if arch:
+            return arch
+        try:
+            tbl = getattr(self, 'updates_table', None)
+            pkgs = tbl.model.packages() if tbl is not None else []
+        except Exception:
+            pkgs = []
+        return [p for p in pkgs
+                if (p.get('source') or '').upper() in ('PACMAN', 'AUR')
+                and p.get('new_version')
+                and p.get('new_version') != p.get('version')]
     
     def ignore_selected(self):
         return ignore_service.ignore_selected(self)
@@ -570,12 +627,15 @@ class _OperationsMixin:
         pkg = getattr(self.package_detail_card, '_pkg_data', None)
         if not pkg:
             return
+        source = pkg.get('source', 'pacman')
+        name = pkg.get('name') or pkg.get('id') or ''
+        if not self._confirm_partial_update({source: [name]}):
+            return
         if not self.ensure_session_auth():
             self.log("Update cancelled: authentication required.")
             return
-        source = pkg.get('source', 'pacman')
         self.installation_progress.emit("start", True)
-        update_service.update_packages(self, {source: [pkg['name']]})
+        update_service.update_packages(self, {source: [name]})
 
     def uninstall_from_detail(self):
         pkg = getattr(self.package_detail_card, '_pkg_data', None)

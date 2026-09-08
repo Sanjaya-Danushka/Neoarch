@@ -10,15 +10,15 @@ import os
 from threading import Thread
 
 from PyQt6.QtCore import pyqtSignal, Qt, QTimer, QRectF
-from PyQt6.QtGui import QPainter, QColor, QPixmap, QIcon, QCursor
+from PyQt6.QtGui import QPainter, QColor, QPixmap, QIcon
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFrame,
-    QLineEdit, QComboBox, QFileDialog, QInputDialog, QMessageBox,
+    QFileDialog, QInputDialog, QMessageBox,
     QScrollArea, QMenu,
 )
 
-from neoarch.frontend.tokens import Colors, Fonts, Radii, Spacing
+from neoarch.frontend.tokens import Colors, Radii
 
 __all__ = ["AppImageTab"]
 
@@ -683,9 +683,6 @@ class AppImageTab(QWidget):
             return
         self._run("Add AppImage", lambda: _url_add(name.strip(), url.strip()))
 
-    def check_updates(self):
-        self._run("Check Updates", _check_all)
-
     def _on_update(self, aid):
         reply = QMessageBox.question(
             self, "Update AppImage", f"Update '{aid}'?",
@@ -750,15 +747,6 @@ def _url_add(name, url):
     from neoarch.backend.services import appimage
     entry = appimage.add_from_url(name, url)
     return True, f"Added {entry.get('name', name)}."
-
-
-def _check_all():
-    from neoarch.backend.services import appimage
-    results = appimage.check_all_updates()
-    if not results:
-        return True, "All AppImages up to date."
-    return True, f"{len(results)} update(s) available:\n" + "\n".join(
-        f"  {r.get('name', r.get('id', ''))}: {r.get('latest_version', '')}" for r in results)
 
 
 def _update_ids(ids):

@@ -12,11 +12,10 @@ import subprocess
 from threading import Thread
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QLineEdit, QMessageBox, QPlainTextEdit, QComboBox, QCheckBox, QMenu,
-    QScrollArea, QWidget,
+    QLineEdit, QMessageBox, QPlainTextEdit, QComboBox, QCheckBox,
+    QWidget,
 )
 from PyQt6.QtCore import Qt, QObject, QTimer, pyqtSignal
-from PyQt6.QtGui import QCursor
 
 DOCKER_PATH = shutil.which("docker") or "docker"
 
@@ -71,33 +70,6 @@ class DockerManager(QObject):
         self._update_badge()
         self.containers_changed.emit()
         return containers
-
-    def show_shell_menu(self):
-        """Show a menu to select a container and open a shell."""
-        menu = QMenu()
-        menu.setStyleSheet("""
-            QMenu { background-color: #2A2D33; color: #F0F0F0; border: 1px solid rgba(0,191,174,0.3); }
-            QMenu::item:selected { background-color: rgba(0,191,174,0.2); }
-        """)
-        try:
-            result = subprocess.run(
-                [DOCKER_PATH, "ps", "--format", "{{.Names}}"],
-                check=False, capture_output=True, text=True, timeout=10,
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                names = result.stdout.strip().split('\n')
-                for name in names:
-                    action = menu.addAction(name)
-                    action.triggered.connect(lambda checked=False, n=name: self.open_container_shell(n))
-            else:
-                menu.addAction("No running containers").setEnabled(False)
-        except Exception:
-            menu.addAction("No running containers").setEnabled(False)
-        menu.exec(QCursor.pos())
-
-    def install_from_docker(self):
-        """Open the advanced Docker run dialog."""
-        self.show_advanced_run_dialog()
 
     def show_advanced_run_dialog(self, prefill_image=None):
         """Show the advanced Docker run dialog with full options."""
@@ -501,80 +473,6 @@ class DockerManager(QObject):
                 self.show_message.emit("Container Start Failed", f"Error: {str(e)}")
         Thread(target=run_thread, daemon=True).start()
 
-    def list_docker_images(self):
-        """Show Docker images as styled cards with contextual Run/Stop button."""
-        dialog = QDialog()
-        dialog.setWindowTitle("Docker Images")
-        dialog.setMinimumSize(440, 320)
-        dialog.setStyleSheet("""
-            QDialog {
-                background-color: rgba(18, 19, 22, 0.98);
-                color: #EDEDEF;
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 14px;
-            }
-        """)
-        layout = QVBoxLayout(dialog)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-
-        header = QWidget()
-        hl = QHBoxLayout(header)
-        hl.setContentsMargins(14, 10, 10, 6)
-        title = QLabel("Docker Images")
-        title.setStyleSheet("color: #EDEDEF; font-size: 13px; font-weight: 600; background: transparent; border: none;")
-        hl.addWidget(title)
-        hl.addStretch()
-        layout.addWidget(header)
-
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("""
-            QScrollArea { background: transparent; border: none; }
-            QScrollBar:vertical {
-                background: rgba(255,255,255,0.02);
-                width: 5px; border-radius: 2px;
-            }
-            QScrollBar::handle:vertical {
-                background: rgba(255,255,255,0.08);
-                border-radius: 2px;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
-        """)
-        scroll_content = QWidget()
-        scroll_content.setStyleSheet("background: transparent; border: none;")
-        scroll_layout = QVBoxLayout(scroll_content)
-        scroll_layout.setContentsMargins(12, 2, 12, 12)
-        scroll_layout.setSpacing(3)
-        scroll_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-
-        try:
-            result = subprocess.run(
-                [DOCKER_PATH, "images", "--format", "{{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.ID}}"],
-                check=False, capture_output=True, text=True, timeout=30,
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                for line in result.stdout.strip().split('\n'):
-                    parts = line.split('\t')
-                    if len(parts) >= 3 and parts[0] and parts[0] != "<none>":
-                        card = self._create_image_card(parts[0], parts[1],
-                            parts[2] if len(parts) > 2 else "",
-                            parts[3] if len(parts) > 3 else "")
-                        scroll_layout.addWidget(card)
-            else:
-                empty = QLabel("No Docker images found")
-                empty.setStyleSheet("color: #5C5E66; font-size: 12px; background: transparent; border: none; padding: 24px;")
-                empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                scroll_layout.addWidget(empty)
-        except Exception as e:
-            err = QLabel(f"Error: {e}")
-            err.setStyleSheet("color: #E06C75; font-size: 12px; background: transparent; border: none; padding: 24px;")
-            scroll_layout.addWidget(err)
-
-        scroll.setWidget(scroll_content)
-        layout.addWidget(scroll)
-        dialog.exec()
-
     def _create_image_card(self, repo, tag, size, image_id):
         """Styled card for one image with a single contextual Run/Stop button."""
         image_ref = f"{repo}:{tag}"
@@ -677,21 +575,6 @@ class DockerManager(QObject):
         except Exception as e:
             self.log_signal.emit(f"Error stopping containers: {e}")
 
-    def show_stop_menu(self):
-        """Show context menu for stopping containers."""
-        menu = QMenu()
-        menu.setStyleSheet("""
-            QMenu { background-color: #2A2D33; color: #F0F0F0; border: 1px solid rgba(0,191,174,0.3); }
-            QMenu::item:selected { background-color: rgba(0,191,174,0.2); }
-        """)
-        stop_running = menu.addAction("Stop Running Containers")
-        stop_all = menu.addAction("Stop All Containers")
-        action = menu.exec(QCursor.pos())
-        if action == stop_running:
-            self.stop_docker_containers(only_running=True)
-        elif action == stop_all:
-            self.stop_docker_containers(only_running=False)
-
     def _after_container_action(self, verb, cid, result):
         """Shared handler for start/stop/restart/remove results."""
         if result.returncode == 0:
@@ -746,50 +629,6 @@ class DockerManager(QObject):
             except Exception:
                 continue
         self.log_signal.emit("Failed to open shell: no shell or terminal available")
-
-    @staticmethod
-    def show_container_logs(cid):
-        """Show container logs in a dialog."""
-        dialog = QDialog()
-        dialog.setWindowTitle(f"Container Logs: {cid}")
-        dialog.setMinimumSize(600, 400)
-        dialog.setStyleSheet("QDialog { background-color: #1E1E1E; color: #F0F0F0; }")
-        layout = QVBoxLayout(dialog)
-        log_view = QPlainTextEdit()
-        log_view.setReadOnly(True)
-        log_view.setStyleSheet("QPlainTextEdit { background-color: #2A2D33; color: #C9C9C9; font-family: monospace; }")
-        layout.addWidget(log_view)
-        close_btn = QPushButton("Close")
-        close_btn.clicked.connect(dialog.accept)
-        layout.addWidget(close_btn)
-
-        try:
-            logs = subprocess.run([DOCKER_PATH, "logs", "--tail", "100", cid], check=False, capture_output=True, text=True, timeout=30)
-            log_view.setPlainText(logs.stdout or "No logs available")
-        except Exception as e:
-            log_view.setPlainText(f"Error fetching logs: {e}")
-        dialog.exec()
-
-    def stop_docker_containers(self, only_running=True):
-        """Stop Docker containers."""
-        try:
-            cmd = [DOCKER_PATH, "ps", "-q"] if only_running else [DOCKER_PATH, "ps", "-a", "-q"]
-            result = subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=30)
-            if result.returncode == 0 and result.stdout.strip():
-                containers = result.stdout.strip().split('\n')
-                self.log_signal.emit(f"Stopping {len(containers)} containers...")
-                for container_id in containers:
-                    stop_result = subprocess.run([DOCKER_PATH, "stop", container_id], check=False, capture_output=True, text=True, timeout=30)
-                    if stop_result.returncode == 0:
-                        self.log_signal.emit(f"Stopped container: {container_id}")
-                    else:
-                        self.log_signal.emit(f"Failed to stop container {container_id}: {stop_result.stderr}")
-                self.show_message.emit("Containers Stopped", f"Stopped {len(containers)} containers")
-            else:
-                self.log_signal.emit("No running containers to stop")
-        except Exception as e:
-            self.log_signal.emit(f"Error stopping containers: {str(e)}")
-        self.load_containers(include_all=True)
 
     # ── data-fetching helpers for the new tab UI ──────────────────────
 

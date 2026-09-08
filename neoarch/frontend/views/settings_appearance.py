@@ -2,8 +2,8 @@
 
 from typing import Any
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QPushButton,
-    QScrollArea, QCheckBox, QComboBox,
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame,
+    QCheckBox, QComboBox,
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QPainter, QPen
@@ -260,17 +260,3 @@ class AppearanceSettingsWidget(QWidget):
             manager.apply_theme(theme_id)
             # Rebuild settings UI to reflect new theme
             self.app.build_settings_ui()
-
-    def refresh_theme(self):
-        """Rebuild cards to update selection state."""
-        # Clear and rebuild
-        while self.layout.count():
-            item = self.layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-            elif item.layout():
-                while item.layout().count():
-                    sub = item.layout().takeAt(0)
-                    if sub.widget():
-                        sub.widget().deleteLater()
-        self.setup_ui()

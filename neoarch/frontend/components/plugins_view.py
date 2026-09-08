@@ -1,15 +1,14 @@
 # === components: plugins_view.py ===
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QFrame, QGridLayout, QSizePolicy
 from PyQt6.QtCore import pyqtSignal, Qt, QTimer
-from PyQt6.QtGui import QColor, QFont, QPainter, QPixmap
-from PyQt6.QtSvg import QSvgRenderer
+from PyQt6.QtGui import QColor, QFont
 from typing import Any
 import os
 import shutil
 
 from neoarch.resources.plugin_data import get_plugins_data, get_all_plugins_data
-from neoarch.resources.paths import ICONS_DIR, PLUGINS_ITEMS_DIR
-from neoarch.frontend.tokens import Colors, SourceColors
+from neoarch.resources.paths import PLUGINS_ITEMS_DIR
+from neoarch.frontend.tokens import Colors
 from neoarch.frontend.components.packages_grid_view import (
     PackageCard, _Chip, _CheckBox, _SmallLabel, _SourceLogo,
     _STATUS_COLORS,
@@ -509,36 +508,6 @@ class PluginsView(QWidget):
             return 'brew'
         else:
             return 'pacman'
-
-    def _render_source_icon(self, source, size=14):
-        """Render a source SVG icon to a QPixmap"""
-        path = self._get_source_icon(source)
-        try:
-            renderer = QSvgRenderer(path)
-            pixmap = QPixmap(size, size)
-            pixmap.fill(Qt.GlobalColor.transparent)
-            painter = QPainter(pixmap)
-            renderer.render(painter)
-            painter.end()
-            return pixmap
-        except Exception:
-            pixmap = QPixmap(size, size)
-            pixmap.fill(Qt.GlobalColor.transparent)
-            return pixmap
-
-    @staticmethod
-    def _get_source_icon(source):
-        """Get icon path for package source"""
-        base_path = os.path.join(str(ICONS_DIR), "discover")
-        icons = {
-            'pacman': os.path.join(base_path, 'pacman.svg'),
-            'aur': os.path.join(base_path, 'aur.svg'),
-            'flatpak': os.path.join(base_path, 'flatpack.svg'),
-            'npm': os.path.join(base_path, 'node.svg'),
-            'brew': os.path.join(base_path, 'pacman.svg'),
-            'pip': os.path.join(base_path, 'pacman.svg')
-        }
-        return icons.get(source, os.path.join(base_path, 'pacman.svg'))
 
     # --- Layout helpers to keep calculations consistent ---
     def _layout_spacing(self):
