@@ -25,11 +25,13 @@ def test_parse_changelog_shapes():
     for block in blocks:
         assert block["version"]
         assert isinstance(block["sections"], dict)
-        assert "New Features" in block["sections"]
+        assert set(block["sections"]) <= {"New Features", "Bug Fixes", "Improvements"}
         assert all(isinstance(v, list) and v for v in block["sections"].values())
-    # Newest-first: the current release header matches the app version,
-    # and subsequent blocks are strictly older.
-    assert blocks[0]["version"] == APP_VERSION
+    # Newest-first: on a released build the current header matches APP_VERSION,
+    # on a dev build an "Unreleased" section sits on top; either is valid, and
+    # subsequent blocks are strictly older.
+    assert blocks[0]["version"].lower() == "unreleased" or \
+        blocks[0]["version"] == APP_VERSION
     keys = [rn.version_key(b["version"]) for b in blocks]
     assert keys == sorted(keys, reverse=True)
 

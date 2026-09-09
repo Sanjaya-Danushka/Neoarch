@@ -10,6 +10,23 @@ dialog shows after an update.
 
 ---
 
+## Unreleased (dev branch)
+
+Changes on the `dev` branch that will land in the next release.
+
+### Improvements
+
+- The PKGBUILD pre-install scanner now detects byte-level command obfuscation
+  (ANSI-C `$'\\x..'` quoting, `printf`-spelled commands, variable-split
+  reassembly), Tor/SOCKS-proxied fetches, downloads straight into system
+  paths, AUR self-propagation references, non-interactive mutating
+  `pacman --noconfirm` calls, duplicate `source=()` declarations, and
+  unchecked mutable MR/PR diff sources — layered defense rules ported from
+  the `archcanary` pre-build scanner. Exposed via `neo scan <PKGBUILD>`
+  (`--json` supported).
+
+---
+
 ## 3.2.0 — 2026-09-09
 
 Changes on the `dev` branch that land in this release.

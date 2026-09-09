@@ -56,6 +56,85 @@ RAW_LINE_PATTERNS = (
     (r"(?<!\\)`", "command substitution (backticks)"),
 )
 
+# ──────────────────────────────────────────────────────────────────────────
+# Supply-chain evasion & obfuscation techniques (Layered-defense rules
+# ported from the pre-build scanner of `archcanary`; MIT-licensed).
+# Each rule is a tuple: (compiled regex, human rule name, severity).
+# Commented-out lines are exempted in the scan loop where a rule's signal
+# would be destroyed by a routine `#` note.
+# ──────────────────────────────────────────────────────────────────────────
+
+# Byte-at-a-time command assembly: `$'\x63\x75\x72\x6c'` spells "curl".
+# 3+ chained escapes are required so the ubiquitous `read -d $'\0'` NUL
+# idiom never matches.
+ANSI_C_QUOTED_BYTES = re.compile(
+    r"\$'((?:\\x[0-9a-fA-F]{2}|\\[0-7]{1,3}){3,})'")
+
+# `printf` spelling a command out a byte at a time: the escapes decode to
+# letters/digits (hex: 0x30-7a; octal: \6[0-7]..\17[0-2]). Single \x1b-\x1f
+# colour/control escapes are excluded by construction.
+PRINTF_BYTE = re.compile(
+    r"\\x(?:3[0-9]|4[1-9a-fA-F]|5[0-9aA]|6[1-9a-fA-F]|7[0-9aA])"
+    r"|\\0?(?:6[0-7]|7[01]|10[1-7]|1[12][0-7]|13[0-2]|14[1-7]|1[56][0-7]|17[0-2])")
+
+# `a=bu; b=n; $a$b` — command reassembled from a variable fragment.
+VARIABLE_SPLIT_REASSEMBLY = re.compile(
+    r"[a-z_]+=[A-Za-z]+\s*;\s*[a-z_]+=[A-Za-z]+\s*;\s*\$")
+
+# Fetch proxied through Tor/SOCKS (curl -x socks5h://, --socks*, --proxy
+# socks), or wrapped by torsocks/proxychains. Used to pull payloads while
+# evading URL blocklists.
+TOR_FETCH = re.compile(
+    r"\b(curl|wget)\b[^\n]*?(-[A-Za-z]*x\s*socks[0-9]?h?://"
+    r"|--socks[0-9]?h?\b|--proxy\s+socks)")
+TOR_WRAPPER = re.compile(r"(^|[;&|\s])(torsocks|proxychains4?)\s")
+ONION_URL = re.compile(r"\.onion([/\"'\s]|$)")
+
+# Downloading straight into a system dir (/usr, /etc, /opt, /boot) instead
+# of the makepkg sandbox — bypasses pacman's file tracking.
+DOWNLOAD_TO_SYSTEM_PATH = re.compile(
+    r"\b(curl|wget)\b[^\n]*?-[A-Za-z]*[oO]\s*/?(usr|etc|opt|boot)/")
+
+# Reference to the AUR's own git SSH remote: self-propagation mechanism.
+AUR_SSH_REMOTE = re.compile(r"aur@aur\.archlinux\.org")
+
+# Mutating pacman invoked non-interactively from install-time code.
+PACMAN_NONINTERACTIVE = re.compile(r"\bpacman\b[^\n]*?--noconfirm")
+
+# Per-line rules that run inside the main scan loop.
+LINE_OBFUSCATION_RULES = (
+    (ANSI_C_QUOTED_BYTES, "command obfuscation", "warning",
+     "a command is being assembled byte-at-a-time with ANSI-C quoting "
+     "($'\\x..' / $'\\0..')"),
+    (VARIABLE_SPLIT_REASSEMBLY, "command obfuscation", "warning",
+     "a shell command is rebuilt from a variable fragment (a=x;b=y; $a$b)"),
+    (TOR_FETCH, "Tor/SOCKS-proxied fetch", "critical",
+     "network fetch routed through Tor/SOCKS - used to pull payloads while "
+     "evading URL blocklists"),
+    (TOR_WRAPPER, "Tor/SOCKS-proxied fetch", "critical",
+     "command run through torsocks/proxychains - payload is fetched under a "
+     "proxy, evading URL blocklists"),
+    (ONION_URL, "Tor/SOCKS-proxied fetch", "warning",
+     "reference to a .onion URL in install-time code"),
+    (DOWNLOAD_TO_SYSTEM_PATH, "download to system path", "warning",
+     "download writes into /usr /etc /opt /boot directly, bypassing pacman's "
+     "file tracking"),
+    (AUR_SSH_REMOTE, "AUR repository self-reference", "critical",
+     "references ssh://aur@aur.archlinux.org - no legit PKGBUILD touches its "
+     "own remote; this is the AUR self-propagation pattern"),
+    (PACMAN_NONINTERACTIVE, "non-interactive pacman", "warning",
+     "pacman mutating operation with --noconfirm from install-time code"),
+    # printf byte-spelling is conditional: only when the line already
+    # contains `printf`.
+    (PRINTF_BYTE, "command obfuscation", "warning",
+     "printf is spelling a command out a byte at a time"),
+)
+
+# Mutable MR/PR diff endpoints (GitHub/Gitea pulls, GitLab merge requests).
+MUTABLE_PATCH_RE = re.compile(
+    r"(/-/merge_requests/[0-9]+(?:\.(?:diff|patch)|/diffs)"
+    r"|/pulls?/[0-9]+\.(?:diff|patch))")
+
 # Unicode characters that are invisible or control-flow altering.
 ZERO_WIDTH = re.compile(
     "[\u200b\u200c\u200d\u2060\ufeff"
@@ -267,6 +346,22 @@ def scan_text(text: str, context: str = "", base_dir: str = "",
                     context=context, matched=line, line=line_no + src_line,
                 ))
 
+        if not line.startswith("#"):
+            for regex, rule, severity, detail in LINE_OBFUSCATION_RULES:
+                if regex is PRINTF_BYTE:
+                    if "printf" in line and regex.search(line):
+                        findings.append(_finding(
+                            severity, rule, detail,
+                            context=context, matched=line,
+                            line=line_no + src_line,
+                        ))
+                elif regex.search(line):
+                    findings.append(_finding(
+                        severity, rule, detail,
+                        context=context, matched=line,
+                        line=line_no + src_line,
+                    ))
+
     # Homograph checks across the whole document (names, URLs, deps)
     for field_name in ("pkgname", "pkgdesc", "url", "depends"):
         matches = re.findall(rf"^\s*{field_name}\s*=\s*(.+)$", text, re.M)
@@ -348,6 +443,78 @@ def _parse_install_scriptlets(text: str) -> Dict[str, str]:
     return scriptlets
 
 
+def _duplicate_source_decl(header: str) -> List[Dict]:
+    """Flag a source=() key assigned twice by a bare `=` (the later one
+    silently discards the earlier). A deliberate duplicate is either dead
+    build-variant logic or a staged-but-not-armed payload (real incident:
+    storageexplorer-bin pretended source=() above its real one). `+=`
+    appends and never discards, so it alone never matches — but a prior
+    `+=` still counts as already-assigned for catching a later bare `=`."""
+    findings: List[Dict] = []
+    seen = {}
+    for raw in header.splitlines():
+        m = re.match(r"^\s*(source(?:_[A-Za-z0-9_]+)?)(\+?)=\(", raw)
+        if not m:
+            continue
+        key, operator = m.group(1), m.group(2)
+        if not operator and key in seen:
+            findings.append(_finding(
+                "warning",
+                "duplicate source declaration",
+                f"{key}=() is declared more than once; makepkg honors only the "
+                "last assignment, so the earlier one is dead code (a known "
+                "staging trick)",
+                matched=raw.strip(),
+            ))
+        seen[key] = True
+    return findings
+
+
+def _parse_pkgbuild_checksums(text: str) -> List[str]:
+    """Parse sha256sums=() arrays (best effort), mirroring source parsing."""
+    items: List[str] = []
+    for m in re.finditer(r"\bsha2?56sums?\s*\(?\+?\s*=\s*\(", text):
+        depth = 1
+        i = m.end()
+        while i < len(text) and depth:
+            if text[i] == "(":
+                depth += 1
+            elif text[i] == ")":
+                depth -= 1
+            i += 1
+        inner = text[m.end():i - 1]
+        try:
+            items.extend(shlex.split(inner))
+        except ValueError:
+            continue
+    return items
+
+
+def _mutable_patch_source(text: str) -> List[Dict]:
+    """Flag a source=() entry pointing at a mutable MR/PR diff URL that no
+    sha256sums=() entry pins. A /commit/<sha>.patch is immutable and fine; a
+    /pull/<n>.diff changes on every push, so it can be swapped after review.
+    Checksums pair positionally with source=() entries."""
+    findings: List[Dict] = []
+    sources = _parse_pkgbuild_sources(text)
+    checksums = _parse_pkgbuild_checksums(text)
+    for idx, src in enumerate(sources):
+        if not MUTABLE_PATCH_RE.search(src):
+            continue
+        pin = checksums[idx] if idx < len(checksums) and checksums[idx] else ""
+        if pin and pin.upper() != "SKIP":
+            continue
+        findings.append(_finding(
+            "warning",
+            "mutable patch source",
+            f"source '{src}' is a mutable MR/PR diff/patch endpoint and is "
+            "not pinned by a sha256sum — it can change to different content "
+            "after review",
+            matched=src,
+        ))
+    return findings
+
+
 def scan_install_scriptlet(scriptlet_text: str, name: str) -> List[Dict]:
     """Scan a single extracted scriptlet body."""
     return scan_text(scriptlet_text, context=name, src_line=0)
@@ -373,6 +540,8 @@ def scan_pkgbuild(text: str, base_dir: str = "") -> List[Dict]:
     header = _split_header(text)
     findings = scan_text(header, context="PKGBUILD", base_dir=base_dir,
                          source_files=_parse_pkgbuild_sources(header))
+    findings.extend(_duplicate_source_decl(header))
+    findings.extend(_mutable_patch_source(header))
     for name, body in _parse_install_scriptlets(text).items():
         findings.extend(scan_install_scriptlet(body, name))
     return findings
