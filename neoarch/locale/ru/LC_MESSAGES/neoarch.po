@@ -1,0 +1,2345 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# Russian catalog
+
+msgid " Add from File"
+msgstr " Добавить из файла"
+
+msgid " Check for Updates"
+msgstr " Проверить обновления"
+
+msgid " Clone Repository"
+msgstr " Клонировать репозиторий"
+
+msgid " min"
+msgstr " мин"
+
+msgid " re-checking"
+msgstr " повторная проверка"
+
+msgid " vols"
+msgstr " тома"
+
+msgid " — {ms}"
+msgstr " — {ms}"
+
+msgid "$ authentication required…"
+msgstr "$ требуется аутентификация…"
+
+msgid "+ Create Network"
+msgstr "+ Создать сеть"
+
+msgid "+ Create Volume"
+msgstr "+ Создать том"
+
+msgid "+ Pull Image"
+msgstr "+ Загрузить образ"
+
+msgid "+ Run Container"
+msgstr "+ Запустить контейнер"
+
+msgid ".pacnew Files"
+msgstr "Файлы .pacnew"
+
+msgid "1 update available"
+msgstr "доступно 1 обновление"
+
+msgid "A field guide to every NeoArch page"
+msgstr "Полевое руководство по каждой странице NeoArch"
+
+msgid "A modern graphical package manager for Arch Linux — search, install, and manage packages from pacman, AUR, Flatpak, and npm in one place. Create bundles, manage Git projects, run Docker containers, and sync your setup across devices."
+msgstr "Современный графический менеджер пакетов для Arch Linux — ищите, устанавливайте и управляйте пакетами из pacman, AUR, Flatpak и npm в одном месте. Создавайте наборы, управляйте Git-проектами, запускайте контейнеры Docker и синхронизируйте настройки между устройствами."
+
+msgid "A new version of NeoArch is available"
+msgstr "Доступна новая версия NeoArch"
+
+msgid "A setup is already running — wait for it"
+msgstr "Настройка уже выполняется — подождите"
+
+msgid "ABOUT"
+msgstr "О ПРОГРАММЕ"
+
+msgid "AUR Helper:"
+msgstr "Помощник AUR:"
+
+msgid "AUR RPC Connectivity"
+msgstr "Подключение AUR RPC"
+
+msgid "AUR Security Notice"
+msgstr "Предупреждение о безопасности AUR"
+
+msgid "AUR packages are built from third-party PKGBUILD scripts maintained by the community.\n\n{aur_pkgs}\n\nAlways review the PKGBUILD and .install scriptlet before building. Proceeding with the AUR helper does not perform a static security scan."
+msgstr "Пакеты AUR собираются из сторонних PKGBUILD-скриптов, поддерживаемых сообществом.\n\n{aur_pkgs}\n\nВсегда проверяйте PKGBUILD и скрипт .install перед сборкой. Использование помощника AUR не выполняет статическую проверку безопасности."
+
+msgid "AUR — Arch User Repository"
+msgstr "AUR — Архивы пользователей Arch"
+
+msgid "About"
+msgstr "О программе"
+
+msgid "About NeoArch"
+msgstr "О NeoArch"
+
+msgid "Across all projects"
+msgstr "По всем проектам"
+
+msgid "Action Recommended"
+msgstr "Рекомендуемое действие"
+
+msgid "Actions"
+msgstr "Действия"
+
+msgid "Active"
+msgstr "Активный"
+
+msgid "Add an AppImage from a local file or URL to get started."
+msgstr "Добавьте AppImage из локального файла или URL, чтобы начать."
+
+msgid "Add from file or URL"
+msgstr "Добавить из файла или URL"
+
+msgid "Add packages from Discover, Updates, or Installed views"
+msgstr "Добавляйте пакеты из разделов «Обнаружение», «Обновления» или «Установленные»"
+
+msgid "Add selected to Bundle"
+msgstr "Добавить выбранное в набор"
+
+msgid "Advanced"
+msgstr "Дополнительно"
+
+msgid "All"
+msgstr "Все"
+
+msgid "All Categories"
+msgstr "Все категории"
+
+msgid "All Git projects"
+msgstr "Все Git-проекты"
+
+msgid "All caught up"
+msgstr "Всё актуально"
+
+msgid "All checks passed"
+msgstr "Все проверки пройдены"
+
+msgid "All cloud bundles deleted."
+msgstr "Все облачные наборы удалены."
+
+msgid "All containers"
+msgstr "Все контейнеры"
+
+msgid "All dependencies installed"
+msgstr "Все зависимости установлены"
+
+msgid "All managed AppImages"
+msgstr "Все управляемые AppImages"
+
+msgid "Allow parallel network requests"
+msgstr "Разрешить параллельные сетевые запросы"
+
+msgid "Another package manager is running"
+msgstr "Другой менеджер пакетов запущен"
+
+msgid "AppImages"
+msgstr "AppImages"
+
+msgid "Appearance"
+msgstr "Внешний вид"
+
+msgid "Applies to all pages immediately."
+msgstr "Применяется ко всем страницам сразу."
+
+msgid "Apply"
+msgstr "Применить"
+
+msgid "Apply every pending update in one click"
+msgstr "Примените все ожидающие обновления одним кликом"
+
+msgid "Arch Linux News"
+msgstr "Новости Arch Linux"
+
+msgid "Arch News"
+msgstr "Новости Arch"
+
+msgid "Authenticate once, install smoothly after"
+msgstr "Аутентифицируйтесь один раз, дальше установка будет гладкой"
+
+msgid "Auto (detect available)"
+msgstr "Авто (определить доступное)"
+
+msgid "Auto Update"
+msgstr "Автообновление"
+
+msgid "Auto check updates on launch"
+msgstr "Автоматически проверять обновления при запуске"
+
+msgid "Automate NeoArch from the terminal with `neo` (or neoarch-cli)"
+msgstr "Автоматизируйте NeoArch из терминала с помощью `neo` (или neoarch-cli)"
+
+msgid "Autosave bundle to file"
+msgstr "Автосохранение набора в файл"
+
+msgid "Autosave path:"
+msgstr "Путь автосохранения:"
+
+msgid "Available"
+msgstr "Доступно"
+
+msgid "Available Updates"
+msgstr "Доступные обновления"
+
+msgid "BUNDLES"
+msgstr "НАБОРЫ"
+
+msgid "Back up bundles to your NeoArch account"
+msgstr "Резервируйте наборы в своей учётной записи NeoArch"
+
+msgid "Back up collections online"
+msgstr "Резервируйте коллекции онлайн"
+
+msgid "Background re-check while the app is open"
+msgstr "Фоновая повторная проверка, пока приложение открыто"
+
+msgid "Backup"
+msgstr "Резервная копия"
+
+msgid "Basic Settings"
+msgstr "Основные настройки"
+
+msgid "Batch install"
+msgstr "Пакетная установка"
+
+msgid "Before installing from the AUR, review the PKGBUILD."
+msgstr "Перед установкой из AUR проверьте PKGBUILD."
+
+msgid "Best Match"
+msgstr "Наилучшее совпадение"
+
+msgid "Both"
+msgstr "Оба"
+
+msgid "Browse and install applications from available sources"
+msgstr "Просматривайте и устанавливайте приложения из доступных источников"
+
+msgid "Browse and manage every package currently installed on your machine."
+msgstr "Просматривайте и управляйте каждым пакетом, установленным на вашей машине."
+
+msgid "Browse installable tools as cards"
+msgstr "Просматривайте устанавливаемые инструменты в виде карточек"
+
+msgid "Browse packages in Home, check the ones you want,\nand click Add to Bundle in the toolbar."
+msgstr "Просматривайте пакеты на главной, отмечайте нужные\nи нажмите «Добавить в набор» на панели инструментов."
+
+msgid "Browse…"
+msgstr "Обзор…"
+
+msgid "Bug Fix"
+msgstr "Исправление ошибок"
+
+msgid "Bug Fixes"
+msgstr "Исправления ошибок"
+
+msgid "Build"
+msgstr "Сборка"
+
+msgid "Build Activity"
+msgstr "Активность сборок"
+
+msgid "Build Package"
+msgstr "Собрать пакет"
+
+msgid "Build history"
+msgstr "История сборок"
+
+msgid "Builds Today"
+msgstr "Сборок сегодня"
+
+msgid "Bulk uninstall"
+msgstr "Массовое удаление"
+
+msgid "Bundle Autosave"
+msgstr "Автосохранение набора"
+
+msgid "Bundles"
+msgstr "Наборы"
+
+msgid "Buy Me a Coffee"
+msgstr "Buy Me a Coffee"
+
+msgid "By Name"
+msgstr "По имени"
+
+msgid "By Package ID"
+msgstr "По ID пакета"
+
+msgid "CHAPTER {num}"
+msgstr "ГЛАВА {num}"
+
+msgid "COMMUNITY"
+msgstr "СООБЩЕСТВО"
+
+msgid "Cancel"
+msgstr "Отмена"
+
+msgid "Cancel Installation"
+msgstr "Отменить установку"
+
+msgid "Carry starred packages anywhere"
+msgstr "Забирайте избранные пакеты куда угодно"
+
+msgid "Categories"
+msgstr "Категории"
+
+msgid "Category"
+msgstr "Категория"
+
+msgid "Changelog built from Git history"
+msgstr "Журнал изменений строится из истории Git"
+
+msgid "Channels, events and cooldowns"
+msgstr "Каналы, события и задержки"
+
+msgid "Chaotic-AUR: automatic through pacman.conf."
+msgstr "Chaotic-AUR: автоматически через pacman.conf."
+
+msgid "Check Failed"
+msgstr "Проверка не удалась"
+
+msgid "Check failed: {e}"
+msgstr "Проверка не удалась: {e}"
+
+msgid "Check for Updates"
+msgstr "Проверить обновления"
+
+msgid "Checking for updates..."
+msgstr "Проверка обновлений..."
+
+msgid "Checking..."
+msgstr "Проверка..."
+
+msgid "Checking…"
+msgstr "Проверка…"
+
+msgid "Choose Sign In — your browser handles secure login, then NeoArch continues automatically"
+msgstr "Выберите «Вход» — браузер выполнит безопасный вход, затем NeoArch продолжит автоматически"
+
+msgid "Choose a theme for NeoArch. Changes apply instantly."
+msgstr "Выберите тему для NeoArch. Изменения применяются мгновенно."
+
+msgid "Clean Cache"
+msgstr "Очистить кэш"
+
+msgid "Clean Orphans"
+msgstr "Удалить осиротевшие пакеты"
+
+msgid "Clean orphans, cache, and read Arch news."
+msgstr "Удалите осиротевшие пакеты, очистите кэш и читайте новости Arch."
+
+msgid "Clear"
+msgstr "Очистить"
+
+msgid "Click \"Run Diagnostics\" to check your system"
+msgstr "Нажмите «Запустить диагностику», чтобы проверить систему"
+
+msgid "Click any row to open the detail card before deciding"
+msgstr "Нажмите на любую строку, чтобы открыть карточку с деталями перед решением"
+
+msgid "Clone a repository to build and manage software projects."
+msgstr "Клонируйте репозиторий, чтобы собирать и управлять программными проектами."
+
+msgid "Clone dialog"
+msgstr "Диалог клонирования"
+
+msgid "Clone, build and maintain projects straight from Git repositories."
+msgstr "Клонируйте, собирайте и поддерживайте проекты прямо из Git-репозиториев."
+
+msgid "Clone, build, update, and manage Git projects"
+msgstr "Клонируйте, собирайте, обновляйте и управляйте Git-проектами"
+
+msgid "Clone, build, update, and manage Git repositories"
+msgstr "Клонируйте, собирайте, обновляйте и управляйте Git-репозиториями"
+
+msgid "Close"
+msgstr "Закрыть"
+
+msgid "Cloud bundles"
+msgstr "Облачные наборы"
+
+msgid "Cloud sign-in"
+msgstr "Вход в облако"
+
+msgid "Cloud sync"
+msgstr "Облачная синхронизация"
+
+msgid "Coffee fund ☕\nEvery cup keeps development going."
+msgstr "Кофейный фонд ☕\nКаждая чашка поддерживает разработку."
+
+msgid "Collect favourite packages into groups"
+msgstr "Собирайте любимые пакеты в группы"
+
+msgid "Coming soon"
+msgstr "Скоро"
+
+msgid "Commits"
+msgstr "Коммиты"
+
+msgid "Community"
+msgstr "Сообщество"
+
+msgid "Community recipes"
+msgstr "Рецепты сообщества"
+
+msgid "Community-maintained recipes — not curated or reviewed by Arch."
+msgstr "Рецепты, поддерживаемые сообществом — не курируются и не проверяются Arch."
+
+msgid "Companion CLI"
+msgstr "Компаньон CLI"
+
+msgid "Complete table of installed packages"
+msgstr "Полная таблица установленных пакетов"
+
+msgid "Config Files (.pacnew)"
+msgstr "Файлы конфигурации (.pacnew)"
+
+msgid "Config in ~/.config/neoarch."
+msgstr "Конфигурация в ~/.config/neoarch."
+
+msgid "Configure NeoArch settings"
+msgstr "Настройте параметры NeoArch"
+
+msgid "Configure NeoArch settings and plugins"
+msgstr "Настройте параметры и плагины NeoArch"
+
+msgid "Configure basic application settings and preferences"
+msgstr "Настройте основные параметры и предпочтения приложения"
+
+msgid "Configure every part of NeoArch across seven focused categories."
+msgstr "Настройте каждую часть NeoArch в семи фокус-категориях."
+
+msgid "Configure logging behaviour and log file settings"
+msgstr "Настройте поведение журналирования и параметры файлов журнала"
+
+msgid "Configure network proxy settings and connection options"
+msgstr "Настройте параметры сетевого прокси и подключения"
+
+msgid "Confirm"
+msgstr "Подтвердить"
+
+msgid "Connection restored"
+msgstr "Подключение восстановлено"
+
+msgid "Console Output"
+msgstr "Вывод консоли"
+
+msgid "Container Logs"
+msgstr "Журналы контейнера"
+
+msgid "Containers"
+msgstr "Контейнеры"
+
+msgid "Continue"
+msgstr "Продолжить"
+
+msgid "Continue installing AUR packages?"
+msgstr "Продолжить установку пакетов AUR?"
+
+msgid "Contributing Guide ↗"
+msgstr "Руководство для контрибьюторов ↗"
+
+msgid "Contributors & sponsors"
+msgstr "Контрибьюторы и спонсоры"
+
+msgid "Control which events show notifications and alerts"
+msgstr "Управляйте тем, какие события показывают уведомления и оповещения"
+
+msgid "Cooldown between notifications (seconds):"
+msgstr "Задержка между уведомлениями (секунд):"
+
+msgid "Copied!"
+msgstr "Скопировано!"
+
+msgid "Copy"
+msgstr "Копировать"
+
+msgid "Copy Report"
+msgstr "Скопировать отчёт"
+
+msgid "Copy name"
+msgstr "Скопировать имя"
+
+msgid "Create"
+msgstr "Создать"
+
+msgid "Create Backup"
+msgstr "Создать резервную копию"
+
+msgid "Create Docker Network"
+msgstr "Создать сеть Docker"
+
+msgid "Create Docker Volume"
+msgstr "Создать том Docker"
+
+msgid "Create Network"
+msgstr "Создать сеть"
+
+msgid "Create Snapshot"
+msgstr "Создать снимок"
+
+msgid "Create Volume"
+msgstr "Создать том"
+
+msgid "Create a bundle to get started"
+msgstr "Создайте набор, чтобы начать"
+
+msgid "Create and inspect Docker resources"
+msgstr "Создавайте и просматривайте ресурсы Docker"
+
+msgid "Create backup before updates"
+msgstr "Создавать резервную копию перед обновлениями"
+
+msgid "Create bundles"
+msgstr "Создавайте наборы"
+
+msgid "Create, import, export, and install bundles of packages"
+msgstr "Создавайте, импортируйте, экспортируйте и устанавливайте наборы пакетов"
+
+msgid "Create, import, export, and install bundles of packages across sources"
+msgstr "Создавайте, импортируйте, экспортируйте и устанавливайте наборы пакетов из разных источников"
+
+msgid "Credentials & sudo"
+msgstr "Учётные данные и sudo"
+
+msgid "Current Version: {version}"
+msgstr "Текущая версия: {version}"
+
+msgid "Currently active"
+msgstr "Сейчас активен"
+
+msgid "Currently using"
+msgstr "Сейчас используется"
+
+msgid "DEBUG"
+msgstr "ОТЛАДКА"
+
+msgid "DEBUG shows all details, ERROR shows only failures"
+msgstr "DEBUG показывает все детали, ERROR — только сбои"
+
+msgid "Dashboard and package discovery"
+msgstr "Панель и поиск пакетов"
+
+msgid "Date Installed (Newest)"
+msgstr "Дата установки (новые)"
+
+msgid "Date Installed (Oldest)"
+msgstr "Дата установки (старые)"
+
+msgid "Days:"
+msgstr "Дни:"
+
+msgid "Decorative teal rim on the translucent window frame.\nOff by default — it can leave stray lines on some\ncompositors and GPU drivers."
+msgstr "Декоративная бирюзовая окантовка на полупрозрачной рамке окна.\nВыключена по умолчанию — может оставлять случайные линии на некоторых\nкомпозиторах и драйверах GPU."
+
+msgid "Delete"
+msgstr "Удалить"
+
+msgid "Delete Snapshots"
+msgstr "Удалить снимки"
+
+msgid "Dependencies"
+msgstr "Зависимости"
+
+msgid "Dependencies, system checks, and diagnostic information"
+msgstr "Зависимости, проверки системы и диагностическая информация"
+
+msgid "Dependency list with one-click install, plus system health"
+msgstr "Список зависимостей с установкой в один клик плюс состояние системы"
+
+msgid "Dependency setup cancelled — authentication required"
+msgstr "Настройка зависимостей отменена — требуется аутентификация"
+
+msgid "Dependency setup completed"
+msgstr "Настройка зависимостей завершена"
+
+msgid "Dependency setup incomplete. Still missing: {list}"
+msgstr "Настройка зависимостей неполна. Всё ещё отсутствует: {list}"
+
+msgid "Description"
+msgstr "Описание"
+
+msgid "Designs, builds and maintains every part of NeoArch."
+msgstr "Проектирует, собирает и сопровождает каждую часть NeoArch."
+
+msgid "Desktop notifications (system tray)"
+msgstr "Настольные уведомления (системный трей)"
+
+msgid "Details"
+msgstr "Детали"
+
+msgid "Diagnostics"
+msgstr "Диагностика"
+
+msgid "Diagnostics opens automatically, listing every dependency and what it powers"
+msgstr "Диагностика открывается автоматически, перечисляя каждую зависимость и что она обеспечивает"
+
+msgid "Did you mean…"
+msgstr "Вы имели в виду…"
+
+msgid "Discover plugins and helper tools that extend what NeoArch can do."
+msgstr "Откройте плагины и вспомогательные инструменты, расширяющие возможности NeoArch."
+
+msgid "Disk Usage"
+msgstr "Использование диска"
+
+msgid "Disk usage"
+msgstr "Использование диска"
+
+msgid "Docker"
+msgstr "Docker"
+
+msgid "Docker Containers"
+msgstr "Контейнеры Docker"
+
+msgid "Docker Images ({count})"
+msgstr "Образы Docker ({count})"
+
+msgid "Docker Networks ({count})"
+msgstr "Сети Docker ({count})"
+
+msgid "Docker Volumes ({count})"
+msgstr "Тома Docker ({count})"
+
+msgid "Docker disk usage"
+msgstr "Использование диска Docker"
+
+msgid "Docker volumes"
+msgstr "Тома Docker"
+
+msgid "Documentation"
+msgstr "Документация"
+
+msgid "Done"
+msgstr "Готово"
+
+msgid "Donut chart of project disk usage"
+msgstr "Кольцевая диаграмма использования диска проектами"
+
+msgid "Downgrade..."
+msgstr "Понизить версию..."
+
+msgid "Download Cache"
+msgstr "Кэш загрузок"
+
+msgid "Download snapshot"
+msgstr "Скачать снимок"
+
+msgid "Download the current source tarball"
+msgstr "Скачать текущий исходный архив"
+
+msgid "Downloading"
+msgstr "Загрузка"
+
+msgid "ERROR"
+msgstr "ОШИБКА"
+
+msgid "Echo log to terminal / console"
+msgstr "Дублировать журнал в терминал / консоль"
+
+msgid "Enable All"
+msgstr "Включить все"
+
+msgid "Enable automatic updates"
+msgstr "Включить автоматические обновления"
+
+msgid "Enable scheduled update checks"
+msgstr "Включить плановые проверки обновлений"
+
+msgid "Environment"
+msgstr "Окружение"
+
+msgid "Error: {e}"
+msgstr "Ошибка: {e}"
+
+msgid "Errors and warnings"
+msgstr "Ошибки и предупреждения"
+
+msgid "Events"
+msgstr "События"
+
+msgid "Every change auto-saves locally — no save button needed"
+msgstr "Каждое изменение сохраняется локально автоматически — кнопка сохранения не нужна"
+
+msgid "Every result is badged [aur] — never confused with official."
+msgstr "Каждый результат помечен [aur] — никогда не спутаете с официальными."
+
+msgid "Everything about the app itself — versions, health and the people behind it."
+msgstr "Всё о самом приложении — версии, состояние и люди за ним."
+
+msgid "Explicit"
+msgstr "Явно установленный"
+
+msgid "Export Settings"
+msgstr "Экспорт настроек"
+
+msgid "Failed to apply (need root?)."
+msgstr "Не удалось применить (нужны права root?)."
+
+msgid "Failed to render update list."
+msgstr "Не удалось отобразить список обновлений."
+
+msgid "Feature"
+msgstr "Функция"
+
+msgid "Fetch any repository by URL"
+msgstr "Получайте любой репозиторий по URL"
+
+msgid "Filesystem: BTRFS - native snapshots available"
+msgstr "Файловая система: BTRFS — доступны нативные снимки"
+
+msgid "Filesystem: {fs} - package list + config backup only"
+msgstr "Файловая система: {fs} — только список пакетов + резервная копия конфигурации"
+
+msgid "Find anything from pacman, AUR, Flatpak and npm"
+msgstr "Находите что угодно из pacman, AUR, Flatpak и npm"
+
+msgid "Find apps in large libraries fast"
+msgstr "Быстро находите приложения в больших библиотеках"
+
+msgid "Flatpak sandboxed · npm user mode."
+msgstr "Flatpak в песочнице · npm в пользовательском режиме."
+
+msgid "Follow container output and resource usage"
+msgstr "Следите за выводом контейнера и использованием ресурсов"
+
+msgid "Found {n} corrupted archive(s):\n{list}"
+msgstr "Найдено повреждённых архивов: {n}:\n{list}"
+
+msgid "Founder · Lead Developer"
+msgstr "Основатель · Ведущий разработчик"
+
+msgid "Fri"
+msgstr "Пт"
+
+msgid "Full inventory"
+msgstr "Полная опись"
+
+msgid "GUI Framework"
+msgstr "Графический фреймворк"
+
+msgid "GUI sudo prompt (SUDO_ASKPASS) — never stored."
+msgstr "Графический запрос sudo (SUDO_ASKPASS) — никогда не сохраняется."
+
+msgid "General"
+msgstr "Общие"
+
+msgid "Generate"
+msgstr "Сгенерировать"
+
+msgid "Generate codes others import instantly"
+msgstr "Создавайте коды, которые другие импортируют мгновенно"
+
+msgid "Getting Started"
+msgstr "Начало работы"
+
+msgid "Git"
+msgstr "Git"
+
+msgid "Git Projects"
+msgstr "Git-проекты"
+
+msgid "Git Repositories"
+msgstr "Git-репозитории"
+
+msgid "Glow border around the window"
+msgstr "Светящаяся рамка вокруг окна"
+
+msgid "Good afternoon"
+msgstr "Добрый день"
+
+msgid "Good evening"
+msgstr "Добрый вечер"
+
+msgid "Good morning"
+msgstr "Доброе утро"
+
+msgid "Grid View"
+msgstr "Сетка"
+
+msgid "Grid or list view"
+msgstr "Сетка или список"
+
+msgid "Grid or table view"
+msgstr "Сетка или таблица"
+
+msgid "Group packages into shareable collections and rebuild setups anywhere."
+msgstr "Группируйте пакеты в коллекции для совместного использования и восстанавливайте настройки где угодно."
+
+msgid "Guest"
+msgstr "Гость"
+
+msgid "HABITS"
+msgstr "ПРИВЫЧКИ"
+
+msgid "HOW IT WORKS"
+msgstr "КАК ЭТО РАБОТАЕТ"
+
+msgid "HTTP"
+msgstr "HTTP"
+
+msgid "HTTPS"
+msgstr "HTTPS"
+
+msgid "Healthy-system checklist"
+msgstr "Чек-лист здоровой системы"
+
+msgid "Help & About"
+msgstr "Справка и о программе"
+
+msgid "Helper: auto — yay, paru, trizen, pikaur (General)."
+msgstr "Помощник: auto — yay, paru, trizen, pikaur (Общие)."
+
+msgid "Here's what's new in this update"
+msgstr "Вот что нового в этом обновлении"
+
+msgid "Hero search"
+msgstr "Главный поиск"
+
+msgid "Hide Console"
+msgstr "Скрыть консоль"
+
+msgid "Hide installed packages"
+msgstr "Скрыть установленные пакеты"
+
+msgid "High signal"
+msgstr "Высокий сигнал"
+
+msgid "Hold package"
+msgstr "Удержать пакет"
+
+msgid "Home"
+msgstr "Главная"
+
+msgid "Host:"
+msgstr "Хост:"
+
+msgid "I understand — Update Selection"
+msgstr "Понятно — обновить выбранное"
+
+msgid "ID"
+msgstr "ID"
+
+msgid "INFO"
+msgstr "ИНФО"
+
+msgid "ITEMS"
+msgstr "ЭЛЕМЕНТЫ"
+
+msgid "Idle"
+msgstr "Ожидание"
+
+msgid "Ignore Selected"
+msgstr "Игнорировать выбранное"
+
+msgid "Ignore update"
+msgstr "Игнорировать обновление"
+
+msgid "Ignore updates"
+msgstr "Игнорировать обновления"
+
+msgid "Ignore updates (IgnorePkg)"
+msgstr "Игнорировать обновления (IgnorePkg)"
+
+msgid "Image manager"
+msgstr "Менеджер образов"
+
+msgid "Images"
+msgstr "Образы"
+
+msgid "Import"
+msgstr "Импорт"
+
+msgid "Import & export"
+msgstr "Импорт и экспорт"
+
+msgid "Import AppImages either way"
+msgstr "Импортируйте AppImages любым способом"
+
+msgid "Import Code"
+msgstr "Импортировать код"
+
+msgid "Import Settings"
+msgstr "Импорт настроек"
+
+msgid "Improvements"
+msgstr "Улучшения"
+
+msgid "In Bundles, press Sync to upload the active bundle"
+msgstr "В «Наборах» нажмите «Синхронизировать», чтобы загрузить активный набор"
+
+msgid "In Home, tick packages and press Add to Bundle — items join the active bundle (switch it in the sidebar here first)"
+msgstr "На главной отметьте пакеты и нажмите «Добавить в набор» — элементы попадут в активный набор (сначала переключите его здесь в боковой панели)"
+
+msgid "In-app toast messages"
+msgstr "Всплывающие уведомления в приложении"
+
+msgid "Include Local source (custom scripts)"
+msgstr "Включить локальный источник (собственные скрипты)"
+
+msgid "Inspect any package before installing"
+msgstr "Просматривайте любой пакет перед установкой"
+
+msgid "Install"
+msgstr "Установить"
+
+msgid "Install All Missing"
+msgstr "Установить всё отсутствующее"
+
+msgid "Install Bundle"
+msgstr "Установить набор"
+
+msgid "Install Bundle sets up everything offline, grouped by source"
+msgstr "«Установить набор» настраивает всё офлайн, сгруппировано по источникам"
+
+msgid "Install Local Pkg"
+msgstr "Установить локальный пакет"
+
+msgid "Install Package"
+msgstr "Установить пакет"
+
+msgid "Install Packages with Sudo"
+msgstr "Установить пакеты через sudo"
+
+msgid "Install Selected"
+msgstr "Установить выбранное"
+
+msgid "Install Selected installs them immediately, grouped by source"
+msgstr "«Установить выбранное» устанавливает их сразу, сгруппировано по источникам"
+
+msgid "Install and launch extensions like BleachBit and Timeshift"
+msgstr "Устанавливайте и запускайте расширения, такие как BleachBit и Timeshift"
+
+msgid "Install and manage AppImage applications"
+msgstr "Устанавливайте и управляйте приложениями AppImage"
+
+msgid "Install failed"
+msgstr "Установка не удалась"
+
+msgid "Install output appears here — press Install to begin"
+msgstr "Вывод установки появится здесь — нажмите «Установить», чтобы начать"
+
+msgid "Install partially completed"
+msgstr "Установка частично завершена"
+
+msgid "Install with Sudo Privileges"
+msgstr "Установить с правами sudo"
+
+msgid "Install, open or uninstall each entry"
+msgstr "Установите, откройте или удалите каждый элемент"
+
+msgid "Installation cancelled"
+msgstr "Установка отменена"
+
+msgid "Installation complete."
+msgstr "Установка завершена."
+
+msgid "Installation failed"
+msgstr "Установка не удалась"
+
+msgid "Installed"
+msgstr "Установлено"
+
+msgid "Installed First"
+msgstr "Сначала установленные"
+
+msgid "Installed Packages"
+msgstr "Установленные пакеты"
+
+msgid "Installed count, pending updates, source totals"
+msgstr "Число установленных, ожидающие обновления, итоги по источникам"
+
+msgid "Installing {names}… watch output below"
+msgstr "Установка {names}… следите за выводом ниже"
+
+msgid "Installing…"
+msgstr "Установка…"
+
+msgid "Instant theming"
+msgstr "Мгновенное применение тем"
+
+msgid "Internet connection is available again."
+msgstr "Подключение к интернету снова доступно."
+
+msgid "Keep Arch rolling with fast, controlled system updates."
+msgstr "Держите Arch актуальным с быстрыми, контролируемыми обновлениями системы."
+
+msgid "Keep last:"
+msgstr "Оставить последние:"
+
+msgid "Keep projects current and compiled"
+msgstr "Поддерживайте проекты актуальными и собранными"
+
+msgid "Keep your local AppImage library tidy and up to date."
+msgstr "Содержите локальную библиотеку AppImage в порядке и актуальной."
+
+msgid "Keep your system tidy: orphans, leftover configs, and news"
+msgstr "Содержите систему в порядке: осиротевшие пакеты, остатки конфигов и новости"
+
+msgid "Language / Culture:"
+msgstr "Язык / культура:"
+
+msgid "Language, AUR helper, paths, settings transfer"
+msgstr "Язык, помощник AUR, пути, перенос настроек"
+
+msgid "Large — 14 px"
+msgstr "Крупный — 14 px"
+
+msgid "Last Updated"
+msgstr "Последнее обновление"
+
+msgid "Latest from archlinux.org"
+msgstr "Последнее с archlinux.org"
+
+msgid "Latest installs and upgrades at a glance"
+msgstr "Последние установки и обновления одним взглядом"
+
+msgid "Launch"
+msgstr "Запустить"
+
+msgid "Launch containers from any image"
+msgstr "Запускайте контейнеры из любого образа"
+
+msgid "License"
+msgstr "Лицензия"
+
+msgid "Lifecycle control"
+msgstr "Управление жизненным циклом"
+
+msgid "List Backups"
+msgstr "Список резервных копий"
+
+msgid "List View"
+msgstr "Список"
+
+msgid "Live logs"
+msgstr "Живые журналы"
+
+msgid "Live results across every source as you type"
+msgstr "Живые результаты из всех источников по мере ввода"
+
+msgid "Load More"
+msgstr "Загрузить ещё"
+
+msgid "Load More ({remaining} remaining)"
+msgstr "Загрузить ещё (осталось {remaining})"
+
+msgid "Load More Packages"
+msgstr "Загрузить ещё пакеты"
+
+msgid "Loading packages…"
+msgstr "Загрузка пакетов…"
+
+msgid "Loading plugins…"
+msgstr "Загрузка плагинов…"
+
+msgid "Loading updates…"
+msgstr "Загрузка обновлений…"
+
+msgid "Local images"
+msgstr "Локальные образы"
+
+msgid "Log File"
+msgstr "Файл журнала"
+
+msgid "Log Files (*.log *.txt);;All Files (*)"
+msgstr "Файлы журнала (*.log *.txt);;Все файлы (*)"
+
+msgid "Log file path:"
+msgstr "Путь к файлу журнала:"
+
+msgid "Log level:"
+msgstr "Уровень журналирования:"
+
+msgid "Logging"
+msgstr "Журналирование"
+
+msgid "Low signal"
+msgstr "Низкий сигнал"
+
+msgid "MB"
+msgstr "МБ"
+
+msgid "Maintenance"
+msgstr "Обслуживание"
+
+msgid "Maintenance tools"
+msgstr "Инструменты обслуживания"
+
+msgid "Make new bundles anytime with the + button beside BUNDLES"
+msgstr "Создавайте новые наборы в любой момент кнопкой + рядом с «НАБОРЫ»"
+
+msgid "Manage .pacnew"
+msgstr "Управлять .pacnew"
+
+msgid "Manage AppImage applications"
+msgstr "Управлять приложениями AppImage"
+
+msgid "Manage Bundles"
+msgstr "Управление наборами"
+
+msgid "Manage Bundles in the menu jumps to your local collections"
+msgstr "«Управление наборами» в меню переходит к вашим локальным коллекциям"
+
+msgid "Manage Cloud Bundles"
+msgstr "Управление облачными наборами"
+
+msgid "Manage Ignored"
+msgstr "Управление игнорируемыми"
+
+msgid "Manage automatic updates and system snapshots"
+msgstr "Управляйте автоматическими обновлениями и снимками системы"
+
+msgid "Manage containers, images, and Docker resources"
+msgstr "Управляйте контейнерами, образами и ресурсами Docker"
+
+msgid "Manage containers, images, volumes and networks without the terminal."
+msgstr "Управляйте контейнерами, образами, томами и сетями без терминала."
+
+msgid "Manage package sources and extensions"
+msgstr "Управляйте источниками пакетов и расширениями"
+
+msgid "Mark as dependency"
+msgstr "Пометить как зависимость"
+
+msgid "Mark as explicitly installed"
+msgstr "Пометить как явно установленный"
+
+msgid "Max log file size:"
+msgstr "Максимальный размер файла журнала:"
+
+msgid "Maximize"
+msgstr "Развернуть"
+
+msgid "Medium signal"
+msgstr "Средний сигнал"
+
+msgid "Meet and support the community"
+msgstr "Знакомьтесь с сообществом и поддерживайте его"
+
+msgid "Minimize"
+msgstr "Свернуть"
+
+msgid "Mon"
+msgstr "Пн"
+
+msgid "Move bundles via JSON files"
+msgstr "Перемещайте наборы через JSON-файлы"
+
+msgid "Multi-source manager"
+msgstr "Мультиисточниковый менеджер"
+
+msgid "Name A-Z"
+msgstr "Имя A-Z"
+
+msgid "Name Z-A"
+msgstr "Имя Z-A"
+
+msgid "Narrow the list by repository"
+msgstr "Сузьте список по репозиторию"
+
+msgid "Needs Attention"
+msgstr "Требует внимания"
+
+msgid "NeoArch Core Architectural Manifesto"
+msgstr "Основной архитектурный манифест NeoArch"
+
+msgid "NeoArch brings every package source and system workflow on Arch Linux together in one fast, friendly interface."
+msgstr "NeoArch объединяет все источники пакетов и системные рабочие процессы Arch Linux в одном быстром и дружелюбном интерфейсе."
+
+msgid "NeoArch is free, open-source and developed independently by one person. If it saves you time, consider supporting its continued development."
+msgstr "NeoArch бесплатен, имеет открытый исходный код и разрабатывается одним человеком. Если он экономит ваше время, подумайте о поддержке его дальнейшей разработки."
+
+msgid "NeoArch warns “full system upgrade recommended”, then lets you proceed."
+msgstr "NeoArch предупреждает «рекомендуется полное обновление системы», а затем позволяет продолжить."
+
+msgid "NeoArch {version} is available"
+msgstr "NeoArch {version} доступна"
+
+msgid "NeoArch {version} ·"
+msgstr "NeoArch {version} ·"
+
+msgid "Networks"
+msgstr "Сети"
+
+msgid "New Features"
+msgstr "Новые функции"
+
+msgid "New Version"
+msgstr "Новая версия"
+
+msgid "Newest"
+msgstr "Новейшие"
+
+msgid "Next: {nxt}"
+msgstr "Далее: {nxt}"
+
+msgid "No AUR helper detected"
+msgstr "Помощник AUR не обнаружен"
+
+msgid "No AppImages yet"
+msgstr "AppImages пока нет"
+
+msgid "No Git projects yet"
+msgstr "Git-проектов пока нет"
+
+msgid "No Selection"
+msgstr "Ничего не выбрано"
+
+msgid "No containers yet"
+msgstr "Контейнеров пока нет"
+
+msgid "No corrupted package archives found."
+msgstr "Повреждённых архивов пакетов не найдено."
+
+msgid "No description available."
+msgstr "Описание недоступно."
+
+msgid "No installed packages"
+msgstr "Нет установленных пакетов"
+
+msgid "No internet connection"
+msgstr "Нет подключения к интернету"
+
+msgid "No packages found matching '{query}'."
+msgstr "Пакетов, соответствующих «{query}», не найдено."
+
+msgid "No packages found matching '{q}'."
+msgstr "Пакетов, соответствующих «{q}», не найдено."
+
+msgid "No packages found. Try a different search."
+msgstr "Пакеты не найдены. Попробуйте другой запрос."
+
+msgid "No packages in bundle"
+msgstr "В наборе нет пакетов"
+
+msgid "No recent builds"
+msgstr "Нет недавних сборок"
+
+msgid "No recent package activity found"
+msgstr "Недавней активности по пакетам не найдено"
+
+msgid "No results found"
+msgstr "Результатов не найдено"
+
+msgid "No run scheduled (pick at least one day)"
+msgstr "Запуск не запланирован (выберите хотя бы один день)"
+
+msgid "No signal"
+msgstr "Нет сигнала"
+
+msgid "No updates found matching '{q}'."
+msgstr "Обновлений, соответствующих «{q}», не найдено."
+
+msgid "None (direct connection)"
+msgstr "Нет (прямое подключение)"
+
+msgid "Not Installed First"
+msgstr "Сначала неустановленные"
+
+msgid "Nothing depends on this package (it is not needed by anything installed)."
+msgstr "От этого пакета ничего не зависит (он не нужен ничему установленному)."
+
+msgid "Nothing starts until you confirm — never silently."
+msgstr "Ничего не запускается, пока вы не подтвердите — никогда молча."
+
+msgid "Nothing to purge (or failed)."
+msgstr "Очищать нечего (или не удалось)."
+
+msgid "Notification Channels"
+msgstr "Каналы уведомлений"
+
+msgid "Notifications"
+msgstr "Уведомления"
+
+msgid "OAuth tokens cached with an expiry."
+msgstr "Токены OAuth кэшируются с истечением срока."
+
+msgid "OK"
+msgstr "ОК"
+
+msgid "OK (bash resolved)"
+msgstr "ОК (bash найден)"
+
+msgid "Off"
+msgstr "Выкл"
+
+msgid "Official: core / extra / multilib via pacman."
+msgstr "Официальные: core / extra / multilib через pacman."
+
+msgid "Old cached versions removed."
+msgstr "Старые кэшированные версии удалены."
+
+msgid "One-click install"
+msgstr "Установка в один клик"
+
+msgid "One-click states"
+msgstr "Состояния в один клик"
+
+msgid "Open"
+msgstr "Открыть"
+
+msgid "Open About from the bottom of the sidebar — if anything is missing, its icon turns into a warning bell"
+msgstr "Откройте «О программе» внизу боковой панели — если чего-то не хватает, его значок превратится в предупреждающий колокольчик"
+
+msgid "Open Bundles — your first visit creates My Bundle automatically"
+msgstr "Откройте «Наборы» — при первом посещении автоматически создастся «Мой набор»"
+
+msgid "Open Folder"
+msgstr "Открыть папку"
+
+msgid "Open Shell"
+msgstr "Открыть терминал"
+
+msgid "Open Source"
+msgstr "Открытый исходный код"
+
+msgid "Open aur.archlinux.org ↗"
+msgstr "Открыть aur.archlinux.org ↗"
+
+msgid "Open the PKGBUILD recipe this package builds from"
+msgstr "Откройте рецепт PKGBUILD, из которого собирается этот пакет"
+
+msgid "Open the commit history for this package"
+msgstr "Откройте историю коммитов для этого пакета"
+
+msgid "Open, update or remove entries"
+msgstr "Откройте, обновите или удалите элементы"
+
+msgid "Operation"
+msgstr "Операция"
+
+msgid "Operation complete."
+msgstr "Операция завершена."
+
+msgid "Or press Add to Bundle to save them into the active bundle"
+msgstr "Или нажмите «Добавить в набор», чтобы сохранить их в активный набор"
+
+msgid "Organise projects your way"
+msgstr "Организуйте проекты по-своему"
+
+msgid "Orphaned Packages"
+msgstr "Осиротевшие пакеты"
+
+msgid "Orphans, .pacnew, cache hygiene, Arch news"
+msgstr "Осиротевшие пакеты, .pacnew, гигиена кэша, новости Arch"
+
+msgid "Other Containers ({count})"
+msgstr "Другие контейнеры ({count})"
+
+msgid "Overview"
+msgstr "Обзор"
+
+msgid "PROTECTED"
+msgstr "ЗАЩИЩЕНО"
+
+msgid "Package"
+msgstr "Пакет"
+
+msgid "Package Cache"
+msgstr "Кэш пакетов"
+
+msgid "Package Management"
+msgstr "Управление пакетами"
+
+msgid "Package Manager Busy"
+msgstr "Менеджер пакетов занят"
+
+msgid "Package Name"
+msgstr "Имя пакета"
+
+msgid "Package Stats"
+msgstr "Статистика пакетов"
+
+msgid "Package count and version changes are shown first."
+msgstr "Сначала показываются число пакетов и изменения версий."
+
+msgid "Package details"
+msgstr "Детали пакета"
+
+msgid "Package install / uninstall complete"
+msgstr "Установка / удаление пакета завершены"
+
+msgid "Package sources"
+msgstr "Источники пакетов"
+
+msgid "Packages installed as dependencies that nothing needs anymore."
+msgstr "Пакеты, установленные как зависимости, которые больше никому не нужны."
+
+msgid "Packages installed on this system will appear here"
+msgstr "Установленные на этой системе пакеты появятся здесь"
+
+msgid "Packages to update: {n}"
+msgstr "Пакетов к обновлению: {n}"
+
+msgid "Packages, Git, Docker, AppImages and bundles in one app"
+msgstr "Пакеты, Git, Docker, AppImages и наборы в одном приложении"
+
+msgid "Partial Update Warning"
+msgstr "Предупреждение о частичном обновлении"
+
+msgid "Partial upgrades"
+msgstr "Частичные обновления"
+
+msgid "Paste share code..."
+msgstr "Вставить код для обмена..."
+
+msgid "Pause All"
+msgstr "Приостановить всё"
+
+msgid "Pending counts stay visible in the sidebar"
+msgstr "Число ожидающего остаётся видимым в боковой панели"
+
+msgid "Pick exactly which packages to upgrade"
+msgstr "Выбирайте точно, какие пакеты обновить"
+
+msgid "Pin packages you never want upgraded"
+msgstr "Закрепляйте пакеты, которые никогда не хотите обновлять"
+
+msgid "Platform"
+msgstr "Платформа"
+
+msgid "Play sound on events"
+msgstr "Играть звук при событиях"
+
+msgid "Please select packages to install."
+msgstr "Пожалуйста, выберите пакеты для установки."
+
+msgid "Please wait, fetching package data"
+msgstr "Подождите, получаем данные о пакетах"
+
+msgid "Plugin"
+msgstr "Плагин"
+
+msgid "Plugin catalog"
+msgstr "Каталог плагинов"
+
+msgid "Port:"
+msgstr "Порт:"
+
+msgid "Portable  ·  Desktop Integration  ·  Updates  ·  Easy Removal"
+msgstr "Портативность  ·  Интеграция с рабочим столом  ·  Обновления  ·  Лёгкое удаление"
+
+msgid "Prefer full upgrades — keep IgnorePkg minimal."
+msgstr "Предпочитайте полные обновления — держите IgnorePkg минимальным."
+
+msgid "Prefer official repos over AUR when both exist."
+msgstr "Предпочитайте официальные репозитории AUR, когда доступны оба."
+
+msgid "Press Install on any row, or Install All Missing once"
+msgstr "Нажмите «Установить» в любой строке или «Установить всё отсутствующее» один раз"
+
+msgid "Processing..."
+msgstr "Обработка..."
+
+msgid "Projects to update"
+msgstr "Проекты к обновлению"
+
+msgid "Prompt only, never stored"
+msgstr "Только запрос, никогда не сохраняется"
+
+msgid "Proxy"
+msgstr "Прокси"
+
+msgid "Proxy & Network"
+msgstr "Прокси и сеть"
+
+msgid "Proxy type:"
+msgstr "Тип прокси:"
+
+msgid "Prune Old"
+msgstr "Убрать старые"
+
+msgid "Pull"
+msgstr "Загрузить"
+
+msgid "Pull & build"
+msgstr "Загрузить и собрать"
+
+msgid "Pull / Update"
+msgstr "Загрузить / обновить"
+
+msgid "Pull Docker Image"
+msgstr "Загрузить образ Docker"
+
+msgid "Pull Image"
+msgstr "Загрузить образ"
+
+msgid "Pull images and clear unused ones"
+msgstr "Загружайте образы и очищайте неиспользуемые"
+
+msgid "Pull, run, and manage Docker containers"
+msgstr "Загружайте, запускайте и управляйте контейнерами Docker"
+
+msgid "Purge Old Cache"
+msgstr "Очистить старый кэш"
+
+msgid "Python"
+msgstr "Python"
+
+msgid "Qt"
+msgstr "Qt"
+
+msgid "Queue several plugins together"
+msgstr "Ставьте несколько плагинов в очередь одновременно"
+
+msgid "Quick Actions"
+msgstr "Быстрые действия"
+
+msgid "Quick actions"
+msgstr "Быстрые действия"
+
+msgid "Quick search…"
+msgstr "Быстрый поиск…"
+
+msgid "Quick view of your machine profile"
+msgstr "Быстрый просмотр профиля вашей машины"
+
+msgid "Rate Limiting"
+msgstr "Ограничение частоты запросов"
+
+msgid "Re-check for updates every:"
+msgstr "Повторно проверять обновления каждые:"
+
+msgid "Read PKGBUILDs before installing AUR packages."
+msgstr "Читайте PKGBUILD перед установкой пакетов AUR."
+
+msgid "Ready to update"
+msgstr "Готов к обновлению"
+
+msgid "Reason"
+msgstr "Причина"
+
+msgid "Recent Activity"
+msgstr "Недавняя активность"
+
+msgid "Recent activity"
+msgstr "Недавняя активность"
+
+msgid "Refresh"
+msgstr "Обновить"
+
+msgid "Refresh Databases"
+msgstr "Обновить базы данных"
+
+msgid "Release Notes"
+msgstr "Примечания к выпуску"
+
+msgid "Release notes"
+msgstr "Примечания к выпуску"
+
+msgid "Releases"
+msgstr "Релизы"
+
+msgid "Remove"
+msgstr "Удалить"
+
+msgid "Remove Orphans"
+msgstr "Удалить осиротевшие"
+
+msgid "Remove Plugins"
+msgstr "Удалить плагины"
+
+msgid "Remove from Bundle"
+msgstr "Удалить из набора"
+
+msgid "Remove orphans, manage .pacnew files, purge cache"
+msgstr "Удалите осиротевшие, управляйте файлами .pacnew, очистите кэш"
+
+msgid "Remove several selected packages safely"
+msgstr "Безопасно удалите несколько выбранных пакетов"
+
+msgid "Rename"
+msgstr "Переименовать"
+
+msgid "Report a Bug ↗"
+msgstr "Сообщить об ошибке ↗"
+
+msgid "Repository Storage"
+msgstr "Хранилище репозитория"
+
+msgid "Request timeout:"
+msgstr "Таймаут запроса:"
+
+msgid "Required By"
+msgstr "Требуется для"
+
+msgid "Requires root; writes /etc/pacman.conf"
+msgstr "Требует root; записывает /etc/pacman.conf"
+
+msgid "Requires the external 'timeshift' tool. Optional - the built-in backup above is recommended."
+msgstr "Требуется внешний инструмент 'timeshift'. Необязательно — рекомендуется встроенная резервная копия выше."
+
+msgid "Resource Usage"
+msgstr "Использование ресурсов"
+
+msgid "Restart"
+msgstr "Перезапустить"
+
+msgid "Restore"
+msgstr "Восстановить"
+
+msgid "Restore Backup"
+msgstr "Восстановить из резервной копии"
+
+msgid "Restore or delete bundles stored in your cloud account."
+msgstr "Восстановите или удалите наборы, хранящиеся в вашей облачной учётной записи."
+
+msgid "Results"
+msgstr "Результаты"
+
+msgid "Revert to Snapshot"
+msgstr "Откатить к снимку"
+
+msgid "Review recent builds per project"
+msgstr "Просматривайте недавние сборки по каждому проекту"
+
+msgid "Rolling release — packages expect to update together."
+msgstr "Плавающий релиз — пакеты ожидают обновления вместе."
+
+msgid "Root Filesystem"
+msgstr "Корневая файловая система"
+
+msgid "Round — 8 px"
+msgstr "Скруглённые — 8 px"
+
+msgid "Run"
+msgstr "Запустить"
+
+msgid "Run Diagnostics"
+msgstr "Запустить диагностику"
+
+msgid "Run a Docker image to create your first container."
+msgstr "Запустите образ Docker, чтобы создать свой первый контейнер."
+
+msgid "Run container"
+msgstr "Запустить контейнер"
+
+msgid "Run the update check automatically on a weekly schedule (evaluated by the CLI/service layer; applies when the app is running)."
+msgstr "Автоматически проверять обновления по еженедельному расписанию (оценивается уровнем CLI/службы; действует, пока приложение запущено)."
+
+msgid "Running"
+msgstr "Запущен"
+
+msgid "Running Containers ({count})"
+msgstr "Запущенные контейнеры ({count})"
+
+msgid "Running diagnostics…"
+msgstr "Запуск диагностики…"
+
+msgid "Runtime"
+msgstr "Среда выполнения"
+
+msgid "SAFE"
+msgstr "БЕЗОПАСНО"
+
+msgid "SAFETY OVERVIEW"
+msgstr "ОБЗОР БЕЗОПАСНОСТИ"
+
+msgid "SETTINGS"
+msgstr "НАСТРОЙКИ"
+
+msgid "SIGN-IN"
+msgstr "ВХОД"
+
+msgid "SOCKS5"
+msgstr "SOCKS5"
+
+msgid "SOURCES"
+msgstr "ИСТОЧНИКИ"
+
+msgid "Safe cancellations"
+msgstr "Безопасная отмена"
+
+msgid "Sat"
+msgstr "Сб"
+
+msgid "Scan cached package archives for corruption before they cause failures."
+msgstr "Сканируйте кэшированные архивы пакетов на повреждения, прежде чем они вызовут сбои."
+
+msgid "Scan failed: {err}"
+msgstr "Сканирование не удалось: {err}"
+
+msgid "Scan for Corrupted Archives"
+msgstr "Сканировать на повреждённые архивы"
+
+msgid "Scan to buy me a coffee"
+msgstr "Отсканируйте, чтобы купить мне кофе"
+
+msgid "Schedule disabled"
+msgstr "Расписание отключено"
+
+msgid "Scheduled Checks"
+msgstr "Плановые проверки"
+
+msgid "Schedules, pre-update backups, Timeshift"
+msgstr "Расписания, резервные копии перед обновлением, Timeshift"
+
+msgid "Search"
+msgstr "Поиск"
+
+msgid "Search & sort"
+msgstr "Поиск и сортировка"
+
+msgid "Search Mode"
+msgstr "Режим поиска"
+
+msgid "Search and discover new packages to install"
+msgstr "Ищите и находите новые пакеты для установки"
+
+msgid "Search extensions"
+msgstr "Искать расширения"
+
+msgid "Search for packages"
+msgstr "Искать пакеты"
+
+msgid "Search packages across pacman, AUR, Flatpak, npm…"
+msgstr "Ищите пакеты в pacman, AUR, Flatpak, npm…"
+
+msgid "Search pacman, AUR, Flatpak and npm side by side"
+msgstr "Ищите в pacman, AUR, Flatpak и npm бок о бок"
+
+msgid "Search..."
+msgstr "Поиск..."
+
+msgid "Searching official repos and AUR..."
+msgstr "Поиск в официальных репозиториях и AUR..."
+
+msgid "Searching packages..."
+msgstr "Поиск пакетов..."
+
+msgid "Secure browser-based authentication"
+msgstr "Безопасная аутентификация через браузер"
+
+msgid "Security"
+msgstr "Безопасность"
+
+msgid "See console output for details."
+msgstr "Подробности — в выводе консоли."
+
+msgid "See when an app has a newer release"
+msgstr "Видите, когда у приложения появился новый релиз"
+
+msgid "Select Bundle Autosave Path"
+msgstr "Выберите путь автосохранения набора"
+
+msgid "Select Log File"
+msgstr "Выберите файл журнала"
+
+msgid "Select a backup to restore packages from:"
+msgstr "Выберите резервную копию для восстановления пакетов:"
+
+msgid "Selective updates"
+msgstr "Выборочные обновления"
+
+msgid "Set pacman ParallelDownloads={count}"
+msgstr "Установить pacman ParallelDownloads={count}"
+
+msgid "Set up an entire bundle at once"
+msgstr "Настройте весь набор сразу"
+
+msgid "Settings"
+msgstr "Настройки"
+
+msgid "Setup Environment"
+msgstr "Настроить окружение"
+
+msgid "Setup failed: {e}"
+msgstr "Настройка не удалась: {e}"
+
+msgid "Share Code"
+msgstr "Поделиться кодом"
+
+msgid "Share codes"
+msgstr "Коды для обмена"
+
+msgid "Share codes and cloud Sync work once you are signed in"
+msgstr "Коды для обмена и облачная синхронизация работают после входа"
+
+msgid "Sharp — 4 px"
+msgstr "Острые — 4 px"
+
+msgid "Show Console"
+msgstr "Показать консоль"
+
+msgid "Show News"
+msgstr "Показать новости"
+
+msgid "Show News ({n} new)"
+msgstr "Показать новости ({n} новых)"
+
+msgid "Show available or installed only"
+msgstr "Показывать только доступные или установленные"
+
+msgid "Sign in to share or sync bundles across devices"
+msgstr "Войдите, чтобы делиться наборами и синхронизировать их между устройствами"
+
+msgid "Sign in to sync favourites"
+msgstr "Войдите, чтобы синхронизировать избранное"
+
+msgid "Sign in to unlock cloud sync across your devices."
+msgstr "Войдите, чтобы включить облачную синхронизацию между вашими устройствами."
+
+msgid "Signed in as {name}"
+msgstr "Вы вошли как {name}"
+
+msgid "Size"
+msgstr "Размер"
+
+msgid "Size (Largest)"
+msgstr "Размер (крупные)"
+
+msgid "Size (Smallest)"
+msgstr "Размер (мелкие)"
+
+msgid "Skip for now"
+msgstr "Пропустить"
+
+msgid "Software Updates"
+msgstr "Обновления ПО"
+
+msgid "Sort"
+msgstr "Сортировать"
+
+msgid "Sort By"
+msgstr "Сортировать по"
+
+msgid "Source"
+msgstr "Источник"
+
+msgid "Source A-Z"
+msgstr "Источник A-Z"
+
+msgid "Source Z-A"
+msgstr "Источник Z-A"
+
+msgid "Source filters"
+msgstr "Фильтры источников"
+
+msgid "Sources"
+msgstr "Источники"
+
+msgid "Sources & Plugins"
+msgstr "Источники и плагины"
+
+msgid "Start"
+msgstr "Запустить"
+
+msgid "Start, stop and remove containers"
+msgstr "Запускайте, останавливайте и удаляйте контейнеры"
+
+msgid "Stat cards"
+msgstr "Карточки статистики"
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Status filters"
+msgstr "Фильтры статуса"
+
+msgid "Stay informed about important announcements before updating."
+msgstr "Будьте в курсе важных объявлений перед обновлением."
+
+msgid "Stop"
+msgstr "Остановить"
+
+msgid "Stop running installations anytime"
+msgstr "Останавливайте выполняющиеся установки в любой момент"
+
+msgid "Storage"
+msgstr "Хранилище"
+
+msgid "Storage overview"
+msgstr "Обзор хранилища"
+
+msgid "Success"
+msgstr "Успех"
+
+msgid "Successful builds"
+msgstr "Успешные сборки"
+
+msgid "Sudo session"
+msgstr "Сессия sudo"
+
+msgid "Sun"
+msgstr "Вс"
+
+msgid "Support NeoArch"
+msgstr "Поддержать NeoArch"
+
+msgid "Supports Cargo · CMake · Make · Meson · Go · npm · PKGBUILD"
+msgstr "Поддерживает Cargo · CMake · Make · Meson · Go · npm · PKGBUILD"
+
+msgid "Switch appearance anytime from Settings"
+msgstr "Переключайте внешний вид в любой момент в настройках"
+
+msgid "Sync favourites"
+msgstr "Синхронизировать избранное"
+
+msgid "Syncing package databases…"
+msgstr "Синхронизация баз данных пакетов…"
+
+msgid "System & Account"
+msgstr "Система и учётная запись"
+
+msgid "System Health"
+msgstr "Здоровье системы"
+
+msgid "System Healthy"
+msgstr "Система здорова"
+
+msgid "System Status"
+msgstr "Статус системы"
+
+msgid "System info"
+msgstr "Информация о системе"
+
+msgid "Tap your avatar at the bottom of the left sidebar"
+msgstr "Нажмите на свой аватар внизу левой боковой панели"
+
+msgid "Test AUR API"
+msgstr "Проверить AUR API"
+
+msgid "Testing…"
+msgstr "Проверка…"
+
+msgid "The following components are required for NeoArch to work:\n\n{list}\n\nInstall now?"
+msgstr "Для работы NeoArch требуются следующие компоненты:\n\n{list}\n\nУстановить сейчас?"
+
+msgid "The operation was cancelled."
+msgstr "Операция была отменена."
+
+msgid "The package database is locked. Close other package tools (pacman, pamac, yay/paru) and retry."
+msgstr "База данных пакетов заблокирована. Закройте другие инструменты управления пакетами (pacman, pamac, yay/paru) и повторите."
+
+msgid "The people behind NeoArch and how to support it"
+msgstr "Люди, стоящие за NeoArch, и как его поддержать"
+
+msgid "The red dot clears by itself when every check passes"
+msgstr "Красная точка исчезает сама, когда все проверки пройдены"
+
+msgid "Theme picker applied instantly"
+msgstr "Выбор темы применяется мгновенно"
+
+msgid "This will install the following packages with elevated privileges:\n\n{package_list}\n\nContinue?"
+msgstr "Будут установлены следующие пакеты с повышенными привилегиями:\n\n{package_list}\n\nПродолжить?"
+
+msgid "Thu"
+msgstr "Чт"
+
+msgid "Tick one or many packages right in the results table"
+msgstr "Отмечайте один или несколько пакетов прямо в таблице результатов"
+
+msgid "Time:"
+msgstr "Время:"
+
+msgid "Timeouts"
+msgstr "Таймауты"
+
+msgid "Timeouts, SSL verify, parallel downloads"
+msgstr "Таймауты, проверка SSL, параллельные загрузки"
+
+msgid "Timeshift (advanced)"
+msgstr "Timeshift (дополнительно)"
+
+msgid "Toggle how search results are shown"
+msgstr "Переключайте, как показываются результаты поиска"
+
+msgid "Tools & Workflows"
+msgstr "Инструменты и рабочие процессы"
+
+msgid "Total AppImages"
+msgstr "Всего AppImages"
+
+msgid "Total Projects"
+msgstr "Всего проектов"
+
+msgid "Total Size"
+msgstr "Общий размер"
+
+msgid "Total commits"
+msgstr "Всего коммитов"
+
+msgid "Try a different search term"
+msgstr "Попробуйте другой поисковый запрос"
+
+msgid "Tue"
+msgstr "Вт"
+
+msgid "Type A-Z"
+msgstr "Тип A-Z"
+
+msgid "Type Z-A"
+msgstr "Тип Z-A"
+
+msgid "Type what you are looking for — results stream in from every source"
+msgstr "Вводите то, что ищете, — результаты поступают из каждого источника"
+
+msgid "Unhold package"
+msgstr "Снять удержание с пакета"
+
+msgid "Unified workflows"
+msgstr "Единые рабочие процессы"
+
+msgid "Unignore updates (IgnorePkg)"
+msgstr "Отменить игнорирование обновлений (IgnorePkg)"
+
+msgid "Uninstall"
+msgstr "Удалить"
+
+msgid "Uninstall Package"
+msgstr "Удалить пакет"
+
+msgid "Uninstall Selected"
+msgstr "Удалить выбранное"
+
+msgid "Uninstall complete."
+msgstr "Удаление завершено."
+
+msgid "Uninstalling…"
+msgstr "Удаление…"
+
+msgid "Unique sources"
+msgstr "Уникальные источники"
+
+msgid "Unreachable"
+msgstr "Недоступен"
+
+msgid "Upcoming release"
+msgstr "Будущий выпуск"
+
+msgid "Update"
+msgstr "Обновить"
+
+msgid "Update All"
+msgstr "Обновить всё"
+
+msgid "Update All, refresh databases, clean cache"
+msgstr "Обновить всё, обновить базы данных, очистить кэш"
+
+msgid "Update Package"
+msgstr "Обновить пакет"
+
+msgid "Update Review"
+msgstr "Просмотр обновления"
+
+msgid "Update Selected"
+msgstr "Обновить выбранное"
+
+msgid "Update Type"
+msgstr "Тип обновления"
+
+msgid "Update badges"
+msgstr "Значки обновлений"
+
+msgid "Update checks"
+msgstr "Проверки обновлений"
+
+msgid "Update complete."
+msgstr "Обновление завершено."
+
+msgid "Update interval (days):"
+msgstr "Интервал обновления (дни):"
+
+msgid "Update partially completed"
+msgstr "Обновление частично завершено"
+
+msgid "Update review"
+msgstr "Просмотр обновления"
+
+msgid "Updates"
+msgstr "Обновления"
+
+msgid "Updates ({n})"
+msgstr "Обновления ({n})"
+
+msgid "Updates Available"
+msgstr "Доступны обновления"
+
+msgid "Updates available"
+msgstr "Доступны обновления"
+
+msgid "Updates build one at a time; a failure never aborts the rest."
+msgstr "Обновления собираются по одному; сбой никогда не прерывает остальные."
+
+msgid "Updates will appear here automatically when available"
+msgstr "Обновления будут появляться здесь автоматически, когда станут доступны"
+
+msgid "Updating a selection can desync libraries from their apps."
+msgstr "Обновление части пакетов может рассогласовать библиотеки с их приложениями."
+
+msgid "Updating a selection only"
+msgstr "Обновление только выбранного"
+
+msgid "Use Cloud Bundles from the same menu to restore backups"
+msgstr "Используйте «Облачные наборы» из того же меню для восстановления резервных копий"
+
+msgid "Use npm user mode for global installs"
+msgstr "Использовать пользовательский режим npm для глобальных установок"
+
+msgid "User"
+msgstr "Пользователь"
+
+msgid "User Account"
+msgstr "Учётная запись"
+
+msgid "Verifies reachability of the AUR RPC endpoint used to resolve packages from the AUR source."
+msgstr "Проверяет доступность конечной точки AUR RPC, используемой для поиска пакетов из источника AUR."
+
+msgid "Verify SSL certificates"
+msgstr "Проверять SSL-сертификаты"
+
+msgid "Version"
+msgstr "Версия"
+
+msgid "Version (Latest)"
+msgstr "Версия (последняя)"
+
+msgid "Version (Oldest)"
+msgstr "Версия (самая старая)"
+
+msgid "Version history and changes"
+msgstr "История версий и изменения"
+
+msgid "Version information, links, and system details"
+msgstr "Информация о версии, ссылки и сведения о системе"
+
+msgid "Version {version}"
+msgstr "Версия {version}"
+
+msgid "Version, edition and project links"
+msgstr "Версия, выпуск и ссылки на проект"
+
+msgid "View All Releases on GitHub ↗"
+msgstr "Просмотреть все релизы на GitHub ↗"
+
+msgid "View Changes"
+msgstr "Просмотреть изменения"
+
+msgid "View Details"
+msgstr "Просмотреть детали"
+
+msgid "View Logs"
+msgstr "Просмотреть журналы"
+
+msgid "View PKGBUILD"
+msgstr "Просмотреть PKGBUILD"
+
+msgid "View in browser"
+msgstr "Открыть в браузере"
+
+msgid "Volumes"
+msgstr "Тома"
+
+msgid "Volumes & networks"
+msgstr "Тома и сети"
+
+msgid "WARNED · NOT BLOCKED"
+msgstr "ПРЕДУПРЕЖДЕН · НЕ ЗАБЛОКИРОВАН"
+
+msgid "WARNING"
+msgstr "ПРЕДУПРЕЖДЕНИЕ"
+
+msgid "WHAT YOU CAN DO"
+msgstr "ЧТО ВЫ МОЖЕТЕ СДЕЛАТЬ"
+
+msgid "Want to improve NeoArch?"
+msgstr "Хотите улучшить NeoArch?"
+
+msgid "Warned, not blocked"
+msgstr "Предупреждён, не заблокирован"
+
+msgid "Wed"
+msgstr "Ср"
+
+msgid "Welcome"
+msgstr "Добро пожаловать"
+
+msgid "What NeoArch can reach, what it runs, and what it asks before it acts"
+msgstr "К чему NeoArch имеет доступ, что он запускает и о чём спрашивает перед действием"
+
+msgid "What's New"
+msgstr "Что нового"
+
+msgid "What's New in NeoArch {version}"
+msgstr "Что нового в NeoArch {version}"
+
+msgid "When packages ship new configs, the old one is kept as .pacnew."
+msgstr "Когда пакеты поставляют новые конфиги, старые сохраняются как .pacnew."
+
+msgid "Window corner radius"
+msgstr "Радиус углов окна"
+
+msgid "Window frame"
+msgstr "Рамка окна"
+
+msgid "You appear to be offline. Search results may be incomplete and installations may fail."
+msgstr "Похоже, вы офлайн. Результаты поиска могут быть неполными, а установки могут не удаться."
+
+msgid "You picked {selected} of {available} available updates. On Arch, packages are built against the latest libraries — a partial upgrade can desync libraries from their apps and break your system.\n\nIt’s recommended to do a full system upgrade instead."
+msgstr "Вы выбрали {selected} из {available} доступных обновлений. В Arch пакеты собираются под новейшие библиотеки — частичное обновление может рассогласовать библиотеки с их приложениями и сломать систему.\n\nРекомендуется вместо этого выполнить полное обновление системы."
+
+msgid "Your Projects"
+msgstr "Ваши проекты"
+
+msgid "Your bundle is empty"
+msgstr "Ваш набор пуст"
+
+msgid "Your starting point — search every source and watch what happens on your system."
+msgstr "Ваша отправная точка — ищите по всем источникам и наблюдайте, что происходит в системе."
+
+msgid "Your system is up to date"
+msgstr "Ваша система актуальна"
+
+msgid "across all sources"
+msgstr "по всем источникам"
+
+msgid "e.g. 127.0.0.1 or proxy.example.com"
+msgstr "напр. 127.0.0.1 или proxy.example.com"
+
+msgid "everything looks good"
+msgstr "всё выглядит хорошо"
+
+msgid "keep your system updated"
+msgstr "держите систему в актуальном состоянии"
+
+msgid "not installed"
+msgstr "не установлено"
+
+msgid "pacman ParallelDownloads:"
+msgstr "pacman ParallelDownloads:"
+
+msgid "sec"
+msgstr "сек"
+
+msgid "seconds"
+msgstr "секунд"
+
+msgid "versions per package"
+msgstr "версий на пакет"
+
+msgid "{checked} of {total} selected"
+msgstr "выбрано {checked} из {total}"
+
+msgid "{checked} of {total} selected{size}"
+msgstr "выбрано {checked} из {total}{size}"
+
+msgid "{count} missing — {req} required for NeoArch to work"
+msgstr "отсутствует {count} — для работы NeoArch требуется {req}"
+
+msgid "{count} optional component(s) missing — features above will stay hidden until installed"
+msgstr "отсутствует {count} необязательных компонентов — указанные выше функции останутся скрытыми до установки"
+
+msgid "{count} packages were found, {count} of which match the specified filters{suffix}"
+msgstr "найдено пакетов: {count}, из них {count} соответствуют заданным фильтрам{suffix}"
+
+msgid "{count} plugin{s} selected"
+msgstr "выбрано {count} плагин{s}"
+
+msgid "{edition} Edition"
+msgstr "Выпуск {edition}"
+
+msgid "{issues} issues need resolving"
+msgstr "нужно решить {issues} проблем"
+
+msgid "{issues} item{s} found"
+msgstr "найдено {issues} объект{s}"
+
+msgid "{n} application"
+msgstr "{n} приложение"
+
+msgid "{n} applications"
+msgstr "{n} приложений"
+
+msgid "{prefix}, {name}!"
+msgstr "{prefix}, {name}!"
+
+msgid "{running} running, {stopped} stopped"
+msgstr "{stopped} остановлено, {running} запущено"
+
+msgid "{shown} of {total} applications"
+msgstr "{shown} из {total} приложений"
+
+msgid "{total} packages installed"
+msgstr "установлено пакетов: {total}"
+
+msgid "{total} updates available"
+msgstr "доступно обновлений: {total}"
+
+msgid "“Unified system design is not about hiding complex settings; it is about providing power users with reliable tools that simplify technical friction.”"
+msgstr "«Единый системный дизайн — это не про сокрытие сложных настроек; это про предоставление продвинутым пользователям надёжных инструментов, упрощающих технические трения»."
+
+msgid "• {status}"
+msgstr "• {status}"
+
+msgid "↓ {count} commits behind"
+msgstr "↓ отстаёт на {count} коммитов"
+
+msgid "↗ AUR Package"
+msgstr "↗ Пакет AUR"
+
+msgid "↗ GitHub"
+msgstr "↗ GitHub"
+
+msgid "↗ Repository"
+msgstr "↗ Репозиторий"
+
+msgid "↗ View Release"
+msgstr "↗ Просмотреть релиз"
+
+msgid "↗ Website"
+msgstr "↗ Веб-сайт"
+
+msgid "↪  Sign Out"
+msgstr "↪  Выйти"
+
+msgid "↻ Restore"
+msgstr "↻ Восстановить"
+
+msgid "⇥  Sign In"
+msgstr "⇥  Войти"
+
+msgid "◉  Installed"
+msgstr "◉  Установлено"
+
+msgid "◉  Update Available"
+msgstr "◉  Доступно обновление"
+
+msgid "○  Not Installed"
+msgstr "○  Не установлено"
+
+msgid "● Clean"
+msgstr "● Без изменений"
+
+msgid "● Modified ({count})"
+msgstr "●  Изменено ({count})"
+
+msgid "☁  Cloud Bundles"
+msgstr "☁  Облачные наборы"
+
+msgid "☁ Sync"
+msgstr "☁ Синхронизация"
+
+msgid "♥  GitHub Sponsors"
+msgstr "♥  Спонсоры на GitHub"
+
+msgid "⚙  Account Settings"
+msgstr "⚙  Настройки учётной записи"
+
+msgid "⚠ Simulated test mode (NEOARCH_FAKE_MISSING) — these rows never clear; unset the env var for real checks"
+msgstr "⚠ Имитируемый тестовый режим (NEOARCH_FAKE_MISSING) — эти строки никогда не очищаются; отключите переменную окружения для реальных проверок"
+
+msgid "✓  Up to date"
+msgstr "✓  Актуально"
+
+msgid "✗ Cancelled — authenticate to enable installs"
+msgstr "✗ Отменено — аутентифицируйтесь, чтобы включить установки"

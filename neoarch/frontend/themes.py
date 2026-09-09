@@ -77,6 +77,7 @@ LIGHT = {
     "name": "Light",
     "description": "Clean light theme for bright environments",
     "is_dark": False,
+    "coming_soon": True,
     "colors": {
         "BG": "#F5F5F7",
         "BG_SECONDARY": "#ECECEF",
@@ -133,6 +134,7 @@ DRACULA = {
     "name": "Dracula",
     "description": "Popular dark theme with purple accents",
     "is_dark": True,
+    "coming_soon": True,
     "colors": {
         "BG": "#282A36",
         "BG_SECONDARY": "#2E303E",
@@ -189,6 +191,7 @@ NORD = {
     "name": "Nord",
     "description": "Arctic blue color palette",
     "is_dark": True,
+    "coming_soon": True,
     "colors": {
         "BG": "#2E3440",
         "BG_SECONDARY": "#3B4252",
@@ -269,8 +272,8 @@ class ThemeManager(QObject):
 
     def apply_theme(self, theme_id):
         """Apply a theme by id. Updates Colors, Fonts, Radii, SourceColors,
-        and regenerates QSS blocks."""
-        if theme_id not in THEMES:
+        and regenerates QSS blocks. Coming-soon themes are not selectable yet."""
+        if theme_id not in THEMES or THEMES[theme_id].get("coming_soon"):
             return
         theme = THEMES[theme_id]
         self._current_id = theme_id

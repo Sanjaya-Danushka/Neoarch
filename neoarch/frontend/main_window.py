@@ -173,6 +173,8 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         QTimer.singleShot(1500, self.run_first_run_checks)
         # Restore cloud avatar UI state
         QTimer.singleShot(2000, lambda: self._on_cloud_user_changed(self._cloud_auth.user))
+        # Release notes: What's New after an update, then silently detect newer releases
+        QTimer.singleShot(3200, self._check_release_notes)
 
     def _on_cloud_user_changed(self, user):
         if hasattr(self, 'update_user_avatar'):
@@ -186,6 +188,107 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         """Reapply the main stylesheet when the theme changes."""
         from neoarch.frontend.tokens import DARK_STYLESHEET
         self.setStyleSheet(DARK_STYLESHEET)
+
+    def _check_release_notes(self):
+        """Show 'What's New' once after the app updates; then silently
+        check whether a newer GitHub release exists.
+
+        Dev preview toggles (skip the once-per-version logic):
+          NEOARCH_PREVIEW_WHATS_NEW=1        force the What's New dialog
+          NEOARCH_PREVIEW_UPDATE=3.2.0       force the update-available dialog
+        """
+        from threading import Thread
+        import os as _os
+        try:
+            from neoarch.resources.paths import APP_VERSION
+            from neoarch.backend.services.release_notes import (
+                parse_changelog, whats_new)
+            from neoarch.frontend.components.whats_new_dialog import (
+                WhatIsNewDialog)
+        except Exception as e:
+            self.log(f"Release notes init failed: {e}")
+            return
+
+        blocks = parse_changelog()
+        last_seen = str(self.settings.get('last_seen_version', '') or '')
+
+        preview_wn = _os.environ.get('NEOARCH_PREVIEW_WHATS_NEW')
+        preview_up = _os.environ.get('NEOARCH_PREVIEW_UPDATE')
+        if preview_wn:
+            WhatIsNewDialog(
+                whats_new(blocks, '', limit=4), mode='whats_new',
+                current_version=APP_VERSION, parent=self).exec()
+            return
+        if preview_up:
+            info = {
+                'version': preview_up.strip(),
+                'name': preview_up.strip(),
+                'body': '',
+                'html_url': 'https://github.com/Sanjaya-Danushka/Neoarch/releases/latest',
+            }
+            WhatIsNewDialog([], mode='update', latest=info,
+                            parent=self).exec()
+            return
+
+        if APP_VERSION != last_seen:
+            seen = whats_new(blocks, last_seen)
+            if seen:
+                self.settings['last_seen_version'] = APP_VERSION
+                try:
+                    WhatIsNewDialog(
+                        seen, mode='whats_new',
+                        current_version=APP_VERSION, parent=self).exec()
+                finally:
+                    self.save_settings()
+                return
+
+        if not self.settings.get('auto_check_updates', True):
+            return
+
+        def _fetch():
+            try:
+                from neoarch.backend.services.release_notes import (
+                    latest_release, version_key)
+                from neoarch.resources.paths import APP_VERSION as _version
+                info = latest_release()
+                if not info:
+                    return
+                if version_key(info['version']) <= version_key(_version):
+                    return
+                self.ui_call.emit(
+                    lambda: self._offer_update(info))
+            except Exception:
+                pass
+
+        Thread(target=_fetch, daemon=True).start()
+
+    def _offer_update(self, info):
+        """'Update available' dialog, at most once per week."""
+        import time
+        last_shown = self.settings.get('last_update_banner_ts', 0.0) or 0.0
+        now = time.time()
+        if now - float(last_shown) < 7 * 24 * 3600:
+            return
+        try:
+            from neoarch.backend.services.release_notes import (
+                parse_changelog, whats_new)
+            from neoarch.frontend.components.whats_new_dialog import (
+                WhatIsNewDialog)
+        except Exception as e:
+            self.log(f"Update check failed: {e}")
+            return
+        try:
+            blocks = whats_new(
+                parse_changelog(),
+                str(self.settings.get('last_seen_version', '') or ''),
+                limit=2)
+        except Exception:
+            blocks = []
+        try:
+            WhatIsNewDialog(blocks, mode='update', latest=info,
+                            parent=self).exec()
+        finally:
+            self.update_setting('last_update_banner_ts', now)
 
     def closeEvent(self, event):
         try:

@@ -16,11 +16,12 @@ from neoarch.frontend.themes import THEMES
 class _ThemePreview(QFrame):
     """Small color swatch preview of a theme."""
 
-    def __init__(self, theme_data, parent=None):
+    def __init__(self, theme_data, disabled=False, parent=None):
         super().__init__(parent)
         self.setFixedSize(180, 100)
         self._c = theme_data["colors"]
         self._is_dark = theme_data["is_dark"]
+        self._disabled = disabled
 
     def paintEvent(self, event):
         p = QPainter(self)
@@ -66,28 +67,40 @@ class _ThemePreview(QFrame):
         p.drawRoundedRect(4, 28, 20, 4, 2, 2)
         p.drawRoundedRect(4, 40, 20, 4, 2, 2)
 
+        if self._disabled:
+            p.fillRect(0, 0, w, h, QColor(0, 0, 0, 72))
+            accent_gray = QColor(self._c["TEXT_3"])
+            p.setBrush(accent_gray)
+            p.drawRoundedRect(4, 16, 20, 4, 2, 2)
+
         p.end()
 
 
 class _ThemeCard(QFrame):
     """Clickable theme card with preview and label."""
 
-    def __init__(self, theme_id, theme_data, is_selected, on_select, parent=None):
+    def __init__(self, theme_id, theme_data, is_selected, on_select,
+                 disabled=False, parent=None):
         super().__init__(parent)
         self.theme_id = theme_id
         self._on_select = on_select
+        self._disabled = disabled
         # Uniform width so all theme cards match each other in the grid
         self.setFixedSize(210, 190)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        if not disabled:
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
 
+        border = Colors.ACCENT if is_selected else Colors.BORDER
+        border_hover = (f"border-color: {Colors.ACCENT};"
+                        if not disabled else f"border-color: {Colors.BORDER};")
         self.setStyleSheet(f"""
             QFrame {{
                 background-color: {Colors.SURFACE};
-                border: 2px solid {Colors.ACCENT if is_selected else Colors.BORDER};
+                border: 2px solid {border};
                 border-radius: {Radii.XL}px;
             }}
             QFrame:hover {{
-                border-color: {Colors.ACCENT};
+                {border_hover}
             }}
         """)
 
@@ -96,22 +109,31 @@ class _ThemeCard(QFrame):
         layout.setSpacing(8)
 
         # Preview
-        preview = _ThemePreview(theme_data)
+        preview = _ThemePreview(theme_data, disabled=disabled)
         layout.addWidget(preview)
 
         # Label row
         label_row = QHBoxLayout()
         name = QLabel(theme_data["name"])
         name.setStyleSheet(f"""
-            color: {Colors.TEXT}; font-size: {Fonts.BASE};
+            color: {Colors.TEXT_3 if disabled else Colors.TEXT};
+            font-size: {Fonts.BASE};
             font-weight: {Fonts.SEMI}; border: none;
         """)
         label_row.addWidget(name)
 
-        if is_selected:
+        if is_selected and not disabled:
             badge = QLabel(_("Active"))
             badge.setStyleSheet(f"""
                 color: {Colors.ACCENT}; font-size: {Fonts.SM};
+                font-weight: {Fonts.SEMI}; border: none;
+            """)
+            label_row.addWidget(badge)
+
+        if disabled:
+            badge = QLabel(_("Coming soon"))
+            badge.setStyleSheet(f"""
+                color: {Colors.TEXT_3}; font-size: {Fonts.SM};
                 font-weight: {Fonts.SEMI}; border: none;
             """)
             label_row.addWidget(badge)
@@ -122,11 +144,17 @@ class _ThemeCard(QFrame):
         desc = QLabel(theme_data["description"])
         desc.setWordWrap(True)
         desc.setStyleSheet(f"""
-            color: {Colors.TEXT_2}; font-size: {Fonts.SM}; border: none;
+            color: {Colors.TEXT_3 if disabled else Colors.TEXT_2};
+            font-size: {Fonts.SM}; border: none;
         """)
         layout.addWidget(desc)
 
+        if disabled:
+            self.setToolTip(_("Coming soon"))
+
     def mousePressEvent(self, event):
+        if self._disabled:
+            return
         if event.button() == Qt.MouseButton.LeftButton:
             self._on_select(self.theme_id)
 
@@ -170,6 +198,7 @@ class AppearanceSettingsWidget(QWidget):
                 theme_id, theme_data,
                 is_selected=(theme_id == current_id),
                 on_select=self._apply_theme,
+                disabled=theme_data.get("coming_soon", False),
             )
             self._cards[theme_id] = card
             grid.addWidget(card)

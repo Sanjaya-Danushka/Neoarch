@@ -52,6 +52,9 @@ msgstr "සෑම NeoArch පිටුවකටම ක්ෂේත්‍ර ම�
 msgid "A modern graphical package manager for Arch Linux — search, install, and manage packages from pacman, AUR, Flatpak, and npm in one place. Create bundles, manage Git projects, run Docker containers, and sync your setup across devices."
 msgstr "Arch Linux සඳහා නවීන චිත්රක පැකේජ කළමනාකරුවෙකි — pacman, AUR, Flatpak සහ npm වලින් පැකේජ සෙවීමට, ස්ථාපනය කිරීමට සහ කළමනාකරණය කිරීමට එක් තැනකින් ඉඩ සලසයි. බණ්ඩල සාදන්න, Git ව්යාපෘති කළමනාකරණය කරන්න, Docker කන්ටේනර ධාවනය කරන්න, සහ ඔබේ සැකසුම උපාංග හරහා සමමුහුර්ත කරන්න."
 
+msgid "A new version of NeoArch is available"
+msgstr "NeoArch හි නව අනුවාදයක් ලබා ගත හැක"
+
 msgid "A setup is already running — wait for it"
 msgstr "ස්ථාපනයක් දැනටමත් ක්‍රියාත්මකයි — එය කෙරෙහි රැඳී සිටින්න"
 
@@ -376,6 +379,9 @@ msgstr "කෝපි අරමුදල ☕\nසෑම කෝප්පයක්�
 msgid "Collect favourite packages into groups"
 msgstr "ප්‍රියතම පැකේජ කාණ්ඩවලට එක් කරන්න"
 
+msgid "Coming soon"
+msgstr "ඉක්මනින් පැමිණේ"
+
 msgid "Commits"
 msgstr "කොමිට්"
 
@@ -432,6 +438,9 @@ msgstr "කන්ටේනර ලොග"
 
 msgid "Containers"
 msgstr "කන්ටේනර්"
+
+msgid "Continue"
+msgstr "ඉදිරියට"
 
 msgid "Continue installing AUR packages?"
 msgstr "AUR පැකේජ ස්ථාපනය කිරීම දිගටම කරන්නද?"
@@ -789,6 +798,9 @@ msgstr "උපකාර සහ පිළිබඳ"
 
 msgid "Helper: auto — yay, paru, trizen, pikaur (General)."
 msgstr "සහායකයා: ස්වයංක්‍රීය — yay, paru, trizen, pikaur (සාමාන්‍ය)."
+
+msgid "Here's what's new in this update"
+msgstr "මෙම යාවත්කාලීනයේ නව දේ මෙන්න"
 
 msgid "Hero search"
 msgstr "ප්‍රධාන සෙවුම"
@@ -1149,6 +1161,9 @@ msgstr "NeoArch නොමිලේ, විවෘත-මූලාශ්‍ර ස
 
 msgid "NeoArch warns “full system upgrade recommended”, then lets you proceed."
 msgstr "NeoArch “සම්පූර්ණ පද්ධති උත්ශ්‍රේණි කිරීම නිර්දේශිතයි” ලෙස අනතුරු අඟවයි, ඉන්පසු ඉදිරියට යාමට ඉඩ දෙයි."
+
+msgid "NeoArch {version} is available"
+msgstr "NeoArch {version} ලබා ගත හැක"
 
 msgid "NeoArch {version} ·"
 msgstr "NeoArch {version} ·"
@@ -1786,6 +1801,9 @@ msgstr "ප්‍රමාණය (විශාලතම)"
 msgid "Size (Smallest)"
 msgstr "ප්‍රමාණය (කුඩාම)"
 
+msgid "Skip for now"
+msgstr "දැනට මඟ හරින්න"
+
 msgid "Software Updates"
 msgstr "මෘදුකාංග යාවත්කාලීන"
 
@@ -1996,6 +2014,9 @@ msgstr "අද්විතීය ප්‍රභව"
 msgid "Unreachable"
 msgstr "ළඟා විය නොහැක"
 
+msgid "Upcoming release"
+msgstr "ඉදිරි නිකුතුව"
+
 msgid "Update"
 msgstr "යාවත්කාලීන"
 
@@ -2092,6 +2113,9 @@ msgstr "අනුවාද ඉතිහාසය සහ වෙනස්කම්
 msgid "Version information, links, and system details"
 msgstr "අනුවාද තොරතුරු, සබැඳි සහ පද්ධති විස්තර"
 
+msgid "Version {version}"
+msgstr "අනුවාදය {version}"
+
 msgid "Version, edition and project links"
 msgstr "අනුවාදය, සංස්කරණය සහ ව්‍යාපෘති සබැඳි"
 
@@ -2142,6 +2166,12 @@ msgstr "සාදරයෙන් පිළිගනිමු"
 
 msgid "What NeoArch can reach, what it runs, and what it asks before it acts"
 msgstr "NeoArch හට ළඟා විය හැක්කේ කුමකටද, එය ධාවනය කරන්නේ කුමක්ද, සහ ක්‍රියා කිරීමට පෙර එය අසන්නේ කුමක්ද"
+
+msgid "What's New"
+msgstr "අලුත් මොනවාද"
+
+msgid "What's New in NeoArch {version}"
+msgstr "NeoArch {version} හි අලුත් මොනවාද"
 
 msgid "When packages ship new configs, the old one is kept as .pacnew."
 msgstr "පැකේජ නව වින්යාස එවන විට, පැරණි එක .pacnew ලෙස තබා ගනී."

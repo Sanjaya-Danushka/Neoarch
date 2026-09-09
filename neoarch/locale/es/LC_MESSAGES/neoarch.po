@@ -52,6 +52,9 @@ msgstr "Una guía práctica de cada página de NeoArch"
 msgid "A modern graphical package manager for Arch Linux — search, install, and manage packages from pacman, AUR, Flatpak, and npm in one place. Create bundles, manage Git projects, run Docker containers, and sync your setup across devices."
 msgstr "Un gestor de paquetes gráfico moderno para Arch Linux: busca, instala y administra paquetes de pacman, AUR, Flatpak y npm en un solo lugar. Crea paquetes, administra proyectos Git, ejecuta contenedores Docker y sincroniza tu configuración entre dispositivos."
 
+msgid "A new version of NeoArch is available"
+msgstr "Hay una nueva versión de NeoArch disponible"
+
 msgid "A setup is already running — wait for it"
 msgstr "Ya hay una instalación en curso — espera a que termine"
 
@@ -376,6 +379,9 @@ msgstr "Fondo de café ☕\nCada taza mantiene el desarrollo en marcha."
 msgid "Collect favourite packages into groups"
 msgstr "Agrupa tus paquetes favoritos en colecciones"
 
+msgid "Coming soon"
+msgstr "Próximamente"
+
 msgid "Commits"
 msgstr "Confirmaciones"
 
@@ -432,6 +438,9 @@ msgstr "Registros del contenedor"
 
 msgid "Containers"
 msgstr "Contenedores"
+
+msgid "Continue"
+msgstr "Continuar"
 
 msgid "Continue installing AUR packages?"
 msgstr "¿Continuar instalando paquetes AUR?"
@@ -789,6 +798,9 @@ msgstr "Ayuda y Acerca de"
 
 msgid "Helper: auto — yay, paru, trizen, pikaur (General)."
 msgstr "Ayudante: auto — yay, paru, trizen, pikaur (General)."
+
+msgid "Here's what's new in this update"
+msgstr "Esto es lo nuevo en esta actualización"
 
 msgid "Hero search"
 msgstr "Búsqueda principal"
@@ -1149,6 +1161,9 @@ msgstr "NeoArch es gratuito, de código abierto y está desarrollado de forma in
 
 msgid "NeoArch warns “full system upgrade recommended”, then lets you proceed."
 msgstr "NeoArch advierte «actualización completa del sistema recomendada» y luego te deja continuar."
+
+msgid "NeoArch {version} is available"
+msgstr "NeoArch {version} está disponible"
 
 msgid "NeoArch {version} ·"
 msgstr "NeoArch {version} ·"
@@ -1786,6 +1801,9 @@ msgstr "Tamaño (mayor)"
 msgid "Size (Smallest)"
 msgstr "Tamaño (menor)"
 
+msgid "Skip for now"
+msgstr "Omitir por ahora"
+
 msgid "Software Updates"
 msgstr "Actualizaciones de software"
 
@@ -1996,6 +2014,9 @@ msgstr "Fuentes únicas"
 msgid "Unreachable"
 msgstr "Inaccesible"
 
+msgid "Upcoming release"
+msgstr "Próxima versión"
+
 msgid "Update"
 msgstr "Actualizar"
 
@@ -2092,6 +2113,9 @@ msgstr "Historial de versiones y cambios"
 msgid "Version information, links, and system details"
 msgstr "Información de versión, enlaces y detalles del sistema"
 
+msgid "Version {version}"
+msgstr "Versión {version}"
+
 msgid "Version, edition and project links"
 msgstr "Versión, edición y enlaces del proyecto"
 
@@ -2142,6 +2166,12 @@ msgstr "Bienvenido"
 
 msgid "What NeoArch can reach, what it runs, and what it asks before it acts"
 msgstr "A qué puede acceder NeoArch, qué ejecuta y qué pide antes de actuar"
+
+msgid "What's New"
+msgstr "Novedades"
+
+msgid "What's New in NeoArch {version}"
+msgstr "Novedades en NeoArch {version}"
 
 msgid "When packages ship new configs, the old one is kept as .pacnew."
 msgstr "Cuando los paquetes incluyen configuraciones nuevas, la anterior se conserva como .pacnew."

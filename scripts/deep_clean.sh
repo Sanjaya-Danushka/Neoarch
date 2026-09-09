@@ -27,7 +27,7 @@ print_error() {
 }
 
 # Check if we're in the right directory
-if [ ! -f "aurora_home.py" ]; then
+if [ ! -f "Neoarch.py" ]; then
     print_error "Not in NeoArch directory. Please run from the project root."
     exit 1
 fi

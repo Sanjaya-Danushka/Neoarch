@@ -1,0 +1,2345 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# Turkish catalog
+
+msgid " Add from File"
+msgstr " Dosyadan Ekle"
+
+msgid " Check for Updates"
+msgstr " Güncellemeleri Kontrol Et"
+
+msgid " Clone Repository"
+msgstr " Depoyu Klonla"
+
+msgid " min"
+msgstr " dk"
+
+msgid " re-checking"
+msgstr " yeniden kontrol"
+
+msgid " vols"
+msgstr " birim"
+
+msgid " — {ms}"
+msgstr " — {ms}"
+
+msgid "$ authentication required…"
+msgstr "$ kimlik doğrulama gerekli…"
+
+msgid "+ Create Network"
+msgstr "+ Ağ Oluştur"
+
+msgid "+ Create Volume"
+msgstr "+ Birim Oluştur"
+
+msgid "+ Pull Image"
+msgstr "+ Görüntü Çek"
+
+msgid "+ Run Container"
+msgstr "+ Konteyner Çalıştır"
+
+msgid ".pacnew Files"
+msgstr ".pacnew Dosyaları"
+
+msgid "1 update available"
+msgstr "1 güncelleme mevcut"
+
+msgid "A field guide to every NeoArch page"
+msgstr "Her NeoArch sayfası için bir saha rehberi"
+
+msgid "A modern graphical package manager for Arch Linux — search, install, and manage packages from pacman, AUR, Flatpak, and npm in one place. Create bundles, manage Git projects, run Docker containers, and sync your setup across devices."
+msgstr "Arch Linux için modern bir grafiksel paket yöneticisi — pacman, AUR, Flatpak ve npm paketlerini tek yerden arayın, kurun ve yönetin. Paket grupları oluşturun, Git projelerini yönetin, Docker konteynerlerini çalıştırın ve kurulumunuzu cihazlar arasında senkronize edin."
+
+msgid "A new version of NeoArch is available"
+msgstr "NeoArch için yeni bir sürüm mevcut"
+
+msgid "A setup is already running — wait for it"
+msgstr "Zaten bir kurulum çalışıyor — bekleyin"
+
+msgid "ABOUT"
+msgstr "HAKKINDA"
+
+msgid "AUR Helper:"
+msgstr "AUR Yardımcısı:"
+
+msgid "AUR RPC Connectivity"
+msgstr "AUR RPC Bağlantısı"
+
+msgid "AUR Security Notice"
+msgstr "AUR Güvenlik Bildirimi"
+
+msgid "AUR packages are built from third-party PKGBUILD scripts maintained by the community.\n\n{aur_pkgs}\n\nAlways review the PKGBUILD and .install scriptlet before building. Proceeding with the AUR helper does not perform a static security scan."
+msgstr "AUR paketleri, topluluk tarafından bakımı yapılan üçüncü taraf PKGBUILD betiklerinden derlenir.\n\n{aur_pkgs}\n\nDerlemeden önce her zaman PKGBUILD ve .install betiğini inceleyin. AUR yardımcısıyla devam etmek statik bir güvenlik taraması yapmaz."
+
+msgid "AUR — Arch User Repository"
+msgstr "AUR — Arch Kullanıcı Deposu"
+
+msgid "About"
+msgstr "Hakkında"
+
+msgid "About NeoArch"
+msgstr "NeoArch Hakkında"
+
+msgid "Across all projects"
+msgstr "Tüm projelerde"
+
+msgid "Action Recommended"
+msgstr "Önerilen Eylem"
+
+msgid "Actions"
+msgstr "Eylemler"
+
+msgid "Active"
+msgstr "Etkin"
+
+msgid "Add an AppImage from a local file or URL to get started."
+msgstr "Başlamak için yerel bir dosyadan veya URL'den AppImage ekleyin."
+
+msgid "Add from file or URL"
+msgstr "Dosyadan veya URL'den ekle"
+
+msgid "Add packages from Discover, Updates, or Installed views"
+msgstr "Keşfet, Güncellemeler veya Kurulu görünümlerinden paket ekleyin"
+
+msgid "Add selected to Bundle"
+msgstr "Seçilenleri Grupta Birleştir'e ekle"
+
+msgid "Advanced"
+msgstr "Gelişmiş"
+
+msgid "All"
+msgstr "Tümü"
+
+msgid "All Categories"
+msgstr "Tüm Kategoriler"
+
+msgid "All Git projects"
+msgstr "Tüm Git projeleri"
+
+msgid "All caught up"
+msgstr "Hepsi güncel"
+
+msgid "All checks passed"
+msgstr "Tüm kontroller geçti"
+
+msgid "All cloud bundles deleted."
+msgstr "Tüm bulut grupları silindi."
+
+msgid "All containers"
+msgstr "Tüm konteynerler"
+
+msgid "All dependencies installed"
+msgstr "Tüm bağımlılıklar kuruldu"
+
+msgid "All managed AppImages"
+msgstr "Tüm yönetilen AppImages"
+
+msgid "Allow parallel network requests"
+msgstr "Paralel ağ isteklerine izin ver"
+
+msgid "Another package manager is running"
+msgstr "Başka bir paket yöneticisi çalışıyor"
+
+msgid "AppImages"
+msgstr "AppImages"
+
+msgid "Appearance"
+msgstr "Görünüm"
+
+msgid "Applies to all pages immediately."
+msgstr "Tüm sayfalara anında uygulanır."
+
+msgid "Apply"
+msgstr "Uygula"
+
+msgid "Apply every pending update in one click"
+msgstr "Bekleyen her güncellemeyi tek tıkla uygula"
+
+msgid "Arch Linux News"
+msgstr "Arch Linux Haberleri"
+
+msgid "Arch News"
+msgstr "Arch Haberleri"
+
+msgid "Authenticate once, install smoothly after"
+msgstr "Bir kez kimlik doğrula, sonrasında sorunsuz kur"
+
+msgid "Auto (detect available)"
+msgstr "Otomatik (mevcut olanı algıla)"
+
+msgid "Auto Update"
+msgstr "Otomatik Güncelleme"
+
+msgid "Auto check updates on launch"
+msgstr "Başlangıçta otomatik güncelleme kontrolü"
+
+msgid "Automate NeoArch from the terminal with `neo` (or neoarch-cli)"
+msgstr "NeoArch'ı terminalden `neo` (veya neoarch-cli) ile otomatikleştirin"
+
+msgid "Autosave bundle to file"
+msgstr "Grubu dosyaya otomatik kaydet"
+
+msgid "Autosave path:"
+msgstr "Otomatik kayıt yolu:"
+
+msgid "Available"
+msgstr "Mevcut"
+
+msgid "Available Updates"
+msgstr "Mevcut Güncellemeler"
+
+msgid "BUNDLES"
+msgstr "GRUPLAR"
+
+msgid "Back up bundles to your NeoArch account"
+msgstr "Grupları NeoArch hesabınıza yedekleyin"
+
+msgid "Back up collections online"
+msgstr "Koleksiyonları çevrimiçi yedekleyin"
+
+msgid "Background re-check while the app is open"
+msgstr "Uygulama açıkken arka planda yeniden kontrol"
+
+msgid "Backup"
+msgstr "Yedek"
+
+msgid "Basic Settings"
+msgstr "Temel Ayarlar"
+
+msgid "Batch install"
+msgstr "Toplu kurulum"
+
+msgid "Before installing from the AUR, review the PKGBUILD."
+msgstr "AUR'dan kurmadan önce PKGBUILD'ı inceleyin."
+
+msgid "Best Match"
+msgstr "En İyi Eşleşme"
+
+msgid "Both"
+msgstr "Her ikisi"
+
+msgid "Browse and install applications from available sources"
+msgstr "Mevcut kaynaklardan uygulamalara göz atıp kurun"
+
+msgid "Browse and manage every package currently installed on your machine."
+msgstr "Makinenizde kurulu her pakete göz atın ve yönetin."
+
+msgid "Browse installable tools as cards"
+msgstr "Kurulabilir araçlara kart olarak göz atın"
+
+msgid "Browse packages in Home, check the ones you want,\nand click Add to Bundle in the toolbar."
+msgstr "Ana sayfada paketlere göz atın, istediklerinizi işaretleyin\nve araç çubuğundaki Grupa Ekle'ye tıklayın."
+
+msgid "Browse…"
+msgstr "Gözat…"
+
+msgid "Bug Fix"
+msgstr "Hata Düzeltmesi"
+
+msgid "Bug Fixes"
+msgstr "Hata Düzeltmeleri"
+
+msgid "Build"
+msgstr "Derle"
+
+msgid "Build Activity"
+msgstr "Derleme Etkinliği"
+
+msgid "Build Package"
+msgstr "Paketi Derle"
+
+msgid "Build history"
+msgstr "Derleme geçmişi"
+
+msgid "Builds Today"
+msgstr "Bugünkü Derlemeler"
+
+msgid "Bulk uninstall"
+msgstr "Toplu kaldırma"
+
+msgid "Bundle Autosave"
+msgstr "Grup Otomatik Kaydı"
+
+msgid "Bundles"
+msgstr "Gruplar"
+
+msgid "Buy Me a Coffee"
+msgstr "Bana Bir Kahve Ismarla"
+
+msgid "By Name"
+msgstr "Ada Göre"
+
+msgid "By Package ID"
+msgstr "Paket Kimliğine Göre"
+
+msgid "CHAPTER {num}"
+msgstr "BÖLÜM {num}"
+
+msgid "COMMUNITY"
+msgstr "TOPLULUK"
+
+msgid "Cancel"
+msgstr "İptal"
+
+msgid "Cancel Installation"
+msgstr "Kurulumu İptal Et"
+
+msgid "Carry starred packages anywhere"
+msgstr "Yıldızlı paketleri her yere taşıyın"
+
+msgid "Categories"
+msgstr "Kategoriler"
+
+msgid "Category"
+msgstr "Kategori"
+
+msgid "Changelog built from Git history"
+msgstr "Git geçmişinden oluşturulan değişiklik günlüğü"
+
+msgid "Channels, events and cooldowns"
+msgstr "Kanallar, olaylar ve bekleme süreleri"
+
+msgid "Chaotic-AUR: automatic through pacman.conf."
+msgstr "Chaotic-AUR: pacman.conf üzerinden otomatik."
+
+msgid "Check Failed"
+msgstr "Kontrol Başarısız"
+
+msgid "Check failed: {e}"
+msgstr "Kontrol başarısız: {e}"
+
+msgid "Check for Updates"
+msgstr "Güncellemeleri Kontrol Et"
+
+msgid "Checking for updates..."
+msgstr "Güncellemeler kontrol ediliyor..."
+
+msgid "Checking..."
+msgstr "Kontrol ediliyor..."
+
+msgid "Checking…"
+msgstr "Kontrol ediliyor…"
+
+msgid "Choose Sign In — your browser handles secure login, then NeoArch continues automatically"
+msgstr "Oturum Aç'ı seçin — tarayıcınız güvenli girişi halleder, sonra NeoArch otomatik devam eder"
+
+msgid "Choose a theme for NeoArch. Changes apply instantly."
+msgstr "NeoArch için bir tema seçin. Değişiklikler anında uygulanır."
+
+msgid "Clean Cache"
+msgstr "Önbelleği Temizle"
+
+msgid "Clean Orphans"
+msgstr "Öksüzleri Temizle"
+
+msgid "Clean orphans, cache, and read Arch news."
+msgstr "Öksüzleri ve önbelleği temizleyin, Arch haberlerini okuyun."
+
+msgid "Clear"
+msgstr "Temizle"
+
+msgid "Click \"Run Diagnostics\" to check your system"
+msgstr "Sisteminizi kontrol etmek için \"Tanılamayı Çalıştır\"a tıklayın"
+
+msgid "Click any row to open the detail card before deciding"
+msgstr "Karar vermeden önce detay kartını açmak için herhangi bir satıra tıklayın"
+
+msgid "Clone a repository to build and manage software projects."
+msgstr "Yazılım projeleri derlemek ve yönetmek için bir depo klonlayın."
+
+msgid "Clone dialog"
+msgstr "Klonlama iletişimi"
+
+msgid "Clone, build and maintain projects straight from Git repositories."
+msgstr "Git depolarından doğrudan projeleri klonlayın, derleyin ve bakımını yapın."
+
+msgid "Clone, build, update, and manage Git projects"
+msgstr "Git projelerini klonlayın, derleyin, güncelleyin ve yönetin"
+
+msgid "Clone, build, update, and manage Git repositories"
+msgstr "Git depolarını klonlayın, derleyin, güncelleyin ve yönetin"
+
+msgid "Close"
+msgstr "Kapat"
+
+msgid "Cloud bundles"
+msgstr "Bulut grupları"
+
+msgid "Cloud sign-in"
+msgstr "Buluta giriş"
+
+msgid "Cloud sync"
+msgstr "Bulut senkronizasyonu"
+
+msgid "Coffee fund ☕\nEvery cup keeps development going."
+msgstr "Kahve fonu ☕\nHer fincan geliştirmeyi ayakta tutar."
+
+msgid "Collect favourite packages into groups"
+msgstr "Favori paketleri gruplarda toplayın"
+
+msgid "Coming soon"
+msgstr "Yakında"
+
+msgid "Commits"
+msgstr "Commit'ler"
+
+msgid "Community"
+msgstr "Topluluk"
+
+msgid "Community recipes"
+msgstr "Topluluk tarifleri"
+
+msgid "Community-maintained recipes — not curated or reviewed by Arch."
+msgstr "Topluluk tarafından bakılan tarifler — Arch tarafından seçilmez veya gözden geçirilmez."
+
+msgid "Companion CLI"
+msgstr "Eşlikçi CLI"
+
+msgid "Complete table of installed packages"
+msgstr "Kurulu paketlerin eksiksiz tablosu"
+
+msgid "Config Files (.pacnew)"
+msgstr "Yapılandırma Dosyaları (.pacnew)"
+
+msgid "Config in ~/.config/neoarch."
+msgstr "Yapılandırma ~/.config/neoarch içinde."
+
+msgid "Configure NeoArch settings"
+msgstr "NeoArch ayarlarını yapılandırın"
+
+msgid "Configure NeoArch settings and plugins"
+msgstr "NeoArch ayarlarını ve eklentilerini yapılandırın"
+
+msgid "Configure basic application settings and preferences"
+msgstr "Temel uygulama ayarlarını ve tercihleri yapılandırın"
+
+msgid "Configure every part of NeoArch across seven focused categories."
+msgstr "NeoArch'ın her parçasını yedi odaklı kategoride yapılandırın."
+
+msgid "Configure logging behaviour and log file settings"
+msgstr "Günlükleme davranışını ve günlük dosyası ayarlarını yapılandırın"
+
+msgid "Configure network proxy settings and connection options"
+msgstr "Ağ proxy ayarlarını ve bağlantı seçeneklerini yapılandırın"
+
+msgid "Confirm"
+msgstr "Onayla"
+
+msgid "Connection restored"
+msgstr "Bağlantı geri yüklendi"
+
+msgid "Console Output"
+msgstr "Konsol Çıktısı"
+
+msgid "Container Logs"
+msgstr "Konteyner Günlükleri"
+
+msgid "Containers"
+msgstr "Konteynerler"
+
+msgid "Continue"
+msgstr "Devam"
+
+msgid "Continue installing AUR packages?"
+msgstr "AUR paketlerini kurmaya devam edilsin mi?"
+
+msgid "Contributing Guide ↗"
+msgstr "Katkı Rehberi ↗"
+
+msgid "Contributors & sponsors"
+msgstr "Katkıda bulunanlar ve sponsorlar"
+
+msgid "Control which events show notifications and alerts"
+msgstr "Hangi olayların bildirim ve uyarı göstereceğini kontrol edin"
+
+msgid "Cooldown between notifications (seconds):"
+msgstr "Bildirimler arası bekleme süresi (saniye):"
+
+msgid "Copied!"
+msgstr "Kopyalandı!"
+
+msgid "Copy"
+msgstr "Kopyala"
+
+msgid "Copy Report"
+msgstr "Raporu Kopyala"
+
+msgid "Copy name"
+msgstr "Adı kopyala"
+
+msgid "Create"
+msgstr "Oluştur"
+
+msgid "Create Backup"
+msgstr "Yedek Oluştur"
+
+msgid "Create Docker Network"
+msgstr "Docker Ağı Oluştur"
+
+msgid "Create Docker Volume"
+msgstr "Docker Birimi Oluştur"
+
+msgid "Create Network"
+msgstr "Ağ Oluştur"
+
+msgid "Create Snapshot"
+msgstr "Anlık Görüntü Oluştur"
+
+msgid "Create Volume"
+msgstr "Birim Oluştur"
+
+msgid "Create a bundle to get started"
+msgstr "Başlamak için bir grup oluşturun"
+
+msgid "Create and inspect Docker resources"
+msgstr "Docker kaynakları oluşturun ve inceleyin"
+
+msgid "Create backup before updates"
+msgstr "Güncellemelerden önce yedek oluştur"
+
+msgid "Create bundles"
+msgstr "Gruplar oluşturun"
+
+msgid "Create, import, export, and install bundles of packages"
+msgstr "Paket grupları oluşturun, içe aktarın, dışa aktarın ve kurun"
+
+msgid "Create, import, export, and install bundles of packages across sources"
+msgstr "Kaynaklar arasında paket grupları oluşturun, içe aktarın, dışa aktarın ve kurun"
+
+msgid "Credentials & sudo"
+msgstr "Kimlik Bilgileri ve sudo"
+
+msgid "Current Version: {version}"
+msgstr "Geçerli Sürüm: {version}"
+
+msgid "Currently active"
+msgstr "Şu anda etkin"
+
+msgid "Currently using"
+msgstr "Şu anda kullanılıyor"
+
+msgid "DEBUG"
+msgstr "HATA AYIKLAMA"
+
+msgid "DEBUG shows all details, ERROR shows only failures"
+msgstr "DEBUG tüm ayrıntıları gösterir, ERROR yalnızca hataları"
+
+msgid "Dashboard and package discovery"
+msgstr "Kontrol paneli ve paket keşfi"
+
+msgid "Date Installed (Newest)"
+msgstr "Kurulum Tarihi (En Yeni)"
+
+msgid "Date Installed (Oldest)"
+msgstr "Kurulum Tarihi (En Eski)"
+
+msgid "Days:"
+msgstr "Günler:"
+
+msgid "Decorative teal rim on the translucent window frame.\nOff by default — it can leave stray lines on some\ncompositors and GPU drivers."
+msgstr "Yarı saydam pencere çerçevesinde dekoratif turkuaz kenarlık.\nVarsayılan olarak kapalı — bazı kompozisyon yöneticileri\nve GPU sürücülerinde dağınık çizgiler bırakabilir."
+
+msgid "Delete"
+msgstr "Sil"
+
+msgid "Delete Snapshots"
+msgstr "Anlık Görüntüleri Sil"
+
+msgid "Dependencies"
+msgstr "Bağımlılıklar"
+
+msgid "Dependencies, system checks, and diagnostic information"
+msgstr "Bağımlılıklar, sistem kontrolleri ve tanılama bilgileri"
+
+msgid "Dependency list with one-click install, plus system health"
+msgstr "Tek tıkla kurulumlu bağımlılık listesi, ayrıca sistem sağlığı"
+
+msgid "Dependency setup cancelled — authentication required"
+msgstr "Bağımlılık kurulumu iptal edildi — kimlik doğrulama gerekli"
+
+msgid "Dependency setup completed"
+msgstr "Bağımlılık kurulumu tamamlandı"
+
+msgid "Dependency setup incomplete. Still missing: {list}"
+msgstr "Bağımlılık kurulumu eksik. Hâlâ eksik: {list}"
+
+msgid "Description"
+msgstr "Açıklama"
+
+msgid "Designs, builds and maintains every part of NeoArch."
+msgstr "NeoArch'ın her parçasını tasarlar, geliştirir ve bakımını yapar."
+
+msgid "Desktop notifications (system tray)"
+msgstr "Masaüstü bildirimleri (sistem tepsisi)"
+
+msgid "Details"
+msgstr "Detaylar"
+
+msgid "Diagnostics"
+msgstr "Tanılama"
+
+msgid "Diagnostics opens automatically, listing every dependency and what it powers"
+msgstr "Tanılama otomatik açılır, her bağımlılığı ve neyi çalıştırdığını listeler"
+
+msgid "Did you mean…"
+msgstr "Bunu mu kastettiniz…"
+
+msgid "Discover plugins and helper tools that extend what NeoArch can do."
+msgstr "NeoArch'ın yapabildiklerini genişleten eklentileri ve yardımcı araçları keşfedin."
+
+msgid "Disk Usage"
+msgstr "Disk Kullanımı"
+
+msgid "Disk usage"
+msgstr "Disk kullanımı"
+
+msgid "Docker"
+msgstr "Docker"
+
+msgid "Docker Containers"
+msgstr "Docker Konteynerleri"
+
+msgid "Docker Images ({count})"
+msgstr "Docker Görüntüleri ({count})"
+
+msgid "Docker Networks ({count})"
+msgstr "Docker Ağları ({count})"
+
+msgid "Docker Volumes ({count})"
+msgstr "Docker Birimleri ({count})"
+
+msgid "Docker disk usage"
+msgstr "Docker disk kullanımı"
+
+msgid "Docker volumes"
+msgstr "Docker birimleri"
+
+msgid "Documentation"
+msgstr "Belgeler"
+
+msgid "Done"
+msgstr "Bitti"
+
+msgid "Donut chart of project disk usage"
+msgstr "Proje disk kullanımı halka grafiği"
+
+msgid "Downgrade..."
+msgstr "Sürüm düşür..."
+
+msgid "Download Cache"
+msgstr "İndirme Önbelleği"
+
+msgid "Download snapshot"
+msgstr "Anlık görüntüyü indir"
+
+msgid "Download the current source tarball"
+msgstr "Geçerli kaynak arşivini indir"
+
+msgid "Downloading"
+msgstr "İndiriliyor"
+
+msgid "ERROR"
+msgstr "HATA"
+
+msgid "Echo log to terminal / console"
+msgstr "Günlüğü terminal / konsola yansıt"
+
+msgid "Enable All"
+msgstr "Tümünü Etkinleştir"
+
+msgid "Enable automatic updates"
+msgstr "Otomatik güncellemeleri etkinleştir"
+
+msgid "Enable scheduled update checks"
+msgstr "Zamanlanmış güncelleme kontrollerini etkinleştir"
+
+msgid "Environment"
+msgstr "Ortam"
+
+msgid "Error: {e}"
+msgstr "Hata: {e}"
+
+msgid "Errors and warnings"
+msgstr "Hatalar ve uyarılar"
+
+msgid "Events"
+msgstr "Olaylar"
+
+msgid "Every change auto-saves locally — no save button needed"
+msgstr "Her değişiklik otomatik yerel kaydedilir — kaydet düğmesi gerekmez"
+
+msgid "Every result is badged [aur] — never confused with official."
+msgstr "Her sonuç [aur] rozetlidir — resmi olanlarla asla karıştırılmaz."
+
+msgid "Everything about the app itself — versions, health and the people behind it."
+msgstr "Uygulamanın kendisiyle ilgili her şey — sürümler, sağlık ve arkasındaki insanlar."
+
+msgid "Explicit"
+msgstr "Açıkça kurulmuş"
+
+msgid "Export Settings"
+msgstr "Ayarları Dışa Aktar"
+
+msgid "Failed to apply (need root?)."
+msgstr "Uygulanamadı (root gerekiyor?)."
+
+msgid "Failed to render update list."
+msgstr "Güncelleme listesi oluşturulamadı."
+
+msgid "Feature"
+msgstr "Özellik"
+
+msgid "Fetch any repository by URL"
+msgstr "URL ile herhangi bir depoyu çekin"
+
+msgid "Filesystem: BTRFS - native snapshots available"
+msgstr "Dosya sistemi: BTRFS - yerel anlık görüntüler mevcut"
+
+msgid "Filesystem: {fs} - package list + config backup only"
+msgstr "Dosya sistemi: {fs} - yalnızca paket listesi + yapılandırma yedeği"
+
+msgid "Find anything from pacman, AUR, Flatpak and npm"
+msgstr "pacman, AUR, Flatpak ve npm'den her şeyi bulun"
+
+msgid "Find apps in large libraries fast"
+msgstr "Büyük kütüphanelerde uygulamaları hızla bulun"
+
+msgid "Flatpak sandboxed · npm user mode."
+msgstr "Flatpak sandbox · npm kullanıcı modu."
+
+msgid "Follow container output and resource usage"
+msgstr "Konteyner çıktısını ve kaynak kullanımını izleyin"
+
+msgid "Found {n} corrupted archive(s):\n{list}"
+msgstr "Bozuk arşiv bulundu ({n}):\n{list}"
+
+msgid "Founder · Lead Developer"
+msgstr "Kurucu · Baş Geliştirici"
+
+msgid "Fri"
+msgstr "Cum"
+
+msgid "Full inventory"
+msgstr "Tam envanter"
+
+msgid "GUI Framework"
+msgstr "GUI Framework"
+
+msgid "GUI sudo prompt (SUDO_ASKPASS) — never stored."
+msgstr "GUI sudo istemi (SUDO_ASKPASS) — asla saklanmaz."
+
+msgid "General"
+msgstr "Genel"
+
+msgid "Generate"
+msgstr "Oluştur"
+
+msgid "Generate codes others import instantly"
+msgstr "Başkalarının anında içe aktaracağı kodlar üretin"
+
+msgid "Getting Started"
+msgstr "Başlangıç"
+
+msgid "Git"
+msgstr "Git"
+
+msgid "Git Projects"
+msgstr "Git Projeleri"
+
+msgid "Git Repositories"
+msgstr "Git Depoları"
+
+msgid "Glow border around the window"
+msgstr "Pencere çevresinde parlama kenarlığı"
+
+msgid "Good afternoon"
+msgstr "İyi günler"
+
+msgid "Good evening"
+msgstr "İyi akşamlar"
+
+msgid "Good morning"
+msgstr "Günaydın"
+
+msgid "Grid View"
+msgstr "Izgara Görünümü"
+
+msgid "Grid or list view"
+msgstr "Izgara veya liste görünümü"
+
+msgid "Grid or table view"
+msgstr "Izgara veya tablo görünümü"
+
+msgid "Group packages into shareable collections and rebuild setups anywhere."
+msgstr "Paketleri paylaşılabilir koleksiyonlarda gruplayın ve kurulumları her yerde yeniden kurun."
+
+msgid "Guest"
+msgstr "Misafir"
+
+msgid "HABITS"
+msgstr "ALIŞKANLIKLAR"
+
+msgid "HOW IT WORKS"
+msgstr "NASIL ÇALIŞIR"
+
+msgid "HTTP"
+msgstr "HTTP"
+
+msgid "HTTPS"
+msgstr "HTTPS"
+
+msgid "Healthy-system checklist"
+msgstr "Sağlıklı sistem kontrol listesi"
+
+msgid "Help & About"
+msgstr "Yardım ve Hakkında"
+
+msgid "Helper: auto — yay, paru, trizen, pikaur (General)."
+msgstr "Yardımcı: auto — yay, paru, trizen, pikaur (Genel)."
+
+msgid "Here's what's new in this update"
+msgstr "Bu güncellemedeki yenilikler bunlar"
+
+msgid "Hero search"
+msgstr "Ana arama"
+
+msgid "Hide Console"
+msgstr "Konsolu Gizle"
+
+msgid "Hide installed packages"
+msgstr "Kurulu paketleri gizle"
+
+msgid "High signal"
+msgstr "Yüksek sinyal"
+
+msgid "Hold package"
+msgstr "Paketi tut"
+
+msgid "Home"
+msgstr "Ana Sayfa"
+
+msgid "Host:"
+msgstr "Ana makine:"
+
+msgid "I understand — Update Selection"
+msgstr "Anladım — Seçimi Güncelle"
+
+msgid "ID"
+msgstr "Kimlik"
+
+msgid "INFO"
+msgstr "BİLGİ"
+
+msgid "ITEMS"
+msgstr "ÖGELER"
+
+msgid "Idle"
+msgstr "Boşta"
+
+msgid "Ignore Selected"
+msgstr "Seçilenleri Yoksay"
+
+msgid "Ignore update"
+msgstr "Güncellemeyi yoksay"
+
+msgid "Ignore updates"
+msgstr "Güncellemeleri yoksay"
+
+msgid "Ignore updates (IgnorePkg)"
+msgstr "Güncellemeleri yoksay (IgnorePkg)"
+
+msgid "Image manager"
+msgstr "Görüntü yöneticisi"
+
+msgid "Images"
+msgstr "Görüntüler"
+
+msgid "Import"
+msgstr "İçe Aktar"
+
+msgid "Import & export"
+msgstr "İçe ve dışa aktar"
+
+msgid "Import AppImages either way"
+msgstr "AppImages'ları her iki yolla da içe aktarın"
+
+msgid "Import Code"
+msgstr "Kodu İçe Aktar"
+
+msgid "Import Settings"
+msgstr "Ayarları İçe Aktar"
+
+msgid "Improvements"
+msgstr "İyileştirmeler"
+
+msgid "In Bundles, press Sync to upload the active bundle"
+msgstr "Gruplar'da etkin grubu yüklemek için Senkronize Et'e basın"
+
+msgid "In Home, tick packages and press Add to Bundle — items join the active bundle (switch it in the sidebar here first)"
+msgstr "Ana sayfada paketleri işaretleyip Grupa Ekle'ye basın — ögeler etkin gruba katılır (önce burada kenar çubuğundan değiştirin)"
+
+msgid "In-app toast messages"
+msgstr "Uygulama içi bildirim mesajları"
+
+msgid "Include Local source (custom scripts)"
+msgstr "Yerel kaynağı dahil et (özel betikler)"
+
+msgid "Inspect any package before installing"
+msgstr "Kurmadan önce herhangi bir paketi inceleyin"
+
+msgid "Install"
+msgstr "Kur"
+
+msgid "Install All Missing"
+msgstr "Eksiklerin Tümünü Kur"
+
+msgid "Install Bundle"
+msgstr "Grubu Kur"
+
+msgid "Install Bundle sets up everything offline, grouped by source"
+msgstr "Grubu Kur her şeyi çevrimdışı, kaynağa göre gruplanmış biçimde kurar"
+
+msgid "Install Local Pkg"
+msgstr "Yerel Paket Kur"
+
+msgid "Install Package"
+msgstr "Paketi Kur"
+
+msgid "Install Packages with Sudo"
+msgstr "Sudo ile Paket Kur"
+
+msgid "Install Selected"
+msgstr "Seçilenleri Kur"
+
+msgid "Install Selected installs them immediately, grouped by source"
+msgstr "Seçilenleri Kur onları hemen, kaynağa göre gruplanmış kurar"
+
+msgid "Install and launch extensions like BleachBit and Timeshift"
+msgstr "BleachBit ve Timeshift gibi uzantıları kurun ve başlatın"
+
+msgid "Install and manage AppImage applications"
+msgstr "AppImage uygulamalarını kurun ve yönetin"
+
+msgid "Install failed"
+msgstr "Kurulum başarısız"
+
+msgid "Install output appears here — press Install to begin"
+msgstr "Kurulum çıktısı burada görünür — başlamak için Kur'a basın"
+
+msgid "Install partially completed"
+msgstr "Kurulum kısmen tamamlandı"
+
+msgid "Install with Sudo Privileges"
+msgstr "Sudo Ayrıcalıklarıyla Kur"
+
+msgid "Install, open or uninstall each entry"
+msgstr "Her ögeyi kurun, açın veya kaldırın"
+
+msgid "Installation cancelled"
+msgstr "Kurulum iptal edildi"
+
+msgid "Installation complete."
+msgstr "Kurulum tamamlandı."
+
+msgid "Installation failed"
+msgstr "Kurulum başarısız"
+
+msgid "Installed"
+msgstr "Kurulu"
+
+msgid "Installed First"
+msgstr "Önce Kurulanlar"
+
+msgid "Installed Packages"
+msgstr "Kurulu Paketler"
+
+msgid "Installed count, pending updates, source totals"
+msgstr "Kurulu sayısı, bekleyen güncellemeler, kaynak toplamları"
+
+msgid "Installing {names}… watch output below"
+msgstr "{names} kuruluyor… aşağıdaki çıktıyı izleyin"
+
+msgid "Installing…"
+msgstr "Kuruluyor…"
+
+msgid "Instant theming"
+msgstr "Anında tema uygulama"
+
+msgid "Internet connection is available again."
+msgstr "İnternet bağlantısı yeniden kullanılabilir."
+
+msgid "Keep Arch rolling with fast, controlled system updates."
+msgstr "Arch'ı hızlı, kontrollü sistem güncellemeleriyle güncel tutun."
+
+msgid "Keep last:"
+msgstr "Son şu kadarını tut:"
+
+msgid "Keep projects current and compiled"
+msgstr "Projeleri güncel ve derlenmiş tutun"
+
+msgid "Keep your local AppImage library tidy and up to date."
+msgstr "Yerel AppImage kütüphanenizi düzenli ve güncel tutun."
+
+msgid "Keep your system tidy: orphans, leftover configs, and news"
+msgstr "Sisteminizi düzenli tutun: öksüzler, artık yapılandırmalar ve haberler"
+
+msgid "Language / Culture:"
+msgstr "Dil / Kültür:"
+
+msgid "Language, AUR helper, paths, settings transfer"
+msgstr "Dil, AUR yardımcısı, yollar, ayar aktarımı"
+
+msgid "Large — 14 px"
+msgstr "Büyük — 14 px"
+
+msgid "Last Updated"
+msgstr "Son Güncelleme"
+
+msgid "Latest from archlinux.org"
+msgstr "archlinux.org'dan en son haberler"
+
+msgid "Latest installs and upgrades at a glance"
+msgstr "Son kurulumlar ve yükseltmeler bir bakışta"
+
+msgid "Launch"
+msgstr "Başlat"
+
+msgid "Launch containers from any image"
+msgstr "Herhangi bir görüntüden konteyner başlatın"
+
+msgid "License"
+msgstr "Lisans"
+
+msgid "Lifecycle control"
+msgstr "Yaşam döngüsü denetimi"
+
+msgid "List Backups"
+msgstr "Yedekleri Listele"
+
+msgid "List View"
+msgstr "Liste Görünümü"
+
+msgid "Live logs"
+msgstr "Canlı günlükler"
+
+msgid "Live results across every source as you type"
+msgstr "Yazdıkça her kaynaktan canlı sonuçlar"
+
+msgid "Load More"
+msgstr "Daha Fazla Yükle"
+
+msgid "Load More ({remaining} remaining)"
+msgstr "Daha Fazla Yükle (kalan {remaining})"
+
+msgid "Load More Packages"
+msgstr "Daha Fazla Paket Yükle"
+
+msgid "Loading packages…"
+msgstr "Paketler yükleniyor…"
+
+msgid "Loading plugins…"
+msgstr "Eklentiler yükleniyor…"
+
+msgid "Loading updates…"
+msgstr "Güncellemeler yükleniyor…"
+
+msgid "Local images"
+msgstr "Yerel görüntüler"
+
+msgid "Log File"
+msgstr "Günlük Dosyası"
+
+msgid "Log Files (*.log *.txt);;All Files (*)"
+msgstr "Günlük Dosyaları (*.log *.txt);;Tüm Dosyalar (*)"
+
+msgid "Log file path:"
+msgstr "Günlük dosyası yolu:"
+
+msgid "Log level:"
+msgstr "Günlük düzeyi:"
+
+msgid "Logging"
+msgstr "Günlükleme"
+
+msgid "Low signal"
+msgstr "Düşük sinyal"
+
+msgid "MB"
+msgstr "MB"
+
+msgid "Maintenance"
+msgstr "Bakım"
+
+msgid "Maintenance tools"
+msgstr "Bakım araçları"
+
+msgid "Make new bundles anytime with the + button beside BUNDLES"
+msgstr "GRUPLAR'ın yanındaki + düğmesiyle istediğiniz zaman yeni gruplar oluşturun"
+
+msgid "Manage .pacnew"
+msgstr ".pacnew Yönet"
+
+msgid "Manage AppImage applications"
+msgstr "AppImage uygulamalarını yönet"
+
+msgid "Manage Bundles"
+msgstr "Grupları Yönet"
+
+msgid "Manage Bundles in the menu jumps to your local collections"
+msgstr "Menüdeki Grupları Yönet yerel koleksiyonlarınıza gider"
+
+msgid "Manage Cloud Bundles"
+msgstr "Bulut Gruplarını Yönet"
+
+msgid "Manage Ignored"
+msgstr "Yoksayılanları Yönet"
+
+msgid "Manage automatic updates and system snapshots"
+msgstr "Otomatik güncellemeleri ve sistem anlık görüntülerini yönetin"
+
+msgid "Manage containers, images, and Docker resources"
+msgstr "Konteynerleri, görüntüleri ve Docker kaynaklarını yönetin"
+
+msgid "Manage containers, images, volumes and networks without the terminal."
+msgstr "Terminal olmadan konteynerleri, görüntüleri, birimleri ve ağları yönetin."
+
+msgid "Manage package sources and extensions"
+msgstr "Paket kaynaklarını ve uzantıları yönetin"
+
+msgid "Mark as dependency"
+msgstr "Bağımlılık olarak işaretle"
+
+msgid "Mark as explicitly installed"
+msgstr "Açıkça kuruldu olarak işaretle"
+
+msgid "Max log file size:"
+msgstr "Maks. günlük dosyası boyutu:"
+
+msgid "Maximize"
+msgstr "Büyüt"
+
+msgid "Medium signal"
+msgstr "Orta sinyal"
+
+msgid "Meet and support the community"
+msgstr "Toplulukla tanışın ve destekleyin"
+
+msgid "Minimize"
+msgstr "Küçült"
+
+msgid "Mon"
+msgstr "Pzt"
+
+msgid "Move bundles via JSON files"
+msgstr "Grupları JSON dosyalarıyla taşıyın"
+
+msgid "Multi-source manager"
+msgstr "Çok kaynaklı yönetici"
+
+msgid "Name A-Z"
+msgstr "Ad A-Z"
+
+msgid "Name Z-A"
+msgstr "Ad Z-A"
+
+msgid "Narrow the list by repository"
+msgstr "Listeyi depoya göre daraltın"
+
+msgid "Needs Attention"
+msgstr "Dikkat Gerekli"
+
+msgid "NeoArch Core Architectural Manifesto"
+msgstr "NeoArch Çekirdek Mimari Manifestosu"
+
+msgid "NeoArch brings every package source and system workflow on Arch Linux together in one fast, friendly interface."
+msgstr "NeoArch, Arch Linux'taki her paket kaynağını ve sistem iş akışını tek hızlı, dostça bir arayüzde bir araya getirir."
+
+msgid "NeoArch is free, open-source and developed independently by one person. If it saves you time, consider supporting its continued development."
+msgstr "NeoArch ücretsizdir, açık kaynaktır ve tek bir kişi tarafından bağımsız geliştirilir. Zaman kazandırdıysa, gelişimini desteklemeyi düşünün."
+
+msgid "NeoArch warns “full system upgrade recommended”, then lets you proceed."
+msgstr "NeoArch \"tam sistem yükseltmesi önerilir\" diye uyarır, sonra devam etmenize izin verir."
+
+msgid "NeoArch {version} is available"
+msgstr "NeoArch {version} mevcut"
+
+msgid "NeoArch {version} ·"
+msgstr "NeoArch {version} ·"
+
+msgid "Networks"
+msgstr "Ağlar"
+
+msgid "New Features"
+msgstr "Yeni Özellikler"
+
+msgid "New Version"
+msgstr "Yeni Sürüm"
+
+msgid "Newest"
+msgstr "En Yeni"
+
+msgid "Next: {nxt}"
+msgstr "Sonraki: {nxt}"
+
+msgid "No AUR helper detected"
+msgstr "AUR yardımcısı algılanmadı"
+
+msgid "No AppImages yet"
+msgstr "Henüz AppImages yok"
+
+msgid "No Git projects yet"
+msgstr "Henüz Git projesi yok"
+
+msgid "No Selection"
+msgstr "Seçim Yok"
+
+msgid "No containers yet"
+msgstr "Henüz konteyner yok"
+
+msgid "No corrupted package archives found."
+msgstr "Bozuk paket arşivi bulunamadı."
+
+msgid "No description available."
+msgstr "Açıklama mevcut değil."
+
+msgid "No installed packages"
+msgstr "Kurulu paket yok"
+
+msgid "No internet connection"
+msgstr "İnternet bağlantısı yok"
+
+msgid "No packages found matching '{query}'."
+msgstr "'{query}' ile eşleşen paket bulunamadı."
+
+msgid "No packages found matching '{q}'."
+msgstr "'{q}' ile eşleşen paket bulunamadı."
+
+msgid "No packages found. Try a different search."
+msgstr "Paket bulunamadı. Farklı bir arama deneyin."
+
+msgid "No packages in bundle"
+msgstr "Grupta paket yok"
+
+msgid "No recent builds"
+msgstr "Yakın derleme yok"
+
+msgid "No recent package activity found"
+msgstr "Yakın paket etkinliği bulunamadı"
+
+msgid "No results found"
+msgstr "Sonuç bulunamadı"
+
+msgid "No run scheduled (pick at least one day)"
+msgstr "Zamanlama yok (en az bir gün seçin)"
+
+msgid "No signal"
+msgstr "Sinyal yok"
+
+msgid "No updates found matching '{q}'."
+msgstr "'{q}' ile eşleşen güncelleme bulunamadı."
+
+msgid "None (direct connection)"
+msgstr "Yok (doğrudan bağlantı)"
+
+msgid "Not Installed First"
+msgstr "Önce Kurulmamışlar"
+
+msgid "Nothing depends on this package (it is not needed by anything installed)."
+msgstr "Bu pakete bağımlı hiçbir şey yok (kurulu hiçbir şey tarafından gerekmiyor)."
+
+msgid "Nothing starts until you confirm — never silently."
+msgstr "Onaylamadan hiçbir şey başlamaz — asla sessizce."
+
+msgid "Nothing to purge (or failed)."
+msgstr "Temizlenecek bir şey yok (veya başarısız)."
+
+msgid "Notification Channels"
+msgstr "Bildirim Kanalları"
+
+msgid "Notifications"
+msgstr "Bildirimler"
+
+msgid "OAuth tokens cached with an expiry."
+msgstr "OAuth belirteçleri son kullanma tarihiyle önbelleğe alınır."
+
+msgid "OK"
+msgstr "Tamam"
+
+msgid "OK (bash resolved)"
+msgstr "Tamam (bash bulundu)"
+
+msgid "Off"
+msgstr "Kapalı"
+
+msgid "Official: core / extra / multilib via pacman."
+msgstr "Resmi: core / extra / multilib pacman ile."
+
+msgid "Old cached versions removed."
+msgstr "Eski önbelleğe alınmış sürümler kaldırıldı."
+
+msgid "One-click install"
+msgstr "Tek tıkla kurulum"
+
+msgid "One-click states"
+msgstr "Tek tıkla durumlar"
+
+msgid "Open"
+msgstr "Aç"
+
+msgid "Open About from the bottom of the sidebar — if anything is missing, its icon turns into a warning bell"
+msgstr "Kenar çubuğunun altından Hakkında'yı açın — bir şey eksikse simgesi uyarı ziline dönüşür"
+
+msgid "Open Bundles — your first visit creates My Bundle automatically"
+msgstr "Gruplar'ı açın — ilk ziyaretiniz otomatik olarak Grubum'u oluşturur"
+
+msgid "Open Folder"
+msgstr "Klasörü Aç"
+
+msgid "Open Shell"
+msgstr "Kabuğu Aç"
+
+msgid "Open Source"
+msgstr "Açık Kaynak"
+
+msgid "Open aur.archlinux.org ↗"
+msgstr "aur.archlinux.org'u aç ↗"
+
+msgid "Open the PKGBUILD recipe this package builds from"
+msgstr "Bu paketin derlendiği PKGBUILD tarifini açın"
+
+msgid "Open the commit history for this package"
+msgstr "Bu paket için commit geçmişini açın"
+
+msgid "Open, update or remove entries"
+msgstr "Ögeleri açın, güncelleyin veya kaldırın"
+
+msgid "Operation"
+msgstr "İşlem"
+
+msgid "Operation complete."
+msgstr "İşlem tamamlandı."
+
+msgid "Or press Add to Bundle to save them into the active bundle"
+msgstr "Veya onları etkin gruba kaydetmek için Grupa Ekle'ye basın"
+
+msgid "Organise projects your way"
+msgstr "Projeleri kendi tarzınıza göre düzenleyin"
+
+msgid "Orphaned Packages"
+msgstr "Öksüz Paketler"
+
+msgid "Orphans, .pacnew, cache hygiene, Arch news"
+msgstr "Öksüzler, .pacnew, önbellek hijyeni, Arch haberleri"
+
+msgid "Other Containers ({count})"
+msgstr "Diğer Konteynerler ({count})"
+
+msgid "Overview"
+msgstr "Genel Bakış"
+
+msgid "PROTECTED"
+msgstr "KORUNUYOR"
+
+msgid "Package"
+msgstr "Paket"
+
+msgid "Package Cache"
+msgstr "Paket Önbelleği"
+
+msgid "Package Management"
+msgstr "Paket Yönetimi"
+
+msgid "Package Manager Busy"
+msgstr "Paket Yöneticisi Meşgul"
+
+msgid "Package Name"
+msgstr "Paket Adı"
+
+msgid "Package Stats"
+msgstr "Paket İstatistikleri"
+
+msgid "Package count and version changes are shown first."
+msgstr "Önce paket sayısı ve sürüm değişiklikleri gösterilir."
+
+msgid "Package details"
+msgstr "Paket detayları"
+
+msgid "Package install / uninstall complete"
+msgstr "Paket kurulum / kaldırma tamamlandı"
+
+msgid "Package sources"
+msgstr "Paket kaynakları"
+
+msgid "Packages installed as dependencies that nothing needs anymore."
+msgstr "Bağımlılık olarak kurulmuş ve artık hiçbir şeyin ihtiyaç duymadığı paketler."
+
+msgid "Packages installed on this system will appear here"
+msgstr "Bu sisteme kurulu paketler burada görünür"
+
+msgid "Packages to update: {n}"
+msgstr "Güncellenecek paketler: {n}"
+
+msgid "Packages, Git, Docker, AppImages and bundles in one app"
+msgstr "Paketler, Git, Docker, AppImages ve gruplar tek uygulamada"
+
+msgid "Partial Update Warning"
+msgstr "Kısmi Güncelleme Uyarısı"
+
+msgid "Partial upgrades"
+msgstr "Kısmi yükseltmeler"
+
+msgid "Paste share code..."
+msgstr "Paylaşım kodunu yapıştır..."
+
+msgid "Pause All"
+msgstr "Tümünü Duraklat"
+
+msgid "Pending counts stay visible in the sidebar"
+msgstr "Bekleyen sayılar kenar çubuğunda görünür kalır"
+
+msgid "Pick exactly which packages to upgrade"
+msgstr "Hangi paketleri yükselteceğinizi tam olarak seçin"
+
+msgid "Pin packages you never want upgraded"
+msgstr "Yükseltilmesini asla istemediğiniz paketleri sabitleyin"
+
+msgid "Platform"
+msgstr "Platform"
+
+msgid "Play sound on events"
+msgstr "Olaylarda ses çal"
+
+msgid "Please select packages to install."
+msgstr "Lütfen kurulacak paketleri seçin."
+
+msgid "Please wait, fetching package data"
+msgstr "Lütfen bekleyin, paket verileri alınıyor"
+
+msgid "Plugin"
+msgstr "Eklenti"
+
+msgid "Plugin catalog"
+msgstr "Eklenti kataloğu"
+
+msgid "Port:"
+msgstr "Bağlantı noktası:"
+
+msgid "Portable  ·  Desktop Integration  ·  Updates  ·  Easy Removal"
+msgstr "Taşınabilir  ·  Masaüstü Entegrasyonu  ·  Güncellemeler  ·  Kolay Kaldırma"
+
+msgid "Prefer full upgrades — keep IgnorePkg minimal."
+msgstr "Tam yükseltmeleri tercih edin — IgnorePkg'ı en azda tutun."
+
+msgid "Prefer official repos over AUR when both exist."
+msgstr "Her ikisi de olduğunda resmi depoları AUR'a tercih edin."
+
+msgid "Press Install on any row, or Install All Missing once"
+msgstr "Herhangi bir satırda Kur'a basın veya Eksiklerin Tümünü Kur'a bir kez basın"
+
+msgid "Processing..."
+msgstr "İşleniyor..."
+
+msgid "Projects to update"
+msgstr "Güncellenecek projeler"
+
+msgid "Prompt only, never stored"
+msgstr "Yalnızca sorulur, asla saklanmaz"
+
+msgid "Proxy"
+msgstr "Proxy"
+
+msgid "Proxy & Network"
+msgstr "Proxy ve Ağ"
+
+msgid "Proxy type:"
+msgstr "Proxy türü:"
+
+msgid "Prune Old"
+msgstr "Eskileri Buda"
+
+msgid "Pull"
+msgstr "Çek"
+
+msgid "Pull & build"
+msgstr "Çek ve derle"
+
+msgid "Pull / Update"
+msgstr "Çek / Güncelle"
+
+msgid "Pull Docker Image"
+msgstr "Docker Görüntüsü Çek"
+
+msgid "Pull Image"
+msgstr "Görüntü Çek"
+
+msgid "Pull images and clear unused ones"
+msgstr "Görüntüleri çekin ve kullanılmayanları temizleyin"
+
+msgid "Pull, run, and manage Docker containers"
+msgstr "Docker konteynerlerini çekin, çalıştırın ve yönetin"
+
+msgid "Purge Old Cache"
+msgstr "Eski Önbelleği Temizle"
+
+msgid "Python"
+msgstr "Python"
+
+msgid "Qt"
+msgstr "Qt"
+
+msgid "Queue several plugins together"
+msgstr "Birden çok eklentiyi birlikte sıraya alın"
+
+msgid "Quick Actions"
+msgstr "Hızlı Eylemler"
+
+msgid "Quick actions"
+msgstr "Hızlı eylemler"
+
+msgid "Quick search…"
+msgstr "Hızlı arama…"
+
+msgid "Quick view of your machine profile"
+msgstr "Makine profilinizin hızlı görünümü"
+
+msgid "Rate Limiting"
+msgstr "İstek Sınırlama"
+
+msgid "Re-check for updates every:"
+msgstr "Güncellemeleri her:"
+
+msgid "Read PKGBUILDs before installing AUR packages."
+msgstr "AUR paketleri kurmadan önce PKGBUILD'ları okuyun."
+
+msgid "Ready to update"
+msgstr "Güncellemeye hazır"
+
+msgid "Reason"
+msgstr "Neden"
+
+msgid "Recent Activity"
+msgstr "Son Etkinlik"
+
+msgid "Recent activity"
+msgstr "Son etkinlik"
+
+msgid "Refresh"
+msgstr "Yenile"
+
+msgid "Refresh Databases"
+msgstr "Veritabanlarını Yenile"
+
+msgid "Release Notes"
+msgstr "Sürüm Notları"
+
+msgid "Release notes"
+msgstr "Sürüm notları"
+
+msgid "Releases"
+msgstr "Sürümler"
+
+msgid "Remove"
+msgstr "Kaldır"
+
+msgid "Remove Orphans"
+msgstr "Öksüzleri Kaldır"
+
+msgid "Remove Plugins"
+msgstr "Eklentileri Kaldır"
+
+msgid "Remove from Bundle"
+msgstr "Gruptan Kaldır"
+
+msgid "Remove orphans, manage .pacnew files, purge cache"
+msgstr "Öksüzleri kaldırın, .pacnew dosyalarını yönetin, önbelleği temizleyin"
+
+msgid "Remove several selected packages safely"
+msgstr "Seçili birkaç paketi güvenle kaldırın"
+
+msgid "Rename"
+msgstr "Yeniden Adlandır"
+
+msgid "Report a Bug ↗"
+msgstr "Hata Bildir ↗"
+
+msgid "Repository Storage"
+msgstr "Depo Depolama"
+
+msgid "Request timeout:"
+msgstr "İstek zaman aşımı:"
+
+msgid "Required By"
+msgstr "Gerektiren"
+
+msgid "Requires root; writes /etc/pacman.conf"
+msgstr "root gerektirir; /etc/pacman.conf yazar"
+
+msgid "Requires the external 'timeshift' tool. Optional - the built-in backup above is recommended."
+msgstr "Harici 'timeshift' aracını gerektirir. İsteğe bağlı - yukarıdaki yerleşik yedek önerilir."
+
+msgid "Resource Usage"
+msgstr "Kaynak Kullanımı"
+
+msgid "Restart"
+msgstr "Yeniden Başlat"
+
+msgid "Restore"
+msgstr "Geri Yükle"
+
+msgid "Restore Backup"
+msgstr "Yedeği Geri Yükle"
+
+msgid "Restore or delete bundles stored in your cloud account."
+msgstr "Bulut hesabınızda saklanan grupları geri yükleyin veya silin."
+
+msgid "Results"
+msgstr "Sonuçlar"
+
+msgid "Revert to Snapshot"
+msgstr "Anlık Görüntüye Dön"
+
+msgid "Review recent builds per project"
+msgstr "Proje başına son derlemeleri gözden geçirin"
+
+msgid "Rolling release — packages expect to update together."
+msgstr "Sürekli sürüm — paketler birlikte güncellenmeyi bekler."
+
+msgid "Root Filesystem"
+msgstr "Kök Dosya Sistemi"
+
+msgid "Round — 8 px"
+msgstr "Yuvarlak — 8 px"
+
+msgid "Run"
+msgstr "Çalıştır"
+
+msgid "Run Diagnostics"
+msgstr "Tanılamayı Çalıştır"
+
+msgid "Run a Docker image to create your first container."
+msgstr "İlk konteynerinizi oluşturmak için bir Docker görüntüsü çalıştırın."
+
+msgid "Run container"
+msgstr "Konteyner çalıştır"
+
+msgid "Run the update check automatically on a weekly schedule (evaluated by the CLI/service layer; applies when the app is running)."
+msgstr "Güncelleme kontrolünü haftalık zamanlamayla otomatik çalıştırın (CLI/hizmet katmanınca değerlendirilir; uygulama çalışırken geçerlidir)."
+
+msgid "Running"
+msgstr "Çalışıyor"
+
+msgid "Running Containers ({count})"
+msgstr "Çalışan Konteynerler ({count})"
+
+msgid "Running diagnostics…"
+msgstr "Tanılama çalıştırılıyor…"
+
+msgid "Runtime"
+msgstr "Çalışma zamanı"
+
+msgid "SAFE"
+msgstr "GÜVENLİ"
+
+msgid "SAFETY OVERVIEW"
+msgstr "GÜVENLİK GENEL BAKIŞI"
+
+msgid "SETTINGS"
+msgstr "AYARLAR"
+
+msgid "SIGN-IN"
+msgstr "OTURUM AÇ"
+
+msgid "SOCKS5"
+msgstr "SOCKS5"
+
+msgid "SOURCES"
+msgstr "KAYNAKLAR"
+
+msgid "Safe cancellations"
+msgstr "Güvenli iptaller"
+
+msgid "Sat"
+msgstr "Cmt"
+
+msgid "Scan cached package archives for corruption before they cause failures."
+msgstr "Kusurlar hataya yol açmadan önce önbelleğe alınmış paket arşivlerini tarayın."
+
+msgid "Scan failed: {err}"
+msgstr "Tarama başarısız: {err}"
+
+msgid "Scan for Corrupted Archives"
+msgstr "Bozuk Arşivleri Tara"
+
+msgid "Scan to buy me a coffee"
+msgstr "Bana bir kahve ısmarlamak için tara"
+
+msgid "Schedule disabled"
+msgstr "Zamanlama devre dışı"
+
+msgid "Scheduled Checks"
+msgstr "Zamanlanmış Kontroller"
+
+msgid "Schedules, pre-update backups, Timeshift"
+msgstr "Zamanlamalar, güncelleme öncesi yedekler, Timeshift"
+
+msgid "Search"
+msgstr "Ara"
+
+msgid "Search & sort"
+msgstr "Ara ve sırala"
+
+msgid "Search Mode"
+msgstr "Arama Modu"
+
+msgid "Search and discover new packages to install"
+msgstr "Kurulacak yeni paketleri arayın ve keşfedin"
+
+msgid "Search extensions"
+msgstr "Uzantıları ara"
+
+msgid "Search for packages"
+msgstr "Paketleri ara"
+
+msgid "Search packages across pacman, AUR, Flatpak, npm…"
+msgstr "pacman, AUR, Flatpak, npm… arasında paketleri arayın"
+
+msgid "Search pacman, AUR, Flatpak and npm side by side"
+msgstr "pacman, AUR, Flatpak ve npm'i yan yana arayın"
+
+msgid "Search..."
+msgstr "Ara..."
+
+msgid "Searching official repos and AUR..."
+msgstr "Resmi depolar ve AUR aranıyor..."
+
+msgid "Searching packages..."
+msgstr "Paketler aranıyor..."
+
+msgid "Secure browser-based authentication"
+msgstr "Güvenli tarayıcı tabanlı kimlik doğrulama"
+
+msgid "Security"
+msgstr "Güvenlik"
+
+msgid "See console output for details."
+msgstr "Ayrıntılar için konsol çıktısına bakın."
+
+msgid "See when an app has a newer release"
+msgstr "Bir uygulamanın daha yeni bir sürümü olduğunu görün"
+
+msgid "Select Bundle Autosave Path"
+msgstr "Grup Otomatik Kayıt Yolunu Seç"
+
+msgid "Select Log File"
+msgstr "Günlük Dosyasını Seç"
+
+msgid "Select a backup to restore packages from:"
+msgstr "Paketlerin geri yükleneceği bir yedek seçin:"
+
+msgid "Selective updates"
+msgstr "Seçmeli güncellemeler"
+
+msgid "Set pacman ParallelDownloads={count}"
+msgstr "pacman ParallelDownloads={count} değerini ayarla"
+
+msgid "Set up an entire bundle at once"
+msgstr "Bir grubun tamamını tek seferde kurun"
+
+msgid "Settings"
+msgstr "Ayarlar"
+
+msgid "Setup Environment"
+msgstr "Ortamı Kur"
+
+msgid "Setup failed: {e}"
+msgstr "Kurulum başarısız: {e}"
+
+msgid "Share Code"
+msgstr "Kodu Paylaş"
+
+msgid "Share codes"
+msgstr "Paylaşım kodları"
+
+msgid "Share codes and cloud Sync work once you are signed in"
+msgstr "Oturum açtıktan sonra paylaşım kodları ve bulut Senkronizasyonu çalışır"
+
+msgid "Sharp — 4 px"
+msgstr "Keskin — 4 px"
+
+msgid "Show Console"
+msgstr "Konsolu Göster"
+
+msgid "Show News"
+msgstr "Haberleri Göster"
+
+msgid "Show News ({n} new)"
+msgstr "Haberleri Göster ({n} yeni)"
+
+msgid "Show available or installed only"
+msgstr "Yalnızca mevcut veya kurulu olanları göster"
+
+msgid "Sign in to share or sync bundles across devices"
+msgstr "Grupları cihazlar arasında paylaşmak veya senkronize etmek için oturum açın"
+
+msgid "Sign in to sync favourites"
+msgstr "Favorileri senkronize etmek için oturum açın"
+
+msgid "Sign in to unlock cloud sync across your devices."
+msgstr "Cihazlarınız arasında bulut senkronizasyonunu açmak için oturum açın."
+
+msgid "Signed in as {name}"
+msgstr "{name} olarak oturum açıldı"
+
+msgid "Size"
+msgstr "Boyut"
+
+msgid "Size (Largest)"
+msgstr "Boyut (En Büyük)"
+
+msgid "Size (Smallest)"
+msgstr "Boyut (En Küçük)"
+
+msgid "Skip for now"
+msgstr "Şimdilik atla"
+
+msgid "Software Updates"
+msgstr "Yazılım Güncellemeleri"
+
+msgid "Sort"
+msgstr "Sırala"
+
+msgid "Sort By"
+msgstr "Sırala"
+
+msgid "Source"
+msgstr "Kaynak"
+
+msgid "Source A-Z"
+msgstr "Kaynak A-Z"
+
+msgid "Source Z-A"
+msgstr "Kaynak Z-A"
+
+msgid "Source filters"
+msgstr "Kaynak filtreleri"
+
+msgid "Sources"
+msgstr "Kaynaklar"
+
+msgid "Sources & Plugins"
+msgstr "Kaynaklar ve Eklentiler"
+
+msgid "Start"
+msgstr "Başlat"
+
+msgid "Start, stop and remove containers"
+msgstr "Konteynerleri başlatın, durdurun ve kaldırın"
+
+msgid "Stat cards"
+msgstr "İstatistik kartları"
+
+msgid "Status"
+msgstr "Durum"
+
+msgid "Status filters"
+msgstr "Durum filtreleri"
+
+msgid "Stay informed about important announcements before updating."
+msgstr "Güncellemeden önce önemli duyurulardan haberdar olun."
+
+msgid "Stop"
+msgstr "Durdur"
+
+msgid "Stop running installations anytime"
+msgstr "Çalışan kurulumları istediğiniz zaman durdurun"
+
+msgid "Storage"
+msgstr "Depolama"
+
+msgid "Storage overview"
+msgstr "Depolama genel bakışı"
+
+msgid "Success"
+msgstr "Başarı"
+
+msgid "Successful builds"
+msgstr "Başarılı derlemeler"
+
+msgid "Sudo session"
+msgstr "Sudo oturumu"
+
+msgid "Sun"
+msgstr "Paz"
+
+msgid "Support NeoArch"
+msgstr "NeoArch'ı Destekle"
+
+msgid "Supports Cargo · CMake · Make · Meson · Go · npm · PKGBUILD"
+msgstr "Cargo · CMake · Make · Meson · Go · npm · PKGBUILD destekler"
+
+msgid "Switch appearance anytime from Settings"
+msgstr "Ayarlar'dan istediğiniz zaman görünümü değiştirin"
+
+msgid "Sync favourites"
+msgstr "Favorileri senkronize et"
+
+msgid "Syncing package databases…"
+msgstr "Paket veritabanları senkronize ediliyor…"
+
+msgid "System & Account"
+msgstr "Sistem ve Hesap"
+
+msgid "System Health"
+msgstr "Sistem Sağlığı"
+
+msgid "System Healthy"
+msgstr "Sistem Sağlıklı"
+
+msgid "System Status"
+msgstr "Sistem Durumu"
+
+msgid "System info"
+msgstr "Sistem bilgisi"
+
+msgid "Tap your avatar at the bottom of the left sidebar"
+msgstr "Sol kenar çubuğunun altındaki avatarınıza dokunun"
+
+msgid "Test AUR API"
+msgstr "AUR API'sini Test Et"
+
+msgid "Testing…"
+msgstr "Test ediliyor…"
+
+msgid "The following components are required for NeoArch to work:\n\n{list}\n\nInstall now?"
+msgstr "NeoArch'ın çalışması için aşağıdaki bileşenler gerekli:\n\n{list}\n\nŞimdi kurulsun mu?"
+
+msgid "The operation was cancelled."
+msgstr "İşlem iptal edildi."
+
+msgid "The package database is locked. Close other package tools (pacman, pamac, yay/paru) and retry."
+msgstr "Paket veritabanı kilitli. Diğer paket araçlarını (pacman, pamac, yay/paru) kapatıp yeniden deneyin."
+
+msgid "The people behind NeoArch and how to support it"
+msgstr "NeoArch'ın arkasındaki insanlar ve onu nasıl destekleyeceğiniz"
+
+msgid "The red dot clears by itself when every check passes"
+msgstr "Tüm kontroller geçtiğinde kırmızı nokta kendiliğinden kaybolur"
+
+msgid "Theme picker applied instantly"
+msgstr "Tema seçici anında uygulanır"
+
+msgid "This will install the following packages with elevated privileges:\n\n{package_list}\n\nContinue?"
+msgstr "Bu, aşağıdaki paketleri yükseltilmiş ayrıcalıklarla kuracak:\n\n{package_list}\n\nDevam edilsin mi?"
+
+msgid "Thu"
+msgstr "Per"
+
+msgid "Tick one or many packages right in the results table"
+msgstr "Sonuç tablosunda bir veya birçok paketi doğrudan işaretleyin"
+
+msgid "Time:"
+msgstr "Zaman:"
+
+msgid "Timeouts"
+msgstr "Zaman aşımları"
+
+msgid "Timeouts, SSL verify, parallel downloads"
+msgstr "Zaman aşımları, SSL doğrulama, paralel indirmeler"
+
+msgid "Timeshift (advanced)"
+msgstr "Timeshift (gelişmiş)"
+
+msgid "Toggle how search results are shown"
+msgstr "Arama sonuçlarının gösterilme biçimini değiştir"
+
+msgid "Tools & Workflows"
+msgstr "Araçlar ve İş Akışları"
+
+msgid "Total AppImages"
+msgstr "Toplam AppImages"
+
+msgid "Total Projects"
+msgstr "Toplam Projeler"
+
+msgid "Total Size"
+msgstr "Toplam Boyut"
+
+msgid "Total commits"
+msgstr "Toplam commit"
+
+msgid "Try a different search term"
+msgstr "Farklı bir arama terimi deneyin"
+
+msgid "Tue"
+msgstr "Sal"
+
+msgid "Type A-Z"
+msgstr "Tür A-Z"
+
+msgid "Type Z-A"
+msgstr "Tür Z-A"
+
+msgid "Type what you are looking for — results stream in from every source"
+msgstr "Aradığınızı yazın — her kaynaktan sonuçlar akmaya başlar"
+
+msgid "Unhold package"
+msgstr "Paketin tutuşunu kaldır"
+
+msgid "Unified workflows"
+msgstr "Birleşik iş akışları"
+
+msgid "Unignore updates (IgnorePkg)"
+msgstr "Güncellemeleri yoksaymayı kaldır (IgnorePkg)"
+
+msgid "Uninstall"
+msgstr "Kaldır"
+
+msgid "Uninstall Package"
+msgstr "Paketi Kaldır"
+
+msgid "Uninstall Selected"
+msgstr "Seçilenleri Kaldır"
+
+msgid "Uninstall complete."
+msgstr "Kaldırma tamamlandı."
+
+msgid "Uninstalling…"
+msgstr "Kaldırılıyor…"
+
+msgid "Unique sources"
+msgstr "Benzersiz kaynaklar"
+
+msgid "Unreachable"
+msgstr "Erişilemiyor"
+
+msgid "Upcoming release"
+msgstr "Yaklaşan sürüm"
+
+msgid "Update"
+msgstr "Güncelle"
+
+msgid "Update All"
+msgstr "Tümünü Güncelle"
+
+msgid "Update All, refresh databases, clean cache"
+msgstr "Tümünü güncelle, veritabanlarını yenile, önbelleği temizle"
+
+msgid "Update Package"
+msgstr "Paketi Güncelle"
+
+msgid "Update Review"
+msgstr "Güncelleme İncelemesi"
+
+msgid "Update Selected"
+msgstr "Seçilenleri Güncelle"
+
+msgid "Update Type"
+msgstr "Güncelleme Türü"
+
+msgid "Update badges"
+msgstr "Güncelleme rozetleri"
+
+msgid "Update checks"
+msgstr "Güncelleme kontrolleri"
+
+msgid "Update complete."
+msgstr "Güncelleme tamamlandı."
+
+msgid "Update interval (days):"
+msgstr "Güncelleme aralığı (gün):"
+
+msgid "Update partially completed"
+msgstr "Güncelleme kısmen tamamlandı"
+
+msgid "Update review"
+msgstr "Güncelleme incelemesi"
+
+msgid "Updates"
+msgstr "Güncellemeler"
+
+msgid "Updates ({n})"
+msgstr "Güncellemeler ({n})"
+
+msgid "Updates Available"
+msgstr "Mevcut Güncellemeler"
+
+msgid "Updates available"
+msgstr "Güncellemeler mevcut"
+
+msgid "Updates build one at a time; a failure never aborts the rest."
+msgstr "Güncellemeler teker teker derlenir; bir hata diğerlerini asla iptal etmez."
+
+msgid "Updates will appear here automatically when available"
+msgstr "Güncellemeler mevcut olunca burada otomatik görünür"
+
+msgid "Updating a selection can desync libraries from their apps."
+msgstr "Bir seçimi güncellemek kütüphaneleri uygulamalarından ayırabilir."
+
+msgid "Updating a selection only"
+msgstr "Yalnızca bir seçimi güncelleme"
+
+msgid "Use Cloud Bundles from the same menu to restore backups"
+msgstr "Yedekleri geri yüklemek için aynı menüdeki Bulut Grupları'nı kullanın"
+
+msgid "Use npm user mode for global installs"
+msgstr "Genel kurulumlar için npm kullanıcı modunu kullan"
+
+msgid "User"
+msgstr "Kullanıcı"
+
+msgid "User Account"
+msgstr "Kullanıcı Hesabı"
+
+msgid "Verifies reachability of the AUR RPC endpoint used to resolve packages from the AUR source."
+msgstr "AUR kaynağından paketlerin çözümlenmesinde kullanılan AUR RPC uç noktasının erişilebilirliğini doğrular."
+
+msgid "Verify SSL certificates"
+msgstr "SSL sertifikalarını doğrula"
+
+msgid "Version"
+msgstr "Sürüm"
+
+msgid "Version (Latest)"
+msgstr "Sürüm (En Yeni)"
+
+msgid "Version (Oldest)"
+msgstr "Sürüm (En Eski)"
+
+msgid "Version history and changes"
+msgstr "Sürüm geçmişi ve değişiklikler"
+
+msgid "Version information, links, and system details"
+msgstr "Sürüm bilgisi, bağlantılar ve sistem ayrıntıları"
+
+msgid "Version {version}"
+msgstr "Sürüm {version}"
+
+msgid "Version, edition and project links"
+msgstr "Sürüm, basım ve proje bağlantıları"
+
+msgid "View All Releases on GitHub ↗"
+msgstr "GitHub'da Tüm Sürümleri Görüntüle ↗"
+
+msgid "View Changes"
+msgstr "Değişiklikleri Görüntüle"
+
+msgid "View Details"
+msgstr "Ayrıntıları Görüntüle"
+
+msgid "View Logs"
+msgstr "Günlükleri Görüntüle"
+
+msgid "View PKGBUILD"
+msgstr "PKGBUILD'ı Görüntüle"
+
+msgid "View in browser"
+msgstr "Tarayıcıda görüntüle"
+
+msgid "Volumes"
+msgstr "Birimler"
+
+msgid "Volumes & networks"
+msgstr "Birimler ve ağlar"
+
+msgid "WARNED · NOT BLOCKED"
+msgstr "UYARILDI · ENGELLENMEDİ"
+
+msgid "WARNING"
+msgstr "UYARI"
+
+msgid "WHAT YOU CAN DO"
+msgstr "NELER YAPABİLİRSİNİZ"
+
+msgid "Want to improve NeoArch?"
+msgstr "NeoArch'ı geliştirmek ister misiniz?"
+
+msgid "Warned, not blocked"
+msgstr "Uyarıldı, engellenmedi"
+
+msgid "Wed"
+msgstr "Çar"
+
+msgid "Welcome"
+msgstr "Hoş geldiniz"
+
+msgid "What NeoArch can reach, what it runs, and what it asks before it acts"
+msgstr "NeoArch nelere ulaşabilir, neleri çalıştırır ve harekete geçmeden önce ne sorar"
+
+msgid "What's New"
+msgstr "Ne var ne yok"
+
+msgid "What's New in NeoArch {version}"
+msgstr "NeoArch {version} içindeki yenilikler"
+
+msgid "When packages ship new configs, the old one is kept as .pacnew."
+msgstr "Paketler yeni yapılandırmalar getirdiğinde eskisi .pacnew olarak tutulur."
+
+msgid "Window corner radius"
+msgstr "Pencere köşe yarıçapı"
+
+msgid "Window frame"
+msgstr "Pencere çerçevesi"
+
+msgid "You appear to be offline. Search results may be incomplete and installations may fail."
+msgstr "Çevrimdışı görünüyorsunuz. Arama sonuçları eksik olabilir ve kurulumlar başarısız olabilir."
+
+msgid "You picked {selected} of {available} available updates. On Arch, packages are built against the latest libraries — a partial upgrade can desync libraries from their apps and break your system.\n\nIt’s recommended to do a full system upgrade instead."
+msgstr "{available} mevcut güncellemeden {selected} tanesini seçtiniz. Arch'ta paketler en son kütüphanelere göre derlenir — kısmi bir yükseltme kütüphaneleri uygulamalarından ayırabilir ve sisteminizi bozabilir.\n\nBunun yerine tam sistem yükseltmesi yapmanız önerilir."
+
+msgid "Your Projects"
+msgstr "Projeleriniz"
+
+msgid "Your bundle is empty"
+msgstr "Grubunuz boş"
+
+msgid "Your starting point — search every source and watch what happens on your system."
+msgstr "Başlangıç noktanız — her kaynağı arayın ve sisteminizde neler olduğunu izleyin."
+
+msgid "Your system is up to date"
+msgstr "Sisteminiz güncel"
+
+msgid "across all sources"
+msgstr "tüm kaynaklarda"
+
+msgid "e.g. 127.0.0.1 or proxy.example.com"
+msgstr "ör. 127.0.0.1 veya proxy.example.com"
+
+msgid "everything looks good"
+msgstr "her şey iyi görünüyor"
+
+msgid "keep your system updated"
+msgstr "sisteminizi güncel tutun"
+
+msgid "not installed"
+msgstr "kurulu değil"
+
+msgid "pacman ParallelDownloads:"
+msgstr "pacman ParallelDownloads:"
+
+msgid "sec"
+msgstr "sn"
+
+msgid "seconds"
+msgstr "saniye"
+
+msgid "versions per package"
+msgstr "paket başına sürüm"
+
+msgid "{checked} of {total} selected"
+msgstr "{total} ögeden {checked} tanesi seçildi"
+
+msgid "{checked} of {total} selected{size}"
+msgstr "{total} ögeden {checked} tanesi seçildi{size}"
+
+msgid "{count} missing — {req} required for NeoArch to work"
+msgstr "{count} eksik — NeoArch'ın çalışması için {req} gerekli"
+
+msgid "{count} optional component(s) missing — features above will stay hidden until installed"
+msgstr "{count} isteğe bağlı bileşen eksik — yukarıdaki özellikler kurulana kadar gizli kalır"
+
+msgid "{count} packages were found, {count} of which match the specified filters{suffix}"
+msgstr "{count} paket bulundu, bunlardan {count} tanesi belirtilen filtrelere uyuyor{suffix}"
+
+msgid "{count} plugin{s} selected"
+msgstr "{count} eklenti seçildi{s}"
+
+msgid "{edition} Edition"
+msgstr "{edition} Basımı"
+
+msgid "{issues} issues need resolving"
+msgstr "{issues} sorun çözülmeli"
+
+msgid "{issues} item{s} found"
+msgstr "{issues} öge bulundu{s}"
+
+msgid "{n} application"
+msgstr "{n} uygulama"
+
+msgid "{n} applications"
+msgstr "{n} uygulama"
+
+msgid "{prefix}, {name}!"
+msgstr "{prefix}, {name}!"
+
+msgid "{running} running, {stopped} stopped"
+msgstr "{running} çalışıyor, {stopped} durduruldu"
+
+msgid "{shown} of {total} applications"
+msgstr "{total} uygulamadan {shown} tanesi"
+
+msgid "{total} packages installed"
+msgstr "{total} paket kurulu"
+
+msgid "{total} updates available"
+msgstr "{total} güncelleme mevcut"
+
+msgid "“Unified system design is not about hiding complex settings; it is about providing power users with reliable tools that simplify technical friction.”"
+msgstr "\"Birleşik sistem tasarımı karmaşık ayarları gizlemek değildir; ileri düzey kullanıcılara teknik sürtünmeyi basitleştiren güvenilir araçlar sağlamaktır.\""
+
+msgid "• {status}"
+msgstr "• {status}"
+
+msgid "↓ {count} commits behind"
+msgstr "↓ {count} commit geride"
+
+msgid "↗ AUR Package"
+msgstr "↗ AUR Paketi"
+
+msgid "↗ GitHub"
+msgstr "↗ GitHub"
+
+msgid "↗ Repository"
+msgstr "↗ Depo"
+
+msgid "↗ View Release"
+msgstr "↗ Sürümü Görüntüle"
+
+msgid "↗ Website"
+msgstr "↗ Web Sitesi"
+
+msgid "↪  Sign Out"
+msgstr "↪  Oturumu Kapat"
+
+msgid "↻ Restore"
+msgstr "↻ Geri Yükle"
+
+msgid "⇥  Sign In"
+msgstr "⇥  Oturum Aç"
+
+msgid "◉  Installed"
+msgstr "◉  Kurulu"
+
+msgid "◉  Update Available"
+msgstr "◉  Güncelleme Mevcut"
+
+msgid "○  Not Installed"
+msgstr "○  Kurulu Değil"
+
+msgid "● Clean"
+msgstr "● Temiz"
+
+msgid "● Modified ({count})"
+msgstr "●  Değiştirildi ({count})"
+
+msgid "☁  Cloud Bundles"
+msgstr "☁  Bulut Grupları"
+
+msgid "☁ Sync"
+msgstr "☁ Senkronize Et"
+
+msgid "♥  GitHub Sponsors"
+msgstr "♥  GitHub Sponsorları"
+
+msgid "⚙  Account Settings"
+msgstr "⚙  Hesap Ayarları"
+
+msgid "⚠ Simulated test mode (NEOARCH_FAKE_MISSING) — these rows never clear; unset the env var for real checks"
+msgstr "⚠ Simüle test modu (NEOARCH_FAKE_MISSING) — bu satırlar asla temizlenmez; gerçek kontroller için ortam değişkenini kaldırın"
+
+msgid "✓  Up to date"
+msgstr "✓  Güncel"
+
+msgid "✗ Cancelled — authenticate to enable installs"
+msgstr "✗ İptal Edildi — kurulumları etkinleştirmek için kimlik doğrulayın"

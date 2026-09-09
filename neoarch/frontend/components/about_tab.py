@@ -500,7 +500,11 @@ class _ReleaseNotesTab(QWidget):
         ver_card = _card()
         vl = QVBoxLayout(ver_card)
         vl.setContentsMargins(20, 18, 20, 20)
-        vl.addWidget(_card_title(_("Current Version: {version}").format(version=APP_VERSION)))
+        title_row = QHBoxLayout()
+        title_row.addWidget(_card_title(_("Current Version: {version}").format(version=APP_VERSION)))
+        title_row.addStretch()
+        title_row.addWidget(_link_btn(_("What's New"), self._open_whats_new))
+        vl.addLayout(title_row)
         cl.addWidget(ver_card)
 
         recent = _git_recent_log(20)
@@ -601,6 +605,16 @@ class _ReleaseNotesTab(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(scroll, 1)
         layout.addLayout(outer, 1)
+
+    def _open_whats_new(self):
+        """Open the card-style What's New dialog for the current version."""
+        from neoarch.resources.paths import APP_VERSION
+        from neoarch.backend.services.release_notes import (
+            parse_changelog, whats_new)
+        from neoarch.frontend.components.whats_new_dialog import WhatIsNewDialog
+        blocks = whats_new(parse_changelog(), "", limit=4)
+        WhatIsNewDialog(
+            blocks, mode="whats_new", current_version=APP_VERSION).exec()
 
 
 # ── Tab: Documentation ─────────────────────────────────────────────

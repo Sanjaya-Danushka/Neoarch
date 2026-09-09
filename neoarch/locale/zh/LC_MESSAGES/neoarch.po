@@ -1,0 +1,2345 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+# Chinese catalog
+
+msgid " Add from File"
+msgstr " 从文件添加"
+
+msgid " Check for Updates"
+msgstr " 检查更新"
+
+msgid " Clone Repository"
+msgstr " 克隆仓库"
+
+msgid " min"
+msgstr " 分钟"
+
+msgid " re-checking"
+msgstr " 重新检查"
+
+msgid " vols"
+msgstr " 个卷"
+
+msgid " — {ms}"
+msgstr " — {ms}"
+
+msgid "$ authentication required…"
+msgstr "$ 需要验证…"
+
+msgid "+ Create Network"
+msgstr "+ 创建网络"
+
+msgid "+ Create Volume"
+msgstr "+ 创建卷"
+
+msgid "+ Pull Image"
+msgstr "+ 拉取镜像"
+
+msgid "+ Run Container"
+msgstr "+ 运行容器"
+
+msgid ".pacnew Files"
+msgstr ".pacnew 文件"
+
+msgid "1 update available"
+msgstr "有 1 个更新可用"
+
+msgid "A field guide to every NeoArch page"
+msgstr "每个 NeoArch 页面的操作指南"
+
+msgid "A modern graphical package manager for Arch Linux — search, install, and manage packages from pacman, AUR, Flatpak, and npm in one place. Create bundles, manage Git projects, run Docker containers, and sync your setup across devices."
+msgstr "Arch Linux 的现代化图形软件包管理器 — 在一个地方搜索、安装和管理来自 pacman、AUR、Flatpak 和 npm 的软件包。创建捆绑包、管理 Git 项目、运行 Docker 容器，并跨设备同步你的配置。"
+
+msgid "A new version of NeoArch is available"
+msgstr "有可用的 NeoArch 新版本"
+
+msgid "A setup is already running — wait for it"
+msgstr "已有安装程序在运行 — 请等待"
+
+msgid "ABOUT"
+msgstr "关于"
+
+msgid "AUR Helper:"
+msgstr "AUR 助手："
+
+msgid "AUR RPC Connectivity"
+msgstr "AUR RPC 连接"
+
+msgid "AUR Security Notice"
+msgstr "AUR 安全通知"
+
+msgid "AUR packages are built from third-party PKGBUILD scripts maintained by the community.\n\n{aur_pkgs}\n\nAlways review the PKGBUILD and .install scriptlet before building. Proceeding with the AUR helper does not perform a static security scan."
+msgstr "AUR 软件包由社区维护的第三方 PKGBUILD 脚本构建。\n\n{aur_pkgs}\n\n构建前请始终检查 PKGBUILD 和 .install 脚本。使用 AUR 助手继续操作不会执行静态安全扫描。"
+
+msgid "AUR — Arch User Repository"
+msgstr "AUR — Arch 用户软件仓库"
+
+msgid "About"
+msgstr "关于"
+
+msgid "About NeoArch"
+msgstr "关于 NeoArch"
+
+msgid "Across all projects"
+msgstr "所有项目"
+
+msgid "Action Recommended"
+msgstr "建议操作"
+
+msgid "Actions"
+msgstr "操作"
+
+msgid "Active"
+msgstr "活动"
+
+msgid "Add an AppImage from a local file or URL to get started."
+msgstr "从本地文件或 URL 添加 AppImage 以开始使用。"
+
+msgid "Add from file or URL"
+msgstr "从文件或 URL 添加"
+
+msgid "Add packages from Discover, Updates, or Installed views"
+msgstr "从“发现”、“更新”或“已安装”视图添加软件包"
+
+msgid "Add selected to Bundle"
+msgstr "将所选加入捆绑包"
+
+msgid "Advanced"
+msgstr "高级"
+
+msgid "All"
+msgstr "全部"
+
+msgid "All Categories"
+msgstr "全部分类"
+
+msgid "All Git projects"
+msgstr "所有 Git 项目"
+
+msgid "All caught up"
+msgstr "全部最新"
+
+msgid "All checks passed"
+msgstr "所有检查已通过"
+
+msgid "All cloud bundles deleted."
+msgstr "所有云端捆绑包已删除。"
+
+msgid "All containers"
+msgstr "所有容器"
+
+msgid "All dependencies installed"
+msgstr "所有依赖已安装"
+
+msgid "All managed AppImages"
+msgstr "所有受管的 AppImages"
+
+msgid "Allow parallel network requests"
+msgstr "允许并行网络请求"
+
+msgid "Another package manager is running"
+msgstr "另一个软件包管理器正在运行"
+
+msgid "AppImages"
+msgstr "AppImages"
+
+msgid "Appearance"
+msgstr "外观"
+
+msgid "Applies to all pages immediately."
+msgstr "立即应用于所有页面。"
+
+msgid "Apply"
+msgstr "应用"
+
+msgid "Apply every pending update in one click"
+msgstr "一键应用所有待处理的更新"
+
+msgid "Arch Linux News"
+msgstr "Arch Linux 新闻"
+
+msgid "Arch News"
+msgstr "Arch 新闻"
+
+msgid "Authenticate once, install smoothly after"
+msgstr "验证一次，之后顺畅安装"
+
+msgid "Auto (detect available)"
+msgstr "自动（检测可用）"
+
+msgid "Auto Update"
+msgstr "自动更新"
+
+msgid "Auto check updates on launch"
+msgstr "启动时自动检查更新"
+
+msgid "Automate NeoArch from the terminal with `neo` (or neoarch-cli)"
+msgstr "使用 `neo`（或 neoarch-cli）从终端自动化 NeoArch"
+
+msgid "Autosave bundle to file"
+msgstr "将捆绑包自动保存到文件"
+
+msgid "Autosave path:"
+msgstr "自动保存路径："
+
+msgid "Available"
+msgstr "可用"
+
+msgid "Available Updates"
+msgstr "可用更新"
+
+msgid "BUNDLES"
+msgstr "捆绑包"
+
+msgid "Back up bundles to your NeoArch account"
+msgstr "将捆绑包备份到你的 NeoArch 账户"
+
+msgid "Back up collections online"
+msgstr "在线备份集合"
+
+msgid "Background re-check while the app is open"
+msgstr "应用打开时在后台重新检查"
+
+msgid "Backup"
+msgstr "备份"
+
+msgid "Basic Settings"
+msgstr "基本设置"
+
+msgid "Batch install"
+msgstr "批量安装"
+
+msgid "Before installing from the AUR, review the PKGBUILD."
+msgstr "从 AUR 安装前，请检查 PKGBUILD。"
+
+msgid "Best Match"
+msgstr "最佳匹配"
+
+msgid "Both"
+msgstr "两者"
+
+msgid "Browse and install applications from available sources"
+msgstr "浏览并安装来自可用源的应用程序"
+
+msgid "Browse and manage every package currently installed on your machine."
+msgstr "浏览并管理你机器上当前安装的每个软件包。"
+
+msgid "Browse installable tools as cards"
+msgstr "以卡片形式浏览可安装工具"
+
+msgid "Browse packages in Home, check the ones you want,\nand click Add to Bundle in the toolbar."
+msgstr "在“首页”浏览软件包并勾选需要的项目，\n然后点击工具栏中的“加入捆绑包”。"
+
+msgid "Browse…"
+msgstr "浏览…"
+
+msgid "Bug Fix"
+msgstr "Bug 修复"
+
+msgid "Bug Fixes"
+msgstr "Bug 修复"
+
+msgid "Build"
+msgstr "构建"
+
+msgid "Build Activity"
+msgstr "构建活动"
+
+msgid "Build Package"
+msgstr "构建软件包"
+
+msgid "Build history"
+msgstr "构建历史"
+
+msgid "Builds Today"
+msgstr "今日构建"
+
+msgid "Bulk uninstall"
+msgstr "批量卸载"
+
+msgid "Bundle Autosave"
+msgstr "捆绑包自动保存"
+
+msgid "Bundles"
+msgstr "捆绑包"
+
+msgid "Buy Me a Coffee"
+msgstr "Buy Me a Coffee"
+
+msgid "By Name"
+msgstr "按名称"
+
+msgid "By Package ID"
+msgstr "按软件包 ID"
+
+msgid "CHAPTER {num}"
+msgstr "第 {num} 章"
+
+msgid "COMMUNITY"
+msgstr "社区"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Cancel Installation"
+msgstr "取消安装"
+
+msgid "Carry starred packages anywhere"
+msgstr "将收藏的软件包带到任何地方"
+
+msgid "Categories"
+msgstr "分类"
+
+msgid "Category"
+msgstr "类别"
+
+msgid "Changelog built from Git history"
+msgstr "根据 Git 历史生成的更新日志"
+
+msgid "Channels, events and cooldowns"
+msgstr "频道、事件和冷却时间"
+
+msgid "Chaotic-AUR: automatic through pacman.conf."
+msgstr "Chaotic-AUR：通过 pacman.conf 自动配置。"
+
+msgid "Check Failed"
+msgstr "检查失败"
+
+msgid "Check failed: {e}"
+msgstr "检查失败：{e}"
+
+msgid "Check for Updates"
+msgstr "检查更新"
+
+msgid "Checking for updates..."
+msgstr "正在检查更新..."
+
+msgid "Checking..."
+msgstr "正在检查..."
+
+msgid "Checking…"
+msgstr "正在检查…"
+
+msgid "Choose Sign In — your browser handles secure login, then NeoArch continues automatically"
+msgstr "选择“登录” — 你的浏览器处理安全登录，然后 NeoArch 自动继续"
+
+msgid "Choose a theme for NeoArch. Changes apply instantly."
+msgstr "为 NeoArch 选择主题。更改立即生效。"
+
+msgid "Clean Cache"
+msgstr "清理缓存"
+
+msgid "Clean Orphans"
+msgstr "清理孤立包"
+
+msgid "Clean orphans, cache, and read Arch news."
+msgstr "清理孤立包和缓存，阅读 Arch 新闻。"
+
+msgid "Clear"
+msgstr "清除"
+
+msgid "Click \"Run Diagnostics\" to check your system"
+msgstr "点击“运行诊断”以检查你的系统"
+
+msgid "Click any row to open the detail card before deciding"
+msgstr "在决定前点击任意行以打开详情卡片"
+
+msgid "Clone a repository to build and manage software projects."
+msgstr "克隆仓库以构建和管理软件项目。"
+
+msgid "Clone dialog"
+msgstr "克隆对话框"
+
+msgid "Clone, build and maintain projects straight from Git repositories."
+msgstr "直接从 Git 仓库克隆、构建和维护项目。"
+
+msgid "Clone, build, update, and manage Git projects"
+msgstr "克隆、构建、更新和管理 Git 项目"
+
+msgid "Clone, build, update, and manage Git repositories"
+msgstr "克隆、构建、更新和管理 Git 仓库"
+
+msgid "Close"
+msgstr "关闭"
+
+msgid "Cloud bundles"
+msgstr "云端捆绑包"
+
+msgid "Cloud sign-in"
+msgstr "云端登录"
+
+msgid "Cloud sync"
+msgstr "云端同步"
+
+msgid "Coffee fund ☕\nEvery cup keeps development going."
+msgstr "咖啡基金 ☕\n每一杯都让开发持续进行。"
+
+msgid "Collect favourite packages into groups"
+msgstr "将收藏的软件包分组收集"
+
+msgid "Coming soon"
+msgstr "即将推出"
+
+msgid "Commits"
+msgstr "提交"
+
+msgid "Community"
+msgstr "社区"
+
+msgid "Community recipes"
+msgstr "社区配方"
+
+msgid "Community-maintained recipes — not curated or reviewed by Arch."
+msgstr "由社区维护的配方 — 未经 Arch 策划或审查。"
+
+msgid "Companion CLI"
+msgstr "配套 CLI"
+
+msgid "Complete table of installed packages"
+msgstr "已安装软件包的完整表格"
+
+msgid "Config Files (.pacnew)"
+msgstr "配置文件（.pacnew）"
+
+msgid "Config in ~/.config/neoarch."
+msgstr "配置位于 ~/.config/neoarch。"
+
+msgid "Configure NeoArch settings"
+msgstr "配置 NeoArch 设置"
+
+msgid "Configure NeoArch settings and plugins"
+msgstr "配置 NeoArch 设置和插件"
+
+msgid "Configure basic application settings and preferences"
+msgstr "配置基本应用设置和偏好"
+
+msgid "Configure every part of NeoArch across seven focused categories."
+msgstr "在七个重点分类中配置 NeoArch 的每个部分。"
+
+msgid "Configure logging behaviour and log file settings"
+msgstr "配置日志行为和日志文件设置"
+
+msgid "Configure network proxy settings and connection options"
+msgstr "配置网络代理设置和连接选项"
+
+msgid "Confirm"
+msgstr "确认"
+
+msgid "Connection restored"
+msgstr "连接已恢复"
+
+msgid "Console Output"
+msgstr "控制台输出"
+
+msgid "Container Logs"
+msgstr "容器日志"
+
+msgid "Containers"
+msgstr "容器"
+
+msgid "Continue"
+msgstr "继续"
+
+msgid "Continue installing AUR packages?"
+msgstr "继续安装 AUR 软件包？"
+
+msgid "Contributing Guide ↗"
+msgstr "贡献指南 ↗"
+
+msgid "Contributors & sponsors"
+msgstr "贡献者和赞助者"
+
+msgid "Control which events show notifications and alerts"
+msgstr "控制哪些事件显示通知和提醒"
+
+msgid "Cooldown between notifications (seconds):"
+msgstr "通知之间的冷却时间（秒）："
+
+msgid "Copied!"
+msgstr "已复制！"
+
+msgid "Copy"
+msgstr "复制"
+
+msgid "Copy Report"
+msgstr "复制报告"
+
+msgid "Copy name"
+msgstr "复制名称"
+
+msgid "Create"
+msgstr "创建"
+
+msgid "Create Backup"
+msgstr "创建备份"
+
+msgid "Create Docker Network"
+msgstr "创建 Docker 网络"
+
+msgid "Create Docker Volume"
+msgstr "创建 Docker 卷"
+
+msgid "Create Network"
+msgstr "创建网络"
+
+msgid "Create Snapshot"
+msgstr "创建快照"
+
+msgid "Create Volume"
+msgstr "创建卷"
+
+msgid "Create a bundle to get started"
+msgstr "创建一个捆绑包以开始使用"
+
+msgid "Create and inspect Docker resources"
+msgstr "创建并检查 Docker 资源"
+
+msgid "Create backup before updates"
+msgstr "更新前创建备份"
+
+msgid "Create bundles"
+msgstr "创建捆绑包"
+
+msgid "Create, import, export, and install bundles of packages"
+msgstr "创建、导入、导出和安装软件包捆绑包"
+
+msgid "Create, import, export, and install bundles of packages across sources"
+msgstr "跨源创建、导入、导出和安装软件包捆绑包"
+
+msgid "Credentials & sudo"
+msgstr "凭据和 sudo"
+
+msgid "Current Version: {version}"
+msgstr "当前版本：{version}"
+
+msgid "Currently active"
+msgstr "当前活动"
+
+msgid "Currently using"
+msgstr "正在使用"
+
+msgid "DEBUG"
+msgstr "调试"
+
+msgid "DEBUG shows all details, ERROR shows only failures"
+msgstr "DEBUG 显示所有细节，ERROR 只显示失败"
+
+msgid "Dashboard and package discovery"
+msgstr "仪表板和软件包发现"
+
+msgid "Date Installed (Newest)"
+msgstr "安装日期（最新）"
+
+msgid "Date Installed (Oldest)"
+msgstr "安装日期（最早）"
+
+msgid "Days:"
+msgstr "天数："
+
+msgid "Decorative teal rim on the translucent window frame.\nOff by default — it can leave stray lines on some\ncompositors and GPU drivers."
+msgstr "半透明窗口框架上的装饰性青色边缘。\n默认关闭 — 可能在某些合成器和 GPU 驱动上\n留下杂散线条。"
+
+msgid "Delete"
+msgstr "删除"
+
+msgid "Delete Snapshots"
+msgstr "删除快照"
+
+msgid "Dependencies"
+msgstr "依赖项"
+
+msgid "Dependencies, system checks, and diagnostic information"
+msgstr "依赖项、系统检查和诊断信息"
+
+msgid "Dependency list with one-click install, plus system health"
+msgstr "依赖列表一键安装，外加系统健康"
+
+msgid "Dependency setup cancelled — authentication required"
+msgstr "依赖项设置已取消 — 需要验证"
+
+msgid "Dependency setup completed"
+msgstr "依赖项设置完成"
+
+msgid "Dependency setup incomplete. Still missing: {list}"
+msgstr "依赖项设置不完整。仍然缺少：{list}"
+
+msgid "Description"
+msgstr "描述"
+
+msgid "Designs, builds and maintains every part of NeoArch."
+msgstr "设计、构建和维护 NeoArch 的每个部分。"
+
+msgid "Desktop notifications (system tray)"
+msgstr "桌面通知（系统托盘）"
+
+msgid "Details"
+msgstr "详情"
+
+msgid "Diagnostics"
+msgstr "诊断"
+
+msgid "Diagnostics opens automatically, listing every dependency and what it powers"
+msgstr "诊断会自动打开，列出每个依赖及其功能"
+
+msgid "Did you mean…"
+msgstr "你是要…"
+
+msgid "Discover plugins and helper tools that extend what NeoArch can do."
+msgstr "发现可扩展 NeoArch 功能的插件和辅助工具。"
+
+msgid "Disk Usage"
+msgstr "磁盘使用"
+
+msgid "Disk usage"
+msgstr "磁盘使用"
+
+msgid "Docker"
+msgstr "Docker"
+
+msgid "Docker Containers"
+msgstr "Docker 容器"
+
+msgid "Docker Images ({count})"
+msgstr "Docker 镜像 ({count})"
+
+msgid "Docker Networks ({count})"
+msgstr "Docker 网络 ({count})"
+
+msgid "Docker Volumes ({count})"
+msgstr "Docker 卷 ({count})"
+
+msgid "Docker disk usage"
+msgstr "Docker 磁盘使用"
+
+msgid "Docker volumes"
+msgstr "Docker 卷"
+
+msgid "Documentation"
+msgstr "文档"
+
+msgid "Done"
+msgstr "完成"
+
+msgid "Donut chart of project disk usage"
+msgstr "项目磁盘使用环形图"
+
+msgid "Downgrade..."
+msgstr "降级..."
+
+msgid "Download Cache"
+msgstr "下载缓存"
+
+msgid "Download snapshot"
+msgstr "下载快照"
+
+msgid "Download the current source tarball"
+msgstr "下载当前源代码压缩包"
+
+msgid "Downloading"
+msgstr "正在下载"
+
+msgid "ERROR"
+msgstr "错误"
+
+msgid "Echo log to terminal / console"
+msgstr "将日志回显到终端 / 控制台"
+
+msgid "Enable All"
+msgstr "全部启用"
+
+msgid "Enable automatic updates"
+msgstr "启用自动更新"
+
+msgid "Enable scheduled update checks"
+msgstr "启用计划更新检查"
+
+msgid "Environment"
+msgstr "环境"
+
+msgid "Error: {e}"
+msgstr "错误：{e}"
+
+msgid "Errors and warnings"
+msgstr "错误和警告"
+
+msgid "Events"
+msgstr "事件"
+
+msgid "Every change auto-saves locally — no save button needed"
+msgstr "每项更改都会自动保存到本地 — 无需保存按钮"
+
+msgid "Every result is badged [aur] — never confused with official."
+msgstr "每个结果都带有 [aur] 标记 — 绝不会与官方混淆。"
+
+msgid "Everything about the app itself — versions, health and the people behind it."
+msgstr "应用本身的全部信息 — 版本、健康和背后的开发人员。"
+
+msgid "Explicit"
+msgstr "显式"
+
+msgid "Export Settings"
+msgstr "导出设置"
+
+msgid "Failed to apply (need root?)."
+msgstr "应用失败（需要 root？）。"
+
+msgid "Failed to render update list."
+msgstr "渲染更新列表失败。"
+
+msgid "Feature"
+msgstr "功能"
+
+msgid "Fetch any repository by URL"
+msgstr "通过 URL 获取任何仓库"
+
+msgid "Filesystem: BTRFS - native snapshots available"
+msgstr "文件系统：BTRFS - 支持原生快照"
+
+msgid "Filesystem: {fs} - package list + config backup only"
+msgstr "文件系统：{fs} - 仅软件包列表 + 配置备份"
+
+msgid "Find anything from pacman, AUR, Flatpak and npm"
+msgstr "从 pacman、AUR、Flatpak 和 npm 找到任何内容"
+
+msgid "Find apps in large libraries fast"
+msgstr "在大型库中快速查找应用"
+
+msgid "Flatpak sandboxed · npm user mode."
+msgstr "Flatpak 沙盒 · npm 用户模式。"
+
+msgid "Follow container output and resource usage"
+msgstr "跟踪容器输出和资源使用"
+
+msgid "Found {n} corrupted archive(s):\n{list}"
+msgstr "发现 {n} 个损坏的存档：\n{list}"
+
+msgid "Founder · Lead Developer"
+msgstr "创始人 · 首席开发者"
+
+msgid "Fri"
+msgstr "周五"
+
+msgid "Full inventory"
+msgstr "完整清单"
+
+msgid "GUI Framework"
+msgstr "GUI 框架"
+
+msgid "GUI sudo prompt (SUDO_ASKPASS) — never stored."
+msgstr "GUI sudo 提示（SUDO_ASKPASS）— 永不存储。"
+
+msgid "General"
+msgstr "常规"
+
+msgid "Generate"
+msgstr "生成"
+
+msgid "Generate codes others import instantly"
+msgstr "生成其他人可即时导入的代码"
+
+msgid "Getting Started"
+msgstr "入门指南"
+
+msgid "Git"
+msgstr "Git"
+
+msgid "Git Projects"
+msgstr "Git 项目"
+
+msgid "Git Repositories"
+msgstr "Git 仓库"
+
+msgid "Glow border around the window"
+msgstr "窗口周围的光晕边框"
+
+msgid "Good afternoon"
+msgstr "下午好"
+
+msgid "Good evening"
+msgstr "晚上好"
+
+msgid "Good morning"
+msgstr "早上好"
+
+msgid "Grid View"
+msgstr "网格视图"
+
+msgid "Grid or list view"
+msgstr "网格或列表视图"
+
+msgid "Grid or table view"
+msgstr "网格或表格视图"
+
+msgid "Group packages into shareable collections and rebuild setups anywhere."
+msgstr "将软件包分组为可共享的集合，并在任何地方重建配置。"
+
+msgid "Guest"
+msgstr "访客"
+
+msgid "HABITS"
+msgstr "习惯"
+
+msgid "HOW IT WORKS"
+msgstr "工作原理"
+
+msgid "HTTP"
+msgstr "HTTP"
+
+msgid "HTTPS"
+msgstr "HTTPS"
+
+msgid "Healthy-system checklist"
+msgstr "系统健康检查清单"
+
+msgid "Help & About"
+msgstr "帮助与关于"
+
+msgid "Helper: auto — yay, paru, trizen, pikaur (General)."
+msgstr "助手：auto — yay、paru、trizen、pikaur（常规）。"
+
+msgid "Here's what's new in this update"
+msgstr "这是此更新中的新内容"
+
+msgid "Hero search"
+msgstr "主搜索"
+
+msgid "Hide Console"
+msgstr "隐藏控制台"
+
+msgid "Hide installed packages"
+msgstr "隐藏已安装的软件包"
+
+msgid "High signal"
+msgstr "高信号"
+
+msgid "Hold package"
+msgstr "保持软件包"
+
+msgid "Home"
+msgstr "首页"
+
+msgid "Host:"
+msgstr "主机："
+
+msgid "I understand — Update Selection"
+msgstr "我理解 — 更新所选"
+
+msgid "ID"
+msgstr "ID"
+
+msgid "INFO"
+msgstr "信息"
+
+msgid "ITEMS"
+msgstr "项目"
+
+msgid "Idle"
+msgstr "空闲"
+
+msgid "Ignore Selected"
+msgstr "忽略所选"
+
+msgid "Ignore update"
+msgstr "忽略更新"
+
+msgid "Ignore updates"
+msgstr "忽略更新"
+
+msgid "Ignore updates (IgnorePkg)"
+msgstr "忽略更新（IgnorePkg）"
+
+msgid "Image manager"
+msgstr "镜像管理器"
+
+msgid "Images"
+msgstr "镜像"
+
+msgid "Import"
+msgstr "导入"
+
+msgid "Import & export"
+msgstr "导入与导出"
+
+msgid "Import AppImages either way"
+msgstr "以任意方式导入 AppImages"
+
+msgid "Import Code"
+msgstr "导入代码"
+
+msgid "Import Settings"
+msgstr "导入设置"
+
+msgid "Improvements"
+msgstr "改进"
+
+msgid "In Bundles, press Sync to upload the active bundle"
+msgstr "在“捆绑包”中，按“同步”以上传当前捆绑包"
+
+msgid "In Home, tick packages and press Add to Bundle — items join the active bundle (switch it in the sidebar here first)"
+msgstr "在“首页”勾选软件包并按“加入捆绑包” — 项目会加入当前捆绑包（请先在此处的侧边栏中切换）"
+
+msgid "In-app toast messages"
+msgstr "应用内通知消息"
+
+msgid "Include Local source (custom scripts)"
+msgstr "包含本地源（自定义脚本）"
+
+msgid "Inspect any package before installing"
+msgstr "安装前检查任意软件包"
+
+msgid "Install"
+msgstr "安装"
+
+msgid "Install All Missing"
+msgstr "安装所有缺失项"
+
+msgid "Install Bundle"
+msgstr "安装捆绑包"
+
+msgid "Install Bundle sets up everything offline, grouped by source"
+msgstr "“安装捆绑包”会按来源分组离线配置所有内容"
+
+msgid "Install Local Pkg"
+msgstr "安装本地软件包"
+
+msgid "Install Package"
+msgstr "安装软件包"
+
+msgid "Install Packages with Sudo"
+msgstr "使用 sudo 安装软件包"
+
+msgid "Install Selected"
+msgstr "安装所选"
+
+msgid "Install Selected installs them immediately, grouped by source"
+msgstr "“安装所选”会按来源分组立即安装它们"
+
+msgid "Install and launch extensions like BleachBit and Timeshift"
+msgstr "安装并启动如 BleachBit 和 Timeshift 之类的扩展"
+
+msgid "Install and manage AppImage applications"
+msgstr "安装和管理 AppImage 应用程序"
+
+msgid "Install failed"
+msgstr "安装失败"
+
+msgid "Install output appears here — press Install to begin"
+msgstr "安装输出将显示在此处 — 按“安装”开始"
+
+msgid "Install partially completed"
+msgstr "安装部分完成"
+
+msgid "Install with Sudo Privileges"
+msgstr "使用 sudo 权限安装"
+
+msgid "Install, open or uninstall each entry"
+msgstr "安装、打开或卸载每个条目"
+
+msgid "Installation cancelled"
+msgstr "安装已取消"
+
+msgid "Installation complete."
+msgstr "安装完成。"
+
+msgid "Installation failed"
+msgstr "安装失败"
+
+msgid "Installed"
+msgstr "已安装"
+
+msgid "Installed First"
+msgstr "先安装的"
+
+msgid "Installed Packages"
+msgstr "已安装软件包"
+
+msgid "Installed count, pending updates, source totals"
+msgstr "已安装数、待处理更新、来源总数"
+
+msgid "Installing {names}… watch output below"
+msgstr "正在安装 {names}… 请观察下方输出"
+
+msgid "Installing…"
+msgstr "正在安装…"
+
+msgid "Instant theming"
+msgstr "即时主题"
+
+msgid "Internet connection is available again."
+msgstr "互联网连接已恢复。"
+
+msgid "Keep Arch rolling with fast, controlled system updates."
+msgstr "通过快速、可控的系统更新让 Arch 保持滚动。"
+
+msgid "Keep last:"
+msgstr "保留最近："
+
+msgid "Keep projects current and compiled"
+msgstr "保持项目最新并已编译"
+
+msgid "Keep your local AppImage library tidy and up to date."
+msgstr "让你的本地 AppImage 库保持整洁和最新。"
+
+msgid "Keep your system tidy: orphans, leftover configs, and news"
+msgstr "保持系统整洁：孤立包、遗留配置和新闻"
+
+msgid "Language / Culture:"
+msgstr "语言 / 文化："
+
+msgid "Language, AUR helper, paths, settings transfer"
+msgstr "语言、AUR 助手、路径、设置迁移"
+
+msgid "Large — 14 px"
+msgstr "大 — 14 像素"
+
+msgid "Last Updated"
+msgstr "最后更新"
+
+msgid "Latest from archlinux.org"
+msgstr "来自 archlinux.org 的最新内容"
+
+msgid "Latest installs and upgrades at a glance"
+msgstr "最新安装和升级一览"
+
+msgid "Launch"
+msgstr "启动"
+
+msgid "Launch containers from any image"
+msgstr "从任意镜像启动容器"
+
+msgid "License"
+msgstr "许可证"
+
+msgid "Lifecycle control"
+msgstr "生命周期控制"
+
+msgid "List Backups"
+msgstr "列出备份"
+
+msgid "List View"
+msgstr "列表视图"
+
+msgid "Live logs"
+msgstr "实时日志"
+
+msgid "Live results across every source as you type"
+msgstr "输入时来自每个来源的实时结果"
+
+msgid "Load More"
+msgstr "加载更多"
+
+msgid "Load More ({remaining} remaining)"
+msgstr "加载更多（剩余 {remaining}）"
+
+msgid "Load More Packages"
+msgstr "加载更多软件包"
+
+msgid "Loading packages…"
+msgstr "正在加载软件包…"
+
+msgid "Loading plugins…"
+msgstr "正在加载插件…"
+
+msgid "Loading updates…"
+msgstr "正在加载更新…"
+
+msgid "Local images"
+msgstr "本地镜像"
+
+msgid "Log File"
+msgstr "日志文件"
+
+msgid "Log Files (*.log *.txt);;All Files (*)"
+msgstr "日志文件 (*.log *.txt);;所有文件 (*)"
+
+msgid "Log file path:"
+msgstr "日志文件路径："
+
+msgid "Log level:"
+msgstr "日志级别："
+
+msgid "Logging"
+msgstr "日志记录"
+
+msgid "Low signal"
+msgstr "低信号"
+
+msgid "MB"
+msgstr "MB"
+
+msgid "Maintenance"
+msgstr "维护"
+
+msgid "Maintenance tools"
+msgstr "维护工具"
+
+msgid "Make new bundles anytime with the + button beside BUNDLES"
+msgstr "随时使用 BUNDLES 旁的 + 按钮创建新捆绑包"
+
+msgid "Manage .pacnew"
+msgstr "管理 .pacnew"
+
+msgid "Manage AppImage applications"
+msgstr "管理 AppImage 应用程序"
+
+msgid "Manage Bundles"
+msgstr "管理捆绑包"
+
+msgid "Manage Bundles in the menu jumps to your local collections"
+msgstr "菜单中的“管理捆绑包”会跳转到你的本地集合"
+
+msgid "Manage Cloud Bundles"
+msgstr "管理云端捆绑包"
+
+msgid "Manage Ignored"
+msgstr "管理已忽略项"
+
+msgid "Manage automatic updates and system snapshots"
+msgstr "管理自动更新和系统快照"
+
+msgid "Manage containers, images, and Docker resources"
+msgstr "管理容器、镜像和 Docker 资源"
+
+msgid "Manage containers, images, volumes and networks without the terminal."
+msgstr "无需终端即可管理容器、镜像、卷和网络。"
+
+msgid "Manage package sources and extensions"
+msgstr "管理软件包来源和扩展"
+
+msgid "Mark as dependency"
+msgstr "标记为依赖项"
+
+msgid "Mark as explicitly installed"
+msgstr "标记为显式安装"
+
+msgid "Max log file size:"
+msgstr "日志文件最大大小："
+
+msgid "Maximize"
+msgstr "最大化"
+
+msgid "Medium signal"
+msgstr "中信号"
+
+msgid "Meet and support the community"
+msgstr "认识并支持社区"
+
+msgid "Minimize"
+msgstr "最小化"
+
+msgid "Mon"
+msgstr "周一"
+
+msgid "Move bundles via JSON files"
+msgstr "通过 JSON 文件移动捆绑包"
+
+msgid "Multi-source manager"
+msgstr "多来源管理器"
+
+msgid "Name A-Z"
+msgstr "名称 A-Z"
+
+msgid "Name Z-A"
+msgstr "名称 Z-A"
+
+msgid "Narrow the list by repository"
+msgstr "按仓库缩小列表范围"
+
+msgid "Needs Attention"
+msgstr "需要关注"
+
+msgid "NeoArch Core Architectural Manifesto"
+msgstr "NeoArch 核心架构宣言"
+
+msgid "NeoArch brings every package source and system workflow on Arch Linux together in one fast, friendly interface."
+msgstr "NeoArch 将 Arch Linux 上的每个软件包来源和系统工作流汇集到一个快速友好的界面中。"
+
+msgid "NeoArch is free, open-source and developed independently by one person. If it saves you time, consider supporting its continued development."
+msgstr "NeoArch 是免费、开源的，由一个人独立开发。如果它为你节省了时间，请考虑支持它的持续开发。"
+
+msgid "NeoArch warns “full system upgrade recommended”, then lets you proceed."
+msgstr "NeoArch 会警告“建议进行完整的系统升级”，然后允许你继续。"
+
+msgid "NeoArch {version} is available"
+msgstr "NeoArch {version} 已可用"
+
+msgid "NeoArch {version} ·"
+msgstr "NeoArch {version} ·"
+
+msgid "Networks"
+msgstr "网络"
+
+msgid "New Features"
+msgstr "新功能"
+
+msgid "New Version"
+msgstr "新版本"
+
+msgid "Newest"
+msgstr "最新"
+
+msgid "Next: {nxt}"
+msgstr "下一步：{nxt}"
+
+msgid "No AUR helper detected"
+msgstr "未检测到 AUR 助手"
+
+msgid "No AppImages yet"
+msgstr "还没有 AppImages"
+
+msgid "No Git projects yet"
+msgstr "还没有 Git 项目"
+
+msgid "No Selection"
+msgstr "未选择"
+
+msgid "No containers yet"
+msgstr "还没有容器"
+
+msgid "No corrupted package archives found."
+msgstr "未找到损坏的软件包存档。"
+
+msgid "No description available."
+msgstr "没有可用描述。"
+
+msgid "No installed packages"
+msgstr "没有已安装的软件包"
+
+msgid "No internet connection"
+msgstr "无互联网连接"
+
+msgid "No packages found matching '{query}'."
+msgstr "未找到与“{query}”匹配的软件包。"
+
+msgid "No packages found matching '{q}'."
+msgstr "未找到与“{q}”匹配的软件包。"
+
+msgid "No packages found. Try a different search."
+msgstr "未找到软件包。请尝试其他搜索。"
+
+msgid "No packages in bundle"
+msgstr "捆绑包中没有软件包"
+
+msgid "No recent builds"
+msgstr "没有最近的构建"
+
+msgid "No recent package activity found"
+msgstr "未找到最近的软件包活动"
+
+msgid "No results found"
+msgstr "未找到结果"
+
+msgid "No run scheduled (pick at least one day)"
+msgstr "未安排运行（请至少选择一天）"
+
+msgid "No signal"
+msgstr "无信号"
+
+msgid "No updates found matching '{q}'."
+msgstr "未找到与“{q}”匹配的更新。"
+
+msgid "None (direct connection)"
+msgstr "无（直接连接）"
+
+msgid "Not Installed First"
+msgstr "未安装的优先"
+
+msgid "Nothing depends on this package (it is not needed by anything installed)."
+msgstr "没有任何软件包依赖此包（已安装的内容都不需要它）。"
+
+msgid "Nothing starts until you confirm — never silently."
+msgstr "在你确认之前不会启动任何内容 — 绝不会静默进行。"
+
+msgid "Nothing to purge (or failed)."
+msgstr "没有要清除的内容（或已失败）。"
+
+msgid "Notification Channels"
+msgstr "通知频道"
+
+msgid "Notifications"
+msgstr "通知"
+
+msgid "OAuth tokens cached with an expiry."
+msgstr "OAuth 令牌已带过期时间缓存。"
+
+msgid "OK"
+msgstr "确定"
+
+msgid "OK (bash resolved)"
+msgstr "确定（已解析 bash）"
+
+msgid "Off"
+msgstr "关闭"
+
+msgid "Official: core / extra / multilib via pacman."
+msgstr "官方：core / extra / multilib（通过 pacman）。"
+
+msgid "Old cached versions removed."
+msgstr "旧的缓存版本已移除。"
+
+msgid "One-click install"
+msgstr "一键安装"
+
+msgid "One-click states"
+msgstr "一键状态"
+
+msgid "Open"
+msgstr "打开"
+
+msgid "Open About from the bottom of the sidebar — if anything is missing, its icon turns into a warning bell"
+msgstr "从侧边栏底部打开“关于” — 如果有任何缺失，其图标会变成警告铃"
+
+msgid "Open Bundles — your first visit creates My Bundle automatically"
+msgstr "打开“捆绑包” — 首次访问会自动创建“我的捆绑包”"
+
+msgid "Open Folder"
+msgstr "打开文件夹"
+
+msgid "Open Shell"
+msgstr "打开终端"
+
+msgid "Open Source"
+msgstr "开源"
+
+msgid "Open aur.archlinux.org ↗"
+msgstr "打开 aur.archlinux.org ↗"
+
+msgid "Open the PKGBUILD recipe this package builds from"
+msgstr "打开此软件包所构建的 PKGBUILD 配方"
+
+msgid "Open the commit history for this package"
+msgstr "打开此软件包的提交历史"
+
+msgid "Open, update or remove entries"
+msgstr "打开、更新或移除条目"
+
+msgid "Operation"
+msgstr "操作"
+
+msgid "Operation complete."
+msgstr "操作完成。"
+
+msgid "Or press Add to Bundle to save them into the active bundle"
+msgstr "或按“加入捆绑包”将它们保存到当前捆绑包中"
+
+msgid "Organise projects your way"
+msgstr "以自己的方式组织项目"
+
+msgid "Orphaned Packages"
+msgstr "孤立软件包"
+
+msgid "Orphans, .pacnew, cache hygiene, Arch news"
+msgstr "孤立包、.pacnew、缓存卫生、Arch 新闻"
+
+msgid "Other Containers ({count})"
+msgstr "其他容器 ({count})"
+
+msgid "Overview"
+msgstr "总览"
+
+msgid "PROTECTED"
+msgstr "受保护"
+
+msgid "Package"
+msgstr "软件包"
+
+msgid "Package Cache"
+msgstr "软件包缓存"
+
+msgid "Package Management"
+msgstr "软件包管理"
+
+msgid "Package Manager Busy"
+msgstr "软件包管理器正忙"
+
+msgid "Package Name"
+msgstr "软件包名称"
+
+msgid "Package Stats"
+msgstr "软件包统计"
+
+msgid "Package count and version changes are shown first."
+msgstr "首先显示软件包数量和版本变化。"
+
+msgid "Package details"
+msgstr "软件包详情"
+
+msgid "Package install / uninstall complete"
+msgstr "软件包安装 / 卸载完成"
+
+msgid "Package sources"
+msgstr "软件包来源"
+
+msgid "Packages installed as dependencies that nothing needs anymore."
+msgstr "已作为依赖安装、但不再被任何软件需要的软件包。"
+
+msgid "Packages installed on this system will appear here"
+msgstr "已安装在这个系统上的软件包将显示在这里"
+
+msgid "Packages to update: {n}"
+msgstr "要更新的软件包：{n}"
+
+msgid "Packages, Git, Docker, AppImages and bundles in one app"
+msgstr "一个应用搞定软件包、Git、Docker、AppImages 和捆绑包"
+
+msgid "Partial Update Warning"
+msgstr "部分更新警告"
+
+msgid "Partial upgrades"
+msgstr "部分升级"
+
+msgid "Paste share code..."
+msgstr "粘贴分享代码..."
+
+msgid "Pause All"
+msgstr "全部暂停"
+
+msgid "Pending counts stay visible in the sidebar"
+msgstr "待处理数量在侧边栏中保持可见"
+
+msgid "Pick exactly which packages to upgrade"
+msgstr "精确选择要升级的软件包"
+
+msgid "Pin packages you never want upgraded"
+msgstr "固定你永远不想升级的软件包"
+
+msgid "Platform"
+msgstr "平台"
+
+msgid "Play sound on events"
+msgstr "事件时播放声音"
+
+msgid "Please select packages to install."
+msgstr "请选择要安装的软件包。"
+
+msgid "Please wait, fetching package data"
+msgstr "请稍候，正在获取软件包数据"
+
+msgid "Plugin"
+msgstr "插件"
+
+msgid "Plugin catalog"
+msgstr "插件目录"
+
+msgid "Port:"
+msgstr "端口："
+
+msgid "Portable  ·  Desktop Integration  ·  Updates  ·  Easy Removal"
+msgstr "便携  ·  桌面集成  ·  更新  ·  轻松移除"
+
+msgid "Prefer full upgrades — keep IgnorePkg minimal."
+msgstr "优先完整升级 — 保持 IgnorePkg 最少。"
+
+msgid "Prefer official repos over AUR when both exist."
+msgstr "同时存在时，优先使用官方仓库而非 AUR。"
+
+msgid "Press Install on any row, or Install All Missing once"
+msgstr "按任意行的“安装”，或一键“安装所有缺失项”"
+
+msgid "Processing..."
+msgstr "处理中..."
+
+msgid "Projects to update"
+msgstr "要更新的项目"
+
+msgid "Prompt only, never stored"
+msgstr "仅提示，绝不存储"
+
+msgid "Proxy"
+msgstr "代理"
+
+msgid "Proxy & Network"
+msgstr "代理与网络"
+
+msgid "Proxy type:"
+msgstr "代理类型："
+
+msgid "Prune Old"
+msgstr "清理旧项"
+
+msgid "Pull"
+msgstr "拉取"
+
+msgid "Pull & build"
+msgstr "拉取并构建"
+
+msgid "Pull / Update"
+msgstr "拉取 / 更新"
+
+msgid "Pull Docker Image"
+msgstr "拉取 Docker 镜像"
+
+msgid "Pull Image"
+msgstr "拉取镜像"
+
+msgid "Pull images and clear unused ones"
+msgstr "拉取镜像并清理不用的镜像"
+
+msgid "Pull, run, and manage Docker containers"
+msgstr "拉取、运行和管理 Docker 容器"
+
+msgid "Purge Old Cache"
+msgstr "清除旧缓存"
+
+msgid "Python"
+msgstr "Python"
+
+msgid "Qt"
+msgstr "Qt"
+
+msgid "Queue several plugins together"
+msgstr "将多个插件一起排队"
+
+msgid "Quick Actions"
+msgstr "快速操作"
+
+msgid "Quick actions"
+msgstr "快速操作"
+
+msgid "Quick search…"
+msgstr "快速搜索…"
+
+msgid "Quick view of your machine profile"
+msgstr "快速查看你的机器配置"
+
+msgid "Rate Limiting"
+msgstr "速率限制"
+
+msgid "Re-check for updates every:"
+msgstr "每隔多久重新检查更新："
+
+msgid "Read PKGBUILDs before installing AUR packages."
+msgstr "安装 AUR 软件包前请阅读 PKGBUILD。"
+
+msgid "Ready to update"
+msgstr "准备好更新"
+
+msgid "Reason"
+msgstr "原因"
+
+msgid "Recent Activity"
+msgstr "最近活动"
+
+msgid "Recent activity"
+msgstr "最近活动"
+
+msgid "Refresh"
+msgstr "刷新"
+
+msgid "Refresh Databases"
+msgstr "刷新数据库"
+
+msgid "Release Notes"
+msgstr "发行说明"
+
+msgid "Release notes"
+msgstr "发行说明"
+
+msgid "Releases"
+msgstr "版本"
+
+msgid "Remove"
+msgstr "移除"
+
+msgid "Remove Orphans"
+msgstr "移除孤立包"
+
+msgid "Remove Plugins"
+msgstr "移除插件"
+
+msgid "Remove from Bundle"
+msgstr "从捆绑包中移除"
+
+msgid "Remove orphans, manage .pacnew files, purge cache"
+msgstr "移除孤立包、管理 .pacnew 文件、清除缓存"
+
+msgid "Remove several selected packages safely"
+msgstr "安全移除多个选定软件包"
+
+msgid "Rename"
+msgstr "重命名"
+
+msgid "Report a Bug ↗"
+msgstr "报告 Bug ↗"
+
+msgid "Repository Storage"
+msgstr "仓库存储"
+
+msgid "Request timeout:"
+msgstr "请求超时："
+
+msgid "Required By"
+msgstr "被以下依赖"
+
+msgid "Requires root; writes /etc/pacman.conf"
+msgstr "需要 root；将写入 /etc/pacman.conf"
+
+msgid "Requires the external 'timeshift' tool. Optional - the built-in backup above is recommended."
+msgstr "需要外部 'timeshift' 工具。可选 — 建议使用上方内置的备份。"
+
+msgid "Resource Usage"
+msgstr "资源使用"
+
+msgid "Restart"
+msgstr "重启"
+
+msgid "Restore"
+msgstr "还原"
+
+msgid "Restore Backup"
+msgstr "还原备份"
+
+msgid "Restore or delete bundles stored in your cloud account."
+msgstr "还原或删除存储在云端账户中的捆绑包。"
+
+msgid "Results"
+msgstr "结果"
+
+msgid "Revert to Snapshot"
+msgstr "还原到快照"
+
+msgid "Review recent builds per project"
+msgstr "按项目查看最近的构建"
+
+msgid "Rolling release — packages expect to update together."
+msgstr "滚动发行 — 软件包期望一起更新。"
+
+msgid "Root Filesystem"
+msgstr "根文件系统"
+
+msgid "Round — 8 px"
+msgstr "圆角 — 8 像素"
+
+msgid "Run"
+msgstr "运行"
+
+msgid "Run Diagnostics"
+msgstr "运行诊断"
+
+msgid "Run a Docker image to create your first container."
+msgstr "运行一个 Docker 镜像以创建你的第一个容器。"
+
+msgid "Run container"
+msgstr "运行容器"
+
+msgid "Run the update check automatically on a weekly schedule (evaluated by the CLI/service layer; applies when the app is running)."
+msgstr "按每周计划自动运行更新检查（由 CLI/服务层评估；在应用运行时生效）。"
+
+msgid "Running"
+msgstr "运行中"
+
+msgid "Running Containers ({count})"
+msgstr "运行中的容器 ({count})"
+
+msgid "Running diagnostics…"
+msgstr "正在运行诊断…"
+
+msgid "Runtime"
+msgstr "运行时"
+
+msgid "SAFE"
+msgstr "安全"
+
+msgid "SAFETY OVERVIEW"
+msgstr "安全总览"
+
+msgid "SETTINGS"
+msgstr "设置"
+
+msgid "SIGN-IN"
+msgstr "登录"
+
+msgid "SOCKS5"
+msgstr "SOCKS5"
+
+msgid "SOURCES"
+msgstr "来源"
+
+msgid "Safe cancellations"
+msgstr "安全取消"
+
+msgid "Sat"
+msgstr "周六"
+
+msgid "Scan cached package archives for corruption before they cause failures."
+msgstr "在损坏造成故障之前扫描缓存的软件包存档。"
+
+msgid "Scan failed: {err}"
+msgstr "扫描失败：{err}"
+
+msgid "Scan for Corrupted Archives"
+msgstr "扫描损坏的存档"
+
+msgid "Scan to buy me a coffee"
+msgstr "扫码请我喝咖啡"
+
+msgid "Schedule disabled"
+msgstr "计划已禁用"
+
+msgid "Scheduled Checks"
+msgstr "计划检查"
+
+msgid "Schedules, pre-update backups, Timeshift"
+msgstr "计划、更新前备份、Timeshift"
+
+msgid "Search"
+msgstr "搜索"
+
+msgid "Search & sort"
+msgstr "搜索与排序"
+
+msgid "Search Mode"
+msgstr "搜索模式"
+
+msgid "Search and discover new packages to install"
+msgstr "搜索并发现要安装的新软件包"
+
+msgid "Search extensions"
+msgstr "搜索扩展"
+
+msgid "Search for packages"
+msgstr "搜索软件包"
+
+msgid "Search packages across pacman, AUR, Flatpak, npm…"
+msgstr "跨 pacman、AUR、Flatpak、npm… 搜索软件包"
+
+msgid "Search pacman, AUR, Flatpak and npm side by side"
+msgstr "并排搜索 pacman、AUR、Flatpak 和 npm"
+
+msgid "Search..."
+msgstr "搜索..."
+
+msgid "Searching official repos and AUR..."
+msgstr "正在搜索官方仓库和 AUR..."
+
+msgid "Searching packages..."
+msgstr "正在搜索软件包..."
+
+msgid "Secure browser-based authentication"
+msgstr "安全的基于浏览器的验证"
+
+msgid "Security"
+msgstr "安全"
+
+msgid "See console output for details."
+msgstr "详情请查看控制台输出。"
+
+msgid "See when an app has a newer release"
+msgstr "查看应用是否有更新版本"
+
+msgid "Select Bundle Autosave Path"
+msgstr "选择捆绑包自动保存路径"
+
+msgid "Select Log File"
+msgstr "选择日志文件"
+
+msgid "Select a backup to restore packages from:"
+msgstr "选择要从中还原软件包的备份："
+
+msgid "Selective updates"
+msgstr "选择性更新"
+
+msgid "Set pacman ParallelDownloads={count}"
+msgstr "设置 pacman ParallelDownloads={count}"
+
+msgid "Set up an entire bundle at once"
+msgstr "一次设置整个捆绑包"
+
+msgid "Settings"
+msgstr "设置"
+
+msgid "Setup Environment"
+msgstr "设置环境"
+
+msgid "Setup failed: {e}"
+msgstr "设置失败：{e}"
+
+msgid "Share Code"
+msgstr "分享代码"
+
+msgid "Share codes"
+msgstr "分享代码"
+
+msgid "Share codes and cloud Sync work once you are signed in"
+msgstr "登录后即可分享代码并使用云端同步"
+
+msgid "Sharp — 4 px"
+msgstr "直角 — 4 像素"
+
+msgid "Show Console"
+msgstr "显示控制台"
+
+msgid "Show News"
+msgstr "显示新闻"
+
+msgid "Show News ({n} new)"
+msgstr "显示新闻（{n} 条新）"
+
+msgid "Show available or installed only"
+msgstr "仅显示可用的或已安装的"
+
+msgid "Sign in to share or sync bundles across devices"
+msgstr "登录以在设备间分享或同步捆绑包"
+
+msgid "Sign in to sync favourites"
+msgstr "登录以同步收藏"
+
+msgid "Sign in to unlock cloud sync across your devices."
+msgstr "登录以解锁跨设备云端同步。"
+
+msgid "Signed in as {name}"
+msgstr "已以 {name} 身份登录"
+
+msgid "Size"
+msgstr "大小"
+
+msgid "Size (Largest)"
+msgstr "大小（最大）"
+
+msgid "Size (Smallest)"
+msgstr "大小（最小）"
+
+msgid "Skip for now"
+msgstr "暂时跳过"
+
+msgid "Software Updates"
+msgstr "软件更新"
+
+msgid "Sort"
+msgstr "排序"
+
+msgid "Sort By"
+msgstr "排序方式"
+
+msgid "Source"
+msgstr "来源"
+
+msgid "Source A-Z"
+msgstr "来源 A-Z"
+
+msgid "Source Z-A"
+msgstr "来源 Z-A"
+
+msgid "Source filters"
+msgstr "来源筛选"
+
+msgid "Sources"
+msgstr "来源"
+
+msgid "Sources & Plugins"
+msgstr "来源与插件"
+
+msgid "Start"
+msgstr "启动"
+
+msgid "Start, stop and remove containers"
+msgstr "启动、停止和移除容器"
+
+msgid "Stat cards"
+msgstr "统计卡片"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Status filters"
+msgstr "状态筛选"
+
+msgid "Stay informed about important announcements before updating."
+msgstr "更新前及时了解重要公告。"
+
+msgid "Stop"
+msgstr "停止"
+
+msgid "Stop running installations anytime"
+msgstr "随时停止正在运行的安装"
+
+msgid "Storage"
+msgstr "存储"
+
+msgid "Storage overview"
+msgstr "存储概览"
+
+msgid "Success"
+msgstr "成功"
+
+msgid "Successful builds"
+msgstr "成功构建"
+
+msgid "Sudo session"
+msgstr "sudo 会话"
+
+msgid "Sun"
+msgstr "周日"
+
+msgid "Support NeoArch"
+msgstr "支持 NeoArch"
+
+msgid "Supports Cargo · CMake · Make · Meson · Go · npm · PKGBUILD"
+msgstr "支持 Cargo · CMake · Make · Meson · Go · npm · PKGBUILD"
+
+msgid "Switch appearance anytime from Settings"
+msgstr "随时从“设置”切换外观"
+
+msgid "Sync favourites"
+msgstr "同步收藏"
+
+msgid "Syncing package databases…"
+msgstr "正在同步软件包数据库…"
+
+msgid "System & Account"
+msgstr "系统与账户"
+
+msgid "System Health"
+msgstr "系统健康"
+
+msgid "System Healthy"
+msgstr "系统健康"
+
+msgid "System Status"
+msgstr "系统状态"
+
+msgid "System info"
+msgstr "系统信息"
+
+msgid "Tap your avatar at the bottom of the left sidebar"
+msgstr "点击左侧边栏底部的头像"
+
+msgid "Test AUR API"
+msgstr "测试 AUR API"
+
+msgid "Testing…"
+msgstr "正在测试…"
+
+msgid "The following components are required for NeoArch to work:\n\n{list}\n\nInstall now?"
+msgstr "以下组件是 NeoArch 运行所必需的：\n\n{list}\n\n立即安装？"
+
+msgid "The operation was cancelled."
+msgstr "操作已取消。"
+
+msgid "The package database is locked. Close other package tools (pacman, pamac, yay/paru) and retry."
+msgstr "软件包数据库已被锁定。请关闭其他软件包工具（pacman、pamac、yay/paru）后重试。"
+
+msgid "The people behind NeoArch and how to support it"
+msgstr "NeoArch 的幕后团队以及如何支持它"
+
+msgid "The red dot clears by itself when every check passes"
+msgstr "当所有检查通过时，红点会自动消失"
+
+msgid "Theme picker applied instantly"
+msgstr "主题选择器立即生效"
+
+msgid "This will install the following packages with elevated privileges:\n\n{package_list}\n\nContinue?"
+msgstr "这将使用提升的权限安装以下软件包：\n\n{package_list}\n\n继续？"
+
+msgid "Thu"
+msgstr "周四"
+
+msgid "Tick one or many packages right in the results table"
+msgstr "直接在结果表格中勾选一个或多个软件包"
+
+msgid "Time:"
+msgstr "时间："
+
+msgid "Timeouts"
+msgstr "超时"
+
+msgid "Timeouts, SSL verify, parallel downloads"
+msgstr "超时、SSL 验证、并行下载"
+
+msgid "Timeshift (advanced)"
+msgstr "Timeshift（高级）"
+
+msgid "Toggle how search results are shown"
+msgstr "切换搜索结果的显示方式"
+
+msgid "Tools & Workflows"
+msgstr "工具与工作流"
+
+msgid "Total AppImages"
+msgstr "AppImages 总数"
+
+msgid "Total Projects"
+msgstr "项目总数"
+
+msgid "Total Size"
+msgstr "总大小"
+
+msgid "Total commits"
+msgstr "总提交数"
+
+msgid "Try a different search term"
+msgstr "尝试不同的搜索词"
+
+msgid "Tue"
+msgstr "周二"
+
+msgid "Type A-Z"
+msgstr "类型 A-Z"
+
+msgid "Type Z-A"
+msgstr "类型 Z-A"
+
+msgid "Type what you are looking for — results stream in from every source"
+msgstr "输入你正在寻找的内容 — 结果会从每个来源流入"
+
+msgid "Unhold package"
+msgstr "取消保持软件包"
+
+msgid "Unified workflows"
+msgstr "统一工作流"
+
+msgid "Unignore updates (IgnorePkg)"
+msgstr "取消忽略更新（IgnorePkg）"
+
+msgid "Uninstall"
+msgstr "卸载"
+
+msgid "Uninstall Package"
+msgstr "卸载软件包"
+
+msgid "Uninstall Selected"
+msgstr "卸载所选"
+
+msgid "Uninstall complete."
+msgstr "卸载完成。"
+
+msgid "Uninstalling…"
+msgstr "正在卸载…"
+
+msgid "Unique sources"
+msgstr "独立来源"
+
+msgid "Unreachable"
+msgstr "不可达"
+
+msgid "Upcoming release"
+msgstr "即将发布的版本"
+
+msgid "Update"
+msgstr "更新"
+
+msgid "Update All"
+msgstr "全部更新"
+
+msgid "Update All, refresh databases, clean cache"
+msgstr "全部更新、刷新数据库、清理缓存"
+
+msgid "Update Package"
+msgstr "更新软件包"
+
+msgid "Update Review"
+msgstr "更新检查"
+
+msgid "Update Selected"
+msgstr "更新所选"
+
+msgid "Update Type"
+msgstr "更新类型"
+
+msgid "Update badges"
+msgstr "更新徽标"
+
+msgid "Update checks"
+msgstr "更新检查"
+
+msgid "Update complete."
+msgstr "更新完成。"
+
+msgid "Update interval (days):"
+msgstr "更新间隔（天）："
+
+msgid "Update partially completed"
+msgstr "更新部分完成"
+
+msgid "Update review"
+msgstr "更新检查"
+
+msgid "Updates"
+msgstr "更新"
+
+msgid "Updates ({n})"
+msgstr "更新 ({n})"
+
+msgid "Updates Available"
+msgstr "有可用更新"
+
+msgid "Updates available"
+msgstr "有可用更新"
+
+msgid "Updates build one at a time; a failure never aborts the rest."
+msgstr "更新会逐个构建；一次失败绝不会中止其余部分。"
+
+msgid "Updates will appear here automatically when available"
+msgstr "有更新时会自动显示在这里"
+
+msgid "Updating a selection can desync libraries from their apps."
+msgstr "更新部分软件包可能使库与其应用不同步。"
+
+msgid "Updating a selection only"
+msgstr "仅更新所选部分"
+
+msgid "Use Cloud Bundles from the same menu to restore backups"
+msgstr "使用同一菜单中的“云端捆绑包”还原备份"
+
+msgid "Use npm user mode for global installs"
+msgstr "全局安装使用 npm 用户模式"
+
+msgid "User"
+msgstr "用户"
+
+msgid "User Account"
+msgstr "用户账户"
+
+msgid "Verifies reachability of the AUR RPC endpoint used to resolve packages from the AUR source."
+msgstr "验证用于从 AUR 来源解析软件包的 AUR RPC 端点是否可达。"
+
+msgid "Verify SSL certificates"
+msgstr "验证 SSL 证书"
+
+msgid "Version"
+msgstr "版本"
+
+msgid "Version (Latest)"
+msgstr "版本（最新）"
+
+msgid "Version (Oldest)"
+msgstr "版本（最早）"
+
+msgid "Version history and changes"
+msgstr "版本历史和变更"
+
+msgid "Version information, links, and system details"
+msgstr "版本信息、链接和系统详情"
+
+msgid "Version {version}"
+msgstr "版本 {version}"
+
+msgid "Version, edition and project links"
+msgstr "版本、版次和项目链接"
+
+msgid "View All Releases on GitHub ↗"
+msgstr "在 GitHub 上查看所有版本 ↗"
+
+msgid "View Changes"
+msgstr "查看变更"
+
+msgid "View Details"
+msgstr "查看详情"
+
+msgid "View Logs"
+msgstr "查看日志"
+
+msgid "View PKGBUILD"
+msgstr "查看 PKGBUILD"
+
+msgid "View in browser"
+msgstr "在浏览器中查看"
+
+msgid "Volumes"
+msgstr "卷"
+
+msgid "Volumes & networks"
+msgstr "卷与网络"
+
+msgid "WARNED · NOT BLOCKED"
+msgstr "已警告 · 未阻止"
+
+msgid "WARNING"
+msgstr "警告"
+
+msgid "WHAT YOU CAN DO"
+msgstr "你可以做什么"
+
+msgid "Want to improve NeoArch?"
+msgstr "想改进 NeoArch 吗？"
+
+msgid "Warned, not blocked"
+msgstr "已警告，未阻止"
+
+msgid "Wed"
+msgstr "周三"
+
+msgid "Welcome"
+msgstr "欢迎"
+
+msgid "What NeoArch can reach, what it runs, and what it asks before it acts"
+msgstr "NeoArch 能访问什么、运行什么，以及在行动前会征求什么"
+
+msgid "What's New"
+msgstr "新内容"
+
+msgid "What's New in NeoArch {version}"
+msgstr "NeoArch {version} 中的新内容"
+
+msgid "When packages ship new configs, the old one is kept as .pacnew."
+msgstr "当软件包附带新配置时，旧配置会以 .pacnew 形式保留。"
+
+msgid "Window corner radius"
+msgstr "窗口圆角半径"
+
+msgid "Window frame"
+msgstr "窗口框架"
+
+msgid "You appear to be offline. Search results may be incomplete and installations may fail."
+msgstr "你似乎处于离线状态。搜索结果可能不完整，安装可能失败。"
+
+msgid "You picked {selected} of {available} available updates. On Arch, packages are built against the latest libraries — a partial upgrade can desync libraries from their apps and break your system.\n\nIt’s recommended to do a full system upgrade instead."
+msgstr "你选择了 {available} 个可用更新中的 {selected} 个。在 Arch 上，软件包是针对最新库构建的 — 部分升级可能使库与其应用不同步并损坏系统。\n\n建议改为进行完整的系统升级。"
+
+msgid "Your Projects"
+msgstr "你的项目"
+
+msgid "Your bundle is empty"
+msgstr "你的捆绑包为空"
+
+msgid "Your starting point — search every source and watch what happens on your system."
+msgstr "你的起点 — 搜索每个来源，观察系统上发生的事情。"
+
+msgid "Your system is up to date"
+msgstr "你的系统是最新的"
+
+msgid "across all sources"
+msgstr "跨所有来源"
+
+msgid "e.g. 127.0.0.1 or proxy.example.com"
+msgstr "例如 127.0.0.1 或 proxy.example.com"
+
+msgid "everything looks good"
+msgstr "一切正常"
+
+msgid "keep your system updated"
+msgstr "保持系统更新"
+
+msgid "not installed"
+msgstr "未安装"
+
+msgid "pacman ParallelDownloads:"
+msgstr "pacman ParallelDownloads："
+
+msgid "sec"
+msgstr "秒"
+
+msgid "seconds"
+msgstr "秒"
+
+msgid "versions per package"
+msgstr "每个软件包的版本"
+
+msgid "{checked} of {total} selected"
+msgstr "已选择 {total} 项中的 {checked} 项"
+
+msgid "{checked} of {total} selected{size}"
+msgstr "已选择 {total} 项中的 {checked} 项{size}"
+
+msgid "{count} missing — {req} required for NeoArch to work"
+msgstr "{count} 项缺失 — NeoArch 运行需要 {req} 项"
+
+msgid "{count} optional component(s) missing — features above will stay hidden until installed"
+msgstr "{count} 个可选组件缺失 — 上方功能在安装前将保持隐藏"
+
+msgid "{count} packages were found, {count} of which match the specified filters{suffix}"
+msgstr "找到 {count} 个软件包，其中 {count} 个匹配指定筛选器{suffix}"
+
+msgid "{count} plugin{s} selected"
+msgstr "已选择 {count} 个插件{s}"
+
+msgid "{edition} Edition"
+msgstr "{edition} 版"
+
+msgid "{issues} issues need resolving"
+msgstr "{issues} 个问题需要解决"
+
+msgid "{issues} item{s} found"
+msgstr "找到 {issues} 个项目{s}"
+
+msgid "{n} application"
+msgstr "{n} 个应用"
+
+msgid "{n} applications"
+msgstr "{n} 个应用"
+
+msgid "{prefix}, {name}!"
+msgstr "{prefix}，{name}！"
+
+msgid "{running} running, {stopped} stopped"
+msgstr "{running} 个运行中，{stopped} 个已停止"
+
+msgid "{shown} of {total} applications"
+msgstr "共 {total} 个应用中的 {shown} 个"
+
+msgid "{total} packages installed"
+msgstr "已安装 {total} 个软件包"
+
+msgid "{total} updates available"
+msgstr "有 {total} 个更新可用"
+
+msgid "“Unified system design is not about hiding complex settings; it is about providing power users with reliable tools that simplify technical friction.”"
+msgstr "“统一的系统设计不是要隐藏复杂的设置；而是为高级用户提供简化技术摩擦的可靠工具。”"
+
+msgid "• {status}"
+msgstr "• {status}"
+
+msgid "↓ {count} commits behind"
+msgstr "落后 ↓ {count} 个提交"
+
+msgid "↗ AUR Package"
+msgstr "↗ AUR 软件包"
+
+msgid "↗ GitHub"
+msgstr "↗ GitHub"
+
+msgid "↗ Repository"
+msgstr "↗ 仓库"
+
+msgid "↗ View Release"
+msgstr "↗ 查看版本"
+
+msgid "↗ Website"
+msgstr "↗ 网站"
+
+msgid "↪  Sign Out"
+msgstr "↪  退出登录"
+
+msgid "↻ Restore"
+msgstr "↻ 还原"
+
+msgid "⇥  Sign In"
+msgstr "⇥  登录"
+
+msgid "◉  Installed"
+msgstr "◉  已安装"
+
+msgid "◉  Update Available"
+msgstr "◉  有可用更新"
+
+msgid "○  Not Installed"
+msgstr "○  未安装"
+
+msgid "● Clean"
+msgstr "● 干净"
+
+msgid "● Modified ({count})"
+msgstr "● 已修改 ({count})"
+
+msgid "☁  Cloud Bundles"
+msgstr "☁  云端捆绑包"
+
+msgid "☁ Sync"
+msgstr "☁ 同步"
+
+msgid "♥  GitHub Sponsors"
+msgstr "♥  GitHub 赞助者"
+
+msgid "⚙  Account Settings"
+msgstr "⚙  账户设置"
+
+msgid "⚠ Simulated test mode (NEOARCH_FAKE_MISSING) — these rows never clear; unset the env var for real checks"
+msgstr "⚠ 模拟测试模式（NEOARCH_FAKE_MISSING）— 这些行永远不会清除；取消设置该环境变量以进行真实检查"
+
+msgid "✓  Up to date"
+msgstr "✓  最新"
+
+msgid "✗ Cancelled — authenticate to enable installs"
+msgstr "✗ 已取消 — 请验证以启用安装"

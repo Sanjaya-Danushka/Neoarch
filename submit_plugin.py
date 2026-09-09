@@ -4,19 +4,62 @@ NeoArch Plugin Submission Tool
 Helps users prepare and submit plugins to the community repository
 """
 
-import os
+import ast
 import json
 import shutil
 from pathlib import Path
-from stores.plugin_store import PluginStore
+
+
+def _validate_plugin(path):
+    """Validate a plugin file and extract its metadata.
+
+    A plugin must be a valid Python module exposing at least one NeoArch
+    plugin hook (``on_startup``, ``on_tick``, or ``on_view_changed``).
+    Metadata is read from the module docstring (``Author:`` / ``Version:``
+    / a short description) or module-level NAME / AUTHOR / VERSION /
+    DESCRIPTION constants.
+    """
+    path = Path(path)
+    try:
+        tree = ast.parse(open(path, encoding="utf-8").read(), filename=str(path))
+    except SyntaxError as e:
+        return {"error": f"syntax error: {e}"}
+
+    hooks = [n.name for n in tree.body
+             if isinstance(n, ast.FunctionDef)
+             and n.name in ("on_startup", "on_tick", "on_view_changed")]
+    if not hooks:
+        return {"error": "no recognized plugin hooks "
+                         "(on_startup/on_tick/on_view_changed) found"}
+
+    meta = {"name": path.stem.replace("_", " ").title(),
+            "author": "Unknown", "version": "1.0.0",
+            "description": "No description provided"}
+
+    docstring = ast.get_docstring(tree) or ""
+    for line in docstring.splitlines():
+        line = line.strip()
+        if line.lower().startswith(("author:", "version:", "description:")):
+            key, _, value = line.partition(":")
+            meta[key.lower()] = value.strip()
+
+    for node in tree.body:
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and isinstance(node.value, ast.Constant)
+                and isinstance(node.value.value, str)):
+            key = node.targets[0].id.upper()
+            if key in ("NAME", "AUTHOR", "VERSION", "DESCRIPTION"):
+                meta[key.lower()] = node.value.value
+
+    meta["hooks"] = sorted(hooks)
+    return meta
+
 
 def submit_plugin():
     """Interactive plugin submission workflow"""
     print("🚀 NeoArch Plugin Submission Tool")
     print("=" * 40)
-
-    # Initialize plugin store
-    store = PluginStore()
 
     # Get plugin path from user
     while True:
@@ -37,7 +80,7 @@ def submit_plugin():
 
     # Validate plugin
     print("\n🔍 Validating plugin...")
-    metadata = store.validate_plugin(str(plugin_path))
+    metadata = _validate_plugin(plugin_path)
 
     if 'error' in metadata:
         print(f"❌ Validation failed: {metadata['error']}")
@@ -73,7 +116,7 @@ def submit_plugin():
         'description': description,
         'author': author,
         'version': version,
-        'url': f"https://raw.githubusercontent.com/Sanjaya-Danushka/Aurora/main/community_plugins/{plugin_id}.py",
+        'url': f"https://raw.githubusercontent.com/Sanjaya-Danushka/Neoarch/main/community_plugins/{plugin_id}.py",
         'downloads': 0,
         'last_updated': "2024-01-01",  # Will be updated when merged
         'features': []  # User can add features later
@@ -106,7 +149,7 @@ def submit_plugin():
 
 ## Submission Instructions
 
-1. Fork the [NeoArch repository](https://github.com/Sanjaya-Danushka/Aurora)
+1. Fork the [NeoArch repository](https://github.com/Sanjaya-Danushka/Neoarch)
 2. Copy `{plugin_id}.py` to the `community_plugins/` directory
 3. Update `community_plugins/index.json` with the contents of `submission_info.json`
 4. Submit a pull request
