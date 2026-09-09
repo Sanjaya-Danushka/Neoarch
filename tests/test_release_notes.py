@@ -8,6 +8,7 @@ deterministic and offline-safe.
 import os
 
 from neoarch.backend.services import release_notes as rn
+from neoarch.resources.paths import APP_VERSION
 
 
 def test_version_key_ordering():
@@ -26,8 +27,11 @@ def test_parse_changelog_shapes():
         assert isinstance(block["sections"], dict)
         assert "New Features" in block["sections"]
         assert all(isinstance(v, list) and v for v in block["sections"].values())
-    # File order is newest-first: Unreleased sits right after the intro header.
-    assert blocks[0]["version"].lower() == "unreleased"
+    # Newest-first: the current release header matches the app version,
+    # and subsequent blocks are strictly older.
+    assert blocks[0]["version"] == APP_VERSION
+    keys = [rn.version_key(b["version"]) for b in blocks]
+    assert keys == sorted(keys, reverse=True)
 
 
 def test_whats_new_only_returns_newer_blocks():
