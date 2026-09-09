@@ -18,9 +18,81 @@ from neoarch.backend.package import uninstaller as uninstall_service
 from neoarch.backend.services import ignore as ignore_service
 from neoarch.backend.services.i18n import _
 
+# Per-session cache of fetched+scanned AUR packages so repeated installs of
+# the same package don't re-fetch. {name: Optional[Dict] | None}
+_aur_scan_cache = {}
+
 
 class _OperationsMixin:
     """Mixin providing package operation methods for the main window."""
+
+    def _preflight_aur_scan(self, names):
+        """Fetch + statically scan AUR PKGBUILDs before installation.
+
+        Returns ``{name: [findings]}`` (may contain empty lists). Returns
+        ``None`` if any fetch fails, so callers can degrade to the legacy
+        static notice instead of blocking the install.
+        """
+        from neoarch.backend.services import security_scan
+        from neoarch.backend.services.aur_fetch import fetch_aur_pkgbuild
+
+        result = {}
+        for name in names:
+            if name not in _aur_scan_cache:
+                _aur_scan_cache[name] = fetch_aur_pkgbuild(name)
+            data = _aur_scan_cache[name]
+            if data is None:
+                return None
+            findings = security_scan.scan_pkgbuild(data["pkgbuild"])
+            for scriptlet_name, text in data["scriptlets"].items():
+                findings.extend(security_scan.scan_install_scriptlet(
+                    text, scriptlet_name))
+            result[name] = findings
+        return result
+
+    def _confirm_aur_security(self, aur_pkgs):
+        """Gate AUR installs behind the pre-install security scan.
+
+        Returns True to proceed. On any critical finding the user must
+        explicitly accept the risk; warnings require a plain Continue; a
+        clean scan (or a scan outage) falls back to the legacy notice.
+        """
+        from neoarch.frontend.components.security_check_dialog import (
+            SecurityScanDialog)
+
+        preflight = self._preflight_aur_scan(aur_pkgs)
+        if preflight is not None:
+            all_findings = [f for fs in preflight.values() for f in fs]
+            by_pkg = {n: fs for n, fs in preflight.items() if fs}
+            if all_findings:
+                dialog = SecurityScanDialog(by_pkg, self)
+                return dialog.exec() == SecurityScanDialog.DialogCode.Accepted
+            clean = QMessageBox(
+                QMessageBox.Icon.Information,
+                _("AUR Security Notice"),
+                _("All {n} scanned AUR packages are clean.").format(
+                    n=len(aur_pkgs)),
+                QMessageBox.StandardButton.Ok
+                | QMessageBox.StandardButton.Cancel,
+                self)
+            clean.setInformativeText(_("Continue installing AUR packages?"))
+            clean.setDefaultButton(QMessageBox.StandardButton.Ok)
+            return clean.exec() == QMessageBox.StandardButton.Ok
+
+        warn = QMessageBox(
+            QMessageBox.Icon.Warning,
+            _("AUR Security Notice"),
+            _("AUR packages are built from third-party PKGBUILD scripts "
+              "maintained by the community.\n\n{aur_pkgs}\n\n"
+              "Always review the PKGBUILD and .install scriptlet before "
+              "building. Proceeding with the AUR helper does not perform a "
+              "static security scan.").format(
+                  aur_pkgs=", ".join(aur_pkgs)),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            self)
+        warn.setInformativeText(_("Continue installing AUR packages?"))
+        warn.setDefaultButton(QMessageBox.StandardButton.No)
+        return warn.exec() == QMessageBox.StandardButton.Yes
 
     def sudo_install_selected(self):
         """Install selected packages with sudo privileges"""
@@ -69,19 +141,8 @@ class _OperationsMixin:
             return
         package_list = "\n".join(f"• {pkg}" for src, pkgs in to_install.items() for pkg in pkgs)
         if 'AUR' in to_install:
-            aur_pkgs = ", ".join(to_install['AUR'])
-            warn = QMessageBox(
-                QMessageBox.Icon.Warning,
-                _("AUR Security Notice"),
-                _("AUR packages are built from third-party PKGBUILD scripts "
-                  "maintained by the community.\n\n{aur_pkgs}\n\n"
-                  "Always review the PKGBUILD and .install scriptlet before building. "
-                  "Proceeding with the AUR helper does not perform a static security scan.").format(aur_pkgs=aur_pkgs),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                self)
-            warn.setInformativeText(_("Continue installing AUR packages?"))
-            warn.setDefaultButton(QMessageBox.StandardButton.No)
-            if warn.exec() != QMessageBox.StandardButton.Yes:
+            aur_pkgs = to_install['AUR']
+            if not self._confirm_aur_security(aur_pkgs):
                 return
         reply = QMessageBox.question(
             self, _("Install Packages with Sudo"),

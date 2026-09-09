@@ -94,6 +94,22 @@ def _run_build(workdir: str, chroot: bool, run_checks: bool, install: bool,
         return subprocess.CompletedProcess(cmd, 1, "", str(e))
 
 
+def _scan_checked_out_pkgbuild(dest: str) -> List[Dict]:
+    """Static security scan of the cloned PKGBUILD + .install scriptlets."""
+    from neoarch.backend.services.security_scan import findings_for_file
+    findings: List[Dict] = []
+    if not os.path.isdir(dest):
+        return findings
+    pkgbuild = os.path.join(dest, "PKGBUILD")
+    if os.path.isfile(pkgbuild):
+        findings.extend(findings_for_file(pkgbuild))
+    for fname in sorted(os.listdir(dest)):
+        path = os.path.join(dest, fname)
+        if fname.endswith(".install") and os.path.isfile(path):
+            findings.extend(findings_for_file(path))
+    return findings
+
+
 def build_aur_package(name: str, chroot: bool = False, run_checks: bool = False,
                       install: bool = False, commit: Optional[str] = None,
                       workdir: Optional[str] = None,
@@ -120,9 +136,17 @@ def build_aur_package(name: str, chroot: bool = False, run_checks: bool = False,
             if commit and not _checkout_commit(dest, commit):
                 return {"name": name, "ok": False, "stdout": "",
                         "stderr": "commit checkout failed"}
+            findings = _scan_checked_out_pkgbuild(dest)
+            critical = [f for f in findings if f.get("severity") == "critical"]
+            if critical:
+                return {"name": name, "ok": False, "stdout": "",
+                        "stderr": "blocked: static security scan found "
+                                 "critical issues in the PKGBUILD",
+                        "findings": findings}
             result = _run_build(dest, chroot, run_checks, install, progress_cb)
             return {"name": name, "ok": result.returncode == 0,
-                    "stdout": result.stdout or "", "stderr": result.stderr or ""}
+                    "stdout": result.stdout or "", "stderr": result.stderr or "",
+                    "findings": findings}
         finally:
             if not workdir:
                 shutil.rmtree(tmp, ignore_errors=True)

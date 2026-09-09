@@ -2343,3 +2343,20 @@ msgstr "✓  යාවත්කාලීනයි"
 
 msgid "✗ Cancelled — authenticate to enable installs"
 msgstr "✗ අවලංගු කරන ලදී — ස්ථාපන සබල කිරීමට සත්යාපනය කරන්න"
+
+# AUR pre-install security scan
+
+msgid "Security scan found {count} issue(s) in {pkgs}"
+msgstr "ආරක්ෂණ පරික්ෂාව {pkgs} තුළ {count} ගැටලුවක් හමු විය"
+
+msgid "No security issues found for any scanned AUR package."
+msgstr "පරික්ෂා කළ කිසිදු AUR පැකේජයක ආරක්ෂණ ගැටලු හමු නොවීය."
+
+msgid "I understand the risk — continue anyway"
+msgstr "අවදානම මම තේරුම් ගන්නවා — කෙසේ හෝ ඉදිරියට යන්න"
+
+msgid "All {n} scanned AUR packages are clean."
+msgstr "පරික්ෂා කළ AUR පැකේජ {n} සියල්ල පිරිසිදුයි."
+
+msgid "I understand, continue"
+msgstr "තේරුම් ගත්තා, ඉදිරියට යන්න"

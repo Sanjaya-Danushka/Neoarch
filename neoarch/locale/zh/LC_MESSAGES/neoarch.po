@@ -2343,3 +2343,20 @@ msgstr "✓  最新"
 
 msgid "✗ Cancelled — authenticate to enable installs"
 msgstr "✗ 已取消 — 请验证以启用安装"
+
+# AUR pre-install security scan
+
+msgid "Security scan found {count} issue(s) in {pkgs}"
+msgstr "安全扫描在 {pkgs} 中发现问题 {count} 处"
+
+msgid "No security issues found for any scanned AUR package."
+msgstr "扫描的所有 AUR 软件包均未发现安全问题。"
+
+msgid "I understand the risk — continue anyway"
+msgstr "我了解风险 — 仍要继续"
+
+msgid "All {n} scanned AUR packages are clean."
+msgstr "扫描的所有 {n} 个 AUR 软件包均安全。"
+
+msgid "I understand, continue"
+msgstr "了解，继续"

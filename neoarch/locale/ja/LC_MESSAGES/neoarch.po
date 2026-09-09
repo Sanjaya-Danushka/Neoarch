@@ -2343,3 +2343,20 @@ msgstr "✓  最新"
 
 msgid "✗ Cancelled — authenticate to enable installs"
 msgstr "✗ キャンセル — インストールを有効にするには認証してください"
+
+# AUR pre-install security scan
+
+msgid "Security scan found {count} issue(s) in {pkgs}"
+msgstr "セキュリティスキャンで {pkgs} に {count} 件の問題が見つかりました"
+
+msgid "No security issues found for any scanned AUR package."
+msgstr "スキャンした AUR パッケージにセキュリティ上の問題は見つかりませんでした。"
+
+msgid "I understand the risk — continue anyway"
+msgstr "リスクを理解しています — それでも続行"
+
+msgid "All {n} scanned AUR packages are clean."
+msgstr "スキャンした {n} 個の AUR パッケージはすべて安全です。"
+
+msgid "I understand, continue"
+msgstr "承知しました。続行します"

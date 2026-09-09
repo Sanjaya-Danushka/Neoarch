@@ -2343,3 +2343,20 @@ msgstr "✓  Auf dem neuesten Stand"
 
 msgid "✗ Cancelled — authenticate to enable installs"
 msgstr "✗ Abgebrochen — authentifizieren Sie sich, um Installationen zu aktivieren"
+
+# AUR pre-install security scan
+
+msgid "Security scan found {count} issue(s) in {pkgs}"
+msgstr "Sicherheitsprüfung fand {count} Problem(e) in {pkgs}"
+
+msgid "No security issues found for any scanned AUR package."
+msgstr "Für kein gescanntes AUR-Paket wurden Sicherheitsprobleme gefunden."
+
+msgid "I understand the risk — continue anyway"
+msgstr "Ich verstehe das Risiko — trotzdem fortfahren"
+
+msgid "All {n} scanned AUR packages are clean."
+msgstr "Alle {n} gescannten AUR-Pakete sind sauber."
+
+msgid "I understand, continue"
+msgstr "Verstanden, fortfahren"

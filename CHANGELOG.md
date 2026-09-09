@@ -24,6 +24,12 @@ Changes on the `dev` branch that will land in the next release.
   unchecked mutable MR/PR diff sources — layered defense rules ported from
   the `archcanary` pre-build scanner. Exposed via `neo scan <PKGBUILD>`
   (`--json` supported).
+- AUR packages selected for installation are now fetched from the AUR and
+  statically scanned before the build starts. Critical findings block the
+  install until the risk is explicitly accepted; warnings still require a
+  confirmation. If the scan cannot reach the AUR, the install falls back to
+  the legacy static notice so it is never stuck — a soft gate, not a hard
+  dependency.
 
 ---
 
