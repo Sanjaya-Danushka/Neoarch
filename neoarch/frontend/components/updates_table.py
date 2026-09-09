@@ -59,7 +59,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from neoarch.frontend.tokens import Colors, SourceColors
+from neoarch.frontend.tokens import Colors, Fonts, SourceColors
+from neoarch.backend.services.i18n import _
 
 # ── theme (from centralized tokens.py) ─────────────────────────────
 _ACCENT = QColor(Colors.ACCENT)
@@ -100,6 +101,24 @@ _STATUS_COLORS = {
     "Installed": QColor(93, 199, 139),
     "Update": QColor(255, 179, 71),
     "Available": QColor(0, 191, 174),
+}
+
+_STATUS_TEXT = {
+    "Security": "Security", "Feature": "Feature", "Bug Fix": "Bug Fix",
+    "Maintenance": "Maintenance", "Installed": "Installed",
+    "Available": "Available", "Downloading": "Downloading", "Update": "Update",
+}
+
+_STATUS_TEXT = {
+    "Security": "Security", "Feature": "Feature", "Bug Fix": "Bug Fix",
+    "Maintenance": "Maintenance", "Installed": "Installed",
+    "Available": "Available", "Downloading": "Downloading", "Update": "Update",
+}
+
+_STATUS_TEXT = {
+    "Security": "Security", "Feature": "Feature", "Bug Fix": "Bug Fix",
+    "Maintenance": "Maintenance", "Installed": "Installed",
+    "Available": "Available", "Downloading": "Downloading", "Update": "Update",
 }
 
 _HEADERS = ["", "Package", "Version", "Size", "Source", "Status", "Installed", ""]
@@ -514,9 +533,10 @@ class _UpdatesHeader(QHeaderView):
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         if self._labels:
-            label = (self._labels[section] if 0 <= section < len(self._labels) else "").upper()
+            label = (self._labels[section] if 0 <= section < len(self._labels) else "")
         else:
-            label = (_HEADERS[section] if 0 <= section < len(_HEADERS) else "").upper()
+            label = (_HEADERS[section] if 0 <= section < len(_HEADERS) else "")
+        label = _(label).upper()
 
         # QHeaderView can hand us a section rect that is offset/shrunk by its
         # style's section padding, which misaligns the header labels with the
@@ -1095,78 +1115,78 @@ class UpdatesTable(QTableView):
         if self._plugins_mode:
             installed = bool(pkg.get("_installed"))
             if installed:
-                act_launch = menu.addAction("Launch")
+                act_launch = menu.addAction(_("Launch"))
                 act_launch.triggered.connect(lambda: self.menu_action.emit("launch", pkg))
-                act_uninstall = menu.addAction("Uninstall")
+                act_uninstall = menu.addAction(_("Uninstall"))
                 act_uninstall.triggered.connect(lambda: self.menu_action.emit("uninstall", pkg))
             else:
-                act_install = menu.addAction("Install")
+                act_install = menu.addAction(_("Install"))
                 act_install.triggered.connect(lambda: self.menu_action.emit("install", pkg))
             menu.addSeparator()
-            act_browser = menu.addAction("View in browser")
+            act_browser = menu.addAction(_("View in browser"))
             act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
-            act_copy = menu.addAction("Copy name")
+            act_copy = menu.addAction(_("Copy name"))
             act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
         elif self._bundles_mode:
             installed = bool(pkg.get("_installed"))
             if not installed:
-                act_install = menu.addAction("Install")
+                act_install = menu.addAction(_("Install"))
                 act_install.triggered.connect(lambda: self.menu_action.emit("install", pkg))
-            act_remove = menu.addAction("Remove from Bundle")
+            act_remove = menu.addAction(_("Remove from Bundle"))
             act_remove.triggered.connect(lambda: self.menu_action.emit("bundle_remove", pkg))
             menu.addSeparator()
-            act_browser = menu.addAction("View in browser")
+            act_browser = menu.addAction(_("View in browser"))
             act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
-            act_copy = menu.addAction("Copy name")
+            act_copy = menu.addAction(_("Copy name"))
             act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
         elif self._discover_mode:
             installed = bool(pkg.get("_installed"))
             if not installed:
-                act_install = menu.addAction("Install")
+                act_install = menu.addAction(_("Install"))
                 act_install.triggered.connect(lambda: self.menu_action.emit("install", pkg))
-            act_details = menu.addAction("View Details")
+            act_details = menu.addAction(_("View Details"))
             act_details.triggered.connect(lambda: self.menu_action.emit("details", pkg))
             menu.addSeparator()
-            act_browser = menu.addAction("View in browser")
+            act_browser = menu.addAction(_("View in browser"))
             act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
-            act_copy = menu.addAction("Copy name")
+            act_copy = menu.addAction(_("Copy name"))
             act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
         elif self._installed_mode:
             if self._row_has_update(pkg):
-                act_update = menu.addAction("Update")
+                act_update = menu.addAction(_("Update"))
                 act_update.triggered.connect(lambda: self.menu_action.emit("update", pkg))
-            act_uninstall = menu.addAction("Uninstall")
+            act_uninstall = menu.addAction(_("Uninstall"))
             act_uninstall.triggered.connect(lambda: self.menu_action.emit("uninstall", pkg))
-            act_details = menu.addAction("View Details")
+            act_details = menu.addAction(_("View Details"))
             act_details.triggered.connect(lambda: self.menu_action.emit("details", pkg))
             menu.addSeparator()
             if self._row_has_update(pkg):
-                act_ignore = menu.addAction("Ignore update")
+                act_ignore = menu.addAction(_("Ignore update"))
                 act_ignore.triggered.connect(lambda: self.menu_action.emit("ignore", pkg))
-            act_browser = menu.addAction("View in browser")
+            act_browser = menu.addAction(_("View in browser"))
             act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
-            act_copy = menu.addAction("Copy name")
+            act_copy = menu.addAction(_("Copy name"))
             act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
         else:
-            act_update = menu.addAction("Update")
+            act_update = menu.addAction(_("Update"))
             act_update.triggered.connect(lambda: self.menu_action.emit("update", pkg))
-            act_details = menu.addAction("View Details")
+            act_details = menu.addAction(_("View Details"))
             act_details.triggered.connect(lambda: self.menu_action.emit("details", pkg))
             menu.addSeparator()
-            act_ignore = menu.addAction("Ignore update")
+            act_ignore = menu.addAction(_("Ignore update"))
             act_ignore.triggered.connect(lambda: self.menu_action.emit("ignore", pkg))
-            act_browser = menu.addAction("View in browser")
+            act_browser = menu.addAction(_("View in browser"))
             act_browser.triggered.connect(lambda: self.menu_action.emit("browser", pkg))
-            act_copy = menu.addAction("Copy name")
+            act_copy = menu.addAction(_("Copy name"))
             act_copy.triggered.connect(lambda: self.menu_action.emit("copy", pkg))
 
         if (pkg.get("source") or "").upper() == "AUR":
             menu.addSeparator()
-            act_pkgbuild = menu.addAction("View PKGBUILD")
+            act_pkgbuild = menu.addAction(_("View PKGBUILD"))
             act_pkgbuild.triggered.connect(lambda: self.menu_action.emit("pkgbuild", pkg))
-            act_changes = menu.addAction("View Changes")
+            act_changes = menu.addAction(_("View Changes"))
             act_changes.triggered.connect(lambda: self.menu_action.emit("changes", pkg))
-            act_snapshot = menu.addAction("Download snapshot")
+            act_snapshot = menu.addAction(_("Download snapshot"))
             act_snapshot.triggered.connect(lambda: self.menu_action.emit("snapshot", pkg))
         return menu
 
@@ -1282,7 +1302,7 @@ class UpdatesRowDelegate(QStyledItemDelegate):
             self._paint_label(painter, rect, pkg.get("source", ""), _TEXT_SEC)
         elif col == 5:
             status = pkg.get("status") or classify_update(pkg.get("version"), pkg.get("new_version"))
-            self._paint_chip(painter, rect, status, _STATUS_COLORS.get(status, _TEXT_MUTED))
+            self._paint_chip(painter, rect, _(_STATUS_TEXT.get(status, status)), _STATUS_COLORS.get(status, _TEXT_MUTED))
         elif col == 6:
             self._paint_date(painter, rect, pkg)
         elif col == 7:
@@ -1593,7 +1613,7 @@ class _EmptyOverlay(QWidget):
         self._badge = _EmptyBadge(76)
         layout.addWidget(self._badge, alignment=Qt.AlignmentFlag.AlignHCenter)
 
-        self._title = QLabel("All caught up")
+        self._title = QLabel(_("All caught up"))
         self._title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         f = self._title.font()
         f.setPointSize(13)
@@ -1602,17 +1622,17 @@ class _EmptyOverlay(QWidget):
         self._title.setStyleSheet("color: #EDEDEF; background: transparent; border: none;")
         layout.addWidget(self._title)
 
-        self._sub = QLabel("Your system is up to date")
+        self._sub = QLabel(_("Your system is up to date"))
         self._sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._sub.setStyleSheet("color: #8B8D97; background: transparent; border: none;")
         layout.addWidget(self._sub)
 
-        self._hint = QLabel("Updates will appear here automatically when available")
+        self._hint = QLabel(_("Updates will appear here automatically when available"))
         self._hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._hint.setStyleSheet("color: #5C5E66; background: transparent; border: none;")
         layout.addWidget(self._hint)
 
-        self._suggest_label = QLabel("Did you mean\u2026")
+        self._suggest_label = QLabel(_("Did you mean\u2026"))
         self._suggest_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._suggest_label.setStyleSheet("color: #8B8D97; background: transparent; border: none;")
         self._suggest_label.hide()
@@ -1656,7 +1676,7 @@ class _EmptyOverlay(QWidget):
         if loading:
             self.set_suggestions([])
             self._title.setText(message or "Loading\u2026")
-            self._sub.setText("Please wait, fetching package data")
+            self._sub.setText(_("Please wait, fetching package data"))
             self._hint.hide()
             self._progress.show()
         else:
@@ -1683,11 +1703,11 @@ class _EmptyOverlay(QWidget):
             btn = QPushButton(name)
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.setStyleSheet(
-                "QPushButton { background: rgba(0,191,174,0.12); color: #4FDBCE;"
-                " border: 1px solid rgba(0,191,174,0.35); border-radius: 13px;"
-                " padding: 5px 14px; font-size: 12px; }"
-                " QPushButton:hover { background: rgba(0,191,174,0.22); }"
-                " QPushButton:pressed { background: rgba(0,191,174,0.32); }")
+                f"QPushButton {{ background: rgba(0,191,174,0.12); color: #4FDBCE;"
+                f" border: 1px solid rgba(0,191,174,0.35); border-radius: 13px;"
+                f" padding: 5px 14px; font-size: {Fonts.MD}; }}"
+                f" QPushButton:hover {{ background: rgba(0,191,174,0.22); }}"
+                f" QPushButton:pressed {{ background: rgba(0,191,174,0.32); }}")
             btn.clicked.connect(lambda _=False, n=name: self._suggest_clicked(n))
             self._chips_layout.addWidget(btn)
         self._suggest_label.show()

@@ -35,7 +35,9 @@ from neoarch.backend.package import loader as packages_service
 from neoarch.backend.package import updater as update_service
 from neoarch.backend.package import uninstaller as uninstall_service
 from neoarch.backend.services import ignore as ignore_service
-from neoarch.frontend.tokens import Colors, Fonts
+from neoarch.backend.services.i18n import _
+from neoarch.frontend.tokens import Colors, Fonts, Radii
+from neoarch.frontend.styles import Styles
 
 _BASE_DIR = str(PROJECT_ROOT)
 
@@ -147,6 +149,34 @@ class _ViewsMixin:
         # Ensure proper sizing
         self.adjustSize()
 
+    def rebuild_ui(self):
+        """Recreate the whole UI so every page re-renders with the current
+        active language catalog (called on a language change)."""
+        current = getattr(self, 'current_view', 'discover')
+        settings_cat = getattr(self, '_settings_category', 'general')
+        old = self.centralWidget()
+        if old is not None:
+            old.hide()
+            old.deleteLater()
+        try:
+            self.setup_ui()
+            self.apply_window_effects()
+            self.center_window()
+            for btn_id, btn in self.nav_buttons.items():
+                try:
+                    btn.setChecked(btn_id == current)
+                except Exception:
+                    pass
+            self._settings_category = settings_cat
+            self._user_has_navigated = True
+            self.switch_view(current)
+        except Exception as e:
+            self.log(f"UI rebuild failed: {e}")
+            try:
+                self.build_settings_ui()
+            except Exception:
+                pass
+
     def create_sidebar(self):
         sidebar = QWidget()
         sidebar.setFixedWidth(72)
@@ -180,9 +210,9 @@ class _ViewsMixin:
 
         _base = os.path.join(_BASE_DIR, "assets", "icons")
         nav_items = [
-            ("Home", "discover", os.path.join(_base, "discover.svg")),
-            ("Installed", "installed", os.path.join(_base, "installed.svg")),
-            ("Updates", "updates", os.path.join(_base, "updates.svg")),
+            (_("Home"), "discover", os.path.join(_base, "discover.svg")),
+            (_("Installed"), "installed", os.path.join(_base, "installed.svg")),
+            (_("Updates"), "updates", os.path.join(_base, "updates.svg")),
         ]
 
         self.nav_buttons = {}
@@ -199,12 +229,12 @@ class _ViewsMixin:
         layout.addWidget(sec_sys)
 
         sys_items = [
-            ("Sources", "plugins", os.path.join(_base, "plugins.svg")),
-            ("Git", "git", os.path.join(_base, "git.svg")),
-            ("Docker", "docker", os.path.join(_base, "docker.svg")),
-            ("Bundles", "bundles", os.path.join(_base, "local-builds.svg")),
-            ("AppImages", "appimage", os.path.join(_base, "appimage.svg")),
-            ("Settings", "settings", os.path.join(_base, "settings.svg")),
+            (_("Sources"), "plugins", os.path.join(_base, "plugins.svg")),
+            (_("Git"), "git", os.path.join(_base, "git.svg")),
+            (_("Docker"), "docker", os.path.join(_base, "docker.svg")),
+            (_("Bundles"), "bundles", os.path.join(_base, "local-builds.svg")),
+            (_("AppImages"), "appimage", os.path.join(_base, "appimage.svg")),
+            (_("Settings"), "settings", os.path.join(_base, "settings.svg")),
         ]
         for text, view_id, icon in sys_items:
             btn = self._create_sidebar_btn(icon, text, view_id)
@@ -221,7 +251,7 @@ class _ViewsMixin:
         about_btn = QPushButton()
         about_btn.setObjectName("sidebarBtn")
         about_btn.setFixedHeight(48)
-        about_btn.setToolTip("About")
+        about_btn.setToolTip(_("About"))
         about_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         icon_label = QLabel()
         icon_label.setObjectName("sidebarNavIcon")
@@ -241,7 +271,7 @@ class _ViewsMixin:
         dep_badge.setStyleSheet(f"""
             background-color: {Colors.RED}; color: #FFFFFF;
             border: none; border-radius: 9px;
-            font-size: 10px; font-weight: {Fonts.BOLD};
+            font-size: {Fonts.XS}; font-weight: {Fonts.BOLD};
         """)
         dep_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         dep_badge.setFixedSize(18, 18)
@@ -257,7 +287,7 @@ class _ViewsMixin:
         self.user_avatar_btn = QPushButton()
         self.user_avatar_btn.setObjectName("sidebarBtn")
         self.user_avatar_btn.setFixedHeight(48)
-        self.user_avatar_btn.setToolTip("Sign in to sync favourites")
+        self.user_avatar_btn.setToolTip(_("Sign in to sync favourites"))
         self.user_avatar_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.user_avatar_label = QLabel()
         self.user_avatar_label.setObjectName("sidebarNavIcon")
@@ -373,7 +403,7 @@ class _ViewsMixin:
         if btn:
             try:
                 n = int(count) if count is not None else 0
-                btn.setToolTip(f"Updates ({n})" if n > 0 else "Updates")
+                btn.setToolTip(_("Updates ({n})").format(n=n) if n > 0 else _("Updates"))
             except Exception:
                 pass
 
@@ -383,11 +413,11 @@ class _ViewsMixin:
             return
         total = len(getattr(self, 'updates_all', []) or [])
         if total == 0:
-            self.header_info.setText("Your system is up to date")
+            self.header_info.setText(_("Your system is up to date"))
         elif total == 1:
-            self.header_info.setText("1 update available")
+            self.header_info.setText(_("1 update available"))
         else:
-            self.header_info.setText(f"{total} updates available")
+            self.header_info.setText(_("{total} updates available").format(total=total))
 
     def update_installed_header_counts(self):
         """Update the header info subtitle for Installed with total installed count."""
@@ -395,7 +425,7 @@ class _ViewsMixin:
             return
         total = len(getattr(self, 'installed_all', []) or [])
         try:
-            self.header_info.setText(f"{total} packages installed")
+            self.header_info.setText(_("{total} packages installed").format(total=total))
         except Exception:
             pass
 
@@ -471,7 +501,7 @@ class _ViewsMixin:
         if show_grid_filter:
             self._grid_view_btn = self.create_toolbar_button(
                 os.path.join(navbar_dir, "view.svg"),
-                "Grid View",
+                _("Grid View"),
                 self.toggle_view_mode
             )
             layout.addWidget(self._grid_view_btn)
@@ -479,7 +509,7 @@ class _ViewsMixin:
         if show_install_file:
             self._install_file_btn = self.create_toolbar_button(
                 os.path.join(navbar_dir, "install_from_file.svg"),
-                "Install Local Pkg",
+                _("Install Local Pkg"),
                 self.install_from_local_file
             )
             layout.addWidget(self._install_file_btn)
@@ -487,7 +517,7 @@ class _ViewsMixin:
         if show_bundle:
             self._bundle_btn = self.create_toolbar_button(
                 os.path.join(navbar_dir, "addBundle.svg"),
-                "Add selected to Bundle",
+                _("Add selected to Bundle"),
                 self.add_selected_to_bundle
             )
             layout.addWidget(self._bundle_btn)
@@ -495,7 +525,7 @@ class _ViewsMixin:
         if show_sudo:
             self._sudo_btn = self.create_toolbar_button(
                 os.path.join(navbar_dir, "insatllwithsudo.svg"),
-                "Install with Sudo Privileges",
+                _("Install with Sudo Privileges"),
                 self.sudo_install_selected
             )
             layout.addWidget(self._sudo_btn)
@@ -503,7 +533,7 @@ class _ViewsMixin:
         if show_news:
             self._news_btn = self.create_toolbar_button(
                 os.path.join(navbar_dir, "news.svg"),
-                "Arch News",
+                _("Arch News"),
                 self.show_arch_news
             )
             layout.addWidget(self._news_btn)
@@ -573,19 +603,19 @@ class _ViewsMixin:
         from PyQt6.QtCore import QRectF, Qt
         h = datetime.now().hour
         if h < 12:
-            prefix = "Good morning"
+            prefix = _("Good morning")
         elif h < 17:
-            prefix = "Good afternoon"
+            prefix = _("Good afternoon")
         else:
-            prefix = "Good evening"
+            prefix = _("Good evening")
         if user and user.name:
             name = user.name
         else:
             try:
                 name = getpass.getuser()
             except Exception:
-                name = "User"
-        text = f"{prefix}, {name}!"
+                name = _("User")
+        text = _("{prefix}, {name}!").format(prefix=prefix, name=name)
         font = QFont()
         font.setPixelSize(18)
         font.setBold(True)
@@ -896,18 +926,18 @@ class _ViewsMixin:
         layout.setContentsMargins(24, 0, 24, 0)
         layout.setSpacing(12)
 
-        self.header_label = QLabel("Home")
+        self.header_label = QLabel(_("Home"))
         self.header_label.setObjectName("headerLabel")
         layout.addWidget(self.header_label)
 
-        self.header_info = QLabel("Dashboard and package discovery")
+        self.header_info = QLabel(_("Dashboard and package discovery"))
         self.header_info.setObjectName("headerInfo")
         layout.addWidget(self.header_info)
 
         layout.addStretch()
 
         search_input = QLineEdit()
-        search_input.setPlaceholderText("Quick search…")
+        search_input.setPlaceholderText(_("Quick search…"))
         search_input.setFixedWidth(220)
         search_input.setFixedHeight(36)
         self.search_input = search_input
@@ -923,7 +953,7 @@ class _ViewsMixin:
         refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "ui")
         refresh_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "refresh.svg"), 18))
-        refresh_btn.setToolTip("Refresh")
+        refresh_btn.setToolTip(_("Refresh"))
         refresh_btn.clicked.connect(self.refresh_packages)
         refresh_btn.setStyleSheet("""
             QPushButton {
@@ -998,7 +1028,7 @@ class _ViewsMixin:
                 clear.setEnabled(count > 0)
             if label is not None:
                 if count > 0:
-                    label.setText(f"{count} plugin{'s' if count != 1 else ''} selected")
+                    label.setText(_("{count} plugin{s} selected").format(count=count, s="s" if count != 1 else ""))
                 else:
                     label.setText("")
         except Exception:
@@ -1094,28 +1124,16 @@ class _ViewsMixin:
         self.packages_panel_layout.addWidget(self.large_search_box, 1)
 
         # Loading spinner widget
-        self.loading_widget = LoadingSpinner(message="Checking for updates...")
+        self.loading_widget = LoadingSpinner(message=_("Checking for updates..."))
         self.loading_widget.setVisible(False)  # Hidden by default
 
         # Cancel button for installation
-        self.cancel_install_btn = QPushButton("Cancel Installation")
+        self.cancel_install_btn = QPushButton(_("Cancel Installation"))
         self.cancel_install_btn.setMinimumHeight(36)
         self.cancel_install_btn.setVisible(False)
-        self.cancel_install_btn.setStyleSheet("""
-            QPushButton {
-                background-color: rgba(220, 50, 50, 0.15);
-                color: #FF6B6B;
-                border: 1px solid rgba(220, 50, 50, 0.3);
-                border-radius: 10px;
-                padding: 8px 18px;
-                font-size: 13px;
-                font-weight: 500;
-            }
-            QPushButton:hover {
-                background-color: rgba(220, 50, 50, 0.25);
-                border-color: rgba(220, 50, 50, 0.5);
-            }
-        """)
+        self.cancel_install_btn.setStyleSheet(
+            Styles.btn_danger(padding="8px 18px", size=Fonts.BASE,
+                              radius=Radii.XL))
         self.cancel_install_btn.clicked.connect(self.cancel_installation)
 
         # Container for loading widget and cancel button (centered both axes)
@@ -1135,12 +1153,12 @@ class _ViewsMixin:
         nr_layout = QVBoxLayout(self.no_results_widget)
         nr_layout.setContentsMargins(0, 40, 0, 40)
         nr_layout.setSpacing(8)
-        self.no_results_title = QLabel("No results found")
+        self.no_results_title = QLabel(_("No results found"))
         self.no_results_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.no_results_title.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: 18px; font-weight: 600; background: transparent;")
+        self.no_results_title.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.XXL}; font-weight: 600; background: transparent;")
         self.no_results_desc = QLabel("")
         self.no_results_desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.no_results_desc.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: 13px; background: transparent;")
+        self.no_results_desc.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: {Fonts.BASE}; background: transparent;")
         nr_layout.addWidget(self.no_results_title)
         nr_layout.addWidget(self.no_results_desc)
         self.no_results_widget.setVisible(False)
@@ -1151,7 +1169,7 @@ class _ViewsMixin:
         self.settings_container.setWidgetResizable(True)
         self.settings_container.setVisible(False)
         self.settings_container.setStyleSheet(
-            "QScrollArea { background-color: #0C0C0E; border: none; }")
+            f"QScrollArea {{ background-color: {Colors.BG}; border: none; }}")
         self.settings_root = QWidget()
         self.settings_layout = QVBoxLayout(self.settings_root)
         self.settings_layout.setContentsMargins(0, 0, 0, 0)
@@ -1183,7 +1201,7 @@ class _ViewsMixin:
         self.package_table = HoverTableWidget()
         self.package_table.setColumnCount(5)
         self.package_table.setHorizontalHeaderLabels(
-            ["", "Package Name", "Version", "New Version", "Source"]
+            ["", _("Package Name"), _("Version"), _("New Version"), _("Source")]
         )
         self.package_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.package_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
@@ -1222,7 +1240,7 @@ class _ViewsMixin:
         self.packages_grid.load_more_requested.connect(self._on_grid_load_more)
         table_area_layout.addWidget(self.packages_grid, 1)
 
-        self.load_more_btn = QPushButton("Load More Packages")
+        self.load_more_btn = QPushButton(_("Load More Packages"))
         self.load_more_btn.setObjectName("loadMoreBtn")
         self.load_more_btn.setMinimumHeight(44)
         self.load_more_btn.clicked.connect(self.load_more_packages)
@@ -1248,7 +1266,7 @@ class _ViewsMixin:
         self.console_toggle_btn.setFixedSize(42, 42)
         self.console_toggle_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "terminal.svg"), 20))
         self.console_toggle_btn.setIconSize(QSize(20, 20))
-        self.console_toggle_btn.setToolTip("Show Console")
+        self.console_toggle_btn.setToolTip(_("Show Console"))
         self.console_toggle_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.console_toggle_btn.clicked.connect(self.toggle_console)
         self.console_toggle_btn.setVisible(False)
@@ -1282,7 +1300,7 @@ class _ViewsMixin:
         self.packages_panel_layout.addWidget(self.console_toggle_btn, alignment=Qt.AlignmentFlag.AlignRight)
 
         # Console Output
-        self.console_label = QLabel("Console Output")
+        self.console_label = QLabel(_("Console Output"))
         self.console_label.setObjectName("sectionLabel")
         self.packages_panel_layout.addWidget(self.console_label)
         # Hidden by default; shown via the bottom-right toggle
@@ -1345,7 +1363,7 @@ class _ViewsMixin:
                     border: 1px solid rgba(255,255,255,0.06);
                     border-radius: 10px;
                     padding: 8px 18px;
-                    font-size: 13px;
+                    font-size: {Fonts.BASE};
                     font-weight: 500;
                 }}
                 QPushButton:hover {{
@@ -1357,7 +1375,7 @@ class _ViewsMixin:
                 }}
             """
 
-            refresh_btn = QPushButton(" Check for Updates")
+            refresh_btn = QPushButton(_(" Check for Updates"))
             refresh_btn.setMinimumHeight(36)
             refresh_btn.setStyleSheet(btn_style)
             refresh_icon = self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "ui", "refresh.svg"), 16)
@@ -1366,29 +1384,15 @@ class _ViewsMixin:
             refresh_btn.clicked.connect(self.load_updates)
             layout.addWidget(refresh_btn)
 
-            update_all_btn = QPushButton("Update All")
+            update_all_btn = QPushButton(_("Update All"))
             update_all_btn.setMinimumHeight(36)
-            update_all_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #FFFFFF;
-                    color: #0C0C0E;
-                    border: 1px solid rgba(255, 255, 255, 0.9);
-                    border-radius: 10px;
-                    padding: 8px 18px;
-                    font-size: 13px;
-                    font-weight: 600;
-                }
-                QPushButton:hover {
-                    background-color: #E8EAF0;
-                }
-                QPushButton:pressed {
-                    background-color: #D3D6DE;
-                }
-            """)
+            update_all_btn.setStyleSheet(
+                Styles.btn_white(padding="8px 18px", size=Fonts.BASE,
+                                 radius=Radii.XL))
             update_all_btn.clicked.connect(self.perform_update_all)
             layout.addWidget(update_all_btn)
 
-            update_selected_btn = QPushButton("Update Selected")
+            update_selected_btn = QPushButton(_("Update Selected"))
             update_selected_btn.setMinimumHeight(36)
             update_selected_btn.setEnabled(False)
             update_selected_btn.setStyleSheet(f"""
@@ -1398,7 +1402,7 @@ class _ViewsMixin:
                     border: 1px solid rgba(255, 255, 255, 0.1);
                     border-radius: 10px;
                     padding: 8px 18px;
-                    font-size: 13px;
+                    font-size: {Fonts.BASE};
                     font-weight: 500;
                 }}
                 QPushButton:hover {{
@@ -1417,7 +1421,7 @@ class _ViewsMixin:
 
             self._selection_summary_label = QLabel("")
             self._selection_summary_label.setStyleSheet(
-                f"color: {Colors.TEXT_2}; font-size: 12px; font-weight: 500;"
+                f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; font-weight: 500;"
                 "background: transparent; border: none; padding: 0 6px;")
             layout.addWidget(self._selection_summary_label)
 
@@ -1433,7 +1437,7 @@ class _ViewsMixin:
             layout = QHBoxLayout()
             layout.setSpacing(12)
 
-            update_btn = QPushButton("Update Selected")
+            update_btn = QPushButton(_("Update Selected"))
             update_btn.setMinimumHeight(36)
             update_btn.setStyleSheet(f"""
                 QPushButton {{
@@ -1442,7 +1446,7 @@ class _ViewsMixin:
                     border: 1px solid rgba(255,255,255,0.06);
                     border-radius: 10px;
                     padding: 8px 18px;
-                    font-size: 13px;
+                    font-size: {Fonts.BASE};
                     font-weight: 500;
                 }}
                 QPushButton:hover {{
@@ -1458,34 +1462,18 @@ class _ViewsMixin:
             self._installed_update_btn = update_btn
             layout.addWidget(update_btn)
 
-            uninstall_btn = QPushButton("Uninstall Selected")
+            uninstall_btn = QPushButton(_("Uninstall Selected"))
             uninstall_btn.setMinimumHeight(36)
             uninstall_btn.setStyleSheet(
-                """
-                QPushButton {
-                    background-color: #FFFFFF;
-                    color: #0C0C0E;
-                    border: 1px solid rgba(255, 255, 255, 0.9);
-                    border-radius: 10px;
-                    padding: 8px 18px;
-                    font-size: 13px;
-                    font-weight: 600;
-                }
-                QPushButton:hover {
-                    background-color: #E8EAF0;
-                }
-                QPushButton:pressed {
-                    background-color: #D3D6DE;
-                }
-                """
-            )
+                Styles.btn_white(padding="8px 18px", size=Fonts.BASE,
+                                 radius=Radii.XL))
             uninstall_btn.clicked.connect(self.uninstall_selected)
             self._installed_uninstall_btn = uninstall_btn
             layout.addWidget(uninstall_btn)
 
             self._selection_summary_label = QLabel("")
             self._selection_summary_label.setStyleSheet(
-                f"color: {Colors.TEXT_2}; font-size: 12px; font-weight: 500;"
+                f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; font-weight: 500;"
                 "background: transparent; border: none; padding: 0 6px;")
             layout.addWidget(self._selection_summary_label)
 
@@ -1501,26 +1489,12 @@ class _ViewsMixin:
             layout = QHBoxLayout()
             layout.setSpacing(8)  # Tighter spacing
 
-            self.discover_install_btn = QPushButton("Install Selected")
+            self.discover_install_btn = QPushButton(_("Install Selected"))
             self.discover_install_btn.setMinimumHeight(36)
-            self.discover_install_btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: #FFFFFF;
-                    color: #0C0C0E;
-                    border: 1px solid rgba(255, 255, 255, 0.9);
-                    border-radius: 10px;
-                    padding: 8px 18px;
-                    font-size: 13px;
-                    font-weight: 600;
-                }}
-                QPushButton:hover {{ background-color: #E8EAF0; }}
-                QPushButton:pressed {{ background-color: #D3D6DE; }}
-                QPushButton:disabled {{
-                    background-color: rgba(255, 255, 255, 0.06);
-                    color: {Colors.TEXT_3};
-                    border-color: rgba(255, 255, 255, 0.08);
-                }}
-            """)
+            self.discover_install_btn.setStyleSheet(
+                Styles.btn_white(padding="8px 18px", size=Fonts.BASE,
+                                 radius=Radii.XL)
+                + Styles.btn_white_disabled())
             self.discover_install_btn.clicked.connect(self.install_selected)
             self.discover_install_btn.setVisible(False)
             self.discover_install_btn.setEnabled(False)
@@ -1550,32 +1524,18 @@ class _ViewsMixin:
             layout = QHBoxLayout()
             layout.setSpacing(8)
 
-            self._plugins_install_btn = QPushButton("Install Selected")
+            self._plugins_install_btn = QPushButton(_("Install Selected"))
             self._plugins_install_btn.setMinimumHeight(36)
             self._plugins_install_btn.setMinimumWidth(120)
             self._plugins_install_btn.setEnabled(False)
-            self._plugins_install_btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: #FFFFFF;
-                    color: #0C0C0E;
-                    border: 1px solid rgba(255, 255, 255, 0.9);
-                    border-radius: 10px;
-                    padding: 8px 18px;
-                    font-size: 13px;
-                    font-weight: 600;
-                }}
-                QPushButton:hover {{ background-color: #E8EAF0; }}
-                QPushButton:pressed {{ background-color: #D3D6DE; }}
-                QPushButton:disabled {{
-                    background-color: rgba(255, 255, 255, 0.06);
-                    color: {Colors.TEXT_3};
-                    border-color: rgba(255, 255, 255, 0.08);
-                }}
-            """)
+            self._plugins_install_btn.setStyleSheet(
+                Styles.btn_white(padding="8px 18px", size=Fonts.BASE,
+                                 radius=Radii.XL)
+                + Styles.btn_white_disabled())
             self._plugins_install_btn.clicked.connect(self._on_plugins_install_selected)
             layout.addWidget(self._plugins_install_btn)
 
-            self._plugins_clear_btn = QPushButton("Clear")
+            self._plugins_clear_btn = QPushButton(_("Clear"))
             self._plugins_clear_btn.setMinimumHeight(36)
             self._plugins_clear_btn.setMinimumWidth(120)
             self._plugins_clear_btn.setEnabled(False)
@@ -1586,7 +1546,7 @@ class _ViewsMixin:
                     border: 1px solid rgba(255, 107, 107, 0.3);
                     border-radius: 10px;
                     padding: 8px 18px;
-                    font-size: 13px;
+                    font-size: {Fonts.BASE};
                     font-weight: 600;
                 }}
                 QPushButton:hover {{
@@ -1604,7 +1564,7 @@ class _ViewsMixin:
 
             self._plugins_selection_label = QLabel("")
             self._plugins_selection_label.setStyleSheet(
-                f"color: {Colors.TEXT_2}; font-size: 12px; font-weight: 500;"
+                f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; font-weight: 500;"
                 "background: transparent; border: none; padding: 0 6px;")
             layout.addWidget(self._plugins_selection_label)
 
@@ -1624,26 +1584,12 @@ class _ViewsMixin:
             layout.setSpacing(8)
 
             # ── Primary: Install Bundle ──
-            self._bundle_install_btn = QPushButton("Install Bundle")
+            self._bundle_install_btn = QPushButton(_("Install Bundle"))
             self._bundle_install_btn.setMinimumHeight(36)
-            self._bundle_install_btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: #FFFFFF;
-                    color: #0C0C0E;
-                    border: 1px solid rgba(255, 255, 255, 0.9);
-                    border-radius: 10px;
-                    padding: 8px 18px;
-                    font-size: 13px;
-                    font-weight: 600;
-                }}
-                QPushButton:hover {{ background-color: #E8EAF0; }}
-                QPushButton:pressed {{ background-color: #D3D6DE; }}
-                QPushButton:disabled {{
-                    background-color: rgba(255, 255, 255, 0.06);
-                    color: {Colors.TEXT_3};
-                    border-color: rgba(255, 255, 255, 0.08);
-                }}
-            """)
+            self._bundle_install_btn.setStyleSheet(
+                Styles.btn_white(padding="8px 18px", size=Fonts.BASE,
+                                 radius=Radii.XL)
+                + Styles.btn_white_disabled())
             self._bundle_install_btn.clicked.connect(self.install_bundle)
             self._bundle_install_btn.setEnabled(False)
             layout.addWidget(self._bundle_install_btn)
@@ -1663,7 +1609,7 @@ class _ViewsMixin:
                     border: 1px solid rgba(255, 255, 255, 0.12);
                     border-radius: 8px;
                     padding: 7px 14px;
-                    font-size: 12px;
+                    font-size: {Fonts.MD};
                     font-weight: 500;
                 }}
                 QPushButton:hover {{
@@ -1677,7 +1623,7 @@ class _ViewsMixin:
                 }}
             """
 
-            self._bundle_clear_btn = QPushButton("Clear")
+            self._bundle_clear_btn = QPushButton(_("Clear"))
             self._bundle_clear_btn.setMinimumHeight(34)
             self._bundle_clear_btn.setStyleSheet(f"""
                 QPushButton {{
@@ -1686,7 +1632,7 @@ class _ViewsMixin:
                     border: 1px solid rgba(255, 107, 107, 0.2);
                     border-radius: 8px;
                     padding: 7px 14px;
-                    font-size: 12px;
+                    font-size: {Fonts.MD};
                     font-weight: 500;
                 }}
                 QPushButton:hover {{
@@ -1709,14 +1655,14 @@ class _ViewsMixin:
             sep2.setFixedWidth(1)
             layout.addWidget(sep2)
 
-            self._bundle_sync_btn = QPushButton("\u2601 Sync")
+            self._bundle_sync_btn = QPushButton(_("\u2601 Sync"))
             self._bundle_sync_btn.setMinimumHeight(34)
             self._bundle_sync_btn.setStyleSheet(btn_secondary_style)
             self._bundle_sync_btn.clicked.connect(self._cloud_save_favourites)
             self._bundle_sync_btn.setVisible(False)
             layout.addWidget(self._bundle_sync_btn)
 
-            self._bundle_restore_btn = QPushButton("\u21BB Restore")
+            self._bundle_restore_btn = QPushButton(_("\u21BB Restore"))
             self._bundle_restore_btn.setMinimumHeight(34)
             self._bundle_restore_btn.setStyleSheet(btn_secondary_style)
             self._bundle_restore_btn.clicked.connect(self._cloud_sync_favourites)
@@ -1838,21 +1784,21 @@ class _ViewsMixin:
 
         # Update header
         headers = {
-            "updates": (os.path.join(_BASE_DIR, "assets", "icons", "ui", "update12.svg"), "Software Updates", ""),
-            "installed": (os.path.join(_BASE_DIR, "assets", "icons", "ui", "installed.svg"), "Installed Packages", ""),
-            "discover": (os.path.join(_BASE_DIR, "assets", "icons", "ui", "search.svg"), "Home", "Dashboard and package discovery"),
-            "plugins": (os.path.join(_BASE_DIR, "assets", "icons", "plugins.svg"), "Sources & Plugins", "Manage package sources and extensions"),
-            "bundles": (os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"), "Bundles", "Create, import, export, and install bundles of packages"),
-            "appimage": (os.path.join(_BASE_DIR, "assets", "icons", "appimage.svg"), "AppImages", "Manage AppImage applications"),
-            "git": (os.path.join(_BASE_DIR, "assets", "icons", "git.svg"), "Git Repositories", "Clone, build, update, and manage Git repositories"),
-            "docker": (os.path.join(_BASE_DIR, "assets", "icons", "docker.svg"), "Docker Containers", "Pull, run, and manage Docker containers"),
-            "settings": (os.path.join(_BASE_DIR, "assets", "icons", "settings.svg"), "Settings", "Configure NeoArch settings"),
-            "about": (os.path.join(_BASE_DIR, "assets", "icons", "about.svg"), "About", "About NeoArch"),
+            "updates": (os.path.join(_BASE_DIR, "assets", "icons", "ui", "update12.svg"), _("Software Updates"), ""),
+            "installed": (os.path.join(_BASE_DIR, "assets", "icons", "ui", "installed.svg"), _("Installed Packages"), ""),
+            "discover": (os.path.join(_BASE_DIR, "assets", "icons", "ui", "search.svg"), _("Home"), _("Dashboard and package discovery")),
+            "plugins": (os.path.join(_BASE_DIR, "assets", "icons", "plugins.svg"), _("Sources & Plugins"), _("Manage package sources and extensions")),
+            "bundles": (os.path.join(_BASE_DIR, "assets", "icons", "local-builds.svg"), _("Bundles"), _("Create, import, export, and install bundles of packages")),
+            "appimage": (os.path.join(_BASE_DIR, "assets", "icons", "appimage.svg"), _("AppImages"), _("Manage AppImage applications")),
+            "git": (os.path.join(_BASE_DIR, "assets", "icons", "git.svg"), _("Git Repositories"), _("Clone, build, update, and manage Git repositories")),
+            "docker": (os.path.join(_BASE_DIR, "assets", "icons", "docker.svg"), _("Docker Containers"), _("Pull, run, and manage Docker containers")),
+            "settings": (os.path.join(_BASE_DIR, "assets", "icons", "settings.svg"), _("Settings"), _("Configure NeoArch settings")),
+            "about": (os.path.join(_BASE_DIR, "assets", "icons", "about.svg"), _("About"), _("About NeoArch")),
         }
 
         header_data = headers.get(view_id, ("NeoArch", ""))
         if len(header_data) == 3:
-            _, title, subtitle = header_data
+            _hdr_icon, title, subtitle = header_data
         else:
             title, subtitle = header_data
         self.header_label.setText(title)
@@ -1882,7 +1828,7 @@ class _ViewsMixin:
             self._view_mode = "table"
             if hasattr(self, '_grid_view_btn') and self._grid_view_btn:
                 self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "toolbar", "view.svg"), 20))
-                self._grid_view_btn.setToolTip("Grid View")
+                self._grid_view_btn.setToolTip(_("Grid View"))
 
         # Load data for view
         if view_id == "updates":
@@ -1896,7 +1842,7 @@ class _ViewsMixin:
                 self.console.setVisible(False)
                 if hasattr(self, 'console_toggle_btn'):
                     self.console_toggle_btn.setVisible(True)
-                    self.console_toggle_btn.setToolTip("Show Console")
+                    self.console_toggle_btn.setToolTip(_("Show Console"))
             except Exception:
                 pass
             if load and not _installing:
@@ -1908,7 +1854,7 @@ class _ViewsMixin:
                 self.console.setVisible(False)
                 if hasattr(self, 'console_toggle_btn'):
                     self.console_toggle_btn.setVisible(True)
-                    self.console_toggle_btn.setToolTip("Show Console")
+                    self.console_toggle_btn.setToolTip(_("Show Console"))
             except Exception:
                 pass
             try:
@@ -1917,7 +1863,7 @@ class _ViewsMixin:
                 # skeleton loading state inside the table
                 self._installed_loading = True
                 self.updates_table.setVisible(True)
-                self.updates_table.set_loading(True, "Loading packages\u2026")
+                self.updates_table.set_loading(True, _("Loading packages\u2026"))
             except Exception as e:
                 self.log(f"Error showing installed loading state: {e}")
             self.load_installed_packages()
@@ -1928,7 +1874,7 @@ class _ViewsMixin:
                 self.packages_content_area.setVisible(False)
             self.load_more_btn.setVisible(False)
             self.package_table.setRowCount(0)
-            self.header_info.setText("Search and discover new packages to install")
+            self.header_info.setText(_("Search and discover new packages to install"))
             try:
                 if hasattr(self, 'filters_panel'):
                     self.filters_panel.setVisible(False)
@@ -1938,7 +1884,7 @@ class _ViewsMixin:
             if news_btn is not None:
                 news_btn.setVisible(True)
             try:
-                self.search_input.setPlaceholderText("Search for packages")
+                self.search_input.setPlaceholderText(_("Search for packages"))
             except Exception:
                 pass
             # Removed verbose log: self.log("Type a package name to search in AUR and official repositories")
@@ -1948,7 +1894,7 @@ class _ViewsMixin:
                 self.console.setVisible(False)
                 if hasattr(self, 'console_toggle_btn'):
                     self.console_toggle_btn.setVisible(True)
-                    self.console_toggle_btn.setToolTip("Show Console")
+                    self.console_toggle_btn.setToolTip(_("Show Console"))
             except Exception:
                 pass
             try:
@@ -1957,7 +1903,7 @@ class _ViewsMixin:
                 _installing = False
             if _installing:
                 try:
-                    self.loading_widget.set_message("Processing...")
+                    self.loading_widget.set_message(_("Processing..."))
                     self.loading_widget.setVisible(True)
                     self.loading_widget.start_animation()
                     if hasattr(self, 'loading_container'):
@@ -1977,10 +1923,10 @@ class _ViewsMixin:
             self.large_search_box.setVisible(False)
             self.settings_container.setVisible(False)
             self._hide_all_package_views()
-            self.header_info.setText("Create, import, export, and install bundles of packages across sources")
+            self.header_info.setText(_("Create, import, export, and install bundles of packages across sources"))
             self.load_more_btn.setVisible(False)
             try:
-                self.search_input.setPlaceholderText("Search for packages")
+                self.search_input.setPlaceholderText(_("Search for packages"))
             except Exception:
                 pass
             try:
@@ -1991,7 +1937,7 @@ class _ViewsMixin:
             try:
                 if hasattr(self, 'console_toggle_btn'):
                     self.console_toggle_btn.setVisible(True)
-                    self.console_toggle_btn.setToolTip("Show Console")
+                    self.console_toggle_btn.setToolTip(_("Show Console"))
             except Exception:
                 pass
             self._show_active_view()
@@ -2000,14 +1946,14 @@ class _ViewsMixin:
             self._view_mode = "grid"
             if hasattr(self, '_grid_view_btn') and self._grid_view_btn:
                 self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "toolbar", "view.svg"), 20))
-                self._grid_view_btn.setToolTip("List View")
+                self._grid_view_btn.setToolTip(_("List View"))
             try:
                 self.loading_widget.setVisible(False)
                 self.loading_widget.stop_animation()
             except Exception:
                 pass
             try:
-                self.search_input.setPlaceholderText("Search extensions")
+                self.search_input.setPlaceholderText(_("Search extensions"))
             except Exception:
                 pass
             self.large_search_box.setVisible(False)
@@ -2067,13 +2013,13 @@ class _ViewsMixin:
                 self.plugins_view.show_grid_mode()
             self._refresh_plugins_summary()
 
-            self.header_info.setText("Install and launch extensions like BleachBit and Timeshift")
+            self.header_info.setText(_("Install and launch extensions like BleachBit and Timeshift"))
             try:
                 self.console_label.setVisible(False)
                 self.console.setVisible(False)
                 if hasattr(self, 'console_toggle_btn'):
                     self.console_toggle_btn.setVisible(True)
-                    self.console_toggle_btn.setToolTip("Show Console")
+                    self.console_toggle_btn.setToolTip(_("Show Console"))
             except Exception:
                 pass
         elif view_id == "appimage":
@@ -2097,7 +2043,7 @@ class _ViewsMixin:
                 self.console.setVisible(False)
                 if hasattr(self, 'console_toggle_btn'):
                     self.console_toggle_btn.setVisible(True)
-                    self.console_toggle_btn.setToolTip("Show Console")
+                    self.console_toggle_btn.setToolTip(_("Show Console"))
             except Exception:
                 pass
 
@@ -2108,7 +2054,7 @@ class _ViewsMixin:
                 self.packages_panel_layout.insertWidget(6, self.appimage_view, 1)
             self.appimage_view.setVisible(True)
 
-            self.header_info.setText("Install and manage AppImage applications")
+            self.header_info.setText(_("Install and manage AppImage applications"))
         elif view_id == "git":
             self.large_search_box.setVisible(False)
             self._hide_all_package_views()
@@ -2125,7 +2071,7 @@ class _ViewsMixin:
                 self.console.setVisible(False)
                 if hasattr(self, 'console_toggle_btn'):
                     self.console_toggle_btn.setVisible(True)
-                    self.console_toggle_btn.setToolTip("Show Console")
+                    self.console_toggle_btn.setToolTip(_("Show Console"))
             except Exception:
                 pass
 
@@ -2138,7 +2084,7 @@ class _ViewsMixin:
             self.git_view.setVisible(True)
             self.git_view.refresh()
 
-            self.header_info.setText("Clone, build, update, and manage Git repositories")
+            self.header_info.setText(_("Clone, build, update, and manage Git repositories"))
         elif view_id == "docker":
             self.large_search_box.setVisible(False)
             self._hide_all_package_views()
@@ -2159,7 +2105,7 @@ class _ViewsMixin:
                 self.console.setVisible(False)
                 if hasattr(self, 'console_toggle_btn'):
                     self.console_toggle_btn.setVisible(True)
-                    self.console_toggle_btn.setToolTip("Show Console")
+                    self.console_toggle_btn.setToolTip(_("Show Console"))
             except Exception:
                 pass
 
@@ -2172,7 +2118,7 @@ class _ViewsMixin:
             self.docker_view.setVisible(True)
             self.docker_view.refresh()
 
-            self.header_info.setText("Pull, run, and manage Docker containers")
+            self.header_info.setText(_("Pull, run, and manage Docker containers"))
         elif view_id == "settings":
             # Show settings panel, hide package table & search
             try:
@@ -2208,7 +2154,7 @@ class _ViewsMixin:
                 self.console.setVisible(False)
             except Exception:
                 pass
-            self.header_info.setText("Configure NeoArch settings and plugins")
+            self.header_info.setText(_("Configure NeoArch settings and plugins"))
             if not getattr(self, '_settings_built', False):
                 self._settings_built = True
                 QTimer.singleShot(0, self.build_settings_ui)
@@ -2278,7 +2224,7 @@ class _ViewsMixin:
         self._apply_common_table_style()
         if view_id == "bundles":
             self.package_table.setColumnCount(4)
-            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "Source"])
+            self.package_table.setHorizontalHeaderLabels(["", _("Package Name"), _("Version"), _("Source")])
             self.package_table.setObjectName("bundlesTable")
             self.package_table.setColumnHidden(0, False)
             header = self.package_table.horizontalHeader()
@@ -2292,7 +2238,7 @@ class _ViewsMixin:
             self.package_table.setColumnWidth(3, 120)
         elif view_id == "discover":
             self.package_table.setColumnCount(4)
-            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "Source"])
+            self.package_table.setHorizontalHeaderLabels(["", _("Package Name"), _("Version"), _("Source")])
             self.package_table.setObjectName("discoverTable")
             self.package_table.setColumnHidden(0, False)
             header = self.package_table.horizontalHeader()
@@ -2306,7 +2252,7 @@ class _ViewsMixin:
             self.package_table.setColumnWidth(3, 120)
         else:
             self.package_table.setColumnCount(5)
-            self.package_table.setHorizontalHeaderLabels(["", "Package Name", "Version", "New Version", "Source"])
+            self.package_table.setHorizontalHeaderLabels(["", _("Package Name"), _("Version"), _("New Version"), _("Source")])
             self.package_table.setObjectName("")
             self.package_table.setColumnHidden(0, False)
             header = self.package_table.horizontalHeader()
@@ -2377,7 +2323,7 @@ class _ViewsMixin:
                 self._sync_updates_table()
             except Exception as e:
                 self.log(f"Error rendering updates table: {e}")
-                self._notify("Updates", "Failed to render update list.", level="error", event="errors")
+                self._notify("Updates", _("Failed to render update list."), level="error", event="errors")
         elif self.current_view == "installed":
             try:
                 self.updates_table.set_loading(False)
@@ -2420,7 +2366,7 @@ class _ViewsMixin:
         try:
             if self.current_view in ("updates", "installed") and hasattr(self, 'console_toggle_btn'):
                 self.console_toggle_btn.setVisible(True)
-                self.console_toggle_btn.setToolTip("Show Console")
+                self.console_toggle_btn.setToolTip(_("Show Console"))
         except Exception:
             pass
         # Update counts and nav badge
@@ -2462,7 +2408,7 @@ class _ViewsMixin:
         try:
             if self.current_view in ("updates", "installed") and hasattr(self, 'console_toggle_btn'):
                 self.console_toggle_btn.setVisible(True)
-                self.console_toggle_btn.setToolTip("Show Console")
+                self.console_toggle_btn.setToolTip(_("Show Console"))
         except Exception:
             pass
         self.log("Failed to load packages. Please check the logs for details.")
@@ -2471,7 +2417,7 @@ class _ViewsMixin:
         if status == "start":
             self._installing = True
             self.load_more_btn.setVisible(False)
-            self.loading_widget.set_message("Processing...")
+            self.loading_widget.set_message(_("Processing..."))
             self.loading_widget.set_progress(-1)
             self.loading_widget.setVisible(True)
             self.loading_widget.start_animation()
@@ -2498,7 +2444,7 @@ class _ViewsMixin:
             try:
                 if hasattr(self, 'console_toggle_btn'):
                     self.console_toggle_btn.setVisible(True)
-                    self.console_toggle_btn.setToolTip("Hide Console")
+                    self.console_toggle_btn.setToolTip(_("Hide Console"))
                 self.console_label.setVisible(True)
                 self.console.setVisible(True)
             except Exception:
@@ -2507,15 +2453,15 @@ class _ViewsMixin:
         elif status == "success":
             self._installing = False
             self._install_succeeded = True
-            self.loading_widget.set_message("Success")
+            self.loading_widget.set_message(_("Success"))
             self.cancel_install_btn.setVisible(False)
             op = getattr(self, '_last_operation', 'install') or 'install'
             labels = {
-                'install': ("Install", "Installation complete."),
-                'update': ("Update", "Update complete."),
-                'uninstall': ("Uninstall", "Uninstall complete."),
+                'install': (_("Install"), _("Installation complete.")),
+                'update': (_("Update"), _("Update complete.")),
+                'uninstall': (_("Uninstall"), _("Uninstall complete.")),
             }
-            ntitle, ntext = labels.get(op, ("Operation", "Operation complete."))
+            ntitle, ntext = labels.get(op, (_("Operation"), _("Operation complete.")))
             self._notify(ntitle, ntext, level="success", event="install")
             # Keep spinner visible briefly to show success, then hide
             QTimer.singleShot(1000, lambda: self.finish_installation_progress())
@@ -2525,25 +2471,25 @@ class _ViewsMixin:
             is_update = getattr(self, 'updates_all', None) is not None
             if installed:
                 self._install_succeeded = True
-                self.loading_widget.set_message("Install partially completed")
+                self.loading_widget.set_message(_("Install partially completed"))
             elif is_update:
                 self._install_succeeded = True
-                self.loading_widget.set_message("Update partially completed")
+                self.loading_widget.set_message(_("Update partially completed"))
             else:
-                self.loading_widget.set_message("Install failed")
+                self.loading_widget.set_message(_("Install failed"))
             self.cancel_install_btn.setVisible(False)
             result = getattr(self, '_last_install_result', None)
             if result and hasattr(result, 'title'):
                 self._notify(result.title, result.message, level="error", event="errors")
             else:
-                self._notify("Installation failed", "See console output for details.", level="error", event="errors")
+                self._notify(_("Installation failed"), _("See console output for details."), level="error", event="errors")
             self._last_install_result = None
             QTimer.singleShot(2000, lambda: self.finish_installation_progress())
         elif status == "cancelled":
             self._installing = False
-            self.loading_widget.set_message("Installation cancelled")
+            self.loading_widget.set_message(_("Installation cancelled"))
             self.cancel_install_btn.setVisible(False)
-            self._notify("Installation cancelled", "The operation was cancelled.", level="warning", event="errors")
+            self._notify(_("Installation cancelled"), _("The operation was cancelled."), level="warning", event="errors")
             # Keep spinner visible briefly to show cancellation, then hide
             QTimer.singleShot(1000, lambda: self.finish_installation_progress())
 
@@ -2600,15 +2546,15 @@ class _ViewsMixin:
 
     def _on_no_signal(self):
         self._notify(
-            "No internet connection",
-            "You appear to be offline. Search results may be incomplete and installations may fail.",
+            _("No internet connection"),
+            _("You appear to be offline. Search results may be incomplete and installations may fail."),
             level="warning", event="errors",
         )
 
     def _on_connection_restored(self):
         self._notify(
-            "Connection restored",
-            "Internet connection is available again.",
+            _("Connection restored"),
+            _("Internet connection is available again."),
             level="success", event="updates",
         )
 
@@ -2661,7 +2607,7 @@ class _ViewsMixin:
         self.load_more_btn.setVisible(has_more)
         if has_more:
             remaining = len(self.all_packages) - end
-            self.load_more_btn.setText(f"Load More ({remaining} remaining)")
+            self.load_more_btn.setText(_("Load More ({remaining} remaining)").format(remaining=remaining))
         # Keep header subtitle accurate for Updates
         if self.current_view == "updates":
             self._sync_updates_table()
@@ -2707,7 +2653,7 @@ class _ViewsMixin:
         self.load_more_btn.setVisible(has_more)
         if has_more:
             remaining = total - end
-            self.load_more_btn.setText(f"Load More ({remaining} remaining)")
+            self.load_more_btn.setText(_("Load More ({remaining} remaining)").format(remaining=remaining))
         else:
             self.log("All results loaded")
 
@@ -2893,11 +2839,11 @@ class _ViewsMixin:
                 pass
             if not rows and q:
                 self.updates_table.set_empty_text(
-                    f"No updates found matching '{q}'.", "Try a different search term")
+                    _("No updates found matching '{q}'.").format(q=q), _("Try a different search term"))
             else:
                 self.updates_table.set_empty_text(
-                    "All caught up", "Your system is up to date",
-                    "Updates will appear here automatically when available")
+                    _("All caught up"), _("Your system is up to date"),
+                    _("Updates will appear here automatically when available"))
             self.updates_table.show_installed_date(True)
             self.updates_table.set_installed_mode(False)
             self.updates_table.set_discover_mode(False)
@@ -2973,7 +2919,7 @@ class _ViewsMixin:
                 # flashing an empty state that claims nothing is installed.
                 return
             self.updates_table.set_empty_text(
-                "No installed packages", "Packages installed on this system will appear here")
+                _("No installed packages"), _("Packages installed on this system will appear here"))
             if not mapped:
                 try:
                     q = (self.search_input.text() or '').strip()
@@ -2981,7 +2927,7 @@ class _ViewsMixin:
                     q = ''
                 if q:
                     self.updates_table.set_empty_text(
-                        f"No packages found matching '{q}'.", "Try a different search term")
+                        _("No packages found matching '{q}'.").format(q=q), _("Try a different search term"))
             self.updates_table.set_packages(mapped)
             self.updates_table.set_loading(False)
             try:
@@ -3199,36 +3145,33 @@ class _ViewsMixin:
 
         from PyQt6.QtWidgets import QMenu
         menu = QMenu(self)
-        menu.setStyleSheet(f"""
-            QMenu {{
-                background-color: #1C1E24; color: #F3F4F6;
-                border: 1px solid #373A43; border-radius: 8px; padding: 4px;
-            }}
+        menu.setStyleSheet(Styles.menu(bg=Colors.CARD, fg=Colors.TEXT,
+                               border=Colors.BORDER_STRONG) + f"""
             QMenu::item {{ padding: 8px 16px; border-radius: 4px; }}
             QMenu::item:selected {{ background-color: {Colors.ACCENT}; color: #fff; }}
-            QMenu::separator {{ height: 1px; background: #373A43; margin: 4px 8px; }}
+            QMenu::separator {{ height: 1px; background: {Colors.ACCENT_SOFT}; margin: 4px 8px; }}
         """)
 
-        downgrade_act = menu.addAction("Downgrade...")
+        downgrade_act = menu.addAction(_("Downgrade..."))
         downgrade_act.triggered.connect(lambda: self._package_menu_downgrade(name))
 
         marks = self._load_marks_for(name)
         if marks.get("ignored"):
-            ignore_act = menu.addAction("Unignore updates (IgnorePkg)")
+            ignore_act = menu.addAction(_("Unignore updates (IgnorePkg)"))
         else:
-            ignore_act = menu.addAction("Ignore updates (IgnorePkg)")
+            ignore_act = menu.addAction(_("Ignore updates (IgnorePkg)"))
         ignore_act.triggered.connect(lambda: self._package_menu_ignore(name))
 
         if marks.get("held"):
-            hold_act = menu.addAction("Unhold package")
+            hold_act = menu.addAction(_("Unhold package"))
         else:
-            hold_act = menu.addAction("Hold package")
+            hold_act = menu.addAction(_("Hold package"))
         hold_act.triggered.connect(lambda: self._package_menu_hold(name))
 
         menu.addSeparator()
-        explicit_act = menu.addAction("Mark as explicitly installed")
+        explicit_act = menu.addAction(_("Mark as explicitly installed"))
         explicit_act.triggered.connect(lambda: self._package_menu_reason(name, "explicit"))
-        deps_act = menu.addAction("Mark as dependency")
+        deps_act = menu.addAction(_("Mark as dependency"))
         deps_act.triggered.connect(lambda: self._package_menu_reason(name, "deps"))
 
         menu.exec(self.package_table.viewport().mapToGlobal(pos))
@@ -3417,7 +3360,7 @@ class _ViewsMixin:
         if not name:
             return
 
-        self.package_detail_card.check_updates_btn.setText("Checking...")
+        self.package_detail_card.check_updates_btn.setText(_("Checking..."))
         self.package_detail_card.check_updates_btn.setEnabled(False)
 
         card = self.package_detail_card
@@ -3470,10 +3413,10 @@ class _ViewsMixin:
                 self.package_detail_card.check_updates_btn.setVisible(False)
                 self.package_detail_card.up_to_date_label.setVisible(True)
             else:
-                self.package_detail_card.check_updates_btn.setText("Check Failed")
+                self.package_detail_card.check_updates_btn.setText(_("Check Failed"))
                 self.package_detail_card.check_updates_btn.setEnabled(True)
         except Exception:
-            self.package_detail_card.check_updates_btn.setText("Check for Updates")
+            self.package_detail_card.check_updates_btn.setText(_("Check for Updates"))
             self.package_detail_card.check_updates_btn.setEnabled(True)
 
     def _update_discover_install_btn_state(self):
@@ -3600,11 +3543,11 @@ class _ViewsMixin:
                 if self.current_view == "updates":
                     size = self._checked_download_size()
                     size_text = f" \u00B7 {_fmt_size(size)} to download" if size else ""
-                    label.setText(f"{checked} of {total} selected{size_text}")
+                    label.setText(_("{checked} of {total} selected{size}").format(checked=checked, total=total, size=size_text))
                 else:
-                    label.setText(f"{checked} of {total} selected")
+                    label.setText(_("{checked} of {total} selected").format(checked=checked, total=total))
             elif self.current_view == "updates":
-                label.setText(f"{total} updates available")
+                label.setText(_("{total} updates available").format(total=total))
             else:
                 label.setText("")
         btn = getattr(self, '_updates_selected_btn', None)
@@ -3634,9 +3577,9 @@ class _ViewsMixin:
         try:
             dlg = QMessageBox(self)
             dlg.setIcon(QMessageBox.Icon.Warning)
-            dlg.setWindowTitle("Package Manager Busy")
-            dlg.setText("Another package manager is running")
-            dlg.setInformativeText("The package database is locked. Close other package tools (pacman, pamac, yay/paru) and retry.")
+            dlg.setWindowTitle(_("Package Manager Busy"))
+            dlg.setText(_("Another package manager is running"))
+            dlg.setInformativeText(_("The package database is locked. Close other package tools (pacman, pamac, yay/paru) and retry."))
             if details:
                 dlg.setDetailedText(details)
             if callable(retry_action):
@@ -3709,7 +3652,7 @@ class _ViewsMixin:
 
         try:
             if hasattr(self, 'console_toggle_btn'):
-                self.console_toggle_btn.setToolTip("Hide Console" if new_state else "Show Console")
+                self.console_toggle_btn.setToolTip(_("Hide Console") if new_state else _("Show Console"))
         except Exception:
             pass
 
@@ -3787,23 +3730,12 @@ class _ViewsMixin:
         logged_in = bool(cm and cm.is_logged_in)
 
         menu = QMenu(self)
-        menu.setStyleSheet(f"""
-            QMenu {{
-                background-color: rgba(20, 21, 25, 0.97);
-                color: {Colors.TEXT};
-                border: 1px solid rgba(255, 255, 255, 0.10);
-                border-radius: 12px;
-                padding: 6px;
-            }}
+        menu.setStyleSheet(Styles.menu(radius=Radii.XL, size=Fonts.BASE) + f"""
             QMenu::item {{
                 padding: 9px 20px;
                 border-radius: 8px;
-                font-size: {Fonts.BASE};
             }}
-            QMenu::item:selected {{
-                background-color: rgba(0, 191, 174, 0.16);
-                color: {Colors.ACCENT};
-            }}
+            QMenu::item:selected {{ color: {Colors.ACCENT}; }}
             QMenu::item:disabled {{ color: {Colors.TEXT_3}; }}
             QMenu::separator {{
                 height: 1px;
@@ -3823,7 +3755,7 @@ class _ViewsMixin:
             name_lbl = QLabel(name)
             st_text = "Signed in"
         else:
-            name_lbl = QLabel("Guest")
+            name_lbl = QLabel(_("Guest"))
             st_text = "Not signed in"
         name_lbl.setStyleSheet(
             f"font-size: {Fonts.CARD_TITLE}; font-weight: {Fonts.BOLD};"
@@ -3842,22 +3774,22 @@ class _ViewsMixin:
         menu.addSeparator()
 
         if not logged_in:
-            act_in = menu.addAction("\u21e5  Sign In")
+            act_in = menu.addAction(_("\u21e5  Sign In"))
             act_in.triggered.connect(self._cloud_login)
             menu.addSeparator()
         else:
-            out_act = menu.addAction("\u21aa  Sign Out")
+            out_act = menu.addAction(_("\u21aa  Sign Out"))
             out_act.triggered.connect(
                 lambda: cm.logout() if cm else None)
             menu.addSeparator()
-            manage_act = menu.addAction("Manage Bundles")
+            manage_act = menu.addAction(_("Manage Bundles"))
             manage_act.setIcon(_white_icon(_ICON_BOX))
             manage_act.triggered.connect(
                 lambda: self._safe_switch("bundles"))
-            settings_act = menu.addAction("\u2699  Account Settings")
+            settings_act = menu.addAction(_("\u2699  Account Settings"))
             settings_act.triggered.connect(self._open_account_settings)
 
-        cloud_act = menu.addAction("\u2601  Cloud Bundles")
+        cloud_act = menu.addAction(_("\u2601  Cloud Bundles"))
         cloud_act.triggered.connect(self._cloud_manage_bundles)
 
         btn = self.user_avatar_btn
@@ -4021,7 +3953,7 @@ class _ViewsMixin:
                 border: 1px solid rgba(255, 255, 255, 0.9);
                 border-radius: 6px;
                 padding: 5px 0;
-                font-size: 11px;
+                font-size: {Fonts.SM};
                 font-weight: 600;
                 min-width: 64px;
             }}
@@ -4035,7 +3967,7 @@ class _ViewsMixin:
                 border: 1px solid rgba(255, 80, 80, 0.30);
                 border-radius: 6px;
                 padding: 5px 0;
-                font-size: 11px;
+                font-size: {Fonts.SM};
                 font-weight: 600;
                 min-width: 64px;
             }}
@@ -4051,7 +3983,7 @@ class _ViewsMixin:
                 border: 1px solid {Colors.ACCENT_BORDER_STRONG};
                 border-radius: 6px;
                 padding: 6px 20px;
-                font-size: 12px;
+                font-size: {Fonts.MD};
                 font-weight: 600;
             }}
             QPushButton:hover {{
@@ -4063,7 +3995,7 @@ class _ViewsMixin:
         """
 
         dlg = QDialog(self)
-        dlg.setWindowTitle("Manage Cloud Bundles")
+        dlg.setWindowTitle(_("Manage Cloud Bundles"))
         dlg.setMinimumWidth(440)
         dlg.setStyleSheet(_DIALOG_STYLE)
         _apply_dialog_flags(dlg)
@@ -4080,8 +4012,8 @@ class _ViewsMixin:
         content_layout.setContentsMargins(24, 4, 24, 16)
         content_layout.setSpacing(14)
 
-        subtitle = QLabel("Restore or delete bundles stored in your cloud account.")
-        subtitle.setStyleSheet(f"font-size: 12px; color: {Colors.TEXT_2}; background: transparent; border: none;")
+        subtitle = QLabel(_("Restore or delete bundles stored in your cloud account."))
+        subtitle.setStyleSheet(f"font-size: {Fonts.MD}; color: {Colors.TEXT_2}; background: transparent; border: none;")
         content_layout.addWidget(subtitle)
 
         list_container = QWidget()
@@ -4106,8 +4038,8 @@ class _ViewsMixin:
 
             fresh = cm.list_cloud_bundles()
             if not fresh:
-                lbl = QLabel("All cloud bundles deleted.")
-                lbl.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: 12px; padding: 16px; background: transparent; border: none;")
+                lbl = QLabel(_("All cloud bundles deleted."))
+                lbl.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: {Fonts.MD}; padding: 16px; background: transparent; border: none;")
                 lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 list_layout.addWidget(lbl)
                 return
@@ -4127,7 +4059,7 @@ class _ViewsMixin:
                 info = QLabel(f"{name_text}  ({count_text})")
                 row_h.addWidget(info, 1)
 
-                restore_btn = QPushButton("Restore")
+                restore_btn = QPushButton(_("Restore"))
                 restore_btn.setFixedHeight(26)
                 restore_btn.setCursor(Qt.CursorShape.PointingHandCursor)
                 restore_btn.setStyleSheet(_RESTORE_BTN)
@@ -4151,7 +4083,7 @@ class _ViewsMixin:
                 restore_btn.clicked.connect(make_restore())
                 row_h.addWidget(restore_btn)
 
-                del_btn = QPushButton("Delete")
+                del_btn = QPushButton(_("Delete"))
                 del_btn.setFixedHeight(26)
                 del_btn.setCursor(Qt.CursorShape.PointingHandCursor)
                 del_btn.setStyleSheet(_DELETE_BTN)
@@ -4172,7 +4104,7 @@ class _ViewsMixin:
 
         btn_row = QHBoxLayout()
         btn_row.addStretch()
-        done = QPushButton("Done")
+        done = QPushButton(_("Done"))
         done.setCursor(Qt.CursorShape.PointingHandCursor)
         done.setStyleSheet(_DONE_BTN)
         done.clicked.connect(dlg.accept)
@@ -4219,7 +4151,7 @@ class _ViewsMixin:
                     circular = self._make_circular_pixmap(pixmap, size)
                     self.user_avatar_label.setPixmap(circular)
                     self.user_avatar_label.setStyleSheet("")
-                    self.user_avatar_btn.setToolTip(f"Signed in as {name}")
+                    self.user_avatar_btn.setToolTip(_("Signed in as {name}").format(name=name))
                     return True
         except Exception as e:
             self.log(f"Avatar load failed: {e}")
@@ -4234,11 +4166,11 @@ class _ViewsMixin:
                 initials = user.name[:2].upper() if user.name else "?"
                 self.user_avatar_label.setText(initials)
                 self.user_avatar_label.setStyleSheet(f"""
-                    color: {Colors.ACCENT}; font-weight: bold; font-size: 14px;
+                    color: {Colors.ACCENT}; font-weight: bold; font-size: {Fonts.LG};
                     background-color: rgba(0,191,174,0.15);
                     border-radius: {size // 2}px;
                 """)
-                self.user_avatar_btn.setToolTip(f"Signed in as {user.name}")
+                self.user_avatar_btn.setToolTip(_("Signed in as {name}").format(name=user.name))
         else:
             default = self.get_svg_icon(os.path.join(_BASE_DIR, "assets", "icons", "user.svg"), 20)
             if not default.isNull():
@@ -4246,7 +4178,7 @@ class _ViewsMixin:
             else:
                 self.user_avatar_label.setText("👤")
             self.user_avatar_label.setStyleSheet("")
-            self.user_avatar_btn.setToolTip("Sign in to sync favourites")
+            self.user_avatar_btn.setToolTip(_("Sign in to sync favourites"))
 
     def show_about(self):
         help_service.show_about(self)

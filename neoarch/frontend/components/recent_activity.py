@@ -11,7 +11,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor
 
-from neoarch.frontend.tokens import Colors
+from neoarch.frontend.tokens import Colors, Fonts
+from neoarch.backend.services.i18n import _
 
 
 _ACTION_STYLES = {
@@ -70,9 +71,9 @@ class RecentActivity(QFrame):
         hdr.addWidget(dot)
         hdr.addSpacing(10)
 
-        title = QLabel("Recent Activity")
+        title = QLabel(_("Recent Activity"))
         title.setStyleSheet(
-            f"font-size: 12px; font-weight: 500; color: {Colors.TEXT_2};"
+            f"font-size: {Fonts.MD}; font-weight: 500; color: {Colors.TEXT_2};"
             " background: transparent; letter-spacing: 0.3px;"
         )
         hdr.addWidget(title)
@@ -134,9 +135,9 @@ class RecentActivity(QFrame):
         return entries
 
     def _show_empty(self):
-        lbl = QLabel("No recent package activity found")
+        lbl = QLabel(_("No recent package activity found"))
         lbl.setStyleSheet(
-            f"font-size: 12px; color: {Colors.TEXT_3}; background: transparent; padding: 6px 0;"
+            f"font-size: {Fonts.MD}; color: {Colors.TEXT_3}; background: transparent; padding: 6px 0;"
         )
         self.items_layout.addWidget(lbl)
 
@@ -151,13 +152,13 @@ class RecentActivity(QFrame):
         icon.setFixedWidth(18)
         icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon.setStyleSheet(
-            f"font-size: 14px; font-weight: 700; color: {color}; background: transparent;"
+            f"font-size: {Fonts.LG}; font-weight: 700; color: {color}; background: transparent;"
         )
         row.addWidget(icon)
 
         name = QLabel(pkg)
         name.setStyleSheet(
-            f"font-size: 13px; font-weight: 500; color: {Colors.TEXT}; background: transparent;"
+            f"font-size: {Fonts.BASE}; font-weight: 500; color: {Colors.TEXT}; background: transparent;"
         )
         row.addWidget(name)
 
@@ -171,7 +172,7 @@ class RecentActivity(QFrame):
 
         ts = QLabel(time_str)
         ts.setStyleSheet(
-            f"font-size: 11px; font-weight: 400; color: {Colors.TEXT_3}; background: transparent;"
+            f"font-size: {Fonts.SM}; font-weight: 400; color: {Colors.TEXT_3}; background: transparent;"
         )
         row.addWidget(ts)
 

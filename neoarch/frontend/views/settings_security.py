@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QFrame, QGridLayout, QSizePolicy)
 
 from neoarch.frontend.tokens import Colors, Fonts, Radii
+from neoarch.backend.services.i18n import _
 from neoarch.frontend.components.about_tab import (
     _card, _mac_icon_pixmap, _accent_btn, _open_url,
 )
@@ -94,18 +95,18 @@ class SecuritySettingsWidget(QWidget):
 
         title_col = QVBoxLayout()
         title_col.setSpacing(2)
-        micro = QLabel("SAFETY OVERVIEW")
+        micro = QLabel(_("SAFETY OVERVIEW"))
         micro.setStyleSheet(
             f"font-size: {Fonts.XS}; font-weight: {Fonts.BOLD};"
             f" letter-spacing: 2px; color: {_AMBER};"
             " background: transparent; border: none;")
         title_col.addWidget(micro)
-        name = QLabel("Security")
+        name = QLabel(_("Security"))
         name.setStyleSheet(
             f"font-size: {Fonts.HERO}; font-weight: {Fonts.BOLD};"
             f" color: {Colors.TEXT}; background: transparent; border: none;")
         title_col.addWidget(name)
-        sub = QLabel("What NeoArch can reach, what it runs, and what it asks before it acts")
+        sub = QLabel(_("What NeoArch can reach, what it runs, and what it asks before it acts"))
         sub.setWordWrap(True)
         sub.setStyleSheet(
             f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
@@ -113,7 +114,7 @@ class SecuritySettingsWidget(QWidget):
         title_col.addWidget(sub)
         hl.addLayout(title_col, 1)
 
-        cap = QLabel("WARNED · NOT BLOCKED")
+        cap = QLabel(_("WARNED · NOT BLOCKED"))
         cap.setStyleSheet(
             f"font-size: {Fonts.XS}; font-weight: {Fonts.BOLD}; letter-spacing: 1.2px;"
             f" color: {_AMBER}; background-color: rgba(255, 159, 28, 0.10);"
@@ -131,9 +132,9 @@ class SecuritySettingsWidget(QWidget):
         bl.setSpacing(12)
 
         chips = [
-            ("AUR", "Community recipes", _AMBER),
-            ("Partial updates", "Warned, not blocked", _AMBER),
-            ("Sudo", "Prompt only, never stored", _GREEN),
+            ("AUR", _("Community recipes"), _AMBER),
+            ("Partial updates", _("Warned, not blocked"), _AMBER),
+            ("Sudo", _("Prompt only, never stored"), _GREEN),
         ]
         for value, sub, color in chips:
             chip = QFrame()
@@ -231,46 +232,46 @@ class SecuritySettingsWidget(QWidget):
         grid.setColumnStretch(1, 1)
 
         grid.addWidget(self._tile(
-            _ICON_PACKAGE, _AMBER, "AUR — Arch User Repository", "COMMUNITY", [
-                ("Community-maintained recipes — not curated or reviewed by Arch.", Colors.TEXT),
-                ("Every result is badged [aur] \u2014 never confused with official.", Colors.TEXT_2),
-                ("Updates build one at a time; a failure never aborts the rest.", Colors.TEXT_2),
-                ("Helper: auto \u2014 yay, paru, trizen, pikaur (General).", Colors.TEXT_2),
+            _ICON_PACKAGE, _AMBER, _("AUR — Arch User Repository"), _("COMMUNITY"), [
+                (_("Community-maintained recipes — not curated or reviewed by Arch."), Colors.TEXT),
+                (_("Every result is badged [aur] \u2014 never confused with official."), Colors.TEXT_2),
+                (_("Updates build one at a time; a failure never aborts the rest."), Colors.TEXT_2),
+                (_("Helper: auto \u2014 yay, paru, trizen, pikaur (General)."), Colors.TEXT_2),
             ]), 0, 0)
 
         grid.addWidget(self._tile(
-            _ICON_ALERT, _AMBER, "Partial upgrades", "WARNING", [
-                ("Rolling release \u2014 packages expect to update together.", Colors.TEXT_2),
-                ("Updating a selection can desync libraries from their apps.", Colors.TEXT_2),
-                ("NeoArch warns \u201cfull system upgrade recommended\u201d, then lets you proceed.", _AMBER),
+            _ICON_ALERT, _AMBER, _("Partial upgrades"), _("WARNING"), [
+                (_("Rolling release \u2014 packages expect to update together."), Colors.TEXT_2),
+                (_("Updating a selection can desync libraries from their apps."), Colors.TEXT_2),
+                (_("NeoArch warns \u201cfull system upgrade recommended\u201d, then lets you proceed."), _AMBER),
             ], warn=True), 0, 1)
 
         grid.addWidget(self._tile(
-            _ICON_ARROW, _GREEN, "Update review", "SAFE", [
-                ("Package count and version changes are shown first.", Colors.TEXT_2),
-                ("Nothing starts until you confirm \u2014 never silently.", Colors.GREEN),
+            _ICON_ARROW, _GREEN, _("Update review"), _("SAFE"), [
+                (_("Package count and version changes are shown first."), Colors.TEXT_2),
+                (_("Nothing starts until you confirm \u2014 never silently."), Colors.GREEN),
             ]), 1, 0)
 
         grid.addWidget(self._tile(
-            _ICON_LAYERS, _AMBER, "Package sources", "SOURCES", [
-                ("Official: core / extra / multilib via pacman.", Colors.TEXT_2),
-                ("Chaotic-AUR: automatic through pacman.conf.", Colors.TEAL),
-                ("Flatpak sandboxed \u00b7 npm user mode.", Colors.TEXT_2),
+            _ICON_LAYERS, _AMBER, _("Package sources"), _("SOURCES"), [
+                (_("Official: core / extra / multilib via pacman."), Colors.TEXT_2),
+                (_("Chaotic-AUR: automatic through pacman.conf."), Colors.TEAL),
+                (_("Flatpak sandboxed \u00b7 npm user mode."), Colors.TEXT_2),
             ]), 1, 1)
 
         grid.addWidget(self._tile(
-            _ICON_KEY, _GREEN, "Credentials & sudo", "PROTECTED", [
-                ("GUI sudo prompt (SUDO_ASKPASS) \u2014 never stored.", Colors.GREEN),
-                ("OAuth tokens cached with an expiry.", Colors.TEXT_2),
-                ("Config in ~/.config/neoarch.", Colors.TEXT_2),
+            _ICON_KEY, _GREEN, _("Credentials & sudo"), _("PROTECTED"), [
+                (_("GUI sudo prompt (SUDO_ASKPASS) \u2014 never stored."), Colors.GREEN),
+                (_("OAuth tokens cached with an expiry."), Colors.TEXT_2),
+                (_("Config in ~/.config/neoarch."), Colors.TEXT_2),
             ]), 2, 0)
 
         grid.addWidget(self._tile(
-            _ICON_SHIELD, _AMBER, "Healthy-system checklist", "HABITS", [
-                ("Prefer official repos over AUR when both exist.", Colors.TEXT_2),
-                ("Read PKGBUILDs before installing AUR packages.", Colors.TEXT_2),
-                ("Prefer full upgrades \u2014 keep IgnorePkg minimal.", Colors.TEXT_2),
-                ("Clean orphans, cache, and read Arch news.", Colors.TEXT_2),
+            _ICON_SHIELD, _AMBER, _("Healthy-system checklist"), _("HABITS"), [
+                (_("Prefer official repos over AUR when both exist."), Colors.TEXT_2),
+                (_("Read PKGBUILDs before installing AUR packages."), Colors.TEXT_2),
+                (_("Prefer full upgrades \u2014 keep IgnorePkg minimal."), Colors.TEXT_2),
+                (_("Clean orphans, cache, and read Arch news."), Colors.TEXT_2),
             ]), 2, 1)
 
         self.layout.addLayout(grid)
@@ -284,13 +285,13 @@ class SecuritySettingsWidget(QWidget):
         ll.setContentsMargins(16, 12, 16, 12)
         ll.setSpacing(12)
 
-        lab = QLabel("Before installing from the AUR, review the PKGBUILD.")
+        lab = QLabel(_("Before installing from the AUR, review the PKGBUILD."))
         lab.setStyleSheet(
             f"font-size: {Fonts.MD}; color: {Colors.TEXT};"
             " background: transparent; border: none;")
         ll.addWidget(lab, 1)
 
-        ll.addWidget(_accent_btn("Open aur.archlinux.org \u2197",
+        ll.addWidget(_accent_btn(_("Open aur.archlinux.org \u2197"),
                                  lambda: _open_url(_LINK)))
 
         self.layout.addWidget(link_card)

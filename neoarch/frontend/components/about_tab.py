@@ -8,15 +8,17 @@ import subprocess
 import platform as _platform
 
 from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal, QRectF, QSize
-from PyQt6.QtGui import QPixmap, QPainter, QColor, QIcon
+from PyQt6.QtGui import QPixmap, QPainter, QIcon
 from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QFrame, QScrollArea, QGridLayout, QSizePolicy,
+    QFrame, QScrollArea, QGridLayout,
     QApplication, QStackedWidget,
 )
 
 from neoarch.frontend.tokens import Colors, Fonts, Radii, QSS
+from neoarch.frontend.styles import Styles
+from neoarch.backend.services.i18n import _
 from neoarch.resources.paths import (
     ASSETS_DIR, APP_VERSION, APP_EDITION, PROJECT_ROOT,
 )
@@ -193,13 +195,7 @@ def _scroll_area():
     scroll = QScrollArea()
     scroll.setWidgetResizable(True)
     scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-    scroll.setStyleSheet(
-        "QScrollArea { background: transparent; border: none; }"
-        "QScrollBar:vertical { background: transparent; width: 6px; }"
-        "QScrollBar::handle:vertical { background: rgba(255,255,255,0.08);"
-        "  border-radius: 3px; min-height: 30px; }"
-        "QScrollBar::handle:vertical:hover { background: rgba(255,255,255,0.14); }"
-        "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }")
+    scroll.setStyleSheet(Styles.scrollbar())
     return scroll
 
 
@@ -278,9 +274,9 @@ class _OverviewTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(24)
 
-        layout.addWidget(_page_title("Overview"))
+        layout.addWidget(_page_title(_("Overview")))
         layout.addWidget(_page_subtitle(
-            "Version information, links, and system details"))
+            _("Version information, links, and system details")))
 
         scroll = _scroll_area()
         content = QWidget()
@@ -318,7 +314,7 @@ class _OverviewTab(QWidget):
             logo_lbl.setText("NA")
             logo_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             logo_lbl.setStyleSheet(
-                f"color: {Colors.ACCENT}; font-size: 28px; font-weight: 800;"
+                f"color: {Colors.ACCENT}; font-size: {Fonts.PAGE_TITLE}; font-weight: 800;"
                 "background: transparent; border: none;")
         logo_lbl.setFixedSize(64, 64)
         logo_row.addWidget(logo_lbl)
@@ -330,7 +326,7 @@ class _OverviewTab(QWidget):
             f"font-size: {Fonts.HERO}; font-weight: {Fonts.BOLD};"
             f" color: {Colors.TEXT}; background: transparent; border: none;")
         title_col.addWidget(name_lbl)
-        ed_lbl = QLabel(f"{APP_EDITION} Edition")
+        ed_lbl = QLabel(_("{edition} Edition").format(edition=APP_EDITION))
         ed_lbl.setStyleSheet(
             f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; font-weight: {Fonts.MEDIUM};"
             " background: transparent; border: none;")
@@ -339,10 +335,10 @@ class _OverviewTab(QWidget):
         hl.addLayout(logo_row)
 
         desc = QLabel(
-            "A modern graphical package manager for Arch Linux — search, install, "
-            "and manage packages from pacman, AUR, Flatpak, and npm in one place. "
-            "Create bundles, manage Git projects, run Docker containers, and sync "
-            "your setup across devices."
+            _("A modern graphical package manager for Arch Linux — search, install, "
+              "and manage packages from pacman, AUR, Flatpak, and npm in one place. "
+              "Create bundles, manage Git projects, run Docker containers, and sync "
+              "your setup across devices.")
         )
         desc.setWordWrap(True)
         desc.setStyleSheet(
@@ -353,9 +349,9 @@ class _OverviewTab(QWidget):
         links_row = QHBoxLayout()
         links_row.setSpacing(8)
         for label, url in [
-            ("\u2197 Website", _WEBSITE_URL),
-            ("\u2197 Repository", _REPO_URL),
-            ("\u2197 AUR Package", _AUR_URL),
+            (_("\u2197 Website"), _WEBSITE_URL),
+            (_("\u2197 Repository"), _REPO_URL),
+            (_("\u2197 AUR Package"), _AUR_URL),
         ]:
             links_row.addWidget(_accent_btn(label, lambda u=url: _open_url(u)))
         links_row.addStretch()
@@ -367,13 +363,13 @@ class _OverviewTab(QWidget):
         grid = QGridLayout()
         grid.setSpacing(12)
         cards_data = [
-            ("Version", APP_VERSION, f"{APP_EDITION} Edition", Colors.TEXT),
-            ("License", "MIT", "Open Source", Colors.GREEN),
-            ("Platform", f"{_platform.system()} {_platform.release()}",
+            (_("Version"), APP_VERSION, _("{edition} Edition").format(edition=APP_EDITION), Colors.TEXT),
+            (_("License"), "MIT", _("Open Source"), Colors.GREEN),
+            (_("Platform"), f"{_platform.system()} {_platform.release()}",
              _platform.machine(), Colors.TEXT),
-            ("Python", _platform.python_version(), "Runtime", Colors.TEXT),
-            ("Qt", "6 (PyQt6)", "GUI Framework", Colors.TEXT),
-            ("Commits", str(_git_log_count()), "Total commits", Colors.TEXT),
+            (_("Python"), _platform.python_version(), _("Runtime"), Colors.TEXT),
+            (_("Qt"), "6 (PyQt6)", _("GUI Framework"), Colors.TEXT),
+            (_("Commits"), str(_git_log_count()), _("Total commits"), Colors.TEXT),
         ]
         for i, (title, value, sub, color) in enumerate(cards_data):
             card = _card()
@@ -406,9 +402,9 @@ class _OverviewTab(QWidget):
         dv.setSpacing(8)
 
         quote = QLabel(
-            "\u201CUnified system design is not about hiding complex "
-            "settings; it is about providing power users with reliable "
-            "tools that simplify technical friction.\u201D"
+            _("\u201CUnified system design is not about hiding complex "
+              "settings; it is about providing power users with reliable "
+              "tools that simplify technical friction.\u201D")
         )
         quote.setWordWrap(True)
         quote.setStyleSheet(
@@ -461,7 +457,7 @@ class _OverviewTab(QWidget):
             f"font-size: {Fonts.BASE}; font-weight: {Fonts.SEMI};"
             f" color: {Colors.TEXT}; background: transparent; border: none;")
         author_info.addWidget(author_name)
-        author_role = QLabel("NeoArch Core Architectural Manifesto")
+        author_role = QLabel(_("NeoArch Core Architectural Manifesto"))
         author_role.setStyleSheet(
             f"font-size: {Fonts.SM}; color: {Colors.TEXT_3};"
             " background: transparent; border: none;")
@@ -491,8 +487,8 @@ class _ReleaseNotesTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(24)
 
-        layout.addWidget(_page_title("Release Notes"))
-        layout.addWidget(_page_subtitle("Version history and changes"))
+        layout.addWidget(_page_title(_("Release Notes")))
+        layout.addWidget(_page_subtitle(_("Version history and changes")))
 
         scroll = _scroll_area()
         content = QWidget()
@@ -504,7 +500,7 @@ class _ReleaseNotesTab(QWidget):
         ver_card = _card()
         vl = QVBoxLayout(ver_card)
         vl.setContentsMargins(20, 18, 20, 20)
-        vl.addWidget(_card_title(f"Current Version: {APP_VERSION}"))
+        vl.addWidget(_card_title(_("Current Version: {version}").format(version=APP_VERSION)))
         cl.addWidget(ver_card)
 
         recent = _git_recent_log(20)
@@ -522,9 +518,9 @@ class _ReleaseNotesTab(QWidget):
                 fixes = recent[:3]
 
             for icon, title, items in [
-                (_ICON_SPARKLES, "New Features", features[:8]),
-                (_ICON_WRENCH, "Bug Fixes", fixes[:6]),
-                (_ICON_ARROW_UP_CIRCLE, "Improvements", improvements[:6]),
+                (_ICON_SPARKLES, _("New Features"), features[:8]),
+                (_ICON_WRENCH, _("Bug Fixes"), fixes[:6]),
+                (_ICON_ARROW_UP_CIRCLE, _("Improvements"), improvements[:6]),
             ]:
                 if not items:
                     continue
@@ -571,7 +567,7 @@ class _ReleaseNotesTab(QWidget):
             tcl = QVBoxLayout(tag_card)
             tcl.setContentsMargins(20, 18, 20, 20)
             tcl.setSpacing(10)
-            tcl.addWidget(_card_title("Releases"))
+            tcl.addWidget(_card_title(_("Releases")))
             for tag in tags:
                 row = QHBoxLayout()
                 row.setSpacing(8)
@@ -583,7 +579,7 @@ class _ReleaseNotesTab(QWidget):
                 row.addStretch()
                 release_url = f"{_REPO_URL}/releases/tag/{tag}"
                 row.addWidget(_link_btn(
-                    "\u2197 View Release",
+                    _("\u2197 View Release"),
                     lambda u=release_url: _open_url(u)))
                 tcl.addLayout(row)
                 tcl.addWidget(_sep())
@@ -595,7 +591,7 @@ class _ReleaseNotesTab(QWidget):
             cl.addWidget(tag_card)
 
         cl.addWidget(_accent_btn(
-            "View All Releases on GitHub \u2197",
+            _("View All Releases on GitHub \u2197"),
             lambda: _open_url(f"{_REPO_URL}/releases")))
 
         cl.addStretch(1)
@@ -834,7 +830,7 @@ def _doc_step_row(idx, text, account=False):
     row.addWidget(lbl, 1)
 
     if account:
-        tag = QLabel("SIGN-IN")
+        tag = QLabel(_("SIGN-IN"))
         tag.setStyleSheet(
             f"color: {Colors.ORANGE};"
             " background: rgba(255, 159, 28, 0.12);"
@@ -851,7 +847,7 @@ def _doc_chapter_page(num, title, purpose, features, steps=None):
     cl.setContentsMargins(32, 26, 32, 26)
     cl.setSpacing(12)
 
-    num_lbl = QLabel(f"CHAPTER {num}")
+    num_lbl = QLabel(_("CHAPTER {num}").format(num=num))
     num_lbl.setStyleSheet(
         f"color: {Colors.ACCENT}; font-size: {Fonts.XS};"
         f" font-weight: {Fonts.BOLD}; letter-spacing: 2px;"
@@ -876,7 +872,7 @@ def _doc_chapter_page(num, title, purpose, features, steps=None):
     cl.addWidget(_sep())
     cl.addSpacing(6)
 
-    fh_lbl = QLabel("WHAT YOU CAN DO")
+    fh_lbl = QLabel(_("WHAT YOU CAN DO"))
     fh_lbl.setStyleSheet(
         f"color: {Colors.TEXT_3}; font-size: {Fonts.XS};"
         f" font-weight: {Fonts.BOLD}; letter-spacing: 1.2px;"
@@ -887,14 +883,14 @@ def _doc_chapter_page(num, title, purpose, features, steps=None):
     grid.setContentsMargins(0, 6, 0, 0)
     grid.setSpacing(10)
     for i, (name, desc) in enumerate(features):
-        grid.addWidget(_doc_feature_card(name, desc), i // 2, i % 2)
+        grid.addWidget(_doc_feature_card(_(name), _(desc)), i // 2, i % 2)
     grid.setColumnStretch(0, 1)
     grid.setColumnStretch(1, 1)
     cl.addLayout(grid)
 
     if steps:
         cl.addSpacing(6)
-        sh_lbl = QLabel("HOW IT WORKS")
+        sh_lbl = QLabel(_("HOW IT WORKS"))
         sh_lbl.setStyleSheet(
             f"color: {Colors.TEXT_3}; font-size: {Fonts.XS};"
             f" font-weight: {Fonts.BOLD}; letter-spacing: 1.2px;"
@@ -906,7 +902,7 @@ def _doc_chapter_page(num, title, purpose, features, steps=None):
         steps_box.setSpacing(8)
         for i, step in enumerate(steps, 1):
             text, acct = step if isinstance(step, tuple) else (step, False)
-            steps_box.addLayout(_doc_step_row(i, text, acct))
+            steps_box.addLayout(_doc_step_row(i, _(text), acct))
         cl.addLayout(steps_box)
 
     cl.addStretch(1)
@@ -926,9 +922,9 @@ class _DocumentationTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(24)
 
-        layout.addWidget(_page_title("Documentation"))
+        layout.addWidget(_page_title(_("Documentation")))
         layout.addWidget(_page_subtitle(
-            "A field guide to every NeoArch page"))
+            _("A field guide to every NeoArch page")))
 
         book = _card()
         bl = QHBoxLayout(book)
@@ -948,7 +944,7 @@ class _DocumentationTab(QWidget):
         for section, chapters in _DOC_SECTIONS:
             if not first_section:
                 tl.addSpacing(10)
-            hdr = QLabel(section.upper())
+            hdr = QLabel(_(section).upper())
             hdr.setStyleSheet(
                 f"color: {Colors.TEXT_3}; font-size: {Fonts.XS};"
                 f" font-weight: {Fonts.BOLD}; letter-spacing: 1.2px;"
@@ -958,9 +954,9 @@ class _DocumentationTab(QWidget):
             first_section = False
 
             for num, title, purpose, feats, *rest in chapters:
-                tl.addWidget(self._toc_btn(num, title, idx))
+                tl.addWidget(self._toc_btn(num, _(title), idx))
                 self._stack.addWidget(
-                    _doc_chapter_page(num, title, purpose, feats,
+                    _doc_chapter_page(num, _(title), _(purpose), feats,
                                       rest[0] if rest else None))
                 idx += 1
 
@@ -1024,7 +1020,7 @@ class _AlertNavButton(QPushButton):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._dot = QLabel("\u25cf", self)
         self._dot.setStyleSheet(
-            f"color: {Colors.RED}; font-size: 9px; font-weight: {Fonts.BOLD};"
+            f"color: {Colors.RED}; font-size: {Fonts.TINY}; font-weight: {Fonts.BOLD};"
             "background: transparent; border: none;")
         self._dot.setAttribute(
             Qt.WidgetAttribute.WA_TransparentForMouseEvents)
@@ -1131,7 +1127,7 @@ class _StatusDot(QLabel):
             "info": Colors.TEXT_2,
         }
         c = color_map.get(status, Colors.TEXT_2)
-        self.setText(f"\u2022 {status.upper()}")
+        self.setText(_("\u2022 {status}").format(status=status.upper()))
         self.setStyleSheet(
             f"color: {c}; font-size: {Fonts.XS}; font-weight: {Fonts.SEMI};"
             " background: transparent; border: none;")
@@ -1147,9 +1143,9 @@ class _DiagnosticsTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(16)
 
-        layout.addWidget(_page_title("Diagnostics"))
+        layout.addWidget(_page_title(_("Diagnostics")))
         layout.addWidget(_page_subtitle(
-            "Dependencies, system checks, and diagnostic information"))
+            _("Dependencies, system checks, and diagnostic information")))
 
         scroll = _scroll_area()
         content = QWidget()
@@ -1165,13 +1161,13 @@ class _DiagnosticsTab(QWidget):
 
         dep_head = QHBoxLayout()
         dep_head.setSpacing(12)
-        dep_head.addWidget(_card_title("Dependencies"))
+        dep_head.addWidget(_card_title(_("Dependencies")))
         dep_head.addStretch()
-        refresh_btn = _secondary_btn("Refresh", lambda: None)
+        refresh_btn = _secondary_btn(_("Refresh"), lambda: None)
         refresh_btn.clicked.disconnect()
         refresh_btn.clicked.connect(lambda checked=False: self._refresh_deps())
         dep_head.addWidget(refresh_btn)
-        install_all_btn = _accent_btn("Install All Missing", lambda: None)
+        install_all_btn = _accent_btn(_("Install All Missing"), lambda: None)
         install_all_btn.clicked.disconnect()
         install_all_btn.clicked.connect(
             lambda checked=False: self._install_missing())
@@ -1179,7 +1175,7 @@ class _DiagnosticsTab(QWidget):
         self._install_all_btn = install_all_btn
         dpl.addLayout(dep_head)
 
-        self._dep_summary = QLabel("Checking\u2026")
+        self._dep_summary = QLabel(_("Checking\u2026"))
         self._dep_summary.setStyleSheet(
             f"font-size: {Fonts.SM}; color: {Colors.TEXT_3};"
             "background: transparent; border: none;")
@@ -1201,7 +1197,7 @@ class _DiagnosticsTab(QWidget):
         self._dep_console.setReadOnly(True)
         self._dep_console.setFixedHeight(110)
         self._dep_console.setPlaceholderText(
-            "Install output appears here \u2014 press Install to begin")
+            _("Install output appears here \u2014 press Install to begin"))
         self._dep_console.setStyleSheet(f"""
             QTextEdit {{
                 background-color: {Colors.BG};
@@ -1209,7 +1205,7 @@ class _DiagnosticsTab(QWidget):
                 border: 1px solid {Colors.BORDER};
                 border-radius: {Radii.SM}px;
                 font-family: 'monospace';
-                font-size: 11px;
+                font-size: {Fonts.SM};
                 padding: 8px;
             }}
         """)
@@ -1220,10 +1216,10 @@ class _DiagnosticsTab(QWidget):
         # ── System checks card ──
         btn_row = QHBoxLayout()
         btn_row.setSpacing(12)
-        btn_row.addWidget(_accent_btn("Run Diagnostics", lambda: None))
-        btn_row.addWidget(_secondary_btn("Copy Report", lambda: None))
+        btn_row.addWidget(_accent_btn(_("Run Diagnostics"), lambda: None))
+        btn_row.addWidget(_secondary_btn(_("Copy Report"), lambda: None))
         btn_row.addWidget(_secondary_btn(
-            "Report a Bug \u2197",
+            _("Report a Bug \u2197"),
             lambda: _open_url(f"{_REPO_URL}/issues/new")))
         btn_row.addStretch()
         cl.addLayout(btn_row)
@@ -1233,7 +1229,7 @@ class _DiagnosticsTab(QWidget):
         self._results_layout.setContentsMargins(20, 18, 20, 20)
         self._results_layout.setSpacing(10)
 
-        placeholder = QLabel("Click \"Run Diagnostics\" to check your system")
+        placeholder = QLabel(_("Click \"Run Diagnostics\" to check your system"))
         placeholder.setStyleSheet(
             f"font-size: {Fonts.BASE}; color: {Colors.TEXT_3};"
             " background: transparent; border: none;")
@@ -1258,7 +1254,7 @@ class _DiagnosticsTab(QWidget):
                 w = item.widget()
                 if w:
                     w.deleteLater()
-            loading = QLabel("Running diagnostics\u2026")
+            loading = QLabel(_("Running diagnostics\u2026"))
             loading.setStyleSheet(
                 f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
                 " background: transparent; border: none;")
@@ -1343,7 +1339,7 @@ class _DiagnosticsTab(QWidget):
             catalog = get_dependency_catalog()
             simulated = fake_missing_active()
         except Exception as e:
-            self._dep_summary.setText(f"Check failed: {e}")
+            self._dep_summary.setText(_("Check failed: {e}").format(e=e))
             return
 
         self._clear_dep_rows()
@@ -1374,7 +1370,7 @@ class _DiagnosticsTab(QWidget):
             else:
                 status = "error" if dep["required"] else "warn"
                 row.addWidget(_StatusDot(status))
-                install_btn = _secondary_btn("Install", lambda: None)
+                install_btn = _secondary_btn(_("Install"), lambda: None)
                 install_btn.clicked.disconnect()
                 install_btn.clicked.connect(
                     lambda checked=False, n=dep["name"]: self._install_missing([n]))
@@ -1386,23 +1382,25 @@ class _DiagnosticsTab(QWidget):
         req_missing = [d["name"] for d in catalog
                        if d["required"] and not d["present"]]
         if not missing:
-            self._dep_summary.setText("All dependencies installed")
+            self._dep_summary.setText(_("All dependencies installed"))
             self._dep_summary.setStyleSheet(
                 f"font-size: {Fonts.SM}; color: {Colors.GREEN};"
                 f" font-weight: {Fonts.SEMI};"
                 "background: transparent; border: none;")
         elif req_missing:
             self._dep_summary.setText(
-                f"{len(missing)} missing \u2014 {len(req_missing)} required "
-                "for NeoArch to work")
+                _("{count} missing \u2014 {req} required "
+                  "for NeoArch to work").format(
+                      count=len(missing), req=len(req_missing)))
             self._dep_summary.setStyleSheet(
                 f"font-size: {Fonts.SM}; color: {Colors.RED};"
                 f" font-weight: {Fonts.SEMI};"
                 "background: transparent; border: none;")
         else:
             self._dep_summary.setText(
-                f"{len(missing)} optional component(s) missing \u2014 "
-                "features above will stay hidden until installed")
+                _("{count} optional component(s) missing \u2014 "
+                  "features above will stay hidden until installed").format(
+                      count=len(missing)))
             self._dep_summary.setStyleSheet(
                 f"font-size: {Fonts.SM}; color: {Colors.ORANGE};"
                 f" font-weight: {Fonts.SEMI};"
@@ -1411,8 +1409,8 @@ class _DiagnosticsTab(QWidget):
 
         if simulated and missing:
             self._dep_log_line(
-                "\u26a0 Simulated test mode (NEOARCH_FAKE_MISSING) \u2014 "
-                "these rows never clear; unset the env var for real checks")
+                _("\u26a0 Simulated test mode (NEOARCH_FAKE_MISSING) \u2014 "
+                  "these rows never clear; unset the env var for real checks"))
 
         app = self.main_app
         if app is not None and hasattr(app, "_update_dep_alert"):
@@ -1424,23 +1422,24 @@ class _DiagnosticsTab(QWidget):
         if not targets or app is None:
             return
         if self._dep_worker is not None and self._dep_worker.isRunning():
-            self._dep_log_line("A setup is already running \u2014 wait for it")
+            self._dep_log_line(_("A setup is already running \u2014 wait for it"))
             return
 
         # Use the standard session auth prompt (same as Updates page).
         # Must run here on the GUI thread; if the user closes it once,
         # do not keep asking.
         if hasattr(app, "ensure_session_auth"):
-            self._dep_log_line("$ authentication required\u2026")
+            self._dep_log_line(_("$ authentication required\u2026"))
             if not app.ensure_session_auth():
                 self._dep_log_line(
-                    "\u2717 Cancelled \u2014 authenticate to enable installs")
+                    _("\u2717 Cancelled \u2014 authenticate to enable installs"))
                 return
 
         self._install_all_btn.setEnabled(False)
-        self._install_all_btn.setText("Installing\u2026")
+        self._install_all_btn.setText(_("Installing\u2026"))
         self._dep_summary.setText(
-            f"Installing {', '.join(targets)}\u2026 watch output below")
+            _("Installing {names}\u2026 watch output below").format(
+                names=", ".join(targets)))
         self._dep_worker = _DepInstallWorker(app, targets)
         self._dep_worker.line.connect(self._dep_log_line)
         self._dep_worker.done.connect(self._on_install_done)
@@ -1448,11 +1447,11 @@ class _DiagnosticsTab(QWidget):
 
     def _on_install_done(self, names):
         try:
-            self._install_all_btn.setText("Install All Missing")
+            self._install_all_btn.setText(_("Install All Missing"))
             if self._missing_deps:
                 self._install_all_btn.setEnabled(True)
             self._dep_log_line(
-                "\u2500" * 42 + " re-checking")
+                "\u2500" * 42 + _(" re-checking"))
         except Exception:
             pass
         self._refresh_deps()
@@ -1475,9 +1474,9 @@ class _CommunityTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(24)
 
-        layout.addWidget(_page_title("Community"))
+        layout.addWidget(_page_title(_("Community")))
         layout.addWidget(_page_subtitle(
-            "The people behind NeoArch and how to support it"))
+            _("The people behind NeoArch and how to support it")))
 
         scroll = _scroll_area()
         content = QWidget()
@@ -1518,14 +1517,14 @@ class _CommunityTab(QWidget):
             f"font-size: {Fonts.CARD_TITLE}; font-weight: {Fonts.BOLD};"
             f" color: {Colors.TEXT}; background: transparent; border: none;")
         info.addWidget(name_lbl)
-        role_lbl = QLabel("Founder \u00b7 Lead Developer")
+        role_lbl = QLabel(_("Founder \u00b7 Lead Developer"))
         role_lbl.setStyleSheet(
             f"font-size: {Fonts.SM}; font-weight: {Fonts.SEMI};"
             f" color: {Colors.ACCENT}; background: transparent;"
             " border: none;")
         info.addWidget(role_lbl)
         bio_lbl = QLabel(
-            "Designs, builds and maintains every part of NeoArch.")
+            _("Designs, builds and maintains every part of NeoArch."))
         bio_lbl.setWordWrap(True)
         bio_lbl.setStyleSheet(
             f"font-size: {Fonts.SM}; color: {Colors.TEXT_3};"
@@ -1534,7 +1533,7 @@ class _CommunityTab(QWidget):
         fl.addLayout(info, 1)
 
         fl.addWidget(_secondary_btn(
-            "\u2197 GitHub",
+            _("\u2197 GitHub"),
             lambda: _open_url("https://github.com/Sanjaya-Danushka")))
         cl.addWidget(founder)
 
@@ -1546,20 +1545,20 @@ class _CommunityTab(QWidget):
 
         left = QVBoxLayout()
         left.setSpacing(10)
-        left.addWidget(_card_title("Support NeoArch"))
+        left.addWidget(_card_title(_("Support NeoArch")))
         left.addWidget(_card_body(
-            "NeoArch is free, open-source and developed independently by "
-            "one person. If it saves you time, consider supporting its "
-            "continued development."))
+            _("NeoArch is free, open-source and developed independently by "
+              "one person. If it saves you time, consider supporting its "
+              "continued development.")))
 
         btn_row = QHBoxLayout()
         btn_row.setSpacing(10)
         bmc_icon = os.path.join(
             str(ASSETS_DIR), "icons", "ui", "buymeacoffee.svg")
         for label, url, color, bg, icon_path in [
-            ("\u2665  GitHub Sponsors", _SPONSORS_URL,
+            (_("\u2665  GitHub Sponsors"), _SPONSORS_URL,
              "#FF6464", "rgba(255,100,100,", None),
-            ("Buy Me a Coffee", _BUYMEACOFFEE_URL,
+            (_("Buy Me a Coffee"), _BUYMEACOFFEE_URL,
              "#FFC832", "rgba(255,200,50,", bmc_icon),
         ]:
             b = QPushButton(label)
@@ -1593,7 +1592,7 @@ class _CommunityTab(QWidget):
         if not qpm.isNull():
             qr_frame = QVBoxLayout()
             qr_frame.addWidget(qr, 0, Qt.AlignmentFlag.AlignCenter)
-            cap = QLabel("Scan to buy me a coffee")
+            cap = QLabel(_("Scan to buy me a coffee"))
             cap.setAlignment(Qt.AlignmentFlag.AlignCenter)
             cap.setStyleSheet(
                 f"font-size: {Fonts.XS}; color: {Colors.TEXT_3};"
@@ -1601,7 +1600,7 @@ class _CommunityTab(QWidget):
             qr_frame.addWidget(cap)
         else:
             note = QLabel(
-                "Coffee fund \u2615\nEvery cup keeps development going.")
+                _("Coffee fund \u2615\nEvery cup keeps development going."))
             note.setAlignment(Qt.AlignmentFlag.AlignCenter)
             note.setWordWrap(True)
             note.setStyleSheet(
@@ -1629,7 +1628,7 @@ class _CommunityTab(QWidget):
         cvl = QHBoxLayout(contrib)
         cvl.setContentsMargins(20, 16, 20, 16)
         cvl.setSpacing(12)
-        ct = QLabel("Want to improve NeoArch?")
+        ct = QLabel(_("Want to improve NeoArch?"))
         ct.setStyleSheet(
             f"font-size: {Fonts.BASE}; font-weight: {Fonts.SEMI};"
             f" color: {Colors.TEXT}; background: transparent;"
@@ -1637,7 +1636,7 @@ class _CommunityTab(QWidget):
         cvl.addWidget(ct)
         cvl.addStretch()
         cvl.addWidget(_link_btn(
-            "Contributing Guide \u2197",
+            _("Contributing Guide \u2197"),
             lambda: _open_url(f"{_REPO_URL}?tab=contributing-ov-file")))
         cl.addWidget(contrib)
 
@@ -1725,7 +1724,7 @@ class AboutTab(QWidget):
         sidebar_layout.setContentsMargins(0, 16, 0, 16)
         sidebar_layout.setSpacing(1)
 
-        header = QLabel("ABOUT")
+        header = QLabel(_("ABOUT"))
         header.setStyleSheet(f"""
             color: {Colors.TEXT_3};
             font-size: {Fonts.SM};
@@ -1736,11 +1735,11 @@ class AboutTab(QWidget):
         sidebar_layout.addWidget(header)
 
         tab_labels = [
-            "Overview",
-            "Release Notes",
-            "Documentation",
-            "Diagnostics",
-            "Community",
+            _("Overview"),
+            _("Release Notes"),
+            _("Documentation"),
+            _("Diagnostics"),
+            _("Community"),
         ]
         for i, label in enumerate(tab_labels):
             sidebar_layout.addWidget(self._make_nav_btn(label, i))
@@ -1751,7 +1750,7 @@ class AboutTab(QWidget):
         meta_row.setContentsMargins(16, 4, 16, 8)
         meta_row.setSpacing(0)
 
-        meta_label = QLabel(f"NeoArch {APP_VERSION} \u00b7")
+        meta_label = QLabel(_("NeoArch {version} \u00b7").format(version=APP_VERSION))
         meta_label.setStyleSheet(
             f"color: {Colors.TEXT_3}; font-size: {Fonts.XS};"
             f" font-weight: {Fonts.MEDIUM};"

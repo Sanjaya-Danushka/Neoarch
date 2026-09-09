@@ -97,6 +97,12 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         # Settings state
         self.settings = self.load_settings()
         self.apply_logging_config()
+        # Activate the saved UI/CLI language catalog
+        try:
+            from neoarch.backend.services.i18n import set_language, detect_system_language
+            set_language(self.settings.get('culture') or detect_system_language() or 'en')
+        except Exception:
+            pass
         # Plugins runtime
         self.plugins = []
         self.plugin_timer = QTimer()

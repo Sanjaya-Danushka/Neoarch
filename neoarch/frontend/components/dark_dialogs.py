@@ -6,7 +6,9 @@ from PyQt6.QtWidgets import (
     QPushButton, QWidget,
 )
 
-from neoarch.frontend.tokens import Colors
+from neoarch.frontend.tokens import Colors, Fonts
+from neoarch.frontend.styles import Styles
+from neoarch.backend.services.i18n import _
 
 
 _DIALOG_STYLE = f"""
@@ -17,7 +19,7 @@ QDialog {{
 }}
 QLabel {{
     color: {Colors.TEXT};
-    font-size: 13px;
+    font-size: {Fonts.BASE};
     font-weight: 500;
     background: transparent;
     border: none;
@@ -28,8 +30,8 @@ QLineEdit {{
     border: 1px solid {Colors.BORDER_INPUT};
     border-radius: 8px;
     padding: 8px 12px;
-    font-size: 13px;
-    selection-background-color: rgba(0, 191, 174, 0.3);
+    font-size: {Fonts.BASE};
+    selection-background-color: {Colors.ACCENT};
 }}
 QLineEdit:focus {{
     border: 1px solid {Colors.BORDER_FOCUS};
@@ -40,89 +42,26 @@ QComboBox {{
     border: 1px solid {Colors.BORDER_INPUT};
     border-radius: 8px;
     padding: 8px 12px;
-    font-size: 13px;
+    font-size: {Fonts.BASE};
 }}
 QComboBox:focus {{
     border: 1px solid {Colors.BORDER_FOCUS};
-}}
-QComboBox::drop-down {{
-    border: none;
-    width: 24px;
-}}
-QComboBox::down-arrow {{
-    image: none;
-    border: none;
 }}
 QComboBox QAbstractItemView {{
     background: {Colors.SURFACE_2};
     color: {Colors.TEXT};
     border: 1px solid {Colors.BORDER_STRONG};
     border-radius: 8px;
-    selection-background-color: rgba(0, 191, 174, 0.2);
+    selection-background-color: {Colors.ACCENT_SOFT};
     selection-color: {Colors.TEXT};
     padding: 4px;
 }}
 """
 
 
-_BTN_PRIMARY = f"""
-    QPushButton {{
-        background-color: {Colors.WHITE};
-        color: {Colors.TEXT_ON_ACCENT};
-        border: 1px solid rgba(255, 255, 255, 0.9);
-        border-radius: 8px;
-        padding: 7px 18px;
-        font-size: 12px;
-        font-weight: 600;
-    }}
-    QPushButton:hover {{ background-color: {Colors.WHITE_HOVER}; }}
-    QPushButton:pressed {{ background-color: {Colors.WHITE_PRESSED}; }}
-"""
-
-_BTN_SECONDARY = f"""
-    QPushButton {{
-        background: transparent;
-        color: {Colors.TEXT_2};
-        border: 1px solid {Colors.BORDER};
-        border-radius: 8px;
-        padding: 7px 18px;
-        font-size: 12px;
-        font-weight: 500;
-    }}
-    QPushButton:hover {{
-        background: rgba(255, 255, 255, 0.06);
-        color: {Colors.TEXT};
-    }}
-"""
-
-_BTN_DANGER = f"""
-    QPushButton {{
-        background-color: rgba(255, 80, 80, 0.15);
-        color: #FF6B6B;
-        border: 1px solid rgba(255, 80, 80, 0.30);
-        border-radius: 8px;
-        padding: 7px 18px;
-        font-size: 12px;
-        font-weight: 600;
-    }}
-    QPushButton:hover {{
-        background-color: rgba(255, 80, 80, 0.25);
-        border-color: rgba(255, 80, 80, 0.45);
-    }}
-"""
-
-
-_DIALOG_TITLE_BAR_STYLE = f"""
-QWidget#dialogTitleBar {{
-    background: transparent;
-}}
-QPushButton {{
-    border: none;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 0;
-}}
-"""
+_BTN_PRIMARY = Styles.btn_white()
+_BTN_SECONDARY = Styles.btn_secondary()
+_BTN_DANGER = Styles.btn_danger()
 
 
 class _DialogTitleBar(QWidget):
@@ -139,7 +78,7 @@ class _DialogTitleBar(QWidget):
 
         if title:
             lbl = QLabel(title)
-            lbl.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: 12px; font-weight: 500; background: transparent; border: none;")
+            lbl.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: {Fonts.MD}; font-weight: 500; background: transparent; border: none;")
             lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
             layout.addWidget(lbl)
 
@@ -164,7 +103,7 @@ class _DialogTitleBar(QWidget):
             }}
             QPushButton:hover {{
                 color: rgba(0, 0, 0, 0.6);
-                font-size: 8px;
+                font-size: {Fonts.MICRO};
             }}
         """)
         return btn
@@ -217,11 +156,11 @@ def dark_input(parent, title, label, text=""):
 
     btn_row = QHBoxLayout()
     btn_row.addStretch()
-    cancel = QPushButton("Cancel")
+    cancel = QPushButton(_("Cancel"))
     cancel.setStyleSheet(_BTN_SECONDARY)
     cancel.clicked.connect(dlg.reject)
     btn_row.addWidget(cancel)
-    ok = QPushButton("OK")
+    ok = QPushButton(_("OK"))
     ok.setStyleSheet(_BTN_PRIMARY)
     ok.clicked.connect(dlg.accept)
     btn_row.addWidget(ok)
@@ -263,11 +202,11 @@ def dark_confirm(parent, title, message, danger=False):
 
     btn_row = QHBoxLayout()
     btn_row.addStretch()
-    cancel = QPushButton("Cancel")
+    cancel = QPushButton(_("Cancel"))
     cancel.setStyleSheet(_BTN_SECONDARY)
     cancel.clicked.connect(dlg.reject)
     btn_row.addWidget(cancel)
-    confirm = QPushButton("Delete" if danger else "Confirm")
+    confirm = QPushButton(_("Delete") if danger else _("Confirm"))
     confirm.setStyleSheet(_BTN_DANGER if danger else _BTN_PRIMARY)
     confirm.clicked.connect(dlg.accept)
     btn_row.addWidget(confirm)

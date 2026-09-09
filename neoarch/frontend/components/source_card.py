@@ -7,7 +7,8 @@ from PyQt6.QtCore import pyqtSignal, Qt, QRectF, QSize, QPropertyAnimation, QEas
 from PyQt6.QtGui import QColor, QPainter, QPen, QFont, QFontMetrics, QRadialGradient
 from neoarch.frontend.components.source_item import SourceItem, ToggleSwitch
 from neoarch.frontend.components.flow_layout import FlowLayout
-from neoarch.frontend.tokens import Colors, SourceColors
+from neoarch.frontend.tokens import Colors, Fonts, SourceColors
+from neoarch.backend.services.i18n import _
 
 # ── app theme design tokens ─────────────────────────────────────────
 _RAISED = Colors.CARD_HOVER
@@ -200,7 +201,7 @@ class _ToggleRow(QWidget):
 
         self.label = QLabel(text)
         self.label.setStyleSheet(
-            f"color: {Colors.TEXT}; font-size: 12px; font-weight: 500;"
+            f"color: {Colors.TEXT}; font-size: {Fonts.MD}; font-weight: 500;"
             "background: transparent; border: none; padding: 0;")
         layout.addWidget(self.label, 1)
 
@@ -691,12 +692,12 @@ class SourceCard(QWidget):
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(20, 6, 20, 2)
 
-        title = QLabel("Sources")
+        title = QLabel(_("Sources"))
         title.setObjectName("sourceCardTitle")
         title.setStyleSheet(f"""
             QLabel#sourceCardTitle {{
                 color: {Colors.TEXT};
-                font-size: 15px;
+                font-size: {Fonts.CARD_TITLE};
                 font-weight: 700;
                 background: transparent;
                 border: none;
@@ -716,7 +717,7 @@ class SourceCard(QWidget):
         layout.addWidget(header)
 
     def _toggle_all_style(self, all_on):
-        text = "Pause All" if all_on else "Enable All"
+        text = _("Pause All") if all_on else _("Enable All")
         self.select_all_btn.setText(text)
         if all_on:
             return f"""
@@ -726,7 +727,7 @@ class SourceCard(QWidget):
                     border: 1px solid {Colors.ACCENT_BORDER};
                     border-radius: 8px;
                     padding: 0 10px;
-                    font-size: 11px;
+                    font-size: {Fonts.SM};
                     font-weight: 600;
                 }}
                 QPushButton#toggleAllBtn:hover {{
@@ -741,7 +742,7 @@ class SourceCard(QWidget):
                     border: 1px solid {Colors.BORDER};
                     border-radius: 8px;
                     padding: 0 10px;
-                    font-size: 11px;
+                    font-size: {Fonts.SM};
                     font-weight: 500;
                 }}
                 QPushButton#toggleAllBtn:hover {{
@@ -757,7 +758,7 @@ class SourceCard(QWidget):
         label.setStyleSheet(f"""
             QLabel#sectionHeaderLabel {{
                 color: {Colors.ACCENT};
-                font-size: 11px;
+                font-size: {Fonts.SM};
                 font-weight: 600;
                 letter-spacing: 1.0px;
                 background: transparent;
@@ -783,7 +784,7 @@ class SourceCard(QWidget):
         health_layout.setContentsMargins(16, 10, 16, 8)
         health_layout.setSpacing(6)
 
-        health_layout.addWidget(self._section_header("System Health"))
+        health_layout.addWidget(self._section_header(_("System Health")))
 
         top = QHBoxLayout()
         top.setSpacing(14)
@@ -793,19 +794,19 @@ class SourceCard(QWidget):
 
         status_col = QVBoxLayout()
         status_col.setSpacing(4)
-        self.health_status_title = QLabel("System Healthy")
+        self.health_status_title = QLabel(_("System Healthy"))
         self.health_status_title.setStyleSheet(f"""
             color: {Colors.GREEN};
-            font-size: 13px;
+            font-size: {Fonts.BASE};
             font-weight: 700;
             background: transparent;
             border: none;
             padding: 0;
         """)
-        self.health_status_subtitle = QLabel("All checks passed")
-        self.health_status_subtitle.setStyleSheet("""
+        self.health_status_subtitle = QLabel(_("All checks passed"))
+        self.health_status_subtitle.setStyleSheet(f"""
             color: #6B7280;
-            font-size: 11px;
+            font-size: {Fonts.SM};
             font-weight: 400;
             background: transparent;
             border: none;
@@ -847,22 +848,22 @@ class SourceCard(QWidget):
         score = max(10, 100 - round(issues * 100 / 150))
         self.health_ring.set_score(score)
         if issues == 0:
-            self.health_status_title.setText("System Healthy")
+            self.health_status_title.setText(_("System Healthy"))
             self.health_status_title.setStyleSheet(self._health_title_style("#22C55E"))
-            self.health_status_subtitle.setText("All checks passed")
+            self.health_status_subtitle.setText(_("All checks passed"))
         elif score >= 60:
-            self.health_status_title.setText("Needs Attention")
+            self.health_status_title.setText(_("Needs Attention"))
             self.health_status_title.setStyleSheet(self._health_title_style("#F59E0B"))
-            self.health_status_subtitle.setText(f"{issues} item{'s' if issues != 1 else ''} found")
+            self.health_status_subtitle.setText(_("{issues} item{s} found").format(issues=issues, s="s" if issues != 1 else ""))
         else:
-            self.health_status_title.setText("Action Recommended")
+            self.health_status_title.setText(_("Action Recommended"))
             self.health_status_title.setStyleSheet(self._health_title_style("#EF4444"))
-            self.health_status_subtitle.setText(f"{issues} issues need resolving")
+            self.health_status_subtitle.setText(_("{issues} issues need resolving").format(issues=issues))
 
     def _health_title_style(self, color):
         return f"""
             color: {color};
-            font-size: 13px;
+            font-size: {Fonts.BASE};
             font-weight: 700;
             background: transparent;
             border: none;
@@ -879,10 +880,10 @@ class SourceCard(QWidget):
         search_layout.setContentsMargins(16, 6, 16, 4)
         search_layout.setSpacing(1)
 
-        search_layout.addWidget(self._section_header("Search Mode"))
+        search_layout.addWidget(self._section_header(_("Search Mode")))
 
         self._radio_rows = []
-        for radio_id, radio_text in [("name", "By Name"), ("id", "By Package ID"), ("both", "Both")]:
+        for radio_id, radio_text in [("name", _("By Name")), ("id", _("By Package ID")), ("both", _("Both"))]:
             row = _RadioRow(radio_text)
             row.setChecked(radio_id == "both")
             row.clicked.connect(lambda rid=radio_id: self._on_radio_clicked(rid))
@@ -909,16 +910,16 @@ class SourceCard(QWidget):
         self.summary_count_label = QLabel("0")
         self.summary_count_label.setStyleSheet(f"""
             color: {Colors.TEXT};
-            font-size: 17px;
+            font-size: {Fonts.XXL};
             font-weight: 700;
             background: transparent;
             border: none;
             padding: 0;
         """)
         self.summary_count_caption = QLabel("")
-        self.summary_count_caption.setStyleSheet("""
+        self.summary_count_caption.setStyleSheet(f"""
             color: #6B7280;
-            font-size: 9px;
+            font-size: {Fonts.TINY};
             font-weight: 600;
             letter-spacing: 0.5px;
             background: transparent;
@@ -939,16 +940,16 @@ class SourceCard(QWidget):
         self.summary_size_label = QLabel("")
         self.summary_size_label.setStyleSheet(f"""
             color: {Colors.ACCENT};
-            font-size: 17px;
+            font-size: {Fonts.XXL};
             font-weight: 700;
             background: transparent;
             border: none;
             padding: 0;
         """)
         self.summary_size_caption = QLabel("")
-        self.summary_size_caption.setStyleSheet("""
+        self.summary_size_caption.setStyleSheet(f"""
             color: #6B7280;
-            font-size: 9px;
+            font-size: {Fonts.TINY};
             font-weight: 600;
             letter-spacing: 0.5px;
             background: transparent;
@@ -1021,7 +1022,7 @@ class SourceCard(QWidget):
         status_layout.setContentsMargins(16, 6, 16, 4)
         status_layout.setSpacing(4)
 
-        status_layout.addWidget(self._section_header("Update Type"))
+        status_layout.addWidget(self._section_header(_("Update Type")))
 
         chip_container = QWidget()
         chip_container.setObjectName("chipContainer")
@@ -1053,10 +1054,10 @@ class SourceCard(QWidget):
         sm_layout.setContentsMargins(16, 4, 16, 2)
         sm_layout.setSpacing(0)
 
-        sm_layout.addWidget(self._section_header("Status"))
+        sm_layout.addWidget(self._section_header(_("Status")))
 
         self._status_mode_rows = []
-        for mode_id, mode_text in [("all", "All"), ("available", "Available"), ("installed", "Installed")]:
+        for mode_id, mode_text in [("all", _("All")), ("available", _("Available")), ("installed", _("Installed"))]:
             row = _RadioRow(mode_text)
             row.setChecked(mode_id == "all")
             row.clicked.connect(lambda mid=mode_id: self._on_status_mode_clicked(mid))
@@ -1092,7 +1093,7 @@ class SourceCard(QWidget):
         self._categories_layout.setContentsMargins(16, 4, 16, 4)
         self._categories_layout.setSpacing(0)
 
-        self._categories_layout.addWidget(self._section_header("Categories"))
+        self._categories_layout.addWidget(self._section_header(_("Categories")))
         self._category_rows = []
 
         self.categories_widget.setVisible(False)
@@ -1109,9 +1110,9 @@ class SourceCard(QWidget):
         self._categories_list = list(categories or [])
         counts = counts or {}
 
-        self._categories_layout.addWidget(self._section_header("Categories"))
+        self._categories_layout.addWidget(self._section_header(_("Categories")))
         total = sum(counts.values())
-        all_row = _RadioRow("All Categories", count=total or None)
+        all_row = _RadioRow(_("All Categories"), count=total or None)
         all_row.clicked.connect(lambda: self._on_category_selected(""))
         self._categories_layout.addWidget(all_row)
         self._category_rows.append(("", all_row))
@@ -1141,7 +1142,7 @@ class SourceCard(QWidget):
         sort_layout.setContentsMargins(16, 4, 16, 2)
         sort_layout.setSpacing(6)
 
-        sort_layout.addWidget(self._section_header("Sort By"))
+        sort_layout.addWidget(self._section_header(_("Sort By")))
 
         self.sort_btn = QPushButton()
         self.sort_btn.setObjectName("sortBtn")
@@ -1165,7 +1166,7 @@ class SourceCard(QWidget):
                 border-radius: 6px;
                 margin: 1px 0;
                 color: {Colors.TEXT};
-                font-size: 12px;
+                font-size: {Fonts.MD};
                 font-weight: 500;
                 background: transparent;
             }}
@@ -1180,18 +1181,18 @@ class SourceCard(QWidget):
             }}
         """)
         self._sort_methods = [
-            ("name", True, "Name A-Z"),
-            ("name", False, "Name Z-A"),
-            ("size", True, "Size (Smallest)"),
-            ("size", False, "Size (Largest)"),
-            ("version", True, "Version (Oldest)"),
-            ("version", False, "Version (Latest)"),
-            ("status", True, "Type A-Z"),
-            ("status", False, "Type Z-A"),
-            ("date", False, "Date Installed (Newest)"),
-            ("date", True, "Date Installed (Oldest)"),
-            ("source", True, "Source A-Z"),
-            ("source", False, "Source Z-A"),
+            ("name", True, _("Name A-Z")),
+            ("name", False, _("Name Z-A")),
+            ("size", True, _("Size (Smallest)")),
+            ("size", False, _("Size (Largest)")),
+            ("version", True, _("Version (Oldest)")),
+            ("version", False, _("Version (Latest)")),
+            ("status", True, _("Type A-Z")),
+            ("status", False, _("Type Z-A")),
+            ("date", False, _("Date Installed (Newest)")),
+            ("date", True, _("Date Installed (Oldest)")),
+            ("source", True, _("Source A-Z")),
+            ("source", False, _("Source Z-A")),
         ]
         self._sort_actions = {}
         last_field = None
@@ -1217,9 +1218,9 @@ class SourceCard(QWidget):
         il.setContentsMargins(16, 6, 16, 4)
         il.setSpacing(4)
 
-        il.addWidget(self._section_header("Results"))
+        il.addWidget(self._section_header(_("Results")))
 
-        self.hide_installed_row = _ToggleRow("Hide installed packages", accent_color="#10B981")
+        self.hide_installed_row = _ToggleRow(_("Hide installed packages"), accent_color="#10B981")
         self.hide_installed_row.toggled.connect(self._on_hide_installed_toggled)
         il.addWidget(self.hide_installed_row)
 
@@ -1248,10 +1249,10 @@ class SourceCard(QWidget):
         ul.setContentsMargins(16, 6, 16, 4)
         ul.setSpacing(4)
 
-        ul.addWidget(self._section_header("Status"))
+        ul.addWidget(self._section_header(_("Status")))
 
         self.updates_available_row = _ToggleRow(
-            "Updates available", accent_color=Colors.ORANGE)
+            _("Updates available"), accent_color=Colors.ORANGE)
         self.updates_available_row.toggled.connect(
             self._on_updates_available_toggled)
         ul.addWidget(self.updates_available_row)
@@ -1282,23 +1283,23 @@ class SourceCard(QWidget):
         storage_layout.setContentsMargins(16, 8, 16, 6)
         storage_layout.setSpacing(4)
 
-        storage_layout.addWidget(self._section_header("Storage"))
+        storage_layout.addWidget(self._section_header(_("Storage")))
 
         self.disk_row = QHBoxLayout()
         self.disk_row.setSpacing(8)
-        disk_label = QLabel("Root Filesystem")
+        disk_label = QLabel(_("Root Filesystem"))
         disk_label.setStyleSheet(f"""
             color: {Colors.TEXT};
-            font-size: 12px;
+            font-size: {Fonts.MD};
             font-weight: 500;
             background: transparent;
             border: none;
             padding: 0;
         """)
         self.disk_used_label = QLabel("")
-        self.disk_used_label.setStyleSheet("""
+        self.disk_used_label.setStyleSheet(f"""
             color: #A7B1C2;
-            font-size: 11px;
+            font-size: {Fonts.SM};
             font-weight: 500;
             background: transparent;
             border: none;
@@ -1317,10 +1318,10 @@ class SourceCard(QWidget):
 
         cache_row = QHBoxLayout()
         cache_row.setSpacing(8)
-        cache_label = QLabel("Package Cache")
+        cache_label = QLabel(_("Package Cache"))
         cache_label.setStyleSheet(f"""
             color: {Colors.TEXT};
-            font-size: 12px;
+            font-size: {Fonts.MD};
             font-weight: 500;
             background: transparent;
             border: none;
@@ -1329,13 +1330,13 @@ class SourceCard(QWidget):
         self.cache_size_label = QLabel("")
         self.cache_size_label.setStyleSheet(f"""
             color: {Colors.ACCENT};
-            font-size: 11px;
+            font-size: {Fonts.SM};
             font-weight: 600;
             background: transparent;
             border: none;
             padding: 0;
         """)
-        self.clear_cache_btn = QPushButton("Clear")
+        self.clear_cache_btn = QPushButton(_("Clear"))
         self.clear_cache_btn.setObjectName("clearCacheBtn")
         self.clear_cache_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.clear_cache_btn.setFixedHeight(22)
@@ -1345,7 +1346,7 @@ class SourceCard(QWidget):
                 background: rgba(59, 130, 246, 0.10);
                 border: 1px solid {Colors.ACCENT_BORDER};
                 border-radius: 11px;
-                font-size: 10px;
+                font-size: {Fonts.XS};
                 font-weight: 600;
                 padding: 0 10px;
             }}
@@ -1391,14 +1392,14 @@ class SourceCard(QWidget):
         self._stats_layout.setContentsMargins(16, 8, 16, 6)
         self._stats_layout.setSpacing(2)
 
-        self._stats_header = self._section_header("Package Stats")
+        self._stats_header = self._section_header(_("Package Stats"))
         self._stats_layout.addWidget(self._stats_header)
 
         self._stat_labels = {}
         for key, title in [
-            ("explicit", "Explicit"),
-            ("deps", "Dependencies"),
-            ("outdated", "Updates Available"),
+            ("explicit", _("Explicit")),
+            ("deps", _("Dependencies")),
+            ("outdated", _("Updates Available")),
         ]:
             self._add_stat_row(key, title)
 
@@ -1410,11 +1411,11 @@ class SourceCard(QWidget):
         row = QHBoxLayout()
         row.setSpacing(8)
         lbl = QLabel(title)
-        lbl.setStyleSheet("color: #A7B1C2; font-size: 11px; font-weight: 500;"
+        lbl.setStyleSheet(f"color: #A7B1C2; font-size: {Fonts.SM}; font-weight: 500;"
                           "background: transparent; border: none; padding: 0;")
         val = QLabel("0")
         val.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        val.setStyleSheet(f"color: {Colors.TEXT}; font-size: 12px; font-weight: 600;"
+        val.setStyleSheet(f"color: {Colors.TEXT}; font-size: {Fonts.MD}; font-weight: 600;"
                           "background: transparent; border: none; padding: 0;")
         row.addWidget(lbl, 1)
         row.addWidget(val, 0)
@@ -1428,12 +1429,12 @@ class SourceCard(QWidget):
         qa_layout.setContentsMargins(16, 8, 16, 6)
         qa_layout.setSpacing(4)
 
-        qa_layout.addWidget(self._section_header("Quick Actions"))
+        qa_layout.addWidget(self._section_header(_("Quick Actions")))
 
         self._quick_action_rows = {}
         defs = [
-            ("update_all", "Update All", "\u21BB"),
-            ("clean_orphans", "Clean Orphans", "\u232B"),
+            ("update_all", _("Update All"), "\u21BB"),
+            ("clean_orphans", _("Clean Orphans"), "\u232B"),
         ]
         for key, title, icon in defs:
             row = _ActionRow(title, icon)
@@ -1452,7 +1453,7 @@ class SourceCard(QWidget):
                 background: rgba(255, 255, 255, 0.04);
                 border: 1px solid {Colors.BORDER};
                 border-radius: 8px;
-                font-size: 12px;
+                font-size: {Fonts.MD};
                 font-weight: 500;
                 padding: 0 12px;
                 text-align: left;
@@ -1470,10 +1471,10 @@ class SourceCard(QWidget):
                 return text
         if self._sort_methods:
             return self._sort_methods[0][2]
-        return "Sort"
+        return _("Sort")
 
     def _update_sort_btn_text(self):
-        self.sort_btn.setText(f"Sort: {self._sort_label(self.sort_field, self.sort_asc)} \u25be")
+        self.sort_btn.setText(f"{_('Sort')}: {self._sort_label(self.sort_field, self.sort_asc)} \u25be")
 
     def _open_sort_menu(self):
         pos = self.sort_btn.mapToGlobal(self.sort_btn.rect().bottomLeft())
@@ -1515,12 +1516,12 @@ class SourceCard(QWidget):
         actions_layout.setContentsMargins(16, 6, 16, 4)
         actions_layout.setSpacing(1)
 
-        actions_layout.addWidget(self._section_header("Actions"))
+        actions_layout.addWidget(self._section_header(_("Actions")))
 
         self._action_buttons = {}
         self._action_rows = {}
 
-        self.action_update_all_btn = QPushButton("Update All")
+        self.action_update_all_btn = QPushButton(_("Update All"))
         self.action_update_all_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.action_update_all_btn.setFixedHeight(28)
         self.action_update_all_btn.setStyleSheet(f"""
@@ -1530,7 +1531,7 @@ class SourceCard(QWidget):
                 border: 1px solid {Colors.ACCENT_BORDER_STRONG};
                 border-radius: 8px;
                 padding: 0 14px;
-                font-size: 12px;
+                font-size: {Fonts.MD};
                 font-weight: 600;
             }}
             QPushButton:hover {{
@@ -1542,7 +1543,7 @@ class SourceCard(QWidget):
         """)
         self._action_buttons["update_all"] = self.action_update_all_btn
 
-        self.action_ignore_btn = QPushButton("Ignore Selected")
+        self.action_ignore_btn = QPushButton(_("Ignore Selected"))
         self.action_ignore_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.action_ignore_btn.setFixedHeight(24)
         self.action_ignore_btn.setStyleSheet(f"""
@@ -1552,7 +1553,7 @@ class SourceCard(QWidget):
                 border: 1px solid {Colors.BORDER};
                 border-radius: 8px;
                 padding: 0 12px;
-                font-size: 11px;
+                font-size: {Fonts.SM};
                 font-weight: 500;
             }}
             QPushButton:hover {{
@@ -1565,7 +1566,7 @@ class SourceCard(QWidget):
         """)
         self._action_buttons["ignore"] = self.action_ignore_btn
 
-        self.action_manage_btn = QPushButton("Manage Ignored")
+        self.action_manage_btn = QPushButton(_("Manage Ignored"))
         self.action_manage_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.action_manage_btn.setFixedHeight(24)
         self.action_manage_btn.setStyleSheet(f"""
@@ -1575,7 +1576,7 @@ class SourceCard(QWidget):
                 border: 1px solid {Colors.BORDER};
                 border-radius: 8px;
                 padding: 0 12px;
-                font-size: 11px;
+                font-size: {Fonts.SM};
                 font-weight: 500;
             }}
             QPushButton:hover {{

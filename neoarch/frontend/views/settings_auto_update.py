@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
 from PyQt6.QtCore import QTime
 
 from neoarch.frontend.tokens import QSS, Colors, Fonts, Radii
+from neoarch.backend.services.i18n import _
 
 
 class AutoUpdateSettingsWidget(QWidget):
@@ -31,18 +32,18 @@ class AutoUpdateSettingsWidget(QWidget):
         return card, card_layout
 
     def setup_ui(self):
-        title = QLabel("Auto Update")
+        title = QLabel(_("Auto Update"))
         title.setStyleSheet(f"font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD}; color: {Colors.TEXT}; letter-spacing: -0.5px;")
         self.layout.addWidget(title)
 
-        subtitle = QLabel("Manage automatic updates and system snapshots")
+        subtitle = QLabel(_("Manage automatic updates and system snapshots"))
         subtitle.setStyleSheet(f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2}; margin-top: -16px;")
         self.layout.addWidget(subtitle)
 
         # ── Auto Update Card ──
-        update_card, update_layout = self._make_card("Auto Update")
+        update_card, update_layout = self._make_card(_("Auto Update"))
 
-        self.cb_auto_update = QCheckBox("Enable automatic updates")
+        self.cb_auto_update = QCheckBox(_("Enable automatic updates"))
         self.cb_auto_update.setStyleSheet(QSS.CHECKBOX)
         self.cb_auto_update.setChecked(bool(self.app.settings.get('auto_update_enabled', False)))
         self.cb_auto_update.toggled.connect(lambda v: self.app.update_setting('auto_update_enabled', v))
@@ -50,7 +51,7 @@ class AutoUpdateSettingsWidget(QWidget):
 
         interval_row = QHBoxLayout()
         interval_row.setSpacing(12)
-        interval_label = QLabel("Update interval (days):")
+        interval_label = QLabel(_("Update interval (days):"))
         interval_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         interval_row.addWidget(interval_label)
 
@@ -66,22 +67,22 @@ class AutoUpdateSettingsWidget(QWidget):
 
         refresh_row = QHBoxLayout()
         refresh_row.setSpacing(12)
-        refresh_label = QLabel("Re-check for updates every:")
+        refresh_label = QLabel(_("Re-check for updates every:"))
         refresh_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         refresh_row.addWidget(refresh_label)
 
         self.refresh_spin = QSpinBox()
         self.refresh_spin.setStyleSheet(QSS.SPINBOX)
         self.refresh_spin.setRange(0, 360)
-        self.refresh_spin.setSuffix(" min")
-        self.refresh_spin.setSpecialValueText("Off")
+        self.refresh_spin.setSuffix(_(" min"))
+        self.refresh_spin.setSpecialValueText(_("Off"))
         try:
             self.refresh_spin.setValue(int(self.app.settings.get('auto_refresh_updates_minutes', 0) or 0))
         except (TypeError, ValueError):
             self.refresh_spin.setValue(0)
         self.refresh_spin.valueChanged.connect(lambda v: self.app.update_setting('auto_refresh_updates_minutes', v))
         refresh_row.addWidget(self.refresh_spin)
-        refresh_hint = QLabel("Background re-check while the app is open")
+        refresh_hint = QLabel(_("Background re-check while the app is open"))
         refresh_hint.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: {Fonts.SM}; border: none;")
         refresh_row.addWidget(refresh_hint)
         refresh_row.addStretch()
@@ -90,14 +91,14 @@ class AutoUpdateSettingsWidget(QWidget):
         self.layout.addWidget(update_card)
 
         # ── Scheduled Checks Card ──
-        sched_card, sched_layout = self._make_card("Scheduled Checks")
-        hint = QLabel("Run the update check automatically on a weekly schedule "
-                      "(evaluated by the CLI/service layer; applies when the app is running).")
+        sched_card, sched_layout = self._make_card(_("Scheduled Checks"))
+        hint = QLabel(_("Run the update check automatically on a weekly schedule "
+                      "(evaluated by the CLI/service layer; applies when the app is running)."))
         hint.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; border: none;")
         hint.setWordWrap(True)
         sched_layout.addWidget(hint)
 
-        self.cb_schedule = QCheckBox("Enable scheduled update checks")
+        self.cb_schedule = QCheckBox(_("Enable scheduled update checks"))
         self.cb_schedule.setStyleSheet(QSS.CHECKBOX)
         self.cb_schedule.setChecked(bool(self.app.settings.get('schedule_enabled', False)))
         self.cb_schedule.toggled.connect(self.on_schedule_enabled)
@@ -105,12 +106,12 @@ class AutoUpdateSettingsWidget(QWidget):
 
         days_row = QHBoxLayout()
         days_row.setSpacing(8)
-        days_label = QLabel("Days:")
+        days_label = QLabel(_("Days:"))
         days_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         days_row.addWidget(days_label)
 
         self.day_cbs = []
-        day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        day_names = [_("Mon"), _("Tue"), _("Wed"), _("Thu"), _("Fri"), _("Sat"), _("Sun")]
         current_days = set(int(d) for d in self.app.settings.get('schedule_days', [0, 1, 2, 3, 4, 5, 6]))
         for idx, name in enumerate(day_names):
             cb = QCheckBox(name)
@@ -124,7 +125,7 @@ class AutoUpdateSettingsWidget(QWidget):
 
         time_row = QHBoxLayout()
         time_row.setSpacing(12)
-        time_label = QLabel("Time:")
+        time_label = QLabel(_("Time:"))
         time_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         time_row.addWidget(time_label)
 
@@ -159,9 +160,9 @@ class AutoUpdateSettingsWidget(QWidget):
         self._update_next_label()
 
         # ── Backup Card (built-in) ──
-        backup_card, backup_layout = self._make_card("Backup")
+        backup_card, backup_layout = self._make_card(_("Backup"))
 
-        self.cb_snapshot = QCheckBox("Create backup before updates")
+        self.cb_snapshot = QCheckBox(_("Create backup before updates"))
         self.cb_snapshot.setStyleSheet(QSS.CHECKBOX)
         self.cb_snapshot.setChecked(bool(self.app.settings.get('snapshot_before_update', False)))
         self.cb_snapshot.toggled.connect(lambda v: self.app.update_setting('snapshot_before_update', v))
@@ -172,30 +173,30 @@ class AutoUpdateSettingsWidget(QWidget):
         from neoarch.backend.services.backup import get_filesystem_type, _is_btrfs_root_snapshottable
         fs = get_filesystem_type()
         if fs == "btrfs" and _is_btrfs_root_snapshottable():
-            fs_info.setText("Filesystem: BTRFS - native snapshots available")
+            fs_info.setText(_("Filesystem: BTRFS - native snapshots available"))
         else:
-            fs_info.setText(f"Filesystem: {fs} - package list + config backup only")
+            fs_info.setText(_("Filesystem: {fs} - package list + config backup only").format(fs=fs))
         backup_layout.addWidget(fs_info)
 
         backup_btn_row = QHBoxLayout()
         backup_btn_row.setSpacing(10)
 
-        create_backup_btn = QPushButton("Create Backup")
+        create_backup_btn = QPushButton(_("Create Backup"))
         create_backup_btn.setStyleSheet(QSS.BTN_OUTLINE)
         create_backup_btn.clicked.connect(self.app.create_backup)
         backup_btn_row.addWidget(create_backup_btn)
 
-        list_backup_btn = QPushButton("List Backups")
+        list_backup_btn = QPushButton(_("List Backups"))
         list_backup_btn.setStyleSheet(QSS.BTN_OUTLINE)
         list_backup_btn.clicked.connect(self.app.list_backups)
         backup_btn_row.addWidget(list_backup_btn)
 
-        restore_backup_btn = QPushButton("Restore Backup")
+        restore_backup_btn = QPushButton(_("Restore Backup"))
         restore_backup_btn.setStyleSheet(QSS.BTN_OUTLINE)
         restore_backup_btn.clicked.connect(self.app.restore_backup)
         backup_btn_row.addWidget(restore_backup_btn)
 
-        prune_backup_btn = QPushButton("Prune Old")
+        prune_backup_btn = QPushButton(_("Prune Old"))
         prune_backup_btn.setStyleSheet(QSS.BTN_OUTLINE)
         prune_backup_btn.clicked.connect(self.app.prune_backups)
         backup_btn_row.addWidget(prune_backup_btn)
@@ -205,9 +206,9 @@ class AutoUpdateSettingsWidget(QWidget):
         self.layout.addWidget(backup_card)
 
         # ── Snapshots Card (Timeshift, advanced/optional) ──
-        snap_card, snap_layout = self._make_card("Timeshift (advanced)")
+        snap_card, snap_layout = self._make_card(_("Timeshift (advanced)"))
 
-        snap_hint = QLabel("Requires the external 'timeshift' tool. Optional - the built-in backup above is recommended.")
+        snap_hint = QLabel(_("Requires the external 'timeshift' tool. Optional - the built-in backup above is recommended."))
         snap_hint.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; border: none;")
         snap_hint.setWordWrap(True)
         snap_layout.addWidget(snap_hint)
@@ -215,17 +216,17 @@ class AutoUpdateSettingsWidget(QWidget):
         btn_row = QHBoxLayout()
         btn_row.setSpacing(10)
 
-        create_snap_btn = QPushButton("Create Snapshot")
+        create_snap_btn = QPushButton(_("Create Snapshot"))
         create_snap_btn.setStyleSheet(QSS.BTN_OUTLINE)
         create_snap_btn.clicked.connect(self.app.create_snapshot)
         btn_row.addWidget(create_snap_btn)
 
-        revert_snap_btn = QPushButton("Revert to Snapshot")
+        revert_snap_btn = QPushButton(_("Revert to Snapshot"))
         revert_snap_btn.setStyleSheet(QSS.BTN_OUTLINE)
         revert_snap_btn.clicked.connect(self.app.revert_to_snapshot)
         btn_row.addWidget(revert_snap_btn)
 
-        delete_snap_btn = QPushButton("Delete Snapshots")
+        delete_snap_btn = QPushButton(_("Delete Snapshots"))
         delete_snap_btn.setStyleSheet(QSS.BTN_OUTLINE)
         delete_snap_btn.clicked.connect(self.app.delete_snapshots)
         btn_row.addWidget(delete_snap_btn)
@@ -245,12 +246,12 @@ class AutoUpdateSettingsWidget(QWidget):
     def _update_next_label(self):
         from neoarch.backend.services.scheduler import next_run
         if not self.cb_schedule.isChecked():
-            self.next_label.setText("Schedule disabled")
+            self.next_label.setText(_("Schedule disabled"))
             return
         days = self._collect_days()
         nxt = next_run(days, self._time_str()) if days else None
-        self.next_label.setText(f"Next: {nxt.strftime('%a %Y-%m-%d %H:%M')}" if nxt
-                                else "No run scheduled (pick at least one day)")
+        self.next_label.setText(_("Next: {nxt}").format(nxt=nxt.strftime('%a %Y-%m-%d %H:%M')) if nxt
+                                else _("No run scheduled (pick at least one day)"))
 
     def on_schedule_enabled(self, value):
         self.app.update_setting('schedule_enabled', value)

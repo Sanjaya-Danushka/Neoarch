@@ -9,7 +9,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QPainter, QBrush
 
-from neoarch.frontend.tokens import Colors, SourceColors
+from neoarch.frontend.tokens import Colors, Fonts, SourceColors
+from neoarch.backend.services.i18n import _
 
 
 def _shadow(widget: QWidget, blur=24, offset=(4, 6), alpha=150):
@@ -47,7 +48,7 @@ class _Avatar(QLabel):
 def _section_title(text: str) -> QLabel:
     lbl = QLabel(text)
     lbl.setStyleSheet(
-        f"color: {Colors.TEXT_3}; font-size: 9px; font-weight: 700; "
+        f"color: {Colors.TEXT_3}; font-size: {Fonts.TINY}; font-weight: 700; "
         f"letter-spacing: 0.8px; background: transparent; padding: 0;"
     )
     return lbl
@@ -60,11 +61,11 @@ def _detail_row(label: str, value: str) -> QWidget:
     l.setContentsMargins(0, 2, 0, 2)
     l.setSpacing(8)
     lbl = QLabel(label)
-    lbl.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: 12px; background: transparent;")
+    lbl.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: {Fonts.MD}; background: transparent;")
     lbl.setFixedWidth(56)
     l.addWidget(lbl)
     val = QLabel(value)
-    val.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: 12px; background: transparent;")
+    val.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; background: transparent;")
     val.setWordWrap(True)
     l.addWidget(val, 1)
     return row
@@ -84,7 +85,7 @@ def _close_btn_stylesheet() -> str:
             color: transparent;
             border: none;
             border-radius: 9px;
-            font-size: 11px;
+            font-size: {Fonts.SM};
             font-weight: 700;
         }
         QPushButton:hover {
@@ -105,7 +106,7 @@ def _nav_btn_stylesheet(color: str = Colors.TEXT_2) -> str:
             color: {color};
             padding: 0 20px;
             text-align: center;
-            font-size: 13px;
+            font-size: {Fonts.BASE};
             font-weight: 500;
             border-radius: 8px;
         }}
@@ -204,7 +205,7 @@ class PackageDetailCard(QFrame):
         nc.addWidget(self.name_label)
         self.version_label = QLabel()
         self.version_label.setStyleSheet(
-            f"color: {Colors.TEXT_3}; font-size: 11px; background: transparent;"
+            f"color: {Colors.TEXT_3}; font-size: {Fonts.SM}; background: transparent;"
         )
         nc.addWidget(self.version_label)
         hl.addLayout(nc, 1)
@@ -230,25 +231,25 @@ class PackageDetailCard(QFrame):
         content.addSpacing(10)
 
         # ── Details ──
-        content.addWidget(_section_title("Details"))
+        content.addWidget(_section_title(_("Details")))
         content.addSpacing(6)
 
         self.version_row = QLabel()
         self.version_row.setStyleSheet(
-            f"color: {Colors.TEXT_2}; font-size: 12px; background: transparent;"
+            f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; background: transparent;"
         )
         content.addWidget(self.version_row)
 
-        self.source_row = _detail_row("Source", "")
+        self.source_row = _detail_row(_("Source"), "")
         content.addWidget(self.source_row)
-        self.id_row = _detail_row("ID", "")
+        self.id_row = _detail_row(_("ID"), "")
         content.addWidget(self.id_row)
 
-        self.reason_row = _detail_row("Reason", "")
+        self.reason_row = _detail_row(_("Reason"), "")
         self.reason_row.setVisible(False)
         content.addWidget(self.reason_row)
 
-        self.size_row = _detail_row("Size", "")
+        self.size_row = _detail_row(_("Size"), "")
         self.size_row.setVisible(False)
         content.addWidget(self.size_row)
 
@@ -262,11 +263,11 @@ class PackageDetailCard(QFrame):
         content.addSpacing(12)
         content.addWidget(_make_sep())
         content.addSpacing(10)
-        content.addWidget(_section_title("Required By"))
+        content.addWidget(_section_title(_("Required By")))
         content.addSpacing(6)
         self.revdeps_label = QLabel()
         self.revdeps_label.setStyleSheet(
-            f"color: {Colors.TEXT_2}; font-size: 12px; background: transparent;"
+            f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; background: transparent;"
         )
         self.revdeps_label.setWordWrap(True)
         self.revdeps_label.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -277,12 +278,12 @@ class PackageDetailCard(QFrame):
         content.addSpacing(12)
         content.addWidget(_make_sep())
         content.addSpacing(10)
-        content.addWidget(_section_title("Description"))
+        content.addWidget(_section_title(_("Description")))
         content.addSpacing(6)
 
         self.desc_label = QLabel()
         self.desc_label.setStyleSheet(
-            f"color: {Colors.TEXT_2}; font-size: 12px; background: transparent;"
+            f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; background: transparent;"
         )
         self.desc_label.setWordWrap(True)
         self.desc_label.setAlignment(Qt.AlignmentFlag.AlignTop)
@@ -301,7 +302,7 @@ class PackageDetailCard(QFrame):
         self.action_layout.setContentsMargins(0, 0, 0, 0)
         self.action_layout.setSpacing(6)
 
-        self.install_btn = QPushButton("Install Package")
+        self.install_btn = QPushButton(_("Install Package"))
         self.install_btn.setMinimumHeight(40)
         self.install_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.install_btn.setStyleSheet(
@@ -310,7 +311,7 @@ class PackageDetailCard(QFrame):
         self.install_btn.clicked.connect(self.install_requested.emit)
         self.action_layout.addWidget(self.install_btn)
 
-        self.update_btn = QPushButton("Update Package")
+        self.update_btn = QPushButton(_("Update Package"))
         self.update_btn.setMinimumHeight(40)
         self.update_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.update_btn.setStyleSheet(
@@ -319,7 +320,7 @@ class PackageDetailCard(QFrame):
         self.update_btn.clicked.connect(self.update_requested.emit)
         self.action_layout.addWidget(self.update_btn)
 
-        self.uninstall_btn = QPushButton("Uninstall Package")
+        self.uninstall_btn = QPushButton(_("Uninstall Package"))
         self.uninstall_btn.setMinimumHeight(40)
         self.uninstall_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.uninstall_btn.setStyleSheet(
@@ -328,7 +329,7 @@ class PackageDetailCard(QFrame):
         self.uninstall_btn.clicked.connect(self.uninstall_requested.emit)
         self.action_layout.addWidget(self.uninstall_btn)
 
-        self.check_updates_btn = QPushButton("Check for Updates")
+        self.check_updates_btn = QPushButton(_("Check for Updates"))
         self.check_updates_btn.setMinimumHeight(40)
         self.check_updates_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.check_updates_btn.setStyleSheet(
@@ -336,10 +337,10 @@ class PackageDetailCard(QFrame):
         )
         self.action_layout.addWidget(self.check_updates_btn)
 
-        self.up_to_date_label = QLabel("✓  Up to date")
+        self.up_to_date_label = QLabel(_("✓  Up to date"))
         self.up_to_date_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.up_to_date_label.setStyleSheet(
-            "color: #10B981; font-size: 12px; font-weight: 600; "
+            f"color: #10B981; font-size: {Fonts.MD}; font-weight: 600; "
             "background: rgba(16,185,129,0.08); border-radius: 8px; padding: 8px;"
         )
         self.action_layout.addWidget(self.up_to_date_label)
@@ -353,27 +354,27 @@ class PackageDetailCard(QFrame):
         aur_row.setContentsMargins(0, 0, 0, 0)
         aur_row.setSpacing(6)
 
-        self.aur_pkgbuild_btn = QPushButton("View PKGBUILD")
+        self.aur_pkgbuild_btn = QPushButton(_("View PKGBUILD"))
         self.aur_pkgbuild_btn.setMinimumHeight(36)
         self.aur_pkgbuild_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.aur_pkgbuild_btn.setToolTip(
-            "Open the PKGBUILD recipe this package builds from")
+            _("Open the PKGBUILD recipe this package builds from"))
         self.aur_pkgbuild_btn.setStyleSheet(_nav_btn_stylesheet(Colors.ORANGE))
         self.aur_pkgbuild_btn.clicked.connect(lambda: self._open_aur("pkgbuild"))
         aur_row.addWidget(self.aur_pkgbuild_btn, 1)
 
-        self.aur_changes_btn = QPushButton("View Changes")
+        self.aur_changes_btn = QPushButton(_("View Changes"))
         self.aur_changes_btn.setMinimumHeight(36)
         self.aur_changes_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.aur_changes_btn.setToolTip("Open the commit history for this package")
+        self.aur_changes_btn.setToolTip(_("Open the commit history for this package"))
         self.aur_changes_btn.setStyleSheet(_nav_btn_stylesheet(Colors.TEXT_2))
         self.aur_changes_btn.clicked.connect(lambda: self._open_aur("changes"))
         aur_row.addWidget(self.aur_changes_btn, 1)
 
-        self.aur_snapshot_btn = QPushButton("Download snapshot")
+        self.aur_snapshot_btn = QPushButton(_("Download snapshot"))
         self.aur_snapshot_btn.setMinimumHeight(36)
         self.aur_snapshot_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.aur_snapshot_btn.setToolTip("Download the current source tarball")
+        self.aur_snapshot_btn.setToolTip(_("Download the current source tarball"))
         self.aur_snapshot_btn.setStyleSheet(_nav_btn_stylesheet(Colors.TEXT_2))
         self.aur_snapshot_btn.clicked.connect(lambda: self._open_aur("snapshot"))
         aur_row.addWidget(self.aur_snapshot_btn, 1)
@@ -413,22 +414,22 @@ class PackageDetailCard(QFrame):
         # status badge
         if installed:
             if has_update:
-                self.status_badge.setText("◉  Update Available")
+                self.status_badge.setText(_("◉  Update Available"))
                 self.status_badge.setStyleSheet(
-                    "background: rgba(255,138,101,0.12); color: #FF8A65;"
-                    " font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
+                    f"background: rgba(255,138,101,0.12); color: #FF8A65;"
+                    f" font-size: {Fonts.SM}; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
                 )
             else:
-                self.status_badge.setText("◉  Installed")
+                self.status_badge.setText(_("◉  Installed"))
                 self.status_badge.setStyleSheet(
-                    "background: rgba(16,185,129,0.12); color: #10B981;"
-                    " font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
+                    f"background: rgba(16,185,129,0.12); color: #10B981;"
+                    f" font-size: {Fonts.SM}; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
                 )
         else:
-            self.status_badge.setText("○  Not Installed")
+            self.status_badge.setText(_("○  Not Installed"))
             self.status_badge.setStyleSheet(
                 f"background: rgba(92,94,102,0.12); color: {Colors.TEXT_3};"
-                f" font-size: 11px; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
+                f" font-size: {Fonts.SM}; font-weight: 600; border-radius: 6px; padding: 3px 10px;"
             )
         self.status_badge.setVisible(True)
 
@@ -443,7 +444,7 @@ class PackageDetailCard(QFrame):
         if description:
             self.desc_label.setText(description)
         else:
-            self.desc_label.setText("No description available.")
+            self.desc_label.setText(_("No description available."))
 
         # Installed-only extras: install reason, size, reverse dependencies
         install_reason = pkg_data.get("install_reason", "")
@@ -465,7 +466,7 @@ class PackageDetailCard(QFrame):
             if required_by:
                 self.revdeps_label.setText(", ".join(required_by))
             else:
-                self.revdeps_label.setText("Nothing depends on this package (it is not needed by anything installed).")
+                self.revdeps_label.setText(_("Nothing depends on this package (it is not needed by anything installed)."))
 
         if view == "updates":
             self.install_btn.setVisible(False)
@@ -478,7 +479,7 @@ class PackageDetailCard(QFrame):
             self.update_btn.setVisible(False)
             self.uninstall_btn.setVisible(False)
             self.check_updates_btn.setVisible(True)
-            self.check_updates_btn.setText("Check for Updates")
+            self.check_updates_btn.setText(_("Check for Updates"))
             self.check_updates_btn.setEnabled(True)
             self.up_to_date_label.setVisible(False)
         elif installed:

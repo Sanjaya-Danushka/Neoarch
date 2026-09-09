@@ -8,12 +8,10 @@ import shutil
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel, QPushButton,
     QLineEdit, QScrollArea, QMenu, QMessageBox, QDialog, QComboBox,
-    QCheckBox, QPlainTextEdit, QGridLayout, QSizePolicy,
+    QPlainTextEdit,
 )
-from PyQt6.QtCore import Qt, QTimer, QRectF
-from PyQt6.QtGui import QColor, QPainter, QPen
-from PyQt6.QtSvg import QSvgRenderer
-from neoarch.frontend.tokens import Colors, Fonts, Radii, Spacing
+from PyQt6.QtCore import Qt, QTimer
+from neoarch.frontend.tokens import Colors, Fonts, Radii
 
 __all__ = ["DockerTab"]
 
@@ -40,83 +38,14 @@ _BLUE = Colors.BLUE
 _GREEN = Colors.GREEN
 _RED = Colors.RED
 
-_SCROLL_QSS = (
-    "QScrollArea { background: transparent; border: none; }"
-    "QScrollBar:vertical { background: transparent; width: 6px; }"
-    "QScrollBar::handle:vertical { background: rgba(255,255,255,0.08);"
-    "  border-radius: 3px; min-height: 30px; }"
-    "QScrollBar::handle:vertical:hover { background: rgba(255,255,255,0.14); }"
-    "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }")
+# ── shared styles (single source: styles.py) ───────────────────────
+from neoarch.frontend.styles import Styles
+from neoarch.backend.services.i18n import _
 
-_INPUT_QSS = """
-    QLineEdit {
-        background-color: rgba(28, 30, 36, 0.9);
-        color: #EDEDEF;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        padding: 7px 12px;
-        font-size: 12px;
-        selection-background-color: rgba(0, 191, 174, 0.3);
-    }
-    QLineEdit:focus { border-color: rgba(0, 191, 174, 0.5); }
-    QLineEdit::placeholder { color: #5C5E66; }
-"""
-
-_COMBO_QSS = """
-    QComboBox {
-        background-color: rgba(28, 30, 36, 0.9);
-        color: #EDEDEF;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        padding: 6px 10px;
-        font-size: 11px;
-        min-width: 100px;
-    }
-    QComboBox:focus { border-color: rgba(0, 191, 174, 0.4); }
-    QComboBox::drop-down { border: none; width: 20px; }
-    QComboBox::down-arrow { image: none; border: none; }
-    QComboBox QAbstractItemView {
-        background-color: rgba(22, 23, 26, 0.98);
-        color: #EDEDEF;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 6px;
-        selection-background-color: rgba(0, 191, 174, 0.15);
-        outline: none;
-    }
-"""
-
-_CHECKBOX_QSS = """
-    QCheckBox {
-        color: #C9C9CD; font-size: 11px; spacing: 6px;
-    }
-    QCheckBox::indicator {
-        width: 16px; height: 16px; border-radius: 4px;
-        border: 1.5px solid #5C5E66; background-color: rgba(28, 30, 36, 0.9);
-    }
-    QCheckBox::indicator:checked { background-color: #00BFAE; border-color: #00BFAE; }
-    QCheckBox::indicator:hover { border-color: #00BFAE; }
-"""
-
-_PLAIN_QSS = """
-    QPlainTextEdit {
-        background-color: rgba(28, 30, 36, 0.9);
-        color: #EDEDEF;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-        padding: 6px 8px;
-        font-size: 12px;
-        selection-background-color: rgba(0, 191, 174, 0.3);
-    }
-    QPlainTextEdit:focus { border-color: rgba(0, 191, 174, 0.4); }
-"""
-
-_MENU_QSS = """
-    QMenu { background-color: #2A2D33; color: #F0F0F0;
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
-            padding: 4px; }
-    QMenu::item { padding: 5px 20px; border-radius: 4px; font-size: 12px; }
-    QMenu::item:selected { background-color: rgba(0, 191, 174, 0.18); }
-"""
+_SCROLL_QSS = Styles.scrollbar()
+_INPUT_QSS = Styles.input()
+_COMBO_QSS = Styles.combo()
+_MENU_QSS = Styles.menu()
 
 
 # ── helpers ────────────────────────────────────────────────────────
@@ -124,7 +53,7 @@ _MENU_QSS = """
 def _field_label(text):
     lbl = QLabel(text)
     lbl.setStyleSheet(
-        f"color: {_TEXT2}; font-size: 11px; font-weight: 500;"
+        Styles.text(_TEXT2, Fonts.SM, Fonts.MEDIUM) +
         "background: transparent; border: none; padding-top: 4px;")
     return lbl
 
@@ -151,19 +80,19 @@ class _StatCard(QFrame):
 
         self._title_lbl = QLabel(title)
         self._title_lbl.setStyleSheet(
-            f"color: {_TEXT2}; font-size: 11px; font-weight: 500;"
+            Styles.text(_TEXT2, Fonts.SM, Fonts.MEDIUM) +
             "background: transparent; border: none;")
         layout.addWidget(self._title_lbl)
 
         self._value_lbl = QLabel(str(value))
         self._value_lbl.setStyleSheet(
-            f"color: {color}; font-size: 24px; font-weight: 700;"
+            Styles.text(color, Fonts.HERO, Fonts.BOLD) +
             "background: transparent; border: none;")
         layout.addWidget(self._value_lbl)
 
         self._sub_lbl = QLabel(subtitle)
         self._sub_lbl.setStyleSheet(
-            f"color: {_TEXT3}; font-size: 10px; font-weight: 400;"
+            Styles.text(_TEXT3, Fonts.XS, Fonts.REGULAR) +
             "background: transparent; border: none;")
         layout.addWidget(self._sub_lbl)
 
@@ -193,7 +122,7 @@ class _TabButton(QPushButton):
                     border: 1px solid rgba(0, 191, 174, 0.25);
                     border-radius: 10px;
                     padding: 0 16px;
-                    font-size: 12px; font-weight: 600;
+                    font-size: {Fonts.MD}; font-weight: 600;
                 }}
             """)
         else:
@@ -204,7 +133,7 @@ class _TabButton(QPushButton):
                     border: 1px solid transparent;
                     border-radius: 10px;
                     padding: 0 16px;
-                    font-size: 12px; font-weight: 500;
+                    font-size: {Fonts.MD}; font-weight: 500;
                 }}
                 QPushButton:hover {{
                     color: {_TEXT};
@@ -262,43 +191,32 @@ class DockerTab(QWidget):
         left.setSpacing(2)
         left.setContentsMargins(0, 0, 0, 0)
 
-        title = QLabel("Docker")
+        title = QLabel(_("Docker"))
         title.setStyleSheet(
-            f"color: {_TEXT}; font-size: 20px; font-weight: 700;"
+            f"color: {_TEXT}; font-size: {Fonts.HERO}; font-weight: 700;"
             "background: transparent; border: none;")
         left.addWidget(title)
 
-        subtitle = QLabel("Manage containers, images, and Docker resources")
+        subtitle = QLabel(_("Manage containers, images, and Docker resources"))
         subtitle.setStyleSheet(
-            f"color: {_TEXT2}; font-size: 12px;"
+            Styles.text(_TEXT2, Fonts.MD) + " background: transparent; border: none;"
             "background: transparent; border: none;")
         left.addWidget(subtitle)
         row.addLayout(left, 1)
 
         self._search_input = QLineEdit()
-        self._search_input.setPlaceholderText("Search...")
+        self._search_input.setPlaceholderText(_("Search..."))
         self._search_input.setFixedWidth(180)
         self._search_input.setFixedHeight(32)
         self._search_input.setStyleSheet(_INPUT_QSS)
         self._search_input.textChanged.connect(self._on_search)
         row.addWidget(self._search_input)
 
-        self._run_btn = QPushButton("+ Run Container")
+        self._run_btn = QPushButton(_("+ Run Container"))
         self._run_btn.setFixedHeight(34)
         self._run_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._run_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: #FFFFFF;
-                color: #0C0C0E;
-                border: 1px solid rgba(255, 255, 255, 0.9);
-                border-radius: 10px;
-                padding: 0 18px;
-                font-size: 12px;
-                font-weight: 600;
-            }}
-            QPushButton:hover {{ background-color: #E8EAF0; }}
-            QPushButton:pressed {{ background-color: #D3D6DE; }}
-        """)
+        self._run_btn.setStyleSheet(
+            Styles.btn_white(padding="0 18px", size=Fonts.MD, radius=Radii.XL))
         self._run_btn.clicked.connect(self.run_container)
         row.addWidget(self._run_btn)
 
@@ -311,7 +229,7 @@ class DockerTab(QWidget):
                 color: {_TEXT2};
                 border: 1px solid {_BORDER};
                 border-radius: 10px;
-                font-size: 14px;
+                font-size: {Fonts.LG};
             }}
             QPushButton:hover {{ background: rgba(255,255,255,0.10); color: {_TEXT}; }}
         """)
@@ -324,10 +242,10 @@ class DockerTab(QWidget):
         row = QHBoxLayout()
         row.setSpacing(10)
         row.setContentsMargins(0, 0, 0, 0)
-        self._stat_containers = _StatCard("Containers", "—", "All containers", _TEAL)
-        self._stat_running = _StatCard("Running", "—", "Currently active", _TEAL)
-        self._stat_images = _StatCard("Images", "—", "Local images", _PURPLE)
-        self._stat_disk = _StatCard("Storage", "—", "Docker disk usage", _BLUE)
+        self._stat_containers = _StatCard(_("Containers"), "—", _("All containers"), _TEAL)
+        self._stat_running = _StatCard(_("Running"), "—", _("Currently active"), _TEAL)
+        self._stat_images = _StatCard(_("Images"), "—", _("Local images"), _PURPLE)
+        self._stat_disk = _StatCard(_("Storage"), "—", _("Docker disk usage"), _BLUE)
         row.addWidget(self._stat_containers)
         row.addWidget(self._stat_running)
         row.addWidget(self._stat_images)
@@ -339,8 +257,8 @@ class DockerTab(QWidget):
         row.setSpacing(4)
         row.setContentsMargins(0, 0, 0, 0)
         self._tabs = {}
-        for key, label in [("containers", "Containers"), ("images", "Images"),
-                           ("volumes", "Volumes"), ("networks", "Networks")]:
+        for key, label in [("containers", _("Containers")), ("images", _("Images")),
+                           ("volumes", _("Volumes")), ("networks", _("Networks"))]:
             btn = _TabButton(label)
             btn.clicked.connect(lambda checked, k=key: self._switch_tab(k))
             self._tabs[key] = btn
@@ -370,44 +288,36 @@ class DockerTab(QWidget):
         icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         el.addWidget(icon)
         el.addSpacing(12)
-        t = QLabel("No containers yet")
+        t = QLabel(_("No containers yet"))
         t.setStyleSheet(
-            f"color: {_TEXT}; font-size: 15px; font-weight: 600;"
+            f"color: {_TEXT}; font-size: {Fonts.CARD_TITLE}; font-weight: 600;"
             "background: transparent; border: none;")
         t.setAlignment(Qt.AlignmentFlag.AlignCenter)
         el.addWidget(t)
-        s = QLabel("Run a Docker image to create your first container.")
+        s = QLabel(_("Run a Docker image to create your first container."))
         s.setStyleSheet(
-            f"color: {_TEXT2}; font-size: 12px;"
+            Styles.text(_TEXT2, Fonts.MD) + " background: transparent; border: none;"
             "background: transparent; border: none;")
         s.setAlignment(Qt.AlignmentFlag.AlignCenter)
         el.addWidget(s)
         el.addSpacing(16)
         btn_row = QHBoxLayout()
         btn_row.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        run_btn = QPushButton("+ Run Container")
+        run_btn = QPushButton(_("+ Run Container"))
         run_btn.setFixedHeight(34)
         run_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        run_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: #FFFFFF; color: #0C0C0E;
-                border: 1px solid rgba(255,255,255,0.9);
-                border-radius: 10px; padding: 0 18px;
-                font-size: 12px; font-weight: 600;
-            }}
-            QPushButton:hover {{ background: #E8EAF0; }}
-            QPushButton:pressed {{ background: #D3D6DE; }}
-        """)
+        run_btn.setStyleSheet(
+            Styles.btn_white(padding="0 18px", size=Fonts.MD, radius=Radii.XL))
         run_btn.clicked.connect(self.run_container)
         btn_row.addWidget(run_btn)
-        pull_btn = QPushButton("Pull Image")
+        pull_btn = QPushButton(_("Pull Image"))
         pull_btn.setFixedHeight(34)
         pull_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         pull_btn.setStyleSheet(f"""
             QPushButton {{
                 background: transparent; color: {_TEXT2};
                 border: 1px solid {_BORDER}; border-radius: 10px;
-                padding: 0 20px; font-size: 12px; font-weight: 500;
+                padding: 0 20px; font-size: {Fonts.MD}; font-weight: 500;
             }}
             QPushButton:hover {{ background: rgba(255,255,255,0.04); color: {_TEXT}; }}
         """)
@@ -443,10 +353,10 @@ class DockerTab(QWidget):
             self._networks = self.manager.list_networks()
             running = sum(1 for c in self._containers if c.get('status', '').startswith('Up'))
             stopped = len(self._containers) - running
-            self._stat_containers.set_value(str(len(self._containers)), f"{running} running, {stopped} stopped")
-            self._stat_running.set_value(str(running), "Currently active")
-            self._stat_images.set_value(str(len(self._images)), "Local images")
-            self._stat_disk.set_value(str(len(self._volumes)) + " vols", "Docker volumes")
+            self._stat_containers.set_value(str(len(self._containers)), _("{running} running, {stopped} stopped").format(running=running, stopped=stopped))
+            self._stat_running.set_value(str(running), _("Currently active"))
+            self._stat_images.set_value(str(len(self._images)), _("Local images"))
+            self._stat_disk.set_value(str(len(self._volumes)) + _(" vols"), _("Docker volumes"))
             self._render_content()
         finally:
             self._refreshing = False
@@ -492,20 +402,20 @@ class DockerTab(QWidget):
                    and (not q or q in c.get('name', '').lower() or q in c.get('image', '').lower())]
 
         if running:
-            hdr = self._section_header(f"Running Containers ({len(running)})")
+            hdr = self._section_header(_("Running Containers ({count})").format(count=len(running)))
             self._content_layout.addWidget(hdr)
             for c in running:
                 self._content_layout.addWidget(self._container_row(c, running=True))
 
         if stopped:
-            hdr = self._section_header(f"Other Containers ({len(stopped)})")
+            hdr = self._section_header(_("Other Containers ({count})").format(count=len(stopped)))
             self._content_layout.addWidget(hdr)
             for c in stopped:
                 self._content_layout.addWidget(self._container_row(c, running=False))
 
         # Resource usage
         if running:
-            self._content_layout.addWidget(self._section_header("Resource Usage"))
+            self._content_layout.addWidget(self._section_header(_("Resource Usage")))
             self._content_layout.addWidget(self._resource_panel())
 
     def _container_row(self, c, running=True):
@@ -528,27 +438,27 @@ class DockerTab(QWidget):
         dot = QLabel("●")
         dot.setFixedWidth(10)
         if running:
-            dot.setStyleSheet(f"color: {_TEAL}; font-size: 8px; background: transparent; border: none;")
+            dot.setStyleSheet(f"color: {_TEAL}; font-size: {Fonts.MICRO}; background: transparent; border: none;")
         else:
             status = c.get('status', '')
             if 'code 1' in status.lower() or 'exited' in status.lower():
-                dot.setStyleSheet(f"color: {_RED}; font-size: 8px; background: transparent; border: none;")
+                dot.setStyleSheet(f"color: {_RED}; font-size: {Fonts.MICRO}; background: transparent; border: none;")
             else:
-                dot.setStyleSheet(f"color: {_TEXT3}; font-size: 8px; background: transparent; border: none;")
+                dot.setStyleSheet(f"color: {_TEXT3}; font-size: {Fonts.MICRO}; background: transparent; border: none;")
         lay.addWidget(dot)
 
         name = QLabel(c.get('name', ''))
-        name.setStyleSheet(f"color: {_TEXT}; font-size: 12px; font-weight: 600; background: transparent; border: none;")
+        name.setStyleSheet(Styles.text(_TEXT, Fonts.MD, Fonts.SEMI) + " background: transparent; border: none;")
         lay.addWidget(name)
 
         image = QLabel(c.get('image', ''))
-        image.setStyleSheet(f"color: {_TEXT3}; font-size: 11px; background: transparent; border: none;")
+        image.setStyleSheet(Styles.text(_TEXT3, Fonts.SM) + " background: transparent; border: none;")
         lay.addWidget(image)
 
         lay.addStretch(1)
 
         status_lbl = QLabel(c.get('status', ''))
-        status_lbl.setStyleSheet(f"color: {_TEXT2}; font-size: 11px; background: transparent; border: none;")
+        status_lbl.setStyleSheet(Styles.text(_TEXT2, Fonts.SM) + " background: transparent; border: none;")
         lay.addWidget(status_lbl)
 
         # Actions
@@ -567,7 +477,7 @@ class DockerTab(QWidget):
                             background: rgba(255,107,107,0.10);
                             color: {_RED}; border: 1px solid rgba(255,107,107,0.2);
                             border-radius: 8px; padding: 0 10px;
-                            font-size: 10px; font-weight: 600;
+                            font-size: {Fonts.XS}; font-weight: 600;
                         }}
                         QPushButton:hover {{ background: rgba(255,107,107,0.20); }}
                     """)
@@ -576,7 +486,7 @@ class DockerTab(QWidget):
                         QPushButton {{
                             background: transparent; color: {_TEXT2};
                             border: 1px solid {_BORDER}; border-radius: 8px;
-                            padding: 0 10px; font-size: 10px; font-weight: 500;
+                            padding: 0 10px; font-size: {Fonts.XS}; font-weight: 500;
                         }}
                         QPushButton:hover {{ background: rgba(255,255,255,0.06); color: {_TEXT}; }}
                     """)
@@ -597,7 +507,7 @@ class DockerTab(QWidget):
                             background: rgba(255,107,107,0.10);
                             color: {_RED}; border: 1px solid rgba(255,107,107,0.2);
                             border-radius: 8px; padding: 0 10px;
-                            font-size: 10px; font-weight: 600;
+                            font-size: {Fonts.XS}; font-weight: 600;
                         }}
                         QPushButton:hover {{ background: rgba(255,107,107,0.20); }}
                     """)
@@ -606,7 +516,7 @@ class DockerTab(QWidget):
                         QPushButton {{
                             background: transparent; color: {_TEXT2};
                             border: 1px solid {_BORDER}; border-radius: 8px;
-                            padding: 0 10px; font-size: 10px; font-weight: 500;
+                            padding: 0 10px; font-size: {Fonts.XS}; font-weight: 500;
                         }}
                         QPushButton:hover {{ background: rgba(255,255,255,0.06); color: {_TEXT}; }}
                     """)
@@ -642,12 +552,12 @@ class DockerTab(QWidget):
             col.setContentsMargins(0, 0, 0, 0)
             vl = QLabel(value)
             vl.setStyleSheet(
-                f"color: {_TEXT}; font-size: 14px; font-weight: 600;"
+                f"color: {_TEXT}; font-size: {Fonts.LG}; font-weight: 600;"
                 "background: transparent; border: none;")
             col.addWidget(vl)
             tl = QLabel(label)
             tl.setStyleSheet(
-                f"color: {_TEXT3}; font-size: 10px;"
+                f"color: {_TEXT3}; font-size: {Fonts.XS};"
                 "background: transparent; border: none;")
             col.addWidget(tl)
             lay.addLayout(col)
@@ -664,16 +574,16 @@ class DockerTab(QWidget):
 
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(self._section_header(f"Docker Images ({len(images)})"))
+        row.addWidget(self._section_header(_("Docker Images ({count})").format(count=len(images))))
         row.addStretch(1)
-        pull_btn = QPushButton("+ Pull Image")
+        pull_btn = QPushButton(_("+ Pull Image"))
         pull_btn.setFixedHeight(28)
         pull_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         pull_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {_ACCENT}; color: #0C0C0E;
+                background: {_ACCENT}; color: {Colors.TEXT_ON_ACCENT};
                 border: none; border-radius: 7px;
-                padding: 0 14px; font-size: 11px; font-weight: 600;
+                padding: 0 14px; font-size: {Fonts.SM}; font-weight: 600;
             }}
             QPushButton:hover {{ background: #00D4C1; }}
         """)
@@ -702,23 +612,23 @@ class DockerTab(QWidget):
         lay.setSpacing(10)
 
         name = QLabel(f"{img.get('repo', '')}:{img.get('tag', '')}")
-        name.setStyleSheet(f"color: {_TEXT}; font-size: 12px; font-weight: 500; background: transparent; border: none;")
+        name.setStyleSheet(Styles.text(_TEXT, Fonts.MD, Fonts.MEDIUM) + " background: transparent; border: none;")
         lay.addWidget(name)
 
         size = QLabel(img.get('size', ''))
-        size.setStyleSheet(f"color: {_TEXT3}; font-size: 11px; background: transparent; border: none;")
+        size.setStyleSheet(Styles.text(_TEXT3, Fonts.SM) + " background: transparent; border: none;")
         lay.addWidget(size)
 
         lay.addStretch(1)
 
-        run_btn = QPushButton("Run")
+        run_btn = QPushButton(_("Run"))
         run_btn.setFixedHeight(24)
         run_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         run_btn.setStyleSheet(f"""
             QPushButton {{
                 background: rgba(0,191,174,0.10); color: {_ACCENT};
                 border: 1px solid rgba(0,191,174,0.2); border-radius: 8px;
-                padding: 0 10px; font-size: 10px; font-weight: 600;
+                padding: 0 10px; font-size: {Fonts.XS}; font-weight: 600;
             }}
             QPushButton:hover {{ background: rgba(0,191,174,0.18); }}
         """)
@@ -726,14 +636,14 @@ class DockerTab(QWidget):
         run_btn.clicked.connect(lambda checked=False, r=ref: self.run_container(image=r))
         lay.addWidget(run_btn)
 
-        rm_btn = QPushButton("Remove")
+        rm_btn = QPushButton(_("Remove"))
         rm_btn.setFixedHeight(24)
         rm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         rm_btn.setStyleSheet(f"""
             QPushButton {{
                 background: rgba(255,107,107,0.10); color: {_RED};
                 border: 1px solid rgba(255,107,107,0.2); border-radius: 8px;
-                padding: 0 10px; font-size: 10px; font-weight: 600;
+                padding: 0 10px; font-size: {Fonts.XS}; font-weight: 600;
             }}
             QPushButton:hover {{ background: rgba(255,107,107,0.20); }}
         """)
@@ -751,16 +661,16 @@ class DockerTab(QWidget):
 
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(self._section_header(f"Docker Volumes ({len(vols)})"))
+        row.addWidget(self._section_header(_("Docker Volumes ({count})").format(count=len(vols))))
         row.addStretch(1)
-        create_btn = QPushButton("+ Create Volume")
+        create_btn = QPushButton(_("+ Create Volume"))
         create_btn.setFixedHeight(28)
         create_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         create_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {_ACCENT}; color: #0C0C0E;
+                background: {_ACCENT}; color: {Colors.TEXT_ON_ACCENT};
                 border: none; border-radius: 7px;
-                padding: 0 14px; font-size: 11px; font-weight: 600;
+                padding: 0 14px; font-size: {Fonts.SM}; font-weight: 600;
             }}
             QPushButton:hover {{ background: #00D4C1; }}
         """)
@@ -789,23 +699,23 @@ class DockerTab(QWidget):
         lay.setSpacing(10)
 
         name = QLabel(vol.get('name', ''))
-        name.setStyleSheet(f"color: {_TEXT}; font-size: 12px; font-weight: 500; background: transparent; border: none;")
+        name.setStyleSheet(Styles.text(_TEXT, Fonts.MD, Fonts.MEDIUM) + " background: transparent; border: none;")
         lay.addWidget(name)
 
         size = QLabel(vol.get('size', ''))
-        size.setStyleSheet(f"color: {_TEXT3}; font-size: 11px; background: transparent; border: none;")
+        size.setStyleSheet(Styles.text(_TEXT3, Fonts.SM) + " background: transparent; border: none;")
         lay.addWidget(size)
 
         lay.addStretch(1)
 
-        rm_btn = QPushButton("Remove")
+        rm_btn = QPushButton(_("Remove"))
         rm_btn.setFixedHeight(24)
         rm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         rm_btn.setStyleSheet(f"""
             QPushButton {{
                 background: rgba(255,107,107,0.10); color: {_RED};
                 border: 1px solid rgba(255,107,107,0.2); border-radius: 8px;
-                padding: 0 10px; font-size: 10px; font-weight: 600;
+                padding: 0 10px; font-size: {Fonts.XS}; font-weight: 600;
             }}
             QPushButton:hover {{ background: rgba(255,107,107,0.20); }}
         """)
@@ -823,16 +733,16 @@ class DockerTab(QWidget):
 
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(self._section_header(f"Docker Networks ({len(nets)})"))
+        row.addWidget(self._section_header(_("Docker Networks ({count})").format(count=len(nets))))
         row.addStretch(1)
-        create_btn = QPushButton("+ Create Network")
+        create_btn = QPushButton(_("+ Create Network"))
         create_btn.setFixedHeight(28)
         create_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         create_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {_ACCENT}; color: #0C0C0E;
+                background: {_ACCENT}; color: {Colors.TEXT_ON_ACCENT};
                 border: none; border-radius: 7px;
-                padding: 0 14px; font-size: 11px; font-weight: 600;
+                padding: 0 14px; font-size: {Fonts.SM}; font-weight: 600;
             }}
             QPushButton:hover {{ background: #00D4C1; }}
         """)
@@ -861,27 +771,27 @@ class DockerTab(QWidget):
         lay.setSpacing(10)
 
         name = QLabel(net.get('name', ''))
-        name.setStyleSheet(f"color: {_TEXT}; font-size: 12px; font-weight: 500; background: transparent; border: none;")
+        name.setStyleSheet(Styles.text(_TEXT, Fonts.MD, Fonts.MEDIUM) + " background: transparent; border: none;")
         lay.addWidget(name)
 
         driver = QLabel(net.get('driver', ''))
-        driver.setStyleSheet(f"color: {_TEXT3}; font-size: 11px; background: transparent; border: none;")
+        driver.setStyleSheet(Styles.text(_TEXT3, Fonts.SM) + " background: transparent; border: none;")
         lay.addWidget(driver)
 
         count = QLabel(f"{net.get('containers', 0)} containers")
-        count.setStyleSheet(f"color: {_TEXT3}; font-size: 11px; background: transparent; border: none;")
+        count.setStyleSheet(Styles.text(_TEXT3, Fonts.SM) + " background: transparent; border: none;")
         lay.addWidget(count)
 
         lay.addStretch(1)
 
-        rm_btn = QPushButton("Remove")
+        rm_btn = QPushButton(_("Remove"))
         rm_btn.setFixedHeight(24)
         rm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         rm_btn.setStyleSheet(f"""
             QPushButton {{
                 background: rgba(255,107,107,0.10); color: {_RED};
                 border: 1px solid rgba(255,107,107,0.2); border-radius: 8px;
-                padding: 0 10px; font-size: 10px; font-weight: 600;
+                padding: 0 10px; font-size: {Fonts.XS}; font-weight: 600;
             }}
             QPushButton:hover {{ background: rgba(255,107,107,0.20); }}
         """)
@@ -895,7 +805,7 @@ class DockerTab(QWidget):
     def _section_header(self, text):
         lbl = QLabel(text)
         lbl.setStyleSheet(
-            f"color: {_TEXT}; font-size: 13px; font-weight: 600;"
+            f"color: {_TEXT}; font-size: {Fonts.BASE}; font-weight: 600;"
             "background: transparent; border: none; padding-top: 4px;")
         return lbl
 
@@ -929,12 +839,12 @@ class DockerTab(QWidget):
     def _context_menu(self, pos, cid):
         menu = QMenu(self)
         menu.setStyleSheet(_MENU_QSS)
-        start_act = menu.addAction("Start")
-        stop_act = menu.addAction("Stop")
-        restart_act = menu.addAction("Restart")
-        logs_act = menu.addAction("View Logs")
-        shell_act = menu.addAction("Open Shell")
-        remove_act = menu.addAction("Remove")
+        start_act = menu.addAction(_("Start"))
+        stop_act = menu.addAction(_("Stop"))
+        restart_act = menu.addAction(_("Restart"))
+        logs_act = menu.addAction(_("View Logs"))
+        shell_act = menu.addAction(_("Open Shell"))
+        remove_act = menu.addAction(_("Remove"))
         action = menu.exec(self.mapToGlobal(pos))
         if action == start_act:
             self.manager.start_container(cid)
@@ -956,7 +866,7 @@ class DockerTab(QWidget):
 
     def _show_logs(self, cid):
         dialog = QDialog()
-        dialog.setWindowTitle("Container Logs")
+        dialog.setWindowTitle(_("Container Logs"))
         dialog.setMinimumSize(640, 420)
         dialog.setStyleSheet(f"""
             QDialog {{
@@ -977,7 +887,7 @@ class DockerTab(QWidget):
         hl.setContentsMargins(14, 0, 10, 0)
         title = QLabel(f"{cid[:12]} — Logs")
         title.setStyleSheet(
-            f"color: {_TEXT}; font-size: 12px; font-weight: 600;"
+            f"color: {_TEXT}; font-size: {Fonts.MD}; font-weight: 600;"
             "background: transparent; border: none;")
         hl.addWidget(title)
         hl.addStretch(1)
@@ -987,7 +897,7 @@ class DockerTab(QWidget):
         close_btn.setStyleSheet(f"""
             QPushButton {{
                 background: transparent; color: {_TEXT2};
-                border: none; font-size: 14px; border-radius: 4px;
+                border: none; font-size: {Fonts.LG}; border-radius: 4px;
             }}
             QPushButton:hover {{ background: rgba(255,255,255,0.08); }}
         """)
@@ -997,14 +907,14 @@ class DockerTab(QWidget):
 
         log_view = QPlainTextEdit()
         log_view.setReadOnly(True)
-        log_view.setStyleSheet("""
-            QPlainTextEdit {
+        log_view.setStyleSheet(f"""
+            QPlainTextEdit {{
                 background-color: #1E1E1E; color: #C9C9C9;
                 border: none;
-                font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-                font-size: 11px;
+                font-family: {Fonts.MONO};
+                font-size: {Fonts.SM};
                 padding: 12px;
-            }
+            }}
         """)
         layout.addWidget(log_view, 1)
 
@@ -1018,7 +928,7 @@ class DockerTab(QWidget):
 
     def _show_pull_dialog(self):
         dialog = QDialog()
-        dialog.setWindowTitle("Pull Image")
+        dialog.setWindowTitle(_("Pull Image"))
         dialog.setMinimumWidth(400)
         dialog.setStyleSheet(f"""
             QDialog {{
@@ -1032,9 +942,9 @@ class DockerTab(QWidget):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(12)
 
-        title = QLabel("Pull Docker Image")
+        title = QLabel(_("Pull Docker Image"))
         title.setStyleSheet(
-            f"font-size: 15px; font-weight: 600; color: {_TEXT};"
+            f"font-size: {Fonts.CARD_TITLE}; font-weight: 600; color: {_TEXT};"
             "background: transparent; border: none;")
         layout.addWidget(title)
 
@@ -1046,26 +956,26 @@ class DockerTab(QWidget):
 
         btn_row = QHBoxLayout()
         btn_row.addStretch(1)
-        cancel_btn = QPushButton("Cancel")
+        cancel_btn = QPushButton(_("Cancel"))
         cancel_btn.setFixedHeight(34)
         cancel_btn.clicked.connect(dialog.reject)
         cancel_btn.setStyleSheet(f"""
             QPushButton {{
                 background: transparent; color: {_TEXT2};
                 border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
-                padding: 0 20px; font-size: 12px; font-weight: 500;
+                padding: 0 20px; font-size: {Fonts.MD}; font-weight: 500;
             }}
             QPushButton:hover {{ background: rgba(255,255,255,0.04); color: {_TEXT}; }}
         """)
         btn_row.addWidget(cancel_btn)
-        pull_btn = QPushButton("Pull")
+        pull_btn = QPushButton(_("Pull"))
         pull_btn.setDefault(True)
         pull_btn.setFixedHeight(34)
         pull_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {_ACCENT}; color: #0C0C0E;
+                background: {_ACCENT}; color: {Colors.TEXT_ON_ACCENT};
                 border: none; border-radius: 8px;
-                padding: 0 20px; font-size: 12px; font-weight: 600;
+                padding: 0 20px; font-size: {Fonts.MD}; font-weight: 600;
             }}
             QPushButton:hover {{ background: #00D4C1; }}
         """)
@@ -1081,7 +991,7 @@ class DockerTab(QWidget):
 
     def _show_create_volume_dialog(self):
         dialog = QDialog()
-        dialog.setWindowTitle("Create Volume")
+        dialog.setWindowTitle(_("Create Volume"))
         dialog.setMinimumWidth(380)
         dialog.setStyleSheet(f"""
             QDialog {{
@@ -1095,9 +1005,9 @@ class DockerTab(QWidget):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(12)
 
-        title = QLabel("Create Docker Volume")
+        title = QLabel(_("Create Docker Volume"))
         title.setStyleSheet(
-            f"font-size: 15px; font-weight: 600; color: {_TEXT};"
+            f"font-size: {Fonts.CARD_TITLE}; font-weight: 600; color: {_TEXT};"
             "background: transparent; border: none;")
         layout.addWidget(title)
 
@@ -1109,26 +1019,26 @@ class DockerTab(QWidget):
 
         btn_row = QHBoxLayout()
         btn_row.addStretch(1)
-        cancel_btn = QPushButton("Cancel")
+        cancel_btn = QPushButton(_("Cancel"))
         cancel_btn.setFixedHeight(34)
         cancel_btn.clicked.connect(dialog.reject)
         cancel_btn.setStyleSheet(f"""
             QPushButton {{
                 background: transparent; color: {_TEXT2};
                 border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
-                padding: 0 20px; font-size: 12px; font-weight: 500;
+                padding: 0 20px; font-size: {Fonts.MD}; font-weight: 500;
             }}
             QPushButton:hover {{ background: rgba(255,255,255,0.04); color: {_TEXT}; }}
         """)
         btn_row.addWidget(cancel_btn)
-        create_btn = QPushButton("Create")
+        create_btn = QPushButton(_("Create"))
         create_btn.setDefault(True)
         create_btn.setFixedHeight(34)
         create_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {_ACCENT}; color: #0C0C0E;
+                background: {_ACCENT}; color: {Colors.TEXT_ON_ACCENT};
                 border: none; border-radius: 8px;
-                padding: 0 20px; font-size: 12px; font-weight: 600;
+                padding: 0 20px; font-size: {Fonts.MD}; font-weight: 600;
             }}
             QPushButton:hover {{ background: #00D4C1; }}
         """)
@@ -1144,7 +1054,7 @@ class DockerTab(QWidget):
 
     def _show_create_network_dialog(self):
         dialog = QDialog()
-        dialog.setWindowTitle("Create Network")
+        dialog.setWindowTitle(_("Create Network"))
         dialog.setMinimumWidth(380)
         dialog.setStyleSheet(f"""
             QDialog {{
@@ -1158,9 +1068,9 @@ class DockerTab(QWidget):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(12)
 
-        title = QLabel("Create Docker Network")
+        title = QLabel(_("Create Docker Network"))
         title.setStyleSheet(
-            f"font-size: 15px; font-weight: 600; color: {_TEXT};"
+            f"font-size: {Fonts.CARD_TITLE}; font-weight: 600; color: {_TEXT};"
             "background: transparent; border: none;")
         layout.addWidget(title)
 
@@ -1178,26 +1088,26 @@ class DockerTab(QWidget):
 
         btn_row = QHBoxLayout()
         btn_row.addStretch(1)
-        cancel_btn = QPushButton("Cancel")
+        cancel_btn = QPushButton(_("Cancel"))
         cancel_btn.setFixedHeight(34)
         cancel_btn.clicked.connect(dialog.reject)
         cancel_btn.setStyleSheet(f"""
             QPushButton {{
                 background: transparent; color: {_TEXT2};
                 border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
-                padding: 0 20px; font-size: 12px; font-weight: 500;
+                padding: 0 20px; font-size: {Fonts.MD}; font-weight: 500;
             }}
             QPushButton:hover {{ background: rgba(255,255,255,0.04); color: {_TEXT}; }}
         """)
         btn_row.addWidget(cancel_btn)
-        create_btn = QPushButton("Create")
+        create_btn = QPushButton(_("Create"))
         create_btn.setDefault(True)
         create_btn.setFixedHeight(34)
         create_btn.setStyleSheet(f"""
             QPushButton {{
-                background: {_ACCENT}; color: #0C0C0E;
+                background: {_ACCENT}; color: {Colors.TEXT_ON_ACCENT};
                 border: none; border-radius: 8px;
-                padding: 0 20px; font-size: 12px; font-weight: 600;
+                padding: 0 20px; font-size: {Fonts.MD}; font-weight: 600;
             }}
             QPushButton:hover {{ background: #00D4C1; }}
         """)

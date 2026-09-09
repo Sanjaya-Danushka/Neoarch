@@ -18,7 +18,9 @@ from PyQt6.QtWidgets import (
     QScrollArea, QMenu,
 )
 
-from neoarch.frontend.tokens import Colors, Radii
+from neoarch.frontend.tokens import Colors, Fonts, Radii
+from neoarch.frontend.styles import Styles
+from neoarch.backend.services.i18n import _
 
 __all__ = ["AppImageTab"]
 
@@ -118,19 +120,19 @@ class _StatCard(QFrame):
 
         self._title_lbl = QLabel(title)
         self._title_lbl.setStyleSheet(
-            f"color: {_TEXT2}; font-size: 11px; font-weight: 500;"
+            Styles.text(_TEXT2, Fonts.SM, Fonts.MEDIUM) +
             "background: transparent; border: none;")
         layout.addWidget(self._title_lbl)
 
         self._value_lbl = QLabel(str(value))
         self._value_lbl.setStyleSheet(
-            f"color: {color}; font-size: 24px; font-weight: 700;"
+            Styles.text(color, Fonts.DISPLAY, Fonts.BOLD) +
             "background: transparent; border: none;")
         layout.addWidget(self._value_lbl)
 
         self._sub_lbl = QLabel(subtitle)
         self._sub_lbl.setStyleSheet(
-            f"color: {_TEXT3}; font-size: 10px; font-weight: 400;"
+            Styles.text(_TEXT3, Fonts.XS, Fonts.REGULAR) +
             "background: transparent; border: none;")
         layout.addWidget(self._sub_lbl)
 
@@ -146,7 +148,7 @@ class _Badge(QLabel):
     def __init__(self, text, bg="rgba(255,255,255,0.06)", color=_TEXT2, parent=None):
         super().__init__(text, parent)
         self.setStyleSheet(
-            f"color: {color}; font-size: 10px; font-weight: 600;"
+            f"color: {color}; font-size: {Fonts.XS}; font-weight: 600;"
             f"background: {bg}; border-radius: 4px; padding: 2px 7px;"
             "border: none;")
         self.setFixedHeight(18)
@@ -199,7 +201,7 @@ class _AppRow(QFrame):
 
         name_lbl = QLabel(entry.get("name", entry.get("id", "")))
         name_lbl.setStyleSheet(
-            f"color: {_TEXT}; font-size: 13px; font-weight: 600;"
+            f"color: {_TEXT}; font-size: {Fonts.BASE}; font-weight: 600;"
             "background: transparent; border: none;")
         top_row.addWidget(name_lbl)
 
@@ -231,7 +233,7 @@ class _AppRow(QFrame):
         if sub:
             url_lbl = QLabel(sub)
             url_lbl.setStyleSheet(
-                f"color: {_TEXT3}; font-size: 10px;"
+                f"color: {_TEXT3}; font-size: {Fonts.XS};"
                 "background: transparent; border: none;")
             left.addWidget(url_lbl)
 
@@ -255,7 +257,7 @@ class _AppRow(QFrame):
 
         status_lbl = QLabel(status_text)
         status_lbl.setStyleSheet(
-            f"color: {status_color}; font-size: 11px; font-weight: 500;"
+            f"color: {status_color}; font-size: {Fonts.SM}; font-weight: 500;"
             "background: transparent; border: none;")
         middle.addWidget(status_lbl, 0, Qt.AlignmentFlag.AlignLeft)
 
@@ -263,7 +265,7 @@ class _AppRow(QFrame):
         if size:
             info_lbl = QLabel(_fmt_size(size))
             info_lbl.setStyleSheet(
-                f"color: {_TEXT3}; font-size: 10px;"
+                f"color: {_TEXT3}; font-size: {Fonts.XS};"
                 "background: transparent; border: none;")
             middle.addWidget(info_lbl, 0, Qt.AlignmentFlag.AlignLeft)
 
@@ -291,7 +293,7 @@ class _AppRow(QFrame):
             QPushButton {{
                 background: transparent; color: {_TEXT3};
                 border: 1px solid {_BORDER}; border-radius: 6px;
-                font-size: 14px; font-weight: 700; padding: 0;
+                font-size: {Fonts.LG}; font-weight: 700; padding: 0;
             }}
             QPushButton:hover {{
                 background: rgba(255,255,255,0.06); color: {_TEXT2};
@@ -314,7 +316,7 @@ class _AppRow(QFrame):
                 border: 1px solid rgba(255,255,255,0.08);
                 border-radius: 6px;
                 padding: 0 12px;
-                font-size: 11px; font-weight: 600;
+                font-size: {Fonts.SM}; font-weight: 600;
             }}
             QPushButton:hover {{
                 background: rgba(255,255,255,0.08);
@@ -325,28 +327,18 @@ class _AppRow(QFrame):
 
     def _show_menu(self):
         menu = QMenu(self)
-        menu.setStyleSheet(f"""
-            QMenu {{
-                background: {_SURFACE_2};
-                color: {_TEXT};
-                border: 1px solid {_BORDER};
-                border-radius: 8px;
-                padding: 4px;
-                font-size: 12px;
-            }}
-            QMenu::item {{ padding: 6px 16px; border-radius: 4px; }}
-            QMenu::item:selected {{ background: rgba(0,191,174,0.15); }}
+        menu.setStyleSheet(Styles.menu() + f"""
             QMenu::separator {{ height: 1px; background: {_BORDER}; margin: 4px 8px; }}
         """)
         aid = self.entry.get("id", "")
 
         if self.entry.get("latest_version"):
-            act_up = menu.addAction("Update")
+            act_up = menu.addAction(_("Update"))
             act_up.triggered.connect(lambda: self.update_requested.emit(aid))
 
         menu.addSeparator()
 
-        act_rm = menu.addAction("Remove")
+        act_rm = menu.addAction(_("Remove"))
         act_rm.triggered.connect(lambda: self.remove_requested.emit(aid))
 
         menu.exec(self.mapToGlobal(self.rect().topRight()))
@@ -390,13 +382,7 @@ class AppImageTab(QWidget):
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
         self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self._scroll.setStyleSheet(
-            "QScrollArea { background: transparent; border: none; }"
-            "QScrollBar:vertical { background: transparent; width: 6px; }"
-            "QScrollBar::handle:vertical { background: rgba(255,255,255,0.08);"
-            "  border-radius: 3px; min-height: 30px; }"
-            "QScrollBar::handle:vertical:hover { background: rgba(255,255,255,0.14); }"
-            "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }")
+        self._scroll.setStyleSheet(Styles.scrollbar())
 
         self._content_widget = QWidget()
         self._content_layout = QVBoxLayout(self._content_widget)
@@ -417,38 +403,27 @@ class AppImageTab(QWidget):
         left.setSpacing(2)
         left.setContentsMargins(0, 0, 0, 0)
 
-        title = QLabel("AppImages")
+        title = QLabel(_("AppImages"))
         title.setStyleSheet(
-            f"color: {_TEXT}; font-size: 20px; font-weight: 700;"
+            f"color: {_TEXT}; font-size: {Fonts.HERO}; font-weight: 700;"
             "background: transparent; border: none;")
         left.addWidget(title)
 
-        subtitle = QLabel("Browse and install applications from available sources")
+        subtitle = QLabel(_("Browse and install applications from available sources"))
         subtitle.setStyleSheet(
-            f"color: {_TEXT2}; font-size: 12px;"
+            f"color: {_TEXT2}; font-size: {Fonts.MD};"
             "background: transparent; border: none;")
         left.addWidget(subtitle)
 
         row.addLayout(left, 1)
 
-        add_file_btn = QPushButton(" Add from File")
-        add_file_btn.setIcon(_svg_icon("ui/import.svg", 14, "#0C0C0E"))
+        add_file_btn = QPushButton(_(" Add from File"))
+        add_file_btn.setIcon(_svg_icon("ui/import.svg", 14, f"{Colors.TEXT_ON_ACCENT}"))
         add_file_btn.setIconSize(QRectF(0, 0, 14, 14).toRect().size())
         add_file_btn.setFixedHeight(34)
         add_file_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        add_file_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: #FFFFFF;
-                color: #0C0C0E;
-                border: 1px solid rgba(255, 255, 255, 0.9);
-                border-radius: 10px;
-                padding: 0 18px;
-                font-size: 12px;
-                font-weight: 600;
-            }}
-            QPushButton:hover {{ background-color: #E8EAF0; }}
-            QPushButton:pressed {{ background-color: #D3D6DE; }}
-        """)
+        add_file_btn.setStyleSheet(
+            Styles.btn_white(padding="0 18px", size=Fonts.MD, radius=Radii.XL))
         add_file_btn.clicked.connect(self.add_from_file)
         self._add_file_btn = add_file_btn
         row.addWidget(add_file_btn)
@@ -459,10 +434,10 @@ class AppImageTab(QWidget):
         self._stats_row = QHBoxLayout()
         self._stats_row.setSpacing(10)
 
-        self._stat_total = _StatCard("Total AppImages", "0", "All managed AppImages", _TEAL)
-        self._stat_updates = _StatCard("Updates Available", "0", "Ready to update", _BLUE)
-        self._stat_size = _StatCard("Total Size", "0 B", "Disk usage", _PURPLE)
-        self._stat_sources = _StatCard("Sources", "0", "Unique sources", _ORANGE)
+        self._stat_total = _StatCard(_("Total AppImages"), "0", _("All managed AppImages"), _TEAL)
+        self._stat_updates = _StatCard(_("Updates Available"), "0", _("Ready to update"), _BLUE)
+        self._stat_size = _StatCard(_("Total Size"), "0 B", _("Disk usage"), _PURPLE)
+        self._stat_sources = _StatCard(_("Sources"), "0", _("Unique sources"), _ORANGE)
 
         for card in (self._stat_total, self._stat_updates,
                      self._stat_size, self._stat_sources):
@@ -489,41 +464,33 @@ class AppImageTab(QWidget):
         icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         el.addWidget(icon, 0, Qt.AlignmentFlag.AlignCenter)
 
-        t1 = QLabel("No AppImages yet")
+        t1 = QLabel(_("No AppImages yet"))
         t1.setStyleSheet(
-            f"color: {_TEXT}; font-size: 16px; font-weight: 600;"
+            f"color: {_TEXT}; font-size: {Fonts.XL}; font-weight: 600;"
             "background: transparent; border: none;")
         t1.setAlignment(Qt.AlignmentFlag.AlignCenter)
         el.addWidget(t1)
 
-        t2 = QLabel("Add an AppImage from a local file or URL to get started.")
+        t2 = QLabel(_("Add an AppImage from a local file or URL to get started."))
         t2.setStyleSheet(
-            f"color: {_TEXT2}; font-size: 12px;"
+            f"color: {_TEXT2}; font-size: {Fonts.MD};"
             "background: transparent; border: none;")
         t2.setAlignment(Qt.AlignmentFlag.AlignCenter)
         el.addWidget(t2)
 
-        empty_add = QPushButton(" Add from File")
-        empty_add.setIcon(_svg_icon("ui/import.svg", 14, "#0C0C0E"))
+        empty_add = QPushButton(_(" Add from File"))
+        empty_add.setIcon(_svg_icon("ui/import.svg", 14, f"{Colors.TEXT_ON_ACCENT}"))
         empty_add.setIconSize(QRectF(0, 0, 14, 14).toRect().size())
         empty_add.setFixedHeight(36)
         empty_add.setCursor(Qt.CursorShape.PointingHandCursor)
-        empty_add.setStyleSheet(f"""
-            QPushButton {{
-                background-color: #FFFFFF; color: #0C0C0E;
-                border: 1px solid rgba(255, 255, 255, 0.9);
-                border-radius: 10px; padding: 0 20px;
-                font-size: 12px; font-weight: 600;
-            }}
-            QPushButton:hover {{ background-color: #E8EAF0; }}
-            QPushButton:pressed {{ background-color: #D3D6DE; }}
-        """)
+        empty_add.setStyleSheet(
+            Styles.btn_white(padding="0 20px", size=Fonts.MD, radius=Radii.XL))
         empty_add.clicked.connect(self.add_from_file)
         el.addWidget(empty_add, 0, Qt.AlignmentFlag.AlignCenter)
 
-        t3 = QLabel("Portable  ·  Desktop Integration  ·  Updates  ·  Easy Removal")
+        t3 = QLabel(_("Portable  ·  Desktop Integration  ·  Updates  ·  Easy Removal"))
         t3.setStyleSheet(
-            f"color: {_TEXT3}; font-size: 10px;"
+            f"color: {_TEXT3}; font-size: {Fonts.XS};"
             "background: transparent; border: none;")
         t3.setAlignment(Qt.AlignmentFlag.AlignCenter)
         el.addWidget(t3)
@@ -569,10 +536,10 @@ class AppImageTab(QWidget):
         total_size = sum(_file_size(e.get("bin_path", "")) for e in self._entries)
         sources = len({e.get("source_type", "") for e in self._entries})
 
-        self._stat_total.set_value(total, "All managed AppImages")
-        self._stat_updates.set_value(updates, "Ready to update")
-        self._stat_size.set_value(_fmt_size(total_size), "Disk usage")
-        self._stat_sources.set_value(sources, "Unique sources")
+        self._stat_total.set_value(total, _("All managed AppImages"))
+        self._stat_updates.set_value(updates, _("Ready to update"))
+        self._stat_size.set_value(_fmt_size(total_size), _("Disk usage"))
+        self._stat_sources.set_value(sources, _("Unique sources"))
 
     # ── Rendering ───────────────────────────────────────────────────
 
@@ -595,27 +562,27 @@ class AppImageTab(QWidget):
         total = len(self._entries)
         shown = len(filtered)
         if total == shown:
-            count_text = f"{total} application{'s' if total != 1 else ''}"
+            count_text = _("{n} application").format(n=total) if total == 1 else _("{n} applications").format(n=total)
         else:
-            count_text = f"{shown} of {total} applications"
+            count_text = _("{shown} of {total} applications").format(shown=shown, total=total)
 
         label = QLabel(count_text)
         label.setStyleSheet(
-            f"color: {_TEXT}; font-size: 14px; font-weight: 600;"
+            f"color: {_TEXT}; font-size: {Fonts.LG}; font-weight: 600;"
             "background: transparent; border: none;")
         hrow.addWidget(label)
         hrow.addStretch(1)
 
-        sort_labels = {"name_asc": "Name A-Z", "name_desc": "Name Z-A",
-                       "newest": "Newest", "source": "Source"}
-        self._sort_btn = QPushButton(sort_labels.get(self._sort_mode, "Name A-Z"))
+        sort_labels = {"name_asc": _("Name A-Z"), "name_desc": _("Name Z-A"),
+                       "newest": _("Newest"), "source": _("Source")}
+        self._sort_btn = QPushButton(sort_labels.get(self._sort_mode, _("Name A-Z")))
         self._sort_btn.setFixedHeight(28)
         self._sort_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._sort_btn.setStyleSheet(f"""
             QPushButton {{
                 background: transparent; color: {_TEXT2};
                 border: 1px solid {_BORDER}; border-radius: 6px;
-                padding: 0 10px; font-size: 11px; font-weight: 500;
+                padding: 0 10px; font-size: {Fonts.SM}; font-weight: 500;
             }}
             QPushButton:hover {{ color: {_TEXT}; border-color: {_BORDER_HOVER}; }}
         """)
@@ -715,7 +682,7 @@ class AppImageTab(QWidget):
 
     def _cycle_sort(self):
         modes = ["name_asc", "name_desc", "newest", "source"]
-        labels = ["Name A-Z", "Name Z-A", "Newest", "Source"]
+        labels = [_("Name A-Z"), _("Name Z-A"), _("Newest"), _("Source")]
         idx = modes.index(self._sort_mode) if self._sort_mode in modes else 0
         idx = (idx + 1) % len(modes)
         self._sort_mode = modes[idx]

@@ -8,6 +8,7 @@ from threading import Thread
 
 from neoarch.backend.services.suggestions import index_ready, refresh_names_index, suggest_names
 from neoarch.frontend.mixins.views import _SELF_CONTAINED_VIEWS
+from neoarch.backend.services.i18n import _
 from neoarch.resources.paths import PROJECT_ROOT
 
 
@@ -26,7 +27,7 @@ class _SearchMixin:
             return
         if query == "__REFRESH_DB__":
             def _sync_db():
-                self.log("Syncing package databases\u2026")
+                self.log(_("Syncing package databases\u2026"))
                 try:
                     env = self.get_askpass_env()
                     result = subprocess.run(
@@ -137,7 +138,7 @@ class _SearchMixin:
                         self.filters_panel.setVisible(False)
                 except Exception:
                     pass
-                self.header_info.setText("Search and discover new packages to install")
+                self.header_info.setText(_("Search and discover new packages to install"))
                 install_btn = getattr(self, 'discover_install_btn', None)
                 if install_btn is not None:
                     install_btn.setVisible(False)
@@ -210,7 +211,7 @@ class _SearchMixin:
                 self.packages_grid.setVisible(True)
             if self._grid_view_btn:
                 self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(toolbar_dir, "list.svg"), 20))
-                self._grid_view_btn.setToolTip("List View")
+                self._grid_view_btn.setToolTip(_("List View"))
             if self.current_view != "plugins":
                 self._populate_grid()
         else:
@@ -232,7 +233,7 @@ class _SearchMixin:
                 self.package_table.setVisible(True)
             if self._grid_view_btn:
                 self._grid_view_btn.setIcon(self.get_svg_icon(os.path.join(toolbar_dir, "view.svg"), 20))
-                self._grid_view_btn.setToolTip("Grid View")
+                self._grid_view_btn.setToolTip(_("Grid View"))
 
     def _populate_grid(self):
         # Self-contained pages own their own card grid; never touch the legacy one.
@@ -293,7 +294,7 @@ class _SearchMixin:
                         self.updates_table.set_discover_mode(False)
                 except Exception:
                     pass
-                self.header_info.setText("Search and discover new packages to install")
+                self.header_info.setText(_("Search and discover new packages to install"))
                 try:
                     if hasattr(self, 'source_card') and self.source_card:
                         self.source_card.clear_results()
@@ -357,7 +358,7 @@ class _SearchMixin:
             self.load_more_btn.setVisible(has_more)
             if has_more:
                 remaining = len(self.search_results) - end
-                self.load_more_btn.setText(f"Load More ({remaining} remaining)")
+                self.load_more_btn.setText(_("Load More ({remaining} remaining)").format(remaining=remaining))
 
     def search_discover_packages(self, query):
         self.package_table.setRowCount(0)
@@ -392,7 +393,7 @@ class _SearchMixin:
                 self.updates_table.set_loading(True, "Searching packages...")
         else:
             self.loading_widget.setVisible(True)
-            self.loading_widget.set_message("Searching packages...")
+            self.loading_widget.set_message(_("Searching packages..."))
             self.loading_widget.start_animation()
             self._hide_all_package_views()
             try:
@@ -709,7 +710,7 @@ class _SearchMixin:
         self.load_more_btn.setVisible(False)
 
         if not filtered:
-            self.header_info.setText(f"No packages found matching '{query}'.")
+            self.header_info.setText(_("No packages found matching '{query}'.").format(query=query))
         else:
             count = len(filtered)
             offline = False
@@ -719,7 +720,7 @@ class _SearchMixin:
             except Exception:
                 pass
             suffix = " \u00B7 Offline \u2014 showing cached results" if offline else ""
-            self.header_info.setText(f"{count} packages were found, {count} of which match the specified filters{suffix}")
+            self.header_info.setText(_("{count} packages were found, {count} of which match the specified filters{suffix}").format(count=count, suffix=suffix))
         if hasattr(self, 'no_results_widget'):
             self.no_results_widget.setVisible(False)
         self._show_active_view()

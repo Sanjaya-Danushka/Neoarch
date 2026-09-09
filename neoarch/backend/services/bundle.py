@@ -9,6 +9,9 @@ import json
 from PyQt6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 
 from neoarch.backend.package.installer import install_packages
+from neoarch.backend.services.i18n import _
+from neoarch.backend.services.i18n import _
+from neoarch.backend.services.i18n import _
 
 __all__ = [
     "add_selected_to_bundle", "refresh_bundles_table", "export_bundle",
@@ -92,14 +95,14 @@ def refresh_bundles_table(app):
     table.set_loading(False)
     if not app.bundle_items:
         table.set_empty_text(
-            "Your bundle is empty",
-            "Browse packages in Home, check the ones you want,\n"
-            "and click Add to Bundle in the toolbar.",
-            "Sign in to share or sync bundles across devices")
+            _("Your bundle is empty"),
+            _("Browse packages in Home, check the ones you want,\n"
+              "and click Add to Bundle in the toolbar."),
+            _("Sign in to share or sync bundles across devices"))
     else:
         table.set_empty_text(
-            "No packages in bundle",
-            "Add packages from Discover, Updates, or Installed views")
+            _("No packages in bundle"),
+            _("Add packages from Discover, Updates, or Installed views"))
     mapped = []
     for it in app.bundle_items:
         mapped.append({

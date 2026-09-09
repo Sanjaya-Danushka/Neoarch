@@ -13,6 +13,9 @@ from PyQt6.QtWidgets import QLabel
 
 from neoarch.backend.services import network_latency
 from neoarch.resources.paths import PROJECT_ROOT
+from neoarch.backend.services.i18n import _
+from neoarch.backend.services.i18n import _
+from neoarch.backend.services.i18n import _
 
 _ICON_DIR = os.path.join(str(PROJECT_ROOT), "assets", "icons", "status")
 
@@ -111,9 +114,9 @@ class SignalIndicator(QLabel):
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation,
             ))
-        label = _TIER_LABELS.get(state, state)
+        label = _(_TIER_LABELS.get(state, state))
         if avg is not None:
-            label += f" \u2014 {_fmt(avg)}"
+            label += _(" \u2014 {ms}").format(ms=_fmt(avg))
         self.setToolTip(label)
 
     def is_online(self):

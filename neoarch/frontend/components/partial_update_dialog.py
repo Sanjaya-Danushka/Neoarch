@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 )
 
 from neoarch.frontend.tokens import Colors, Fonts
+from neoarch.backend.services.i18n import _
 
 
 def count_selected(total_updates, packages_by_source):
@@ -45,7 +46,7 @@ def is_partial_update(total_updates, packages_by_source):
 class PartialUpdateDialog(QDialog):
     def __init__(self, total_updates, packages_by_source, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Partial Update Warning")
+        self.setWindowTitle(_("Partial Update Warning"))
         self.setMinimumWidth(540)
         self.setStyleSheet(
             f"QDialog {{ background-color: rgba(22, 23, 26, 235); }}")
@@ -58,7 +59,7 @@ class PartialUpdateDialog(QDialog):
         v.setSpacing(12)
         v.setContentsMargins(24, 22, 24, 20)
 
-        heading = QLabel("Updating a selection only")
+        heading = QLabel(_("Updating a selection only"))
         heading.setWordWrap(True)
         heading.setStyleSheet(
             f"font-size: {Fonts.CARD_TITLE}; font-weight: {Fonts.SEMI};"
@@ -66,11 +67,12 @@ class PartialUpdateDialog(QDialog):
         v.addWidget(heading)
 
         body = QLabel(
-            f"You picked {selected} of {available} available updates. "
-            "On Arch, packages are built against the latest libraries \u2014 "
-            "a partial upgrade can desync libraries from their apps and "
-            "break your system.\n\n"
-            "It\u2019s recommended to do a full system upgrade instead.")
+            _("You picked {selected} of {available} available updates. "
+              "On Arch, packages are built against the latest libraries \u2014 "
+              "a partial upgrade can desync libraries from their apps and "
+              "break your system.\n\n"
+              "It\u2019s recommended to do a full system upgrade instead."
+              ).format(selected=selected, available=available))
         body.setWordWrap(True)
         body.setStyleSheet(
             f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
@@ -83,21 +85,21 @@ class PartialUpdateDialog(QDialog):
         buttons.setSpacing(10)
         buttons.addStretch()
 
-        cancel_btn = QPushButton("Cancel")
+        cancel_btn = QPushButton(_("Cancel"))
         cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         cancel_btn.setMinimumHeight(36)
         cancel_btn.setStyleSheet(
             f"QPushButton {{ background-color: {Colors.CARD};"
             f" color: {Colors.TEXT}; border: 1px solid {Colors.BORDER};"
             f" border-radius: 10px; padding: 8px 18px;"
-            f" font-size: 13px; font-weight: 500; }}"
+            f" font-size: {Fonts.BASE}; font-weight: 500; }}"
             f"QPushButton:hover {{ background-color: {Colors.CARD_HOVER};"
             f" border-color: {Colors.BORDER_HOVER}; }}"
             f"QPushButton:pressed {{ background-color: {Colors.SURFACE_3}; }}")
         cancel_btn.clicked.connect(self.reject)
         buttons.addWidget(cancel_btn)
 
-        self.confirm_btn = QPushButton("I understand \u2014 Update Selection")
+        self.confirm_btn = QPushButton(_("I understand \u2014 Update Selection"))
         self.confirm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.confirm_btn.setMinimumHeight(36)
         self.confirm_btn.setDefault(True)
@@ -107,7 +109,7 @@ class PartialUpdateDialog(QDialog):
             f" color: {Colors.TEXT_ON_ACCENT};"
             f" border: 1px solid rgba(255, 255, 255, 0.9);"
             f" border-radius: 10px; padding: 8px 18px;"
-            f" font-size: 13px; font-weight: 600; }}"
+            f" font-size: {Fonts.BASE}; font-weight: 600; }}"
             f"QPushButton:hover {{ background-color: {Colors.WHITE_HOVER}; }}"
             f"QPushButton:pressed {{ background-color: {Colors.WHITE_PRESSED}; }}")
         self.confirm_btn.clicked.connect(self.accept)

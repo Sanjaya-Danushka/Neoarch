@@ -15,7 +15,8 @@ from PyQt6.QtGui import QColor, QIcon, QPixmap, QPainter
 from PyQt6.QtSvg import QSvgRenderer
 
 from neoarch.frontend.components.recent_activity import RecentActivity
-from neoarch.frontend.tokens import Colors
+from neoarch.frontend.tokens import Colors, Fonts
+from neoarch.backend.services.i18n import _
 from neoarch.resources.paths import PROJECT_ROOT
 
 _C = {
@@ -102,14 +103,14 @@ class LargeSearchBox(QWidget):
         head_col = QVBoxLayout()
         head_col.setSpacing(2)
 
-        title = QLabel("Search for packages")
+        title = QLabel(_("Search for packages"))
         title.setStyleSheet(
-            f"font-size: 24px; font-weight: 700; color: {_C['text']}; background: transparent;")
+            f"font-size: {Fonts.DISPLAY}; font-weight: 700; color: {_C['text']}; background: transparent;")
         head_col.addWidget(title)
 
-        sub = QLabel("Find anything from pacman, AUR, Flatpak and npm")
+        sub = QLabel(_("Find anything from pacman, AUR, Flatpak and npm"))
         sub.setStyleSheet(
-            f"font-size: 13px; font-weight: 400; color: {_C['text_muted']}; background: transparent;")
+            f"font-size: {Fonts.BASE}; font-weight: 400; color: {_C['text_muted']}; background: transparent;")
         head_col.addWidget(sub)
 
         header.addLayout(head_col)
@@ -142,7 +143,7 @@ class LargeSearchBox(QWidget):
         lay.addWidget(icon)
 
         self.input = QLineEdit()
-        self.input.setPlaceholderText("Search packages across pacman, AUR, Flatpak, npm…")
+        self.input.setPlaceholderText(_("Search packages across pacman, AUR, Flatpak, npm…"))
         self.input.setFixedHeight(48)
         self.input.returnPressed.connect(self._on_submit)
         self.input.textChanged.connect(self._on_text)
@@ -152,18 +153,18 @@ class LargeSearchBox(QWidget):
                 background: transparent;
                 border: none;
                 color: {_C['text']};
-                font-size: 15px;
+                font-size: {Fonts.CARD_TITLE};
                 font-weight: 400;
                 padding: 0;
             }}
             QLineEdit::placeholder {{
                 color: {_C['text_muted']};
-                font-size: 14px;
+                font-size: {Fonts.LG};
             }}
         """)
         lay.addWidget(self.input, 1)
 
-        btn = QPushButton("Search")
+        btn = QPushButton(_("Search"))
         btn.setFixedHeight(40)
         btn.setMinimumWidth(100)
         btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -173,7 +174,7 @@ class LargeSearchBox(QWidget):
                 color: {_C['accent']};
                 border: 1px solid {_C['border']};
                 border-radius: 12px;
-                font-size: 13px;
+                font-size: {Fonts.BASE};
                 font-weight: 600;
                 padding: 0 22px;
             }}
@@ -198,17 +199,17 @@ class LargeSearchBox(QWidget):
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(14)
         row.addWidget(self._make_card(
-            "Installed Packages", "installed packages.jpeg",
+            _("Installed Packages"), "installed packages.jpeg",
             _C["accent"], "installed_count_label",
-            "across all sources"), 1)
+            _("across all sources")), 1)
         row.addWidget(self._make_card(
-            "Available Updates", "available updates.jpeg",
+            _("Available Updates"), "available updates.jpeg",
             "#FF9F43", "updates_count_label",
-            "keep your system updated"), 1)
+            _("keep your system updated")), 1)
         row.addWidget(self._make_card(
-            "System Status", "system states.jpeg",
+            _("System Status"), "system states.jpeg",
             "#A29BFE", "sources_count_label",
-            "everything looks good"), 1)
+            _("everything looks good")), 1)
         return row
 
     def _make_card(self, title: str, icon_rel: str, accent: str,
@@ -242,7 +243,7 @@ class LargeSearchBox(QWidget):
 
         label = QLabel(title)
         label.setStyleSheet(
-            f"font-size: 12px; font-weight: 500; color: {_C['text_sec']}; background: transparent; letter-spacing: 0.3px;")
+            f"font-size: {Fonts.MD}; font-weight: 500; color: {_C['text_sec']}; background: transparent; letter-spacing: 0.3px;")
         hdr.addWidget(label)
         hdr.addStretch()
 
@@ -263,7 +264,7 @@ class LargeSearchBox(QWidget):
 
         sub = QLabel(subtitle)
         sub.setStyleSheet(
-            f"font-size: 11px; font-weight: 400; color: {_C['text_muted']}; background: transparent;")
+            f"font-size: {Fonts.SM}; font-weight: 400; color: {_C['text_muted']}; background: transparent;")
         lay.addWidget(sub)
 
         setattr(self, label_attr, val)
@@ -277,9 +278,9 @@ class LargeSearchBox(QWidget):
         row.addStretch()
 
         actions = [
-            ("ui/updateall.svg", "Update All", self._on_update_all, True),
-            ("ui/refreshdb.svg", "Refresh Databases", self._on_refresh, False),
-            ("ui/clean.svg", "Clean Cache", self._on_clean, False),
+            ("ui/updateall.svg", _("Update All"), self._on_update_all, True),
+            ("ui/refreshdb.svg", _("Refresh Databases"), self._on_refresh, False),
+            ("ui/clean.svg", _("Clean Cache"), self._on_clean, False),
         ]
 
         for svg_rel, text, cb, primary in actions:
@@ -299,7 +300,7 @@ class LargeSearchBox(QWidget):
                         border-right: 1px solid rgba(0, 0, 0, 0.25);
                         border-bottom: 2px solid rgba(0, 0, 0, 0.35);
                         border-radius: 14px;
-                        font-size: 13px;
+                        font-size: {Fonts.BASE};
                         font-weight: 600;
                         padding: 0 28px;
                     }}
@@ -327,7 +328,7 @@ class LargeSearchBox(QWidget):
                         border-right: 1px solid rgba(0, 0, 0, 0.25);
                         border-bottom: 2px solid rgba(0, 0, 0, 0.35);
                         border-radius: 14px;
-                        font-size: 13px;
+                        font-size: {Fonts.BASE};
                         font-weight: 500;
                         padding: 0 24px;
                     }}

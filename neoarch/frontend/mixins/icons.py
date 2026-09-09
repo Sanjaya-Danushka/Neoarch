@@ -13,7 +13,7 @@ from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 from PyQt6.QtSvg import QSvgRenderer
 
 from neoarch.resources.paths import PROJECT_ROOT
-from neoarch.frontend.tokens import Colors, SourceColors
+from neoarch.frontend.tokens import Colors, Fonts, SourceColors
 
 _BASE_DIR = str(PROJECT_ROOT)
 _SOURCES_ICON_DIR = os.path.join(_BASE_DIR, "assets", "icons", "sources")
@@ -200,7 +200,7 @@ class _IconsMixin:
             f"""
             QCheckBox#tableCheckbox {{
                 color: #F0F0F0;
-                font-size: 13px;
+                font-size: {Fonts.BASE};
                 font-weight: 500;
                 spacing: 8px;
             }}

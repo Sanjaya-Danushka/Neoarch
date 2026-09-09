@@ -13,9 +13,11 @@ from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.frontend.components.source_card import SourceCard
 
 
-from neoarch.frontend.tokens import Colors
+from neoarch.frontend.tokens import Colors, Fonts
+from neoarch.frontend.styles import Styles
 
 from neoarch.backend.services import filter as filters_service
+from neoarch.backend.services.i18n import _
 from neoarch.frontend.components.updates_table import classify_update, _parse_size, _parse_version
 
 _BASE_DIR = str(PROJECT_ROOT)
@@ -148,15 +150,7 @@ class _BundleListRow(QWidget):
 
     def _show_menu(self, pos):
         menu = QMenu(self)
-        menu.setStyleSheet(f"""
-            QMenu {{
-                background-color: #171C25;
-                color: {Colors.TEXT};
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 10px;
-                padding: 4px;
-                font-size: 12px;
-            }}
+        menu.setStyleSheet(Styles.menu() + f"""
             QMenu::item {{
                 padding: 8px 14px;
                 border-radius: 6px;
@@ -166,8 +160,8 @@ class _BundleListRow(QWidget):
                 background-color: {Colors.ACCENT_SOFT};
             }}
         """)
-        menu.addAction("Rename", lambda: self.rename_requested.emit(self.key))
-        menu.addAction("Delete", lambda: self.delete_requested.emit(self.key))
+        menu.addAction(_("Rename"), lambda: self.rename_requested.emit(self.key))
+        menu.addAction(_("Delete"), lambda: self.delete_requested.emit(self.key))
         menu.exec(self.mapToGlobal(pos))
 
 
@@ -277,7 +271,7 @@ class _BundlesSourcePanel(QWidget):
         label = QLabel(text.upper())
         label.setStyleSheet(f"""
             color: {Colors.ACCENT};
-            font-size: 11px;
+            font-size: {Fonts.SM};
             font-weight: 600;
             letter-spacing: 1.0px;
             background: transparent;
@@ -295,10 +289,10 @@ class _BundlesSourcePanel(QWidget):
         header = QWidget()
         header_lay = QHBoxLayout(header)
         header_lay.setContentsMargins(20, 6, 20, 2)
-        title = QLabel("Bundles")
+        title = QLabel(_("Bundles"))
         title.setStyleSheet(f"""
             color: {Colors.TEXT};
-            font-size: 15px;
+            font-size: {Fonts.CARD_TITLE};
             font-weight: 700;
             background: transparent;
             border: none;
@@ -364,7 +358,7 @@ class _BundlesSourcePanel(QWidget):
 
         hdr_row = QHBoxLayout()
         hdr_row.setSpacing(0)
-        hdr_row.addWidget(self._section_header("Bundles"))
+        hdr_row.addWidget(self._section_header(_("Bundles")))
         hdr_row.addStretch()
         add_btn = QPushButton()
         add_btn.setFixedSize(20, 20)
@@ -395,16 +389,7 @@ class _BundlesSourcePanel(QWidget):
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll.setStyleSheet("""
-            QScrollArea { background: transparent; border: none; }
-            QScrollBar:vertical {
-                background: transparent; width: 5px; margin: 0;
-            }
-            QScrollBar::handle:vertical {
-                background: rgba(255,255,255,0.08); min-height: 20px; border-radius: 2px;
-            }
-            QScrollBar::handle:vertical:hover { background: rgba(255,255,255,0.15); }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }
+        scroll.setStyleSheet(Styles.scrollbar(width=5, min_len=20) + """
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
         """)
         container = QWidget()
@@ -435,20 +420,20 @@ class _BundlesSourcePanel(QWidget):
         sec_lay.setContentsMargins(16, 4, 16, 4)
         sec_lay.setSpacing(4)
 
-        sec_lay.addWidget(self._section_header("Share Code"))
+        sec_lay.addWidget(self._section_header(_("Share Code")))
 
         code_row = QHBoxLayout()
         code_row.setSpacing(6)
 
         self._share_code_label = QLabel("")
         self._share_code_label.setStyleSheet(f"""
-            color: {Colors.TEXT}; font-size: 11px;
+            color: {Colors.TEXT}; font-size: {Fonts.SM};
             font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
             font-weight: 500; background: transparent; border: none;
         """)
         code_row.addWidget(self._share_code_label, 1)
 
-        copy_btn = QPushButton("Copy")
+        copy_btn = QPushButton(_("Copy"))
         copy_btn.setFixedSize(42, 22)
         copy_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         copy_btn.setStyleSheet(f"""
@@ -458,7 +443,7 @@ class _BundlesSourcePanel(QWidget):
                 border: 1px solid {Colors.BORDER};
                 border-radius: 8px;
                 padding: 0 8px;
-                font-size: 10px;
+                font-size: {Fonts.XS};
                 font-weight: 500;
             }}
             QPushButton:hover {{
@@ -471,7 +456,7 @@ class _BundlesSourcePanel(QWidget):
 
         sec_lay.addLayout(code_row)
 
-        gen_btn = QPushButton("Generate")
+        gen_btn = QPushButton(_("Generate"))
         gen_btn.setFixedHeight(22)
         gen_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         gen_btn.setStyleSheet(f"""
@@ -481,7 +466,7 @@ class _BundlesSourcePanel(QWidget):
                 border: 1px solid {Colors.BORDER};
                 border-radius: 8px;
                 padding: 0 10px;
-                font-size: 10px;
+                font-size: {Fonts.XS};
                 font-weight: 500;
             }}
             QPushButton:hover {{
@@ -501,9 +486,9 @@ class _BundlesSourcePanel(QWidget):
             from PyQt6.QtWidgets import QApplication
             QApplication.clipboard().setText(code)
             old = self._share_code_label.text()
-            self._share_code_label.setText("Copied!")
+            self._share_code_label.setText(_("Copied!"))
             self._share_code_label.setStyleSheet(f"""
-                color: {Colors.ACCENT}; font-size: 11px;
+                color: {Colors.ACCENT}; font-size: {Fonts.SM};
                 font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
                 font-weight: 600; background: transparent; border: none;
             """)
@@ -511,7 +496,7 @@ class _BundlesSourcePanel(QWidget):
             def _restore():
                 self._share_code_label.setText(old)
                 self._share_code_label.setStyleSheet(f"""
-                    color: {Colors.TEXT}; font-size: 11px;
+                    color: {Colors.TEXT}; font-size: {Fonts.SM};
                     font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
                     font-weight: 500; background: transparent; border: none;
                 """)
@@ -528,10 +513,10 @@ class _BundlesSourcePanel(QWidget):
         sec_lay.setContentsMargins(16, 4, 16, 4)
         sec_lay.setSpacing(4)
 
-        sec_lay.addWidget(self._section_header("Import Code"))
+        sec_lay.addWidget(self._section_header(_("Import Code")))
 
         self._import_code_input = QLineEdit()
-        self._import_code_input.setPlaceholderText("Paste share code...")
+        self._import_code_input.setPlaceholderText(_("Paste share code..."))
         self._import_code_input.setFixedHeight(26)
         self._import_code_input.setStyleSheet(f"""
             QLineEdit {{
@@ -540,7 +525,7 @@ class _BundlesSourcePanel(QWidget):
                 border: 1px solid {Colors.BORDER};
                 border-radius: 8px;
                 font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-                font-size: 11px;
+                font-size: {Fonts.SM};
                 padding: 0 8px;
                 selection-background-color: rgba(168, 85, 247, 0.3);
             }}
@@ -551,7 +536,7 @@ class _BundlesSourcePanel(QWidget):
         self._import_code_input.returnPressed.connect(self._on_import_code_submit)
         sec_lay.addWidget(self._import_code_input)
 
-        import_btn = QPushButton("Import")
+        import_btn = QPushButton(_("Import"))
         import_btn.setFixedHeight(22)
         import_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         import_btn.setStyleSheet(f"""
@@ -561,7 +546,7 @@ class _BundlesSourcePanel(QWidget):
                 border: 1px solid {Colors.BORDER};
                 border-radius: 8px;
                 padding: 0 10px;
-                font-size: 10px;
+                font-size: {Fonts.XS};
                 font-weight: 500;
             }}
             QPushButton:hover {{
@@ -591,11 +576,11 @@ class _BundlesSourcePanel(QWidget):
         self._bundle_rows.clear()
 
         if not bundles:
-            empty = QLabel("Create a bundle to get started")
+            empty = QLabel(_("Create a bundle to get started"))
             empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
             empty.setStyleSheet(f"""
                 color: {Colors.TEXT_3};
-                font-size: 11px;
+                font-size: {Fonts.SM};
                 font-weight: 500;
                 background: transparent;
                 border: none;
@@ -669,7 +654,7 @@ class _BundlesSourcePanel(QWidget):
         sec_lay.setContentsMargins(16, 4, 16, 4)
         sec_lay.setSpacing(0)
 
-        sec_lay.addWidget(self._section_header("Actions"))
+        sec_lay.addWidget(self._section_header(_("Actions")))
 
         ui_dir = os.path.join(_BASE_DIR, "assets", "icons", "ui")
         defs = [
@@ -701,16 +686,16 @@ class _BundlesSourcePanel(QWidget):
         self._count_items_label = QLabel("0")
         self._count_items_label.setStyleSheet(f"""
             color: {Colors.TEXT};
-            font-size: 17px;
+            font-size: {Fonts.XXL};
             font-weight: 700;
             background: transparent;
             border: none;
             padding: 0;
         """)
-        self._count_items_caption = QLabel("ITEMS")
-        self._count_items_caption.setStyleSheet("""
+        self._count_items_caption = QLabel(_("ITEMS"))
+        self._count_items_caption.setStyleSheet(f"""
             color: #6B7280;
-            font-size: 9px;
+            font-size: {Fonts.TINY};
             font-weight: 600;
             letter-spacing: 0.5px;
             background: transparent;
@@ -730,16 +715,16 @@ class _BundlesSourcePanel(QWidget):
         self._count_bundles_label = QLabel("0")
         self._count_bundles_label.setStyleSheet(f"""
             color: {Colors.ACCENT};
-            font-size: 17px;
+            font-size: {Fonts.XXL};
             font-weight: 700;
             background: transparent;
             border: none;
             padding: 0;
         """)
-        self._count_bundles_caption = QLabel("BUNDLES")
-        self._count_bundles_caption.setStyleSheet("""
+        self._count_bundles_caption = QLabel(_("BUNDLES"))
+        self._count_bundles_caption.setStyleSheet(f"""
             color: #6B7280;
-            font-size: 9px;
+            font-size: {Fonts.TINY};
             font-weight: 600;
             letter-spacing: 0.5px;
             background: transparent;
@@ -812,10 +797,10 @@ class _FiltersMixin:
         self.filters_panel = QFrame()
         self.filters_panel.setMinimumWidth(250)
         self.filters_panel.setMaximumWidth(268)
-        self.filters_panel.setStyleSheet("""
-            QFrame {
-                background-color: #0C0C0E;
-            }
+        self.filters_panel.setStyleSheet(f"""
+            QFrame {{
+                background-color: {Colors.BG};
+            }}
         """)
 
         panel_layout = QVBoxLayout(self.filters_panel)
@@ -827,28 +812,12 @@ class _FiltersMixin:
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        scroll.setStyleSheet("""
-            QScrollArea { background: transparent; border: none; }
-            QScrollArea > QWidget > QWidget { background: transparent; }
-            QScrollBar:vertical {
+        scroll.setStyleSheet(Styles.scrollbar(width=6, color="rgba(255,255,255,0.10)",
+                                      hover="rgba(255,255,255,0.18)") + f"""
+            QScrollArea > QWidget > QWidget {{ background: transparent; }}
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
                 background: transparent;
-                width: 6px;
-                margin: 0;
-            }
-            QScrollBar::handle:vertical {
-                background: rgba(255, 255, 255, 0.10);
-                min-height: 30px;
-                border-radius: 3px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: rgba(255, 255, 255, 0.18);
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-                background: transparent;
-            }
+            }}
         """)
 
         container = QWidget()
@@ -952,15 +921,15 @@ class _FiltersMixin:
         # Discover-specific sort options. "relevance" keeps the best-match
         # ordering produced by the search; the rest are plain field sorts.
         self.source_card.set_sort_methods([
-            ("relevance", True, "Best Match"),
-            ("name", True, "Name A-Z"),
-            ("name", False, "Name Z-A"),
-            ("version", True, "Version (Oldest)"),
-            ("version", False, "Version (Latest)"),
-            ("source", True, "Source A-Z"),
-            ("source", False, "Source Z-A"),
-            ("installed", False, "Not Installed First"),
-            ("installed", True, "Installed First"),
+            ("relevance", True, _("Best Match")),
+            ("name", True, _("Name A-Z")),
+            ("name", False, _("Name Z-A")),
+            ("version", True, _("Version (Oldest)")),
+            ("version", False, _("Version (Latest)")),
+            ("source", True, _("Source A-Z")),
+            ("source", False, _("Source Z-A")),
+            ("installed", False, _("Not Installed First")),
+            ("installed", True, _("Installed First")),
         ])
         self.source_card.set_sort("relevance", True)
 
@@ -1263,11 +1232,11 @@ class _FiltersMixin:
             self.source_card.add_source(source_name, source_icon_path, count=counts.get(source_name, 0))
 
         self.source_card.set_sort_methods([
-            ("name_asc", True, "Name A-Z"),
-            ("name_desc", True, "Name Z-A"),
-            ("category", True, "Category"),
-            ("source", True, "Source"),
-            ("installed", True, "Installed First"),
+            ("name_asc", True, _("Name A-Z")),
+            ("name_desc", True, _("Name Z-A")),
+            ("category", True, _("Category")),
+            ("source", True, _("Source")),
+            ("installed", True, _("Installed First")),
         ])
         self.source_card.set_sort("name_asc", True)
 

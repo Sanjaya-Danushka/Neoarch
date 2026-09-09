@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QProgressBar
 from PyQt6.QtCore import Qt, QPropertyAnimation, pyqtProperty
 from PyQt6.QtGui import QPainter, QColor, QPen
 
-from neoarch.frontend.tokens import Colors
+from neoarch.frontend.tokens import Colors, Fonts
 
 
 _SIZE = 48
@@ -95,7 +95,7 @@ class LoadingSpinner(QWidget):
             LoadingSpinner QLabel#spinnerMsgLabel {{
                 background-color: transparent;
                 color: #E8E8E8;
-                font-size: 20px;
+                font-size: {Fonts.HERO};
                 font-weight: 500;
             }}
             LoadingSpinner QProgressBar {{

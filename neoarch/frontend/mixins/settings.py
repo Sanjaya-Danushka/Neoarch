@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
 import os
 
 from neoarch.backend.services import settings as settings_service
+from neoarch.backend.services.i18n import _
 from neoarch.resources.paths import APP_VERSION, APP_EDITION
 from neoarch.frontend.views.settings_general import GeneralSettingsWidget
 from neoarch.frontend.views.settings_auto_update import AutoUpdateSettingsWidget
@@ -15,7 +16,7 @@ from neoarch.frontend.views.settings_logging import LoggingSettingsWidget
 from neoarch.frontend.views.settings_proxy import ProxySettingsWidget
 from neoarch.frontend.views.settings_maintenance import MaintenanceSettingsWidget
 from neoarch.frontend.views.settings_appearance import AppearanceSettingsWidget
-from neoarch.frontend.tokens import Colors, Fonts, Fonts, Radii
+from neoarch.frontend.tokens import Colors, Fonts, Radii
 
 
 class _SettingsMixin:
@@ -80,7 +81,7 @@ class _SettingsMixin:
 
         self.settings_nav_buttons = {}
 
-        header_label = QLabel("SETTINGS")
+        header_label = QLabel(_("SETTINGS"))
         header_label.setStyleSheet(f"""
             color: {Colors.TEXT_3};
             font-size: {Fonts.SM};
@@ -90,50 +91,50 @@ class _SettingsMixin:
         """)
         sidebar_layout.addWidget(header_label)
 
-        btn_general = QPushButton("General")
+        btn_general = QPushButton(_("General"))
         btn_general.setCheckable(True)
         btn_general.setChecked(True)
         btn_general.clicked.connect(lambda: self.switch_settings_category("general"))
         self.settings_nav_buttons["general"] = btn_general
         sidebar_layout.addWidget(btn_general)
 
-        btn_appearance = QPushButton("Appearance")
+        btn_appearance = QPushButton(_("Appearance"))
         btn_appearance.setCheckable(True)
         btn_appearance.clicked.connect(lambda: self.switch_settings_category("appearance"))
         self.settings_nav_buttons["appearance"] = btn_appearance
         sidebar_layout.addWidget(btn_appearance)
 
-        btn_auto_update = QPushButton("Auto Update")
+        btn_auto_update = QPushButton(_("Auto Update"))
         btn_auto_update.setCheckable(True)
         btn_auto_update.clicked.connect(lambda: self.switch_settings_category("auto_update"))
         self.settings_nav_buttons["auto_update"] = btn_auto_update
         sidebar_layout.addWidget(btn_auto_update)
 
-        btn_notifications = QPushButton("Notifications")
+        btn_notifications = QPushButton(_("Notifications"))
         btn_notifications.setCheckable(True)
         btn_notifications.clicked.connect(lambda: self.switch_settings_category("notifications"))
         self.settings_nav_buttons["notifications"] = btn_notifications
         sidebar_layout.addWidget(btn_notifications)
 
-        btn_security = QPushButton("Security")
+        btn_security = QPushButton(_("Security"))
         btn_security.setCheckable(True)
         btn_security.clicked.connect(lambda: self.switch_settings_category("security"))
         self.settings_nav_buttons["security"] = btn_security
         sidebar_layout.addWidget(btn_security)
 
-        btn_logging = QPushButton("Logging")
+        btn_logging = QPushButton(_("Logging"))
         btn_logging.setCheckable(True)
         btn_logging.clicked.connect(lambda: self.switch_settings_category("logging"))
         self.settings_nav_buttons["logging"] = btn_logging
         sidebar_layout.addWidget(btn_logging)
 
-        btn_proxy = QPushButton("Proxy & Network")
+        btn_proxy = QPushButton(_("Proxy & Network"))
         btn_proxy.setCheckable(True)
         btn_proxy.clicked.connect(lambda: self.switch_settings_category("proxy"))
         self.settings_nav_buttons["proxy"] = btn_proxy
         sidebar_layout.addWidget(btn_proxy)
 
-        btn_maintenance = QPushButton("Maintenance")
+        btn_maintenance = QPushButton(_("Maintenance"))
         btn_maintenance.setCheckable(True)
         btn_maintenance.clicked.connect(lambda: self.switch_settings_category("maintenance"))
         self.settings_nav_buttons["maintenance"] = btn_maintenance
@@ -175,7 +176,7 @@ class _SettingsMixin:
         # Content area
         content_area = QFrame()
         content_area.setObjectName("settingsContent")
-        content_area.setStyleSheet(f"QFrame#settingsContent {{ background-color: #0C0C0E; }}")
+        content_area.setStyleSheet(f"QFrame#settingsContent {{ background-color: {Colors.BG}; }}")
 
         content_outer = QVBoxLayout(content_area)
         content_outer.setContentsMargins(0, 0, 0, 0)
@@ -193,7 +194,7 @@ class _SettingsMixin:
             "  border-radius: 3px; min-height: 30px; }"
             "QScrollBar::handle:vertical:hover { background: rgba(255,255,255,0.14); }"
             "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"
-            "QWidget#settingsInner { background-color: #0C0C0E; }")
+            f"QWidget#settingsInner {{ background-color: {Colors.BG}; }}")
 
         settings_inner = QWidget()
         settings_inner.setObjectName("settingsInner")

@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
 
 from neoarch.backend.services.hygiene import news_unseen_count
 from neoarch.frontend.tokens import QSS, Colors, Fonts, Radii
+from neoarch.backend.services.i18n import _
 
 
 class MaintenanceSettingsWidget(QWidget):
@@ -49,14 +50,15 @@ class MaintenanceSettingsWidget(QWidget):
                 corrupted = None
                 err = str(e)
             if corrupted is None:
-                self.app.show_message.emit("Cache Scan", f"Scan failed: {err}")
+                self.app.show_message.emit("Cache Scan", _("Scan failed: {err}").format(err=err))
                 return
             if not corrupted:
-                self.app.show_message.emit("Cache Scan", "No corrupted package archives found.")
+                self.app.show_message.emit("Cache Scan", _("No corrupted package archives found."))
             else:
                 self.app.show_message.emit(
                     "Cache Scan",
-                    f"Found {len(corrupted)} corrupted archive(s):\n{', '.join(corrupted[:10])}"
+                    _("Found {n} corrupted archive(s):\n{list}").format(
+                        n=len(corrupted), list=', '.join(corrupted[:10]))
                     + ("\n..." if len(corrupted) > 10 else ""))
         Thread(target=task, daemon=True).start()
 
@@ -67,29 +69,29 @@ class MaintenanceSettingsWidget(QWidget):
         def task():
             ok = purge_cache(retain=self.cache_keep.value())
             if ok:
-                self.app.show_message.emit("Cache Purge", "Old cached versions removed.")
+                self.app.show_message.emit("Cache Purge", _("Old cached versions removed."))
             else:
-                self.app.show_message.emit("Cache Purge", "Nothing to purge (or failed).")
+                self.app.show_message.emit("Cache Purge", _("Nothing to purge (or failed)."))
         Thread(target=task, daemon=True).start()
 
     def setup_ui(self):
-        title = QLabel("Maintenance")
+        title = QLabel(_("Maintenance"))
         title.setStyleSheet(f"font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD}; color: {Colors.TEXT}; letter-spacing: -0.5px;")
         self.layout.addWidget(title)
 
-        subtitle = QLabel("Keep your system tidy: orphans, leftover configs, and news")
+        subtitle = QLabel(_("Keep your system tidy: orphans, leftover configs, and news"))
         subtitle.setStyleSheet(f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2}; margin-top: -16px;")
         self.layout.addWidget(subtitle)
 
         # ── Orphans ──
-        card, card_layout = self._make_card("Orphaned Packages")
-        hint = QLabel("Packages installed as dependencies that nothing needs anymore.")
+        card, card_layout = self._make_card(_("Orphaned Packages"))
+        hint = QLabel(_("Packages installed as dependencies that nothing needs anymore."))
         hint.setStyleSheet(QSS.HINT)
         hint.setWordWrap(True)
         card_layout.addWidget(hint)
 
         row = self._row()
-        btn = QPushButton("Remove Orphans")
+        btn = QPushButton(_("Remove Orphans"))
         btn.setStyleSheet(QSS.BTN_OUTLINE)
         btn.clicked.connect(self.app.cleanup_orphans)
         row.addWidget(btn)
@@ -98,14 +100,14 @@ class MaintenanceSettingsWidget(QWidget):
         self.layout.addWidget(card)
 
         # ── .pacnew files ──
-        card, card_layout = self._make_card("Config Files (.pacnew)")
-        hint = QLabel("When packages ship new configs, the old one is kept as .pacnew.")
+        card, card_layout = self._make_card(_("Config Files (.pacnew)"))
+        hint = QLabel(_("When packages ship new configs, the old one is kept as .pacnew."))
         hint.setStyleSheet(QSS.HINT)
         hint.setWordWrap(True)
         card_layout.addWidget(hint)
 
         row = self._row()
-        btn = QPushButton("Manage .pacnew")
+        btn = QPushButton(_("Manage .pacnew"))
         btn.setStyleSheet(QSS.BTN_OUTLINE)
         btn.clicked.connect(self.app.manage_pacnew)
         row.addWidget(btn)
@@ -114,15 +116,15 @@ class MaintenanceSettingsWidget(QWidget):
         self.layout.addWidget(card)
 
         # ── Download Cache ──
-        card, card_layout = self._make_card("Download Cache")
+        card, card_layout = self._make_card(_("Download Cache"))
 
-        corrupt_hint = QLabel("Scan cached package archives for corruption before they cause failures.")
+        corrupt_hint = QLabel(_("Scan cached package archives for corruption before they cause failures."))
         corrupt_hint.setStyleSheet(QSS.HINT)
         corrupt_hint.setWordWrap(True)
         card_layout.addWidget(corrupt_hint)
 
         row = self._row()
-        btn = QPushButton("Scan for Corrupted Archives")
+        btn = QPushButton(_("Scan for Corrupted Archives"))
         btn.setStyleSheet(QSS.BTN_OUTLINE)
         btn.clicked.connect(self.scan_corrupted)
         row.addWidget(btn)
@@ -131,7 +133,7 @@ class MaintenanceSettingsWidget(QWidget):
 
         cache_row = QHBoxLayout()
         cache_row.setSpacing(10)
-        cache_label = QLabel("Keep last:")
+        cache_label = QLabel(_("Keep last:"))
         cache_label.setStyleSheet(QSS.HINT)
         cache_row.addWidget(cache_label)
 
@@ -141,11 +143,11 @@ class MaintenanceSettingsWidget(QWidget):
         self.cache_keep.setValue(3)
         cache_row.addWidget(self.cache_keep)
 
-        cache_unit = QLabel("versions per package")
+        cache_unit = QLabel(_("versions per package"))
         cache_unit.setStyleSheet(QSS.HINT)
         cache_row.addWidget(cache_unit)
 
-        purge_btn = QPushButton("Purge Old Cache")
+        purge_btn = QPushButton(_("Purge Old Cache"))
         purge_btn.setStyleSheet(QSS.BTN_OUTLINE)
         purge_btn.clicked.connect(self.purge_cache)
         cache_row.addWidget(purge_btn)
@@ -154,14 +156,14 @@ class MaintenanceSettingsWidget(QWidget):
         self.layout.addWidget(card)
 
         # ── Arch News ──
-        card, card_layout = self._make_card("Arch Linux News")
-        hint = QLabel("Stay informed about important announcements before updating.")
+        card, card_layout = self._make_card(_("Arch Linux News"))
+        hint = QLabel(_("Stay informed about important announcements before updating."))
         hint.setStyleSheet(QSS.HINT)
         hint.setWordWrap(True)
         card_layout.addWidget(hint)
 
         row = self._row()
-        btn = QPushButton("Show News")
+        btn = QPushButton(_("Show News"))
         btn.setStyleSheet(QSS.BTN_OUTLINE)
         btn.clicked.connect(self.app.show_arch_news)
         row.addWidget(btn)
@@ -185,12 +187,15 @@ class MaintenanceSettingsWidget(QWidget):
             except Exception:
                 return
             if n:
-                self._news_count_ready.emit(int(n))
+                try:
+                    self._news_count_ready.emit(int(n))
+                except RuntimeError:
+                    pass  # widget destroyed during a rebuild
 
         Thread(target=task, daemon=True).start()
 
     def _set_news_badge(self, n: int):
         try:
-            self._news_btn.setText(f"Show News ({n} new)")
+            self._news_btn.setText(_("Show News ({n} new)").format(n=n))
         except RuntimeError:
             pass  # widget already destroyed

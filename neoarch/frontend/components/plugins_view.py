@@ -8,7 +8,9 @@ import shutil
 
 from neoarch.resources.plugin_data import get_plugins_data, get_all_plugins_data
 from neoarch.resources.paths import PLUGINS_ITEMS_DIR
-from neoarch.frontend.tokens import Colors
+from neoarch.frontend.tokens import Colors, Fonts, Radii
+from neoarch.frontend.styles import Styles
+from neoarch.backend.services.i18n import _
 from neoarch.frontend.components.packages_grid_view import (
     PackageCard, _Chip, _CheckBox, _SmallLabel, _SourceLogo,
     _STATUS_COLORS,
@@ -30,53 +32,15 @@ def _canonical_source(source):
     }.get((source or "").lower(), source or "pacman")
 
 
-_NEU_BTN_QSS = """
-QPushButton {
-    background-color: rgba(26, 28, 34, 0.95);
-    color: #00BFAE;
-    border: 1px solid rgba(0, 191, 174, 0.3);
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 11px;
-    padding: 0 14px;
-}
-QPushButton:hover {
-    background-color: rgba(30, 32, 38, 0.95);
-    border: 1px solid rgba(0, 191, 174, 0.6);
-}
-QPushButton:pressed {
-    background-color: rgba(20, 22, 26, 0.95);
-    border: 1px solid rgba(0, 191, 174, 0.8);
-}
-QPushButton:disabled {
-    color: rgba(255, 255, 255, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-"""
+_NEU_BTN_QSS = (
+    Styles.btn_outline(padding="0 14px", size=Fonts.SM, radius=Radii.MD)
+    + Styles.btn_disabled()
+)
 
-_DANGER_BTN_QSS = """
-QPushButton {
-    background-color: rgba(26, 28, 34, 0.95);
-    color: #FF6B6B;
-    border: 1px solid rgba(255, 107, 107, 0.3);
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 11px;
-    padding: 0 14px;
-}
-QPushButton:hover {
-    background-color: rgba(30, 32, 38, 0.95);
-    border: 1px solid rgba(255, 107, 107, 0.6);
-}
-QPushButton:pressed {
-    background-color: rgba(20, 22, 26, 0.95);
-    border: 1px solid rgba(255, 107, 107, 0.8);
-}
-QPushButton:disabled {
-    color: rgba(255, 255, 255, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-}
-"""
+_DANGER_BTN_QSS = (
+    Styles.btn_danger_outline(padding="0 14px", size=Fonts.SM, radius=Radii.MD)
+    + Styles.btn_disabled()
+)
 
 
 class _PluginPackageCard(PackageCard):
@@ -216,14 +180,14 @@ class _PluginPackageCard(PackageCard):
             b.setEnabled(not installing)
             if installing:
                 if b is self._uninstall_btn:
-                    b.setText("Uninstalling\u2026")
+                    b.setText(_("Uninstalling\u2026"))
                 elif b.text() in ("Install", "Open"):
-                    b.setText("Installing\u2026")
+                    b.setText(_("Installing\u2026"))
             else:
                 if "Installing" in b.text():
-                    b.setText("Install" if not self._installed else "Open")
+                    b.setText(_("Install") if not self._installed else _("Open"))
                 elif "Uninstalling" in b.text():
-                    b.setText("Uninstall")
+                    b.setText(_("Uninstall"))
         self._sync_uninstall_visibility()
 
     def set_installed(self, installed):
@@ -308,7 +272,7 @@ class PluginsView(QWidget):
         # Loading state — identical to updates/discover page
         from neoarch.frontend.components.updates_table import _EmptyOverlay
         self._loading_overlay = _EmptyOverlay()
-        self._loading_overlay.set_loading(True, "Loading plugins\u2026")
+        self._loading_overlay.set_loading(True, _("Loading plugins\u2026"))
         layout.addWidget(self._loading_overlay)
 
         # Content stacked area
@@ -453,13 +417,13 @@ class PluginsView(QWidget):
         self._live_search_label = QLabel("")
         self._live_search_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._live_search_label.setStyleSheet(
-            "color: #8B8D97; font-size: 13px; border: none; padding: 24px;")
+            f"color: #8B8D97; font-size: {Fonts.BASE}; border: none; padding: 24px;")
         self._live_search_label.hide()
         scroll_layout.addWidget(self._live_search_label)
 
         scroll_layout.addWidget(grid_container)
 
-        self._load_more_btn = QPushButton("Load More")
+        self._load_more_btn = QPushButton(_("Load More"))
         self._load_more_btn.setObjectName("loadMoreBtn")
         self._load_more_btn.setFixedHeight(40)
         self._load_more_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -607,7 +571,7 @@ class PluginsView(QWidget):
         self._load_more_btn.setVisible(has_more)
         if has_more:
             remaining = len(filtered) - self._visible_count
-            self._load_more_btn.setText(f"Load More ({remaining} remaining)")
+            self._load_more_btn.setText(_("Load More ({remaining} remaining)").format(remaining=remaining))
         self._finish_layout_update()
 
     def _on_load_more(self):
@@ -802,7 +766,7 @@ class PluginsView(QWidget):
                 self.live_search_ready.emit([query, specs])
             self._pending_live_query = query
             try:
-                self._live_search_label.setText("Searching official repos and AUR...")
+                self._live_search_label.setText(_("Searching official repos and AUR..."))
                 self._live_search_label.show()
             except Exception:
                 pass
@@ -819,7 +783,7 @@ class PluginsView(QWidget):
             self._pending_live_query = None
             if not specs:
                 try:
-                    self._live_search_label.setText("No packages found. Try a different search.")
+                    self._live_search_label.setText(_("No packages found. Try a different search."))
                 except Exception:
                     pass
                 return

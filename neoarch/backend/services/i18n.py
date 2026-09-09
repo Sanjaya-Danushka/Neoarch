@@ -12,9 +12,42 @@ import re
 from typing import Dict, Optional
 
 __all__ = [
-    "set_language", "get_language", "available_languages",
-    "translate", "load_catalog", "LOCALE_DIR",
+    "set_language", "get_language", "available_languages", "language_label",
+    "translate", "load_catalog", "LOCALE_DIR", "LANGUAGE_NAMES",
 ]
+
+# Native display names for common locales. Only strings whose code has a
+# bundled catalog are shown in the UI; unknown codes fall back to the raw
+# language code.
+LANGUAGE_NAMES = {
+    "en": "English",
+    "si": "සිංහල (Sinhala)",
+    "es": "Español (Spanish)",
+    "fr": "Français (French)",
+    "de": "Deutsch (German)",
+    "it": "Italiano (Italian)",
+    "pt": "Português (Portuguese)",
+    "nl": "Nederlands (Dutch)",
+    "ru": "Русский (Russian)",
+    "uk": "Українська (Ukrainian)",
+    "pl": "Polski (Polish)",
+    "tr": "Türkçe (Turkish)",
+    "ar": "العربية (Arabic)",
+    "fa": "فارسی (Persian)",
+    "hi": "हिन्दी (Hindi)",
+    "ta": "தமிழ் (Tamil)",
+    "bn": "বাংলা (Bengali)",
+    "te": "తెలుగు (Telugu)",
+    "mr": "मराठी (Marathi)",
+    "gu": "ગુજરાતી (Gujarati)",
+    "zh": "中文 (Chinese)",
+    "ja": "日本語 (Japanese)",
+    "ko": "한국어 (Korean)",
+    "vi": "Tiếng Việt (Vietnamese)",
+    "id": "Bahasa Indonesia (Indonesian)",
+    "ms": "Bahasa Melayu (Malay)",
+    "th": "ไทย (Thai)",
+}
 
 LOCALE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           "..", "..", "locale")
@@ -59,11 +92,54 @@ def load_catalog(language: str) -> Dict[str, str]:
 
 
 def available_languages() -> list:
-    """Language codes with a bundled catalog (e.g. ['en', 'si', 'es'])."""
+    """Language codes with a bundled catalog (e.g. ['en', 'si', 'es']).
+
+    Only directories that actually contain a `LC_MESSAGES/neoarch.po` are
+    listed, so stray folders in the locale tree never surface in the UI.
+    """
     try:
-        return sorted(os.listdir(LOCALE_DIR))
+        codes = []
+        for name in os.listdir(LOCALE_DIR):
+            if os.path.isfile(os.path.join(
+                    LOCALE_DIR, name, "LC_MESSAGES", "neoarch.po")):
+                codes.append(name)
+        return sorted(codes)
     except Exception:
-        return ["en"]
+        return []
+
+
+def detect_system_language() -> str:
+    """Return the best bundled language for the OS locale, else 'en'."""
+    available = set(available_languages())
+    env_names = [
+        os.environ.get("LC_ALL"),
+        os.environ.get("LC_MESSAGES"),
+        os.environ.get("LANG"),
+    ]
+    try:
+        import locale as _locale
+        env_names.append(_locale.getdefaultlocale()[0])
+    except Exception:
+        pass
+    candidates = []
+    for name in env_names:
+        if not name:
+            continue
+        lang = name.split("_")[0].split("-")[0].lower()
+        candidates.append(lang)
+        full = name.replace("_", "-").lower()
+        candidates.append(full)
+        if "-" in full:
+            candidates.append(full.rsplit("-")[0])
+    for c in candidates:
+        if c in available:
+            return c
+    return "en"
+
+
+def language_label(code: str) -> str:
+    """Native display name for a language code, falling back to the code."""
+    return LANGUAGE_NAMES.get(code, code)
 
 
 def set_language(language: str) -> None:

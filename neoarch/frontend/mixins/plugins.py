@@ -6,6 +6,7 @@ import traceback
 
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QTabWidget
+from neoarch.backend.services.i18n import _
 
 
 class _PluginsMixin:
@@ -276,10 +277,10 @@ def on_tick(app):
         if _last_update and now - _last_update < interval_seconds:
             return
         from PyQt6.QtWidgets import QMessageBox
-        reply = QMessageBox.question(app, "Scheduled Update",
-            f"It's been {days} days since the last update.\\n\\n"
-            "Would you like to update your system now?\\n\\n"
-            "This will update packages and create snapshots if enabled.",
+        reply = QMessageBox.question(app, _("Scheduled Update"),
+            _("It's been {days} days since the last update.\\n\\n"
+              "Would you like to update your system now?\\n\\n"
+              "This will update packages and create snapshots if enabled.").format(days=days),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.Yes)
         if reply != QMessageBox.StandardButton.Yes:
@@ -308,7 +309,7 @@ def on_tick(app):
                     result = subprocess.run(get_auth_command() + ["timeshift", "--create", "--comments", comment], capture_output=True, text=True, timeout=300, env=get_askpass_env())
                     if result.returncode == 0:
                         app.log(f"Auto-update: Pre-update snapshot created: {comment}")
-                        app.show_message.emit("Snapshot", f"Pre-update snapshot created: {comment}")
+                        app.show_message.emit(_("Snapshot"), _("Pre-update snapshot created: {comment}").format(comment=comment))
                     else:
                         app.log(f"Auto-update: Failed to create pre-update snapshot: {result.stderr}")
             except Exception as e:
@@ -326,10 +327,10 @@ def on_tick(app):
                 if result.returncode == 0:
                     app.log("Auto-update: Pacman updates completed successfully")
                     update_success = True
-                    app.show_message.emit("Auto Update", "System packages updated successfully")
+                    app.show_message.emit(_("Auto Update"), _("System packages updated successfully"))
                 else:
                     app.log(f"Auto-update: Pacman update failed: {result.stderr}")
-                    app.show_message.emit("Auto Update", f"Pacman update failed: {result.stderr}")
+                    app.show_message.emit(_("Auto Update"), _("Pacman update failed: {err}").format(err=result.stderr))
             # Update AUR packages using any available AUR helper
             aur_helper = sys_utils.get_aur_helper(app.settings.get('aur_helper', 'auto') if app.settings.get('aur_helper', 'auto') != 'auto' else None)
             if aur_helper:
@@ -374,9 +375,9 @@ def on_tick(app):
         except Exception as e:
             app.log(f"Auto-update: General error: {e}")
         if update_success:
-            app.show_message.emit("Auto Update", f"System update completed successfully! Next check in {days} days.")
+            app.show_message.emit(_("Auto Update"), _("System update completed successfully! Next check in {days} days.").format(days=days))
         else:
-            app.show_message.emit("Auto Update", "Some updates failed. Check the console for details.")
+            app.show_message.emit(_("Auto Update"), _("Some updates failed. Check the console for details."))
     except Exception:
         pass
                 """.strip()
@@ -459,7 +460,7 @@ def on_tick(app):
                             widget.remove_selected_plugins()
                             break
         except Exception as e:
-            self._show_message("Remove Plugins", f"Error: {e}")
+            self._show_message(_("Remove Plugins"), _("Error: {e}").format(e=e))
 
     def refresh_plugins_table(self):
         # This method is used internally by the main class

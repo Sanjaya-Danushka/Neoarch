@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap, QPainter, QColor, QPen, QPalette, QFontMetrics
 from PyQt6.QtCore import Qt, QRectF, pyqtSignal, QPropertyAnimation, QEasingCurve, pyqtProperty
 from PyQt6.QtSvg import QSvgRenderer
-from neoarch.frontend.tokens import Colors, SourceColors
+from neoarch.frontend.tokens import Colors, Fonts, SourceColors
 
 
 class ToggleSwitch(QWidget):
@@ -221,7 +221,7 @@ class SourceItem(QWidget):
         self.icon_label.setText(style["text"])
         self.icon_label.setStyleSheet(f"""
             QLabel {{
-                font-size: 16px;
+                font-size: {Fonts.XL};
                 color: {style["color"]};
                 background: transparent;
                 border: none;
@@ -272,21 +272,21 @@ class SourceItem(QWidget):
                 }}
                 QLabel#sourceItemName {{
                     color: {Colors.TEXT};
-                    font-size: 12px;
+                    font-size: {Fonts.MD};
                     font-weight: 600;
                     background: transparent;
                     border: none;
                 }}
                 QLabel#sourceItemSubtitle {{
                     color: #6B7280;
-                    font-size: 10px;
+                    font-size: {Fonts.XS};
                     font-weight: 400;
                     background: transparent;
                     border: none;
                 }}
                 QLabel#sourceItemCount {{
                     color: {Colors.TEXT};
-                    font-size: 10px;
+                    font-size: {Fonts.XS};
                     font-weight: 600;
                     background: rgba(255, 255, 255, 0.08);
                     border: 1px solid {Colors.BORDER_HOVER};
@@ -303,21 +303,21 @@ class SourceItem(QWidget):
                 }}
                 QLabel#sourceItemName {{
                     color: {Colors.TEXT_2};
-                    font-size: 12px;
+                    font-size: {Fonts.MD};
                     font-weight: 500;
                     background: transparent;
                     border: none;
                 }}
                 QLabel#sourceItemSubtitle {{
                     color: #6B7280;
-                    font-size: 10px;
+                    font-size: {Fonts.XS};
                     font-weight: 400;
                     background: transparent;
                     border: none;
                 }}
                 QLabel#sourceItemCount {{
                     color: {Colors.TEXT_2};
-                    font-size: 10px;
+                    font-size: {Fonts.XS};
                     font-weight: 600;
                     background: rgba(255, 255, 255, 0.04);
                     border: 1px solid {Colors.BORDER_INPUT};

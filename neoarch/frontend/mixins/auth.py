@@ -9,7 +9,9 @@ from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QMessageBox
 
 from neoarch.backend import config_utils, sys_utils
+from neoarch.frontend.tokens import Colors, Fonts
 from neoarch.backend.auth import get_askpass_env as _get_askpass_env
+from neoarch.backend.services.i18n import _
 from neoarch.backend.workers import CommandWorker
 from neoarch.backend.package.updater import update_core_tools
 
@@ -76,10 +78,9 @@ class _AuthMixin:
 
         if not missing_required:
             return
-        text = ("The following components are required for NeoArch to work:\n\n"
-                + "\n".join(f"\u2022 {m}" for m in missing_required)
-                + "\n\nInstall now?")
-        reply = QMessageBox.question(self, "Setup Environment", text, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.Yes)
+        text = (_("The following components are required for NeoArch to work:\n\n{list}\n\nInstall now?").format(
+                    list="\n".join(f"\u2022 {m}" for m in missing_required)))
+        reply = QMessageBox.question(self, _("Setup Environment"), text, QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.Yes)
         if reply == QMessageBox.StandardButton.Yes:
             if not self.ensure_session_auth():
                 self.log("Dependency setup cancelled: authentication required.")
@@ -110,18 +111,18 @@ class _AuthMixin:
             self._update_dep_alert(remaining)
             if remaining:
                 self.log(f"Still missing after setup: {', '.join(remaining)}")
-                self.show_message.emit("Environment", f"Dependency setup incomplete. Still missing: {', '.join(remaining)}")
+                self.show_message.emit(_("Environment"), _("Dependency setup incomplete. Still missing: {list}").format(list=", ".join(remaining)))
             else:
-                self.show_message.emit("Environment", "Dependency setup completed")
+                self.show_message.emit(_("Environment"), _("Dependency setup completed"))
         except DependencyAuthCancelled as e:
             self.log(f"Dependency setup cancelled: {e}")
             self.show_message.emit(
-                "Environment",
-                "Dependency setup cancelled \u2014 authentication required")
+                _("Environment"),
+                _("Dependency setup cancelled \u2014 authentication required"))
             raise
         except Exception as e:
             self.log(f"Setup failed: {str(e)}")
-            self.show_message.emit("Environment", f"Setup failed: {str(e)}")
+            self.show_message.emit(_("Environment"), _("Setup failed: {e}").format(e=str(e)))
 
     def _run_sudo_install(self, packages):
         done = Event()
@@ -278,9 +279,9 @@ class _AuthMixin:
         from PyQt6.QtWidgets import (QDialog, QComboBox, QVBoxLayout, QLabel,
                                      QDialogButtonBox)
         dlg = QDialog(self)
-        dlg.setWindowTitle("Restore Backup")
+        dlg.setWindowTitle(_("Restore Backup"))
         layout = QVBoxLayout(dlg)
-        layout.addWidget(QLabel("Select a backup to restore packages from:"))
+        layout.addWidget(QLabel(_("Select a backup to restore packages from:")))
         combo = QComboBox()
         for b in backups:
             pkg = b.get("packages", {})
@@ -358,7 +359,7 @@ class _AuthMixin:
             return
 
         dlg = QDialog(self)
-        dlg.setWindowTitle(".pacnew Files")
+        dlg.setWindowTitle(_(".pacnew Files"))
         dlg.resize(760, 520)
         layout = QVBoxLayout(dlg)
 
@@ -463,14 +464,14 @@ class _AuthMixin:
         entries = news_seen_status(items)
         unseen = sum(1 for e in entries if not e.get("seen"))
         dlg = QDialog(self)
-        dlg.setWindowTitle("Arch Linux News")
+        dlg.setWindowTitle(_("Arch Linux News"))
         dlg.resize(720, 540)
         layout = QVBoxLayout(dlg)
         if unseen:
             hint = QLabel(f"Latest from archlinux.org — {unseen} new")
             hint.setStyleSheet("color: #00BFAE; font-weight: 600;")
         else:
-            hint = QLabel("Latest from archlinux.org")
+            hint = QLabel(_("Latest from archlinux.org"))
             hint.setStyleSheet("color: #8B8D97;")
         layout.addWidget(hint)
 
@@ -482,10 +483,10 @@ class _AuthMixin:
             link = entry.get("link", "")
             summary = entry.get("summary", "")
             badge = "" if entry.get("seen") else \
-                "<span style='background:#00BFAE;color:#0C0C0E;border-radius:4px;" \
-                "padding:1px 6px;font-size:10px;font-weight:700;'>NEW</span> "
+                f"<span style='background:{Colors.ACCENT};color:{Colors.BG};border-radius:4px;" \
+                f"padding:1px 6px;font-size:{Fonts.XS};font-weight:700;'>NEW</span> "
             html.append(
-                f"<h3 style='color:#00BFAE;'>{badge}{title}</h3>"
+                f"<h3 style='color:{Colors.ACCENT};'>{badge}{title}</h3>"
                 f"<p style='color:#8B8D97;'>{date}</p>"
                 f"<p>{summary}</p>"
                 f"<p><a href='{link}'>{link}</a></p><hr>")

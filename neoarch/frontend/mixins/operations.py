@@ -16,6 +16,7 @@ from neoarch.backend.package import installer as install_service
 from neoarch.backend.package import updater as update_service
 from neoarch.backend.package import uninstaller as uninstall_service
 from neoarch.backend.services import ignore as ignore_service
+from neoarch.backend.services.i18n import _
 
 
 class _OperationsMixin:
@@ -45,7 +46,7 @@ class _OperationsMixin:
                 packages_by_source[source].append(install_token)
         
         if not packages_by_source:
-            QMessageBox.information(self, "No Selection", "Please select packages to install.")
+            QMessageBox.information(self, _("No Selection"), _("Please select packages to install."))
             return
         
         try:
@@ -71,20 +72,20 @@ class _OperationsMixin:
             aur_pkgs = ", ".join(to_install['AUR'])
             warn = QMessageBox(
                 QMessageBox.Icon.Warning,
-                "AUR Security Notice",
-                f"AUR packages are built from third-party PKGBUILD scripts "
-                f"maintained by the community.\n\n{aur_pkgs}\n\n"
-                "Always review the PKGBUILD and .install scriptlet before building. "
-                "Proceeding with the AUR helper does not perform a static security scan.",
+                _("AUR Security Notice"),
+                _("AUR packages are built from third-party PKGBUILD scripts "
+                  "maintained by the community.\n\n{aur_pkgs}\n\n"
+                  "Always review the PKGBUILD and .install scriptlet before building. "
+                  "Proceeding with the AUR helper does not perform a static security scan.").format(aur_pkgs=aur_pkgs),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 self)
-            warn.setInformativeText("Continue installing AUR packages?")
+            warn.setInformativeText(_("Continue installing AUR packages?"))
             warn.setDefaultButton(QMessageBox.StandardButton.No)
             if warn.exec() != QMessageBox.StandardButton.Yes:
                 return
         reply = QMessageBox.question(
-            self, "Install Packages with Sudo",
-            f"This will install the following packages with elevated privileges:\n\n{package_list}\n\nContinue?",
+            self, _("Install Packages with Sudo"),
+            _("This will install the following packages with elevated privileges:\n\n{package_list}\n\nContinue?").format(package_list=package_list),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )

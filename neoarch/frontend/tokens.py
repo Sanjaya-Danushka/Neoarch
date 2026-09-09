@@ -100,10 +100,17 @@ SourceColors = {
 class Fonts:
     """Font families, sizes, and weights."""
 
-    FAMILY = "'Segoe UI', -apple-system, sans-serif"
+    FAMILY = ("'Segoe UI', 'Noto Sans', 'Noto Sans Sinhala', 'Noto Sans Devanagari',"
+              " 'Noto Sans Tamil', 'Noto Sans Telugu', 'Noto Sans Bengali',"
+              " 'Noto Sans Gujarati', 'Noto Sans Marathi', 'Noto Sans Kannada',"
+              " 'Noto Sans Malayalam', 'Noto Sans Gurmukhi', 'Noto Sans Oriya',"
+              " 'Noto Sans Arabic', 'Noto Sans Hebrew', 'Noto Sans Thai',"
+              " 'Noto Sans Georgian', 'Noto Sans Armenian', -apple-system, sans-serif")
     MONO = "'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace"
 
     # Size scale (px)
+    MICRO = "8px"
+    TINY = "9px"
     XS = "10px"
     SM = "11px"
     MD = "12px"
@@ -382,7 +389,7 @@ QWidget#appTitleBar {{
 
 QLabel#titleBarLabel {{
     color: {Colors.TEXT_2};
-    font-size: 13px;
+    font-size: {Fonts.BASE};
     font-weight: 500;
 }}
 
@@ -391,7 +398,7 @@ QPushButton#titleBarMinBtn,
 QPushButton#titleBarMaxBtn {{
     border: none;
     border-radius: 7px;
-    font-size: 11px;
+    font-size: {Fonts.SM};
     font-weight: 700;
     padding: 0;
 }}
@@ -430,8 +437,8 @@ QWidget#appBody {{
 QWidget {{
     background-color: transparent;
     color: {Colors.TEXT};
-    font-family: 'Segoe UI', -apple-system, sans-serif;
-    font-size: 13px;
+    font-family: {Fonts.FAMILY};
+    font-size: {Fonts.BASE};
 }}
 
 QLineEdit {{
@@ -440,7 +447,7 @@ QLineEdit {{
     border: 1px solid {Colors.BORDER};
     border-radius: 12px;
     padding: 8px 16px;
-    font-size: 14px;
+    font-size: {Fonts.LG};
     selection-background-color: {Colors.ACCENT};
 }}
 
@@ -456,7 +463,7 @@ QPushButton {{
     border-radius: 10px;
     padding: 8px 18px;
     font-weight: 500;
-    font-size: 13px;
+    font-size: {Fonts.BASE};
 }}
 
 QPushButton:hover {{
@@ -474,7 +481,7 @@ QPushButton#loadMoreBtn {{
     border: 1px solid {Colors.BORDER};
     border-radius: 10px;
     padding: 10px 18px;
-    font-size: 13px;
+    font-size: {Fonts.BASE};
     font-weight: 500;
 }}
 
@@ -499,7 +506,7 @@ QPushButton#sidebarBtn {{
     color: {Colors.TEXT_2};
     padding: 0;
     text-align: center;
-    font-size: 13px;
+    font-size: {Fonts.BASE};
     font-weight: 500;
     border-radius: 8px;
 }}
@@ -516,13 +523,13 @@ QPushButton#sidebarBtn:checked {{
 
 QWidget#sidebarNavIcon {{
     background-color: transparent;
-    font-size: 24px;
+    font-size: {Fonts.DISPLAY};
     color: {Colors.TEXT_2};
 }}
 
 QLabel#sidebarLabel {{
     color: {Colors.TEXT_2};
-    font-size: 11px;
+    font-size: {Fonts.SM};
     font-weight: 500;
     letter-spacing: 0.3px;
 }}
@@ -537,7 +544,7 @@ QPushButton#sidebarBtn:checked QWidget#sidebarNavIcon {{
 
 QLabel#sidebarSection {{
     color: {Colors.TEXT_3};
-    font-size: 9px;
+    font-size: {Fonts.TINY};
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.8px;
@@ -546,13 +553,13 @@ QLabel#sidebarSection {{
 }}
 
 QLabel#sidebarLogo {{
-    font-size: 20px;
+    font-size: {Fonts.HERO};
 }}
 
 QLabel#navBadge {{
     color: {Colors.ACCENT};
     background: transparent;
-    font-size: 11px;
+    font-size: {Fonts.SM};
     font-weight: 700;
 }}
 
@@ -563,13 +570,13 @@ QFrame#appHeader {{
 
 QLabel#headerLabel {{
     color: {Colors.TEXT};
-    font-size: 18px;
+    font-size: {Fonts.XXL};
     font-weight: 600;
 }}
 
 QLabel#headerInfo {{
     color: {Colors.TEXT_2};
-    font-size: 12px;
+    font-size: {Fonts.MD};
 }}
 
 QTableWidget {{
@@ -610,7 +617,7 @@ QHeaderView::section {{
     padding: 10px 10px;
     border: none;
     font-weight: 600;
-    font-size: 11px;
+    font-size: {Fonts.SM};
     text-transform: uppercase;
     letter-spacing: 0.4px;
     border-bottom: 1px solid {Colors.BORDER};
@@ -621,8 +628,8 @@ QTextEdit {{
     color: {Colors.TEXT_2};
     border: 1px solid {Colors.BORDER};
     border-radius: 12px;
-    font-family: 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-    font-size: 12px;
+    font-family: {Fonts.MONO};
+    font-size: {Fonts.MD};
     padding: 10px;
 }}
 
@@ -632,7 +639,7 @@ QLabel {{
 
 QLabel#sectionLabel {{
     color: {Colors.TEXT_2};
-    font-size: 10px;
+    font-size: {Fonts.XS};
     font-weight: 500;
     background: transparent;
     border: none;
@@ -690,7 +697,7 @@ QWidget#sourceChip {{
 
 QWidget#sourceChip QLabel {{
     color: {Colors.ACCENT};
-    font-size: 11px;
+    font-size: {Fonts.SM};
     padding: 0 4px;
 }}
 

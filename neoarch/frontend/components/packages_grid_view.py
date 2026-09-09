@@ -12,6 +12,9 @@ from PyQt6.QtWidgets import (
     QScrollArea, QGridLayout, QSizePolicy,
 )
 from PyQt6.QtCore import Qt, QRectF, QPointF, QSize, pyqtSignal
+from neoarch.backend.services.i18n import _
+from neoarch.backend.services.i18n import _
+from neoarch.backend.services.i18n import _
 from PyQt6.QtGui import (
     QColor, QFont, QFontMetrics, QPainter, QPainterPath, QPen,
     QLinearGradient, QRadialGradient, QPixmap,
@@ -32,6 +35,24 @@ _STATUS_COLORS = {
     "Maintenance": QColor(163, 166, 176),
     "Installed": QColor(93, 199, 139),
     "Available": QColor(163, 166, 176),
+}
+
+_STATUS_TEXT = {
+    "Security": "Security", "Feature": "Feature", "Bug Fix": "Bug Fix",
+    "Maintenance": "Maintenance", "Installed": "Installed",
+    "Available": "Available", "Downloading": "Downloading", "Update": "Update",
+}
+
+_STATUS_TEXT = {
+    "Security": "Security", "Feature": "Feature", "Bug Fix": "Bug Fix",
+    "Maintenance": "Maintenance", "Installed": "Installed",
+    "Available": "Available", "Downloading": "Downloading", "Update": "Update",
+}
+
+_STATUS_TEXT = {
+    "Security": "Security", "Feature": "Feature", "Bug Fix": "Bug Fix",
+    "Maintenance": "Maintenance", "Installed": "Installed",
+    "Available": "Available", "Downloading": "Downloading", "Update": "Update",
 }
 
 
@@ -386,7 +407,7 @@ class PackageCard(QFrame):
             status = "Installed"
         else:
             status = "Available"
-        self.status_chip = _Chip(status, QColor(_STATUS_COLORS.get(status, Colors.TEXT_3)))
+        self.status_chip = _Chip(_(_STATUS_TEXT.get(status, status)), QColor(_STATUS_COLORS.get(status, Colors.TEXT_3)))
         bottom.addWidget(self.status_chip, alignment=Qt.AlignmentFlag.AlignBottom)
 
         layout.addLayout(bottom)

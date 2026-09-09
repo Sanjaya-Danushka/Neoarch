@@ -14,6 +14,9 @@ from neoarch.backend import session_auth
 from neoarch.backend import sys_utils
 from neoarch.backend.auth import get_askpass_env
 from neoarch.backend.workers import CommandWorker
+from neoarch.backend.services.i18n import _
+from neoarch.backend.services.i18n import _
+from neoarch.backend.services.i18n import _
 
 __all__ = ["load_updates", "load_installed_packages"]
 
@@ -422,7 +425,7 @@ def load_updates(app):
     if not installing:
         if use_skeleton:
             try:
-                app.updates_table.set_loading(True, "Loading updates\u2026")
+                app.updates_table.set_loading(True, _("Loading updates\u2026"))
                 app.updates_table.setVisible(True)
                 app.loading_widget.stop_animation()
                 app.loading_widget.setVisible(False)

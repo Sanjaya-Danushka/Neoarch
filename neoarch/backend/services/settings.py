@@ -53,8 +53,8 @@ DEFAULT_SETTINGS = {
     'schedule_enabled': False,
     'schedule_days': [0, 1, 2, 3, 4, 5, 6],
     'schedule_time': '03:00',
-    # Localization (Phase 5)
-    'culture': 'en',
+    # Localization (Phase 5); empty means "follow the OS language"
+    'culture': '',
 }
 
 

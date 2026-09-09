@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
                              QFileDialog, QCheckBox, QLineEdit)
 
 from neoarch.frontend.tokens import QSS, Colors, Fonts
+from neoarch.backend.services.i18n import _
 
 
 class LoggingSettingsWidget(QWidget):
@@ -32,29 +33,29 @@ class LoggingSettingsWidget(QWidget):
         return card, card_layout
 
     def setup_ui(self):
-        title = QLabel("Logging")
+        title = QLabel(_("Logging"))
         title.setStyleSheet(f"font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD}; color: {Colors.TEXT}; letter-spacing: -0.5px;")
         self.layout.addWidget(title)
 
-        subtitle = QLabel("Configure logging behaviour and log file settings")
+        subtitle = QLabel(_("Configure logging behaviour and log file settings"))
         subtitle.setStyleSheet(f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2}; margin-top: -16px;")
         self.layout.addWidget(subtitle)
 
         # ── General Card ──
-        general_card, general_layout = self._make_card("General")
+        general_card, general_layout = self._make_card(_("General"))
 
         level_row = QHBoxLayout()
         level_row.setSpacing(12)
-        level_label = QLabel("Log level:")
+        level_label = QLabel(_("Log level:"))
         level_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         level_row.addWidget(level_label)
 
         self.level_combo = QComboBox()
         self.level_combo.setStyleSheet(QSS.COMBO)
-        self.level_combo.addItem("DEBUG", "DEBUG")
-        self.level_combo.addItem("INFO", "INFO")
-        self.level_combo.addItem("WARNING", "WARNING")
-        self.level_combo.addItem("ERROR", "ERROR")
+        self.level_combo.addItem(_("DEBUG"), "DEBUG")
+        self.level_combo.addItem(_("INFO"), "INFO")
+        self.level_combo.addItem(_("WARNING"), "WARNING")
+        self.level_combo.addItem(_("ERROR"), "ERROR")
 
         current_level = self.app.settings.get('log_level', 'INFO')
         idx = self.level_combo.findData(current_level)
@@ -64,14 +65,14 @@ class LoggingSettingsWidget(QWidget):
         self.level_combo.currentIndexChanged.connect(self._on_level_changed)
         level_row.addWidget(self.level_combo)
 
-        level_hint = QLabel("DEBUG shows all details, ERROR shows only failures")
+        level_hint = QLabel(_("DEBUG shows all details, ERROR shows only failures"))
         level_hint.setStyleSheet(f"color: {Colors.TEXT_3}; font-size: {Fonts.SM}; border: none;")
         level_row.addWidget(level_hint)
         level_row.addStretch()
 
         general_layout.addLayout(level_row)
 
-        self.cb_console = QCheckBox("Echo log to terminal / console")
+        self.cb_console = QCheckBox(_("Echo log to terminal / console"))
         self.cb_console.setStyleSheet(QSS.CHECKBOX)
         self.cb_console.setChecked(bool(self.app.settings.get('log_to_console', False)))
         self.cb_console.toggled.connect(lambda v: self.app.update_setting('log_to_console', v))
@@ -80,11 +81,11 @@ class LoggingSettingsWidget(QWidget):
         self.layout.addWidget(general_card)
 
         # ── Log File Card ──
-        file_card, file_layout = self._make_card("Log File")
+        file_card, file_layout = self._make_card(_("Log File"))
 
         path_row = QHBoxLayout()
         path_row.setSpacing(10)
-        path_label = QLabel("Log file path:")
+        path_label = QLabel(_("Log file path:"))
         path_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         path_row.addWidget(path_label)
 
@@ -94,14 +95,14 @@ class LoggingSettingsWidget(QWidget):
         self.path_edit.textChanged.connect(lambda v: self.app.update_setting('log_file_path', v))
         path_row.addWidget(self.path_edit, 1)
 
-        browse_btn = QPushButton("Browse\u2026")
+        browse_btn = QPushButton(_("Browse…"))
         browse_btn.setStyleSheet(QSS.BTN_OUTLINE)
         browse_btn.setFixedHeight(40)
 
         def on_browse():
-            path, _ = QFileDialog.getSaveFileName(self, "Select Log File",
+            path, _filter = QFileDialog.getSaveFileName(self, _("Select Log File"),
                                                    self.path_edit.text(),
-                                                   "Log Files (*.log *.txt);;All Files (*)")
+                                                   _("Log Files (*.log *.txt);;All Files (*)"))
             if path:
                 self.path_edit.setText(path)
                 self.app.update_setting('log_file_path', path)
@@ -113,7 +114,7 @@ class LoggingSettingsWidget(QWidget):
 
         max_size_row = QHBoxLayout()
         max_size_row.setSpacing(12)
-        max_size_label = QLabel("Max log file size:")
+        max_size_label = QLabel(_("Max log file size:"))
         max_size_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         max_size_row.addWidget(max_size_label)
 
@@ -124,7 +125,7 @@ class LoggingSettingsWidget(QWidget):
         self.max_size_spin.valueChanged.connect(lambda v: self.app.update_setting('log_max_size_mb', v))
         max_size_row.addWidget(self.max_size_spin)
 
-        max_size_unit = QLabel("MB")
+        max_size_unit = QLabel(_("MB"))
         max_size_unit.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         max_size_row.addWidget(max_size_unit)
         max_size_row.addStretch()

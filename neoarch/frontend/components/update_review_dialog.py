@@ -13,7 +13,8 @@ from PyQt6.QtWidgets import (
     QStyledItemDelegate, QStyle,
 )
 
-from neoarch.frontend.tokens import Colors
+from neoarch.frontend.tokens import Colors, Fonts
+from neoarch.backend.services.i18n import _
 
 _TABLE_NO_FOCUS = """
     QTableView { outline: none; }
@@ -43,7 +44,7 @@ class _NoFocusDelegate(QStyledItemDelegate):
 class UpdateReviewDialog(QDialog):
     def __init__(self, packages, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Update Review")
+        self.setWindowTitle(_("Update Review"))
         self.resize(640, 420)
         self.setMinimumWidth(560)
         self.setStyleSheet(
@@ -54,13 +55,14 @@ class UpdateReviewDialog(QDialog):
         v = QVBoxLayout(self)
         v.setSpacing(10)
 
-        self.header_label = QLabel(f"Packages to update: {len(packages)}")
+        self.header_label = QLabel(
+            _("Packages to update: {n}").format(n=len(packages)))
         v.addWidget(self.header_label)
 
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(
-            ["Package", "Source", "Version", "New Version"])
+            [_("Package"), _("Source"), _("Version"), _("New Version")])
         self.table.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.Stretch)
         for col in range(1, 4):
@@ -108,21 +110,21 @@ class UpdateReviewDialog(QDialog):
         h = QHBoxLayout(row)
         h.setContentsMargins(0, 0, 0, 0)
 
-        self.cancel_btn = QPushButton("Cancel")
+        self.cancel_btn = QPushButton(_("Cancel"))
         self.cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.cancel_btn.setMinimumHeight(36)
         self.cancel_btn.setStyleSheet(
             f"QPushButton {{ background-color: {Colors.CARD};"
             f" color: {Colors.TEXT}; border: 1px solid {Colors.BORDER};"
             f" border-radius: 10px; padding: 8px 18px;"
-            f" font-size: 13px; font-weight: 500; }}"
+            f" font-size: {Fonts.BASE}; font-weight: 500; }}"
             f"QPushButton:hover {{ background-color: {Colors.CARD_HOVER};"
             f" border-color: {Colors.BORDER_HOVER}; }}"
             f"QPushButton:pressed {{ background-color: {Colors.SURFACE_3}; }}")
         self.cancel_btn.clicked.connect(self.reject)
         h.addWidget(self.cancel_btn)
 
-        self.confirm_btn = QPushButton("Update All")
+        self.confirm_btn = QPushButton(_("Update All"))
         self.confirm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.confirm_btn.setMinimumHeight(36)
         self.confirm_btn.setDefault(True)
@@ -135,7 +137,7 @@ class UpdateReviewDialog(QDialog):
             f" color: {Colors.TEXT_ON_ACCENT};"
             f" border: 1px solid rgba(255, 255, 255, 0.9);"
             f" border-radius: 10px; padding: 8px 18px;"
-            f" font-size: 13px; font-weight: 600; }}"
+            f" font-size: {Fonts.BASE}; font-weight: 600; }}"
             f"QPushButton:hover {{ background-color: {Colors.WHITE_HOVER}; }}"
             f"QPushButton:pressed {{ background-color: {Colors.WHITE_PRESSED}; }}")
         self.confirm_btn.clicked.connect(self.accept)

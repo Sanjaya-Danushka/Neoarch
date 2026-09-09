@@ -9,6 +9,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QPainter, QPen
 
 from neoarch.frontend.tokens import Colors, Fonts, Radii, QSS
+from neoarch.backend.services.i18n import _
 from neoarch.frontend.themes import THEMES
 
 
@@ -108,7 +109,7 @@ class _ThemeCard(QFrame):
         label_row.addWidget(name)
 
         if is_selected:
-            badge = QLabel("Active")
+            badge = QLabel(_("Active"))
             badge.setStyleSheet(f"""
                 color: {Colors.ACCENT}; font-size: {Fonts.SM};
                 font-weight: {Fonts.SEMI}; border: none;
@@ -143,14 +144,14 @@ class AppearanceSettingsWidget(QWidget):
         self.setup_ui()
 
     def setup_ui(self):
-        title = QLabel("Appearance")
+        title = QLabel(_("Appearance"))
         title.setStyleSheet(f"""
             font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD};
             color: {Colors.TEXT}; letter-spacing: -0.5px;
         """)
         self.layout.addWidget(title)
 
-        subtitle = QLabel("Choose a theme for NeoArch. Changes apply instantly.")
+        subtitle = QLabel(_("Choose a theme for NeoArch. Changes apply instantly."))
         subtitle.setStyleSheet(f"""
             font-size: {Fonts.BASE}; color: {Colors.TEXT_2};
             margin-top: -16px;
@@ -192,7 +193,7 @@ class AppearanceSettingsWidget(QWidget):
         sl.setContentsMargins(20, 18, 20, 20)
         sl.setSpacing(16)
 
-        head = QLabel("Window frame")
+        head = QLabel(_("Window frame"))
         head.setStyleSheet(
             f"font-size: {Fonts.CARD_TITLE}; font-weight: {Fonts.SEMI};"
             f" color: {Colors.TEXT}; background: transparent; border: none;")
@@ -201,11 +202,11 @@ class AppearanceSettingsWidget(QWidget):
         # ── Glow border toggle ──
         glow_row = QHBoxLayout()
         glow_row.setSpacing(12)
-        glow_lbl = QLabel("Glow border around the window")
+        glow_lbl = QLabel(_("Glow border around the window"))
         glow_lbl.setToolTip(
-            "Decorative teal rim on the translucent window frame.\n"
-            "Off by default \u2014 it can leave stray lines on some\n"
-            "compositors and GPU drivers.")
+            _("Decorative teal rim on the translucent window frame.\n"
+              "Off by default \u2014 it can leave stray lines on some\n"
+              "compositors and GPU drivers."))
         glow_lbl.setStyleSheet(
             f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
             " background: transparent; border: none;")
@@ -223,7 +224,7 @@ class AppearanceSettingsWidget(QWidget):
         # ── Corner radius selector ──
         rad_row = QHBoxLayout()
         rad_row.setSpacing(12)
-        rad_lbl = QLabel("Window corner radius")
+        rad_lbl = QLabel(_("Window corner radius"))
         rad_lbl.setStyleSheet(
             f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
             " background: transparent; border: none;")
@@ -232,8 +233,8 @@ class AppearanceSettingsWidget(QWidget):
 
         self._radius_cb = QComboBox()
         self._radius_cb.setStyleSheet(QSS.COMBO)
-        for label, value in (("Sharp \u2014 4 px", 4), ("Round \u2014 8 px", 8),
-                             ("Large \u2014 14 px", 14)):
+        for label, value in ((_("Sharp \u2014 4 px"), 4), (_("Round \u2014 8 px"), 8),
+                             (_("Large \u2014 14 px"), 14)):
             self._radius_cb.addItem(label, value)
         current = self.app.settings.get('window_radius', 8)
         idx = self._radius_cb.findData(int(current) if current else 8)

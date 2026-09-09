@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
                              QCheckBox, QPushButton)
 
 from neoarch.frontend.tokens import QSS, Colors, Fonts, Radii
+from neoarch.backend.services.i18n import _
 
 
 class ProxySettingsWidget(QWidget):
@@ -31,29 +32,29 @@ class ProxySettingsWidget(QWidget):
         return card, card_layout
 
     def setup_ui(self):
-        title = QLabel("Proxy & Network")
+        title = QLabel(_("Proxy & Network"))
         title.setStyleSheet(f"font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD}; color: {Colors.TEXT}; letter-spacing: -0.5px;")
         self.layout.addWidget(title)
 
-        subtitle = QLabel("Configure network proxy settings and connection options")
+        subtitle = QLabel(_("Configure network proxy settings and connection options"))
         subtitle.setStyleSheet(f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2}; margin-top: -16px;")
         self.layout.addWidget(subtitle)
 
         # ── Proxy Card ──
-        proxy_card, proxy_layout = self._make_card("Proxy")
+        proxy_card, proxy_layout = self._make_card(_("Proxy"))
 
         type_row = QHBoxLayout()
         type_row.setSpacing(12)
-        type_label = QLabel("Proxy type:")
+        type_label = QLabel(_("Proxy type:"))
         type_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         type_row.addWidget(type_label)
 
         self.type_combo = QComboBox()
         self.type_combo.setStyleSheet(QSS.COMBO)
-        self.type_combo.addItem("None (direct connection)", "none")
-        self.type_combo.addItem("HTTP", "http")
-        self.type_combo.addItem("HTTPS", "https")
-        self.type_combo.addItem("SOCKS5", "socks5")
+        self.type_combo.addItem(_("None (direct connection)"), "none")
+        self.type_combo.addItem(_("HTTP"), "http")
+        self.type_combo.addItem(_("HTTPS"), "https")
+        self.type_combo.addItem(_("SOCKS5"), "socks5")
 
         current_type = self.app.settings.get('proxy_type', 'none')
         idx = self.type_combo.findData(current_type)
@@ -67,20 +68,20 @@ class ProxySettingsWidget(QWidget):
 
         host_row = QHBoxLayout()
         host_row.setSpacing(12)
-        host_label = QLabel("Host:")
+        host_label = QLabel(_("Host:"))
         host_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         host_row.addWidget(host_label)
 
         self.host_edit = QLineEdit(self.app.settings.get('proxy_host', ''))
         self.host_edit.setStyleSheet(QSS.LINEEDIT)
-        self.host_edit.setPlaceholderText("e.g. 127.0.0.1 or proxy.example.com")
+        self.host_edit.setPlaceholderText(_("e.g. 127.0.0.1 or proxy.example.com"))
         self.host_edit.textChanged.connect(lambda v: self.app.update_setting('proxy_host', v))
         host_row.addWidget(self.host_edit, 1)
         proxy_layout.addLayout(host_row)
 
         port_row = QHBoxLayout()
         port_row.setSpacing(12)
-        port_label = QLabel("Port:")
+        port_label = QLabel(_("Port:"))
         port_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         port_row.addWidget(port_label)
 
@@ -98,11 +99,11 @@ class ProxySettingsWidget(QWidget):
         self.layout.addWidget(proxy_card)
 
         # ── Timeouts Card ──
-        timeout_card, timeout_layout = self._make_card("Timeouts")
+        timeout_card, timeout_layout = self._make_card(_("Timeouts"))
 
         req_row = QHBoxLayout()
         req_row.setSpacing(12)
-        req_label = QLabel("Request timeout:")
+        req_label = QLabel(_("Request timeout:"))
         req_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         req_row.addWidget(req_label)
 
@@ -114,7 +115,7 @@ class ProxySettingsWidget(QWidget):
         self.req_timeout_spin.valueChanged.connect(lambda v: self.app.update_setting('request_timeout', v))
         req_row.addWidget(self.req_timeout_spin)
 
-        req_unit = QLabel("seconds")
+        req_unit = QLabel(_("seconds"))
         req_unit.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         req_row.addWidget(req_unit)
         req_row.addStretch()
@@ -123,15 +124,15 @@ class ProxySettingsWidget(QWidget):
         self.layout.addWidget(timeout_card)
 
         # ── Misc Card ──
-        misc_card, misc_layout = self._make_card("Advanced")
+        misc_card, misc_layout = self._make_card(_("Advanced"))
 
-        self.cb_verify_ssl = QCheckBox("Verify SSL certificates")
+        self.cb_verify_ssl = QCheckBox(_("Verify SSL certificates"))
         self.cb_verify_ssl.setStyleSheet(QSS.CHECKBOX)
         self.cb_verify_ssl.setChecked(bool(self.app.settings.get('verify_ssl', True)))
         self.cb_verify_ssl.toggled.connect(lambda v: self.app.update_setting('verify_ssl', v))
         misc_layout.addWidget(self.cb_verify_ssl)
 
-        self.cb_parallel = QCheckBox("Allow parallel network requests")
+        self.cb_parallel = QCheckBox(_("Allow parallel network requests"))
         self.cb_parallel.setStyleSheet(QSS.CHECKBOX)
         self.cb_parallel.setChecked(bool(self.app.settings.get('parallel_network', True)))
         self.cb_parallel.toggled.connect(lambda v: self.app.update_setting('parallel_network', v))
@@ -139,7 +140,7 @@ class ProxySettingsWidget(QWidget):
 
         dl_row = QHBoxLayout()
         dl_row.setSpacing(12)
-        dl_label = QLabel("pacman ParallelDownloads:")
+        dl_label = QLabel(_("pacman ParallelDownloads:"))
         dl_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
         dl_row.addWidget(dl_label)
 
@@ -154,12 +155,12 @@ class ProxySettingsWidget(QWidget):
         self.dl_spin.setValue(current if current else 5)
         dl_row.addWidget(self.dl_spin)
 
-        apply_btn = QPushButton("Apply")
+        apply_btn = QPushButton(_("Apply"))
         apply_btn.setStyleSheet(QSS.BTN_OUTLINE)
         apply_btn.clicked.connect(self._apply_parallel_downloads)
         dl_row.addWidget(apply_btn)
 
-        dl_note = QLabel("Requires root; writes /etc/pacman.conf")
+        dl_note = QLabel(_("Requires root; writes /etc/pacman.conf"))
         dl_note.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.SM}; border: none;")
         dl_row.addWidget(dl_note)
         dl_row.addStretch()
@@ -175,9 +176,9 @@ class ProxySettingsWidget(QWidget):
         except Exception:
             ok_result = False
         if ok_result:
-            self.app.show_message.emit("ParallelDownloads", f"Set pacman ParallelDownloads={count}")
+            self.app.show_message.emit("ParallelDownloads", _("Set pacman ParallelDownloads={count}").format(count=count))
         else:
-            self.app.show_message.emit("ParallelDownloads", "Failed to apply (need root?).")
+            self.app.show_message.emit("ParallelDownloads", _("Failed to apply (need root?)."))
 
     def _on_type_changed(self, index):
         ptype = self.type_combo.currentData()

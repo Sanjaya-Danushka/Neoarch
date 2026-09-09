@@ -2,6 +2,7 @@
 
 import os
 
+from neoarch.backend.services.i18n import _
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QMenu, QPushButton, QWidget
@@ -108,11 +109,11 @@ class _TitleBar(QWidget):
 
     def contextMenuEvent(self, event):
         menu = QMenu(self)
-        restore_act = menu.addAction("Restore")
-        min_act = menu.addAction("Minimize")
-        max_act = menu.addAction("Maximize")
+        restore_act = menu.addAction(_("Restore"))
+        min_act = menu.addAction(_("Minimize"))
+        max_act = menu.addAction(_("Maximize"))
         menu.addSeparator()
-        close_act = menu.addAction("Close")
+        close_act = menu.addAction(_("Close"))
         action = menu.exec(event.globalPos())
         if action == restore_act:
             self.window().showNormal()
