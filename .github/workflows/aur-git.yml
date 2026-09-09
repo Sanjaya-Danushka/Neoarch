@@ -18,7 +18,7 @@ jobs:
 
       - name: Generate version and .SRCINFO
         run: |
-          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "3.1.0")
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "3.2.0")
           REV=$(git rev-list --count HEAD)
           HASH=$(git rev-parse --short=7 HEAD)
           VERSION="$(echo "$TAG" | sed 's/^v//;s/-/./g').r${REV}.g${HASH}"
