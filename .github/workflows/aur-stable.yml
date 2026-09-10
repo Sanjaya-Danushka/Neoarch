@@ -17,15 +17,19 @@ jobs:
         id: version
         run: |
           TAG="${GITHUB_REF#refs/tags/v}"
-          # Strip -N suffix if present (pkgrel is set in PKGBUILD.stable)
           VERSION="${TAG%-*}"
+          PKGREL="${TAG##*-}"
+          if [[ "$PKGREL" == "$VERSION" ]]; then PKGREL=1; fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "pkgrel=$PKGREL" >> "$GITHUB_OUTPUT"
 
       - name: Generate PKGBUILD and .SRCINFO
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          PKGREL="${{ steps.version.outputs.pkgrel }}"
           mkdir -p build
-          sed "s/__VERSION__/$VERSION/g" packaging/PKGBUILD.stable > build/PKGBUILD
+          sed -e "s/__VERSION__/$VERSION/g" -e "s/__PKGREL__/$PKGREL/g" \
+            packaging/PKGBUILD.stable > build/PKGBUILD
           cp packaging/neoarch.install build/neoarch.install
 
           docker run --rm -v "${{ github.workspace }}/build:/build" archlinux:latest bash -c '
