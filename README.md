@@ -38,7 +38,7 @@
 - **Snapshots** — Timeshift integration (list, create, restore, prune) before risky operations.
 - **System backups** — Btrfs-aware backups (package list + config export) with auto-prune keeping the last 5.
 - **Hygiene tools** — orphan removal, `.pacnew`/`.pacsave` diffs and merging, cache + BleachBit cleaning, and Arch news with offline caching.
-- **PKGBUILD scanner** — static analysis mode flags risky post-install tools, elevation, dynamic shell, local binaries, and Unicode homograph spoofing.
+- **PKGBUILD scanner** — static analysis mode flags risky post-install tools, elevation, dynamic shell, local binaries, and Unicode homograph spoofing (rules ported from [ArchCanary](https://github.com/musqz/archcanary)).
 
 ### Workspace &amp; cloud
 
@@ -187,6 +187,13 @@ yay -S neoarch-git    # latest development build
 
 Virtual environment: `python -m venv .venv && source .venv/bin/activate && pip install -r requirements_pyqt.txt`.
 On Arch, system `pip` usually triggers "externally-managed-environment" — prefer pacman, a venv, or `pipx`.
+
+---
+
+## Credits &amp; acknowledgment
+
+- **ArchCanary** — the PKGBUILD security scanner is built on rule sets ported from [ArchCanary](https://github.com/musqz/archcanary) (MIT) by [musqz](https://github.com/musqz), our pre-install scan gate. Thanks for the groundwork.
+- Built on the shoulders of the Arch Linux ecosystem — **pacman**, **AUR helpers** (yay, paru), **Flatpak**, **npm**, **PyQt6**, and **Timeshift**.
 
 ---
 
