@@ -2426,34 +2426,91 @@ class _ViewsMixin:
         return packages_service.load_updates(self)
 
     def load_installed_packages(self):
-        return packages_service.load_installed_packages(self)
+        res = packages_service.load_installed_packages(self)
+        # Self-heal: if any race (e.g. a startup/auto refresh that rewrote the
+        # shared loading_context) drops this load, never leave the Installed
+        # page stranded on an empty skeleton. Re-query once the load had time
+        # to land but still has not.
+        try:
+            from PyQt6.QtCore import QTimer
+            QTimer.singleShot(12000, self._recover_stuck_installed_load)
+        except Exception:
+            pass
+        return res
+
+    def _recover_stuck_installed_load(self):
+        """Re-issue the Installed query if its initial load never landed."""
+        try:
+            if (self.current_view == "installed"
+                    and getattr(self, '_installed_loading', False)
+                    and not getattr(self, '_installing', False)
+                    and not hasattr(self, 'install_cancel_event')):
+                tries = getattr(self, '_installed_reload_tries', 0) + 1
+                self._installed_reload_tries = tries
+                if tries <= 2:
+                    try:
+                        self.log(f"Installed: initial load did not complete (attempt {tries}); re-querying.")
+                    except Exception:
+                        pass
+                    self.load_installed_packages()
+        except Exception:
+            pass
 
     def on_packages_loaded(self, packages, load_id=None, is_final=False):
-        # Ignore results if user has navigated away from the originating view
-        if self.loading_context != self.current_view and not getattr(self, '_pending_update_all', False):
+        # Results only render on the updates/installed pages (Discover streams
+        # its own search results through a separate signal).
+        normal_view = self.current_view in ("updates", "installed")
+        inst_id = getattr(self, '_installed_load_id', None)
+        upd_id = getattr(self, '_updates_load_id', None)
+        pending = getattr(self, '_pending_update_all', False)
+        is_updates = load_id is not None and load_id == upd_id
+        is_installed = load_id is not None and load_id == inst_id
+        # A pending update-all may only be fed by the UPDATES loader's final
+        # result (load id must match). Anything else landing during that
+        # window — e.g. an Installed load — must NOT be mistaken for the
+        # updates dataset, otherwise one page's rows/counts bleed into the
+        # other (the Installed page showing 127 "updates" or vice-versa).
+        update_all_result = pending and is_final and is_updates
+        if not normal_view and not update_all_result:
             return
-        if self.current_view not in ("updates", "installed") and not getattr(self, '_pending_update_all', False):
-            return
-        # Drop results from a superseded load (left the page and came back
-        # while the earlier thread was still running) so a stale render never
-        # flashes away the loading indicator.
         if load_id is not None:
-            if self.loading_context == "updates" and getattr(self, '_updates_load_id', None) != load_id:
+            # Match the result to the loader that owns the page the user is
+            # actually on, by its load id — NOT by the shared `loading_context`
+            # global. Any parallel loader (startup updates auto-refresh, an
+            # auto-refresh tick, an ignore/proxy change...), and switch_view()
+            # itself, rewrite that global the moment they run. When that
+            # happened after this page's load began, the old code dropped the
+            # results and left the page stranded on an empty table until a
+            # manual refresh. Load ids can never collide, so they are the safe
+            # ownership check; superseded loads are still rejected below.
+            if not update_all_result and self.current_view == "installed" and not is_installed:
                 return
-            if self.loading_context == "installed" and getattr(self, '_installed_load_id', None) != load_id:
+            if self.current_view == "updates" and not is_updates:
                 return
+        elif self.loading_context != self.current_view and not update_all_result:
+            return
+
+        if update_all_result:
+            # The full updates dataset has arrived for the pending update-all.
+            self._pending_update_all = False
+            self.updates_all = packages
+            if self.current_view != "updates":
+                # Start it right away WITHOUT painting the updates list onto
+                # the page the user is currently viewing (the Installed table
+                # must never be replaced by the updates dataset).
+                self._do_update_all()
+                return
+            self._do_update_all()
+            # On the Updates page fall through so the table repaints the real
+            # list below.
+
         self.all_packages = packages
         if self.current_view == "updates":
             self.updates_all = packages
         elif self.current_view == "installed":
             self.installed_all = packages
             self._installed_loading = False
-
-        # Update-all only starts once the full data set has arrived, so a
-        # fast partial paint can never trigger it with incomplete packages.
-        if getattr(self, '_pending_update_all', False) and is_final:
-            self._pending_update_all = False
-            self._do_update_all()
+            self._installed_reload_tries = 0
 
         # Hide loading spinner and paint the redesigned table as soon as any
         # results arrive so the loading indicator never lingers through the
@@ -3097,6 +3154,15 @@ class _ViewsMixin:
             if not mapped and getattr(self, '_installed_loading', False):
                 # Initial load still in flight - keep the skeleton instead of
                 # flashing an empty state that claims nothing is installed.
+                return
+            if not mapped and getattr(self, '_installed_load_id', None) is None:
+                # No Installed query has been issued yet this session. This
+                # call is a UI rebuild (source filters / source-card) running
+                # BEFORE the page's first load: rendering here materializes a
+                # bogus "No installed packages", claims the shared table, and
+                # makes switch_view's can_restore skip the real load - the
+                # reported empty-first-open bug. Leave a clean slate; the
+                # loader paints once its results land.
                 return
             if not mapped and (getattr(self, '_installing', False) or hasattr(self, 'install_cancel_event')):
                 # An operation is running and may hold the pacman DB lock

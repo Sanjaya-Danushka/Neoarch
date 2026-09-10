@@ -651,6 +651,15 @@ def load_installed_packages(app):
                 if pkg['name'] in aur_packages:
                     pkg['source'] = 'AUR'
 
+            # Attach install timestamps before the first paint: the stat pass
+            # is instant (~ms for thousands of packages), so the Installed-date
+            # column is correct on the very first render instead of waiting for
+            # the slow final emit (AUR/flatpak/npm checks).
+            for pkg in packages:
+                if not pkg.get('installed_date') and pkg.get('source') in ('pacman', 'AUR'):
+                    pkg['installed_date'] = _installed_ts(
+                        pkg.get('name') or '', pkg.get('version') or '')
+
             if getattr(app, '_installed_load_id', 0) == load_id:
                 app.packages_ready.emit(list(packages), load_id, False)
 
@@ -873,6 +882,8 @@ def load_installed_packages(app):
                 pass
 
             for pkg in packages:
+                if pkg.get('installed_date'):
+                    continue
                 if pkg.get('source') in ('pacman', 'AUR'):
                     pkg['installed_date'] = _installed_ts(pkg.get('name') or '', pkg.get('version') or '')
                 elif pkg.get('source') == 'Flatpak':

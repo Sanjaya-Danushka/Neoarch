@@ -315,10 +315,14 @@ def _extract_base(original: str, pacnew: str, package: str) -> str:
 def list_installed_sizes() -> Dict[str, int]:
     """Map each installed package name to its installed size in bytes.
 
-    Uses `pacman -Qik` which reports the on-disk size of every locally
-    installed package. Returns a dict of {name: bytes} — an empty dict on
-    failure.
+    Fast path reads the `desc` files in the local pacman database directly:
+    the %SIZE% field there is exactly the per-package installed size that
+    `pacman -Qik` reports, at a fraction of the cost (no pacman subprocess).
+    Falls back to `pacman -Qik` when the database cannot be scanned.
     """
+    sizes = _read_local_db_sizes()
+    if sizes:
+        return sizes
     result = _run(["pacman", "-Qik"], timeout=120)
     if result.returncode != 0 and not result.stdout.strip():
         return {}
@@ -338,6 +342,48 @@ def list_installed_sizes() -> Dict[str, int]:
                     sizes[name] = value
             name = None
     return sizes
+
+
+def _read_local_db_sizes(local: str = "/var/lib/pacman/local") -> Dict[str, int]:
+    """Scan /var/lib/pacman/local/*/desc for the authoritative installed sizes."""
+    sizes: Dict[str, int] = {}
+    try:
+        entries = os.listdir(local)
+    except Exception:
+        return {}
+    for entry in entries:
+        desc = os.path.join(local, entry, "desc")
+        try:
+            with open(desc, "r", encoding="utf-8", errors="replace") as fh:
+                text = fh.read()
+        except Exception:
+            continue
+        sizes.update(_parse_desc_sizes(text))
+    return sizes
+
+
+def _parse_desc_sizes(text: str) -> Dict[str, int]:
+    """Extract {package name: installed size bytes} from a pacman `desc` file.
+
+    Each desc file stores the exact per-package installed size (the same value
+    `pacman -Qi` prints, without the human-readable rounding) under %SIZE%.
+    """
+    name = None
+    size = 0
+    cur = None
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("%") and stripped.endswith("%"):
+            cur = stripped.strip("%")
+            continue
+        if cur == "NAME" and not name:
+            name = stripped
+        elif cur == "SIZE" and stripped.isdigit():
+            size = int(stripped)
+            break
+    if name and size:
+        return {name: size}
+    return {}
 
 
 def _parse_size_text(text: str) -> int:

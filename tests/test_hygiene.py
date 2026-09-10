@@ -7,6 +7,38 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import neoarch.backend.services.hygiene as hygiene
 
 
+def test_parse_desc_sizes():
+    desc = (
+        "%NAME%\nfirefox\n%VERSION%\n135.0.1-1\n"
+        "%DESC%\nFast web browser\n%SIZE%\n292398812\n%ISIZE%\n\n"
+    )
+    assert hygiene._parse_desc_sizes(desc) == {"firefox": 292398812}
+
+
+def test_parse_desc_sizes_zero_size_skipped():
+    assert hygiene._parse_desc_sizes("%NAME%\nbase\n%SIZE%\n0\n") == {}
+
+
+def test_parse_desc_sizes_no_size_block():
+    assert hygiene._parse_desc_sizes("%NAME%\nbase\n%VERSION%\n3-3\n") == {}
+
+
+def test_read_local_db_sizes_reads_desc_files(tmp_path):
+    local = tmp_path / "local"
+    (local / "firefox-135.0.1-1").mkdir(parents=True)
+    (local / "firefox-135.0.1-1" / "desc").write_text(
+        "%NAME%\nfirefox\n%SIZE%\n292398812\n"
+    )
+    (local / "base-3-3").mkdir()
+    (local / "base-3-3" / "desc").write_text("%NAME%\nbase\n%VERSION%\n3-3\n")
+    (local / "dbus-units-2-1").mkdir()
+    assert hygiene._read_local_db_sizes(str(local)) == {"firefox": 292398812}
+
+
+def test_read_local_db_sizes_missing_dir(tmp_path):
+    assert hygiene._read_local_db_sizes(str(tmp_path / "nope")) == {}
+
+
 def test_list_orphans_parses_output(monkeypatch):
     fake = subprocess.CompletedProcess(["pacman", "-Qtdq"], 0, stdout="libfoo\nlibbar\n", stderr="")
     monkeypatch.setattr(hygiene, "_run", lambda *a, **k: fake)

@@ -107,16 +107,42 @@ class _Stub(_ViewsMixin):
 
     def __init__(self):
         self.current_view = "installed"
+        self.loading_context = "installed"
         self._view_mode = "table"
         self._installing = False
         self._operation_view = None
+        self._installed_loading = False
+        self._installed_load_id = None
+        self._updates_load_id = None
+        self._pending_update_all = False
+        self.all_packages = []
+        self.installed_all = []
+        self.updates_all = []
+        self._table_view_owner = ""
+        self.source_card = None
         self.updates_table = UpdatesTable(_FakeApp())
         self.updates_table.set_enrich(False)
         self.package_table = UpdatesTable(_FakeApp())
         self.package_table.set_enrich(False)
         self.packages_grid = UpdatesTable(_FakeApp())
         self.packages_grid.set_enrich(False)
+        self.loading_widget = _FakeWidget()
         self.log = lambda *a, **k: None
+
+
+class _FakeWidget:
+    def setVisible(self, *a):
+        return None
+
+    def stop_animation(self, *a):
+        return None
+
+    def isHidden(self, *a):
+        return False
+
+
+def _rows_of(stub):
+    return [p.get("name") for p in stub.updates_table.model.packages()]
 
 
 def _pkg(name, source="pacman"):
@@ -207,3 +233,178 @@ def test_no_empty_claim_from_stale_query_during_operation(qapp):
     assert "No installed packages" not in stub.updates_table._empty._title.text()
     assert getattr(stub, '_table_view_owner', None) != "installed"
     assert getattr(stub, '_installed_loaded', False) is not True
+
+
+def test_installed_results_kept_when_context_clobbered_by_parallel_load(qapp):
+    """A startup/auto 'updates' refresh rewrites the shared loading_context
+    after the Installed page's load started. Its results must still be
+    accepted (keyed by the page's load id), never stranded on an empty table
+    until a manual refresh."""
+    stub = _Stub()
+    stub.current_view = "installed"
+    stub.loading_context = "updates"       # clobbered by a parallel loader
+    stub._installed_loading = True
+    stub._installed_load_id = 7
+    stub.updates_table.set_packages([])
+
+    stub.on_packages_loaded([_pkg("bash"), _pkg("pacman")], 7, False)
+
+    assert not stub._installed_loading
+    assert stub.installed_all == [_pkg("bash"), _pkg("pacman")]
+    assert stub._table_view_owner == "installed"
+    assert _rows_of(stub) == ["bash", "pacman"]
+
+
+def test_updates_results_kept_when_context_clobbered_by_parallel_load(qapp):
+    """Mirror-case: an Installed load starting while an updates refresh is in
+    flight flips loading_context to 'installed'; the updates results must not
+    be dropped either."""
+    stub = _Stub()
+    stub.current_view = "updates"
+    stub.loading_context = "installed"
+    stub._updates_load_id = 3
+    recorded = []
+
+    def _fake_sync(dataset=None):
+        recorded.append(dataset if dataset is not None
+                         else (stub.updates_all or stub.all_packages))
+
+    stub._sync_updates_table = _fake_sync
+
+    stub.on_packages_loaded([_pkg("linux", "pacman")], 3, False)
+
+    assert stub.updates_all == [_pkg("linux", "pacman")]
+    assert recorded == [[_pkg("linux", "pacman")]], \
+        "updates results were dropped by the context clobber"
+
+
+def test_superseded_load_still_rejected(qapp):
+    """Ownership is now per-page by load id: a load that belongs to a page the
+    user left must still be rejected (the loading indicator stays intact)."""
+    stub = _Stub()
+    stub.current_view = "installed"
+    stub.loading_context = "installed"
+    stub._installed_loading = True
+    stub._installed_load_id = 5
+    stub.installed_all = [_pkg("kept")]
+
+    stub.on_packages_loaded([_pkg("stale")], 4, True)
+
+    assert stub.installed_all == [_pkg("kept")], "superseded load leaked in"
+    assert _rows_of(stub) == [], "stale results must not paint the table"
+
+
+def test_recover_stuck_installed_requeries_when_still_loading(qapp):
+    stub = _Stub()
+    stub.current_view = "installed"
+    stub._installed_loading = True
+    calls = []
+    stub.load_installed_packages = lambda: calls.append("reload")
+
+    stub._recover_stuck_installed_load()
+
+    assert calls == ["reload"]
+
+
+def test_recover_stuck_installed_noop_when_loaded(qapp):
+    stub = _Stub()
+    stub.current_view = "installed"
+    stub._installed_loading = False
+    calls = []
+    stub.load_installed_packages = lambda: calls.append("reload")
+
+    stub._recover_stuck_installed_load()
+
+    assert calls == []
+
+
+def test_recover_stuck_installed_noop_during_operation(qapp):
+    stub = _Stub()
+    stub.current_view = "installed"
+    stub._installed_loading = True
+    stub._installing = True
+    calls = []
+    stub.load_installed_packages = lambda: calls.append("reload")
+
+    stub._recover_stuck_installed_load()
+
+    assert calls == []
+
+
+def test_pending_update_all_ignores_installed_result_on_updates_page(qapp):
+    """While an update-all is pending, an Installed loader result arriving on
+    the Updates page must be rejected — it is not the updates dataset (this
+    used to leak the installed rows/count onto the Updates page)."""
+    stub = _Stub()
+    stub.current_view = "updates"
+    stub._pending_update_all = True
+    stub._installed_load_id = 7
+    stub._updates_load_id = 9
+    calls = []
+    stub._do_update_all = lambda: calls.append("update-all")
+
+    stub.on_packages_loaded([_pkg("bash"), _pkg("pacman")], 7, True)
+
+    assert stub.updates_all == [], "installed result leaked into updates_all"
+    assert stub._pending_update_all is True, "pending flag must survive"
+    assert calls == [], "update-all must not start from installed data"
+    assert _rows_of(stub) == [], "installed rows must not paint the table"
+
+
+def test_pending_update_all_on_installed_page_paints_nothing(qapp):
+    """The updates loader's final result while on the Installed page must
+    trigger the pending update-all but must NOT replace the Installed table
+    or installed_all with the updates dataset."""
+    stub = _Stub()
+    stub.current_view = "installed"
+    stub._pending_update_all = True
+    stub._installed_load_id = 7
+    stub._updates_load_id = 9
+    stub.installed_all = [_pkg("kept-installed")]
+    stub.updates_table.set_packages([_pkg("kept-installed")])
+    calls = []
+    stub._do_update_all = lambda: calls.append("update-all")
+
+    stub.on_packages_loaded([_pkg("linux"), _pkg("glibc")], 9, True)
+
+    assert calls == ["update-all"], "pending update-all did not start"
+    assert stub._pending_update_all is False
+    assert stub.updates_all == [_pkg("linux"), _pkg("glibc")]
+    assert stub.installed_all == [_pkg("kept-installed")], \
+        "installed_all was clobbered by the updates dataset"
+    assert _rows_of(stub) == ["kept-installed"], \
+        "installed table was repainted with updates rows"
+
+
+def test_pending_update_all_updates_page_paints_and_triggers(qapp):
+    """On the Updates page itself the pending update-all still paints the real
+    updates list and then starts."""
+    stub = _Stub()
+    stub.current_view = "updates"
+    stub._pending_update_all = True
+    stub._updates_load_id = 9
+    calls = []
+    stub._do_update_all = lambda: calls.append("update-all")
+    stub.update_updates_header_counts = lambda: None
+    stub.package_table = _FakeLegacy()
+
+    stub.on_packages_loaded([_pkg("linux"), _pkg("glibc")], 9, True)
+
+    assert calls == ["update-all"], "update-all did not start"
+    assert stub._pending_update_all is False
+    assert stub.updates_all == [_pkg("linux"), _pkg("glibc")]
+    assert sorted(_rows_of(stub)) == ["glibc", "linux"], "updates list was not painted"
+
+
+class _FakeLegacy:
+    def __init__(self):
+        self.rows = 0
+
+    def setRowCount(self, n):
+        self.rows = n
+
+    def rowCount(self):
+        return self.rows
+
+    def setVisible(self, *a):
+        return None
