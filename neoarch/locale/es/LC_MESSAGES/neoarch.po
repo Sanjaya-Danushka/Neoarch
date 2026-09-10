@@ -2299,6 +2299,12 @@ msgstr "↗ Ver versión"
 msgid "↗ Website"
 msgstr "↗ Sitio web"
 
+msgid "↗ Wiki"
+msgstr "↗ Wiki"
+
+msgid "Full Wiki ↗"
+msgstr "Wiki completo ↗"
+
 msgid "↪  Sign Out"
 msgstr "↪  Cerrar sesión"
 

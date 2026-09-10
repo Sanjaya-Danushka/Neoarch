@@ -30,6 +30,7 @@ _SPONSORS_URL = "https://github.com/sponsors/Sanjaya-Danushka"
 _BUYMEACOFFEE_URL = "https://www.buymeacoffee.com/sanjayadanushka"
 _WEBSITE_URL = "https://neoarch.dpdns.org"
 _AUR_URL = "https://aur.archlinux.org/packages/neoarch-git"
+_WIKI_URL = "https://github.com/Sanjaya-Danushka/Neoarch/wiki"
 
 _BASE_DIR = os.path.join(os.path.dirname(__file__), "..", "..")
 
@@ -352,6 +353,7 @@ class _OverviewTab(QWidget):
             (_("\u2197 Website"), _WEBSITE_URL),
             (_("\u2197 Repository"), _REPO_URL),
             (_("\u2197 AUR Package"), _AUR_URL),
+            (_("\u2197 Wiki"), _WIKI_URL),
         ]:
             links_row.addWidget(_accent_btn(label, lambda u=url: _open_url(u)))
         links_row.addStretch()
@@ -975,6 +977,12 @@ class _DocumentationTab(QWidget):
                 idx += 1
 
         tl.addStretch(1)
+
+        wiki_btn = _link_btn(
+            _("Full Wiki \u2197"),
+            lambda: _open_url(_WIKI_URL))
+        tl.addWidget(wiki_btn)
+
         toc_scroll.setWidget(toc_widget)
         bl.addWidget(toc_scroll)
 
@@ -1549,6 +1557,9 @@ class _CommunityTab(QWidget):
         fl.addWidget(_secondary_btn(
             _("\u2197 GitHub"),
             lambda: _open_url("https://github.com/Sanjaya-Danushka")))
+        fl.addWidget(_secondary_btn(
+            _("\u2197 Wiki"),
+            lambda: _open_url(_WIKI_URL)))
         cl.addWidget(founder)
 
         # ── Support card with QR ──
