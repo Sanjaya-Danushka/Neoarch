@@ -17,20 +17,28 @@ Changes on the `dev` branch that will land in the next release.
 ### Bug Fixes
 
 - Navigating between pages no longer discards the page's state. Returning to
-  **Updates**, **Installed**, or **Discover** restores your search text, the
+  Updates, Installed, or Discover restores your search text, the
   displayed results, and the checked/selected packages instead of wiping the
-  page; re-entering **Updates** during a running install shows the list in
+  page; re-entering Updates during a running install shows the list in
   place (the operation keeps running in the console) rather than a blank
   page. The install/update progress animation and its Cancel button are now
   confined to the page where the operation started: navigating away hides
-  them, and returning to that page brings the spinner **and** the Cancel
+  them, and returning to that page brings the spinner and the Cancel
   button back (a previous visit to another page had left the button hidden).
   During a running install/update the
-  **Installed** page never claims the system is empty: it reuses the last
+  Installed page never claims the system is empty: it reuses the last
   loaded installed list, or shows a calm "Waiting for the update to finish"
   message and refreshes automatically once the operation releases the
   package database. Use the toolbar Refresh button to force a fresh data
   reload.
+- Plugins list view now correctly syncs filters, sort, and batch toolbar
+  actions (Install Selected, Clear Selection) with the grid view. The table
+  model preserves installed-plugin rows as selection-only, and sort changes
+  propagate to the list view immediately.
+- Header glass panels no longer paint at stale positions when switching
+  between table modes (bundles, plugins, discover). Column hide/show now
+  explicitly refreshes the section-rect cache so Source and Status column
+  headers align correctly with the cells below.
 
 ### Improvements
 
@@ -48,6 +56,9 @@ Changes on the `dev` branch that will land in the next release.
   confirmation. If the scan cannot reach the AUR, the install falls back to
   the legacy static notice so it is never stuck — a soft gate, not a hard
   dependency.
+- About page now links to the Wiki from the Overview, Documentation, and
+  Community tabs. README highlights the Wiki with a "Read before use" note
+  and bundles with a "Save your setup for life" callout.
 
 ---
 
