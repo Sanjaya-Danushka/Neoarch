@@ -8,6 +8,7 @@ model-level restore semantics that the navigation uses.
 
 import os
 import sys
+import types
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -131,13 +132,16 @@ class _Stub(_ViewsMixin):
 
 
 class _FakeWidget:
-    def setVisible(self, *a):
+    @staticmethod
+    def setVisible(*a):
         return None
 
-    def stop_animation(self, *a):
+    @staticmethod
+    def stop_animation(*a):
         return None
 
-    def isHidden(self, *a):
+    @staticmethod
+    def isHidden(*a):
         return False
 
 
@@ -406,7 +410,8 @@ class _FakeLegacy:
     def rowCount(self):
         return self.rows
 
-    def setVisible(self, *a):
+    @staticmethod
+    def setVisible(*a):
         return None
 
 
@@ -464,7 +469,8 @@ class _FakePluginsView:
     def set_sort(self, mode):
         self._sort_mode = mode or "name_asc"
 
-    def selected_installable_ids(self):
+    @staticmethod
+    def selected_installable_ids():
         return []
 
     def _get_filtered_plugins(self):
@@ -577,7 +583,7 @@ def test_toggle_check_selects_installed_rows(qapp):
     table = stub.updates_table
 
     selected = []
-    table.row_selected.connect(lambda pkg: selected.append(pkg))
+    table.row_selected.connect(selected.append)
 
     table._toggle_check(0, None)
 
@@ -601,7 +607,8 @@ def test_plugin_detail_install_routes_through_plugins_manager(qapp):
     stub.plugins_manager = _RecordingPluginsManager(calls)
     stub.plugins_view = object()
 
-    stub.install_from_detail = _OperationsMixin.install_from_detail.__get__(stub, _Stub)
+    stub.install_from_detail = types.MethodType(
+        _OperationsMixin.install_from_detail, stub)
 
     stub.install_from_detail()
 
@@ -619,7 +626,8 @@ def test_plugin_detail_uninstall_routes_through_plugins_manager(qapp):
     stub.plugins_manager = _RecordingPluginsManager(calls)
     stub.plugins_view = object()
 
-    stub.uninstall_from_detail = _OperationsMixin.uninstall_from_detail.__get__(stub, _Stub)
+    stub.uninstall_from_detail = types.MethodType(
+        _OperationsMixin.uninstall_from_detail, stub)
 
     stub.uninstall_from_detail()
 
@@ -639,7 +647,8 @@ def test_plugin_detail_launch_routes_through_plugins_manager(qapp):
     stub.plugins_manager = _RecordingPluginsManager(calls)
     stub.plugins_view = object()
 
-    stub.launch_from_detail = _OperationsMixin.launch_from_detail.__get__(stub, _Stub)
+    stub.launch_from_detail = types.MethodType(
+        _OperationsMixin.launch_from_detail, stub)
 
     stub.launch_from_detail()
 
@@ -773,7 +782,11 @@ def test_plugins_list_selection_toolbar_install_and_clear(qapp):
 
     table = stub.updates_table
     rows = table.model.packages()
-    ts_row = next(i for i, p in enumerate(rows) if p.get("id") == "timeshift")
+    try:
+        ts_row = next(i for i, p in enumerate(rows)
+                      if p.get("id") == "timeshift")
+    except StopIteration:
+        pytest.fail("timeshift row missing from list view")
     table._toggle_check(ts_row, None)
     qapp.processEvents()
 
@@ -821,7 +834,11 @@ def test_plugins_list_installed_row_selects_enables_clear_only(qapp):
 
     table = stub.updates_table
     rows = table.model.packages()
-    bb_row = next(i for i, p in enumerate(rows) if p.get("id") == "bleachbit")
+    try:
+        bb_row = next(i for i, p in enumerate(rows)
+                      if p.get("id") == "bleachbit")
+    except StopIteration:
+        pytest.fail("bleachbit row missing from list view")
     assert rows[bb_row].get("_installed") is True
 
     table._toggle_check(bb_row, None)
