@@ -1292,6 +1292,7 @@ class _FiltersMixin:
         try:
             if not (hasattr(self, 'source_card') and self.source_card):
                 return
+            self._resync_plugins_list_if_visible()
             from neoarch.resources.plugin_data import get_all_plugins_data
             plugins = get_all_plugins_data()
             total = len(plugins)
@@ -1314,6 +1315,22 @@ class _FiltersMixin:
                 "available": max(0, total - installed),
                 "installed": installed,
             })
+        except Exception:
+            pass
+
+    def _resync_plugins_list_if_visible(self):
+        """Keep the Plugins list view in sync with the source-panel filters.
+
+        The grid re-renders itself on every filter change, but the list view
+        reads the shared table, so it must be re-mapped from the filtered
+        card set whenever the filters (source/status/category/sort) change
+        while list view is showing.
+        """
+        try:
+            if (getattr(self, 'current_view', None) == "plugins"
+                    and getattr(self, '_view_mode', None) == "table"
+                    and hasattr(self, '_sync_plugins_table')):
+                self._sync_plugins_table()
         except Exception:
             pass
 

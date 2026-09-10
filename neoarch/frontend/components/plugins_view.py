@@ -219,7 +219,7 @@ class PluginsView(QWidget):
     install_many_requested = pyqtSignal(list)  # list of plugin ids (batch install)
     launch_requested = pyqtSignal(str)    # plugin id
     uninstall_requested = pyqtSignal(str) # plugin id
-    selection_changed = pyqtSignal(int)   # count of selected installable items
+    selection_changed = pyqtSignal(int)   # count of checked items (incl. installed)
     live_search_ready = pyqtSignal(list)  # live search specs (main thread)
 
     def __init__(self, main_app, get_icon_callback, parent=None):
@@ -527,7 +527,7 @@ class PluginsView(QWidget):
         if has_combined and hasattr(self, '_all_filtered_cards'):
             return self._all_filtered_cards
         plugins = self._get_current_plugins()
-        return [self._get_or_create_card(p) for p in plugins]
+        return self._sort_cards([self._get_or_create_card(p) for p in plugins])
 
     def _render_current_page(self):
         filtered = self._get_filtered_plugins()
@@ -801,7 +801,7 @@ class PluginsView(QWidget):
                     'installed': installed,
                     'widget': card,
                 })
-            self._all_filtered_search_cards = card_datas
+            self._all_filtered_search_cards = self._sort_cards(card_datas)
             try:
                 self._live_search_label.hide()
             except Exception:
@@ -868,7 +868,11 @@ class PluginsView(QWidget):
 
     def _update_selection_bar(self):
         try:
-            n = len(self.selected_installable_ids())
+            n = 0
+            for data in self._all_card_datas():
+                widget = data.get('widget')
+                if widget is not None and hasattr(widget, 'is_checked') and widget.is_checked():
+                    n += 1
             self.selection_changed.emit(n)
         except Exception:
             self.selection_changed.emit(0)

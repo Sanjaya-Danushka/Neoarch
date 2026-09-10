@@ -453,3 +453,391 @@ def test_on_packages_loaded_marks_updates_received(qapp):
 
     assert stub._updates_loaded is True
     assert stub._updates_loading is False
+
+
+class _FakePluginsView:
+    """Minimal PluginsView stand-in with the real filtered-card accessor."""
+
+    def __init__(self):
+        self._sort_mode = "name_asc"
+
+    def set_sort(self, mode):
+        self._sort_mode = mode or "name_asc"
+
+    def selected_installable_ids(self):
+        return []
+
+    def _get_filtered_plugins(self):
+        cards = [
+            {"plugin": {"id": "bleachbit", "name": "BleachBit",
+                        "version": "1.0", "desc": "Cleaner", "pkg": "bleachbit"},
+             "installed": True},
+            {"plugin": {"id": "timeshift", "name": "Timeshift",
+                        "version": "2.0", "desc": "Snapshots", "pkg": "timeshift"},
+             "installed": False},
+        ]
+        reverse = self._sort_mode == "name_desc"
+        sort_key = lambda c: (c['plugin'].get('name') or c['plugin'].get('id') or '').lower()
+        return sorted(cards, key=sort_key, reverse=reverse)
+
+    @classmethod
+    def _get_package_source(cls, plugin):
+        return "AUR" if plugin.get("id") == "timeshift" else "pacman"
+
+
+def test_sync_plugins_table_populates_list_view(qapp):
+    """Switching the Plugins page to list view must fill the shared table with
+    the plugin catalog. Guards against the typo'd accessor name that made
+    _sync_plugins_table bail out and leave the updates table empty/stale."""
+    stub = _Stub()
+    stub.plugins_view = _FakePluginsView()
+
+    stub._sync_plugins_table()
+
+    rows = stub.updates_table.model.packages()
+    assert [p.get("name") for p in rows] == ["BleachBit", "Timeshift"]
+    assert rows[0].get("source") == "pacman"
+    assert rows[1].get("source") == "AUR"
+    assert rows[0].get("status") == "Installed"
+    assert rows[1].get("status") == "Available"
+    assert rows[0].get("_installed") is True
+
+
+def _plugins_row_click(stub, pkg):
+    """Drive the shared-table row-selected dispatch exactly as a click does."""
+    stub.current_view = "plugins"
+    stub._on_updates_table_row_selected(pkg)
+
+
+def test_plugin_list_detail_shows_install_not_update(qapp):
+    """Clicking an available plugin row must open the detail card with the
+    Install action — never the Updates page's 'Update Package' button."""
+    from neoarch.frontend.components.package_detail_card import PackageDetailCard
+    stub = _Stub()
+    stub.current_view = "plugins"
+    stub.package_detail_card = PackageDetailCard()
+    pkg = {"name": "Timeshift", "id": "timeshift", "version": "2.0",
+           "source": "AUR", "_installed": False,
+           "description": "Snapshots", "_src": {"desc": "Snapshots"}}
+
+    _plugins_row_click(stub, pkg)
+
+    assert stub.package_detail_card.install_btn.isVisible() is True
+    assert stub.package_detail_card.update_btn.isVisible() is False
+    assert stub.package_detail_card.uninstall_btn.isVisible() is False
+    assert stub.package_detail_card.launch_btn.isVisible() is False
+
+
+def test_plugin_list_detail_shows_launch_and_uninstall_when_installed(qapp):
+    """An installed plugin's detail card offers Launch + Uninstall together,
+    exactly the actions the grid cards expose."""
+    from neoarch.frontend.components.package_detail_card import PackageDetailCard
+    stub = _Stub()
+    stub.current_view = "plugins"
+    stub.package_detail_card = PackageDetailCard()
+    pkg = {"name": "BleachBit", "id": "bleachbit", "version": "1.0",
+           "source": "pacman", "_installed": True,
+           "description": "Cleaner", "_src": {"desc": "Cleaner"}}
+
+    _plugins_row_click(stub, pkg)
+
+    assert stub.package_detail_card.install_btn.isVisible() is False
+    assert stub.package_detail_card.update_btn.isVisible() is False
+    assert stub.package_detail_card.launch_btn.isVisible() is True
+    assert stub.package_detail_card.uninstall_btn.isVisible() is True
+
+
+class _RecordingPluginsManager:
+    def __init__(self, calls):
+        self._calls = calls
+
+    def install_by_id(self, view, plugin_id):
+        self._calls.append(("install", plugin_id))
+
+    def uninstall_by_id(self, view, plugin_id):
+        self._calls.append(("uninstall", plugin_id))
+
+    def launch_by_id(self, view, plugin_id):
+        self._calls.append(("launch", plugin_id))
+
+    def install_many_by_id(self, view, plugin_ids):
+        self._calls.append(("install_many", list(plugin_ids)))
+
+
+def test_toggle_check_selects_installed_rows(qapp):
+    """Clicking an installed plugin row must select it (opening the detail
+    card) instead of being a silent no-op. Only batch-install checking is
+    forbidden for installed rows."""
+    stub = _Stub()
+    stub.current_view = "plugins"
+    stub._view_mode = "table"
+    stub.plugins_view = _FakePluginsView()
+    stub._sync_plugins_table()
+    stub.updates_table.set_packages(stub.updates_table.model.packages())
+    table = stub.updates_table
+
+    selected = []
+    table.row_selected.connect(lambda pkg: selected.append(pkg))
+
+    table._toggle_check(0, None)
+
+    assert selected, "an installed row click must emit row_selected"
+    assert selected[0].get("_installed") is True
+
+    checked = table.model.checked_names()
+    assert not checked, "installed rows must not enter the batch-install selection"
+
+
+def test_plugin_detail_install_routes_through_plugins_manager(qapp):
+    """The detail card's Install button on a plugin row must install via the
+    plugins manager (lifecycle-aware), never the generic package installer."""
+    from neoarch.frontend.components.package_detail_card import PackageDetailCard
+    from neoarch.frontend.mixins.operations import _OperationsMixin
+    stub = _Stub()
+    stub.package_detail_card = PackageDetailCard()
+    stub.package_detail_card._pkg_data = {
+        "_view": "plugins", "id": "timeshift", "name": "Timeshift", "source": "AUR"}
+    calls = []
+    stub.plugins_manager = _RecordingPluginsManager(calls)
+    stub.plugins_view = object()
+
+    stub.install_from_detail = _OperationsMixin.install_from_detail.__get__(stub, _Stub)
+
+    stub.install_from_detail()
+
+    assert calls == [("install", "timeshift")]
+
+
+def test_plugin_detail_uninstall_routes_through_plugins_manager(qapp):
+    from neoarch.frontend.components.package_detail_card import PackageDetailCard
+    from neoarch.frontend.mixins.operations import _OperationsMixin
+    stub = _Stub()
+    stub.package_detail_card = PackageDetailCard()
+    stub.package_detail_card._pkg_data = {
+        "_view": "plugins", "id": "bleachbit", "name": "BleachBit", "source": "pacman"}
+    calls = []
+    stub.plugins_manager = _RecordingPluginsManager(calls)
+    stub.plugins_view = object()
+
+    stub.uninstall_from_detail = _OperationsMixin.uninstall_from_detail.__get__(stub, _Stub)
+
+    stub.uninstall_from_detail()
+
+    assert calls == [("uninstall", "bleachbit")]
+
+
+def test_plugin_detail_launch_routes_through_plugins_manager(qapp):
+    """The plugin detail card's Launch button must run the plugin through the
+    plugins manager (as the ⋯ menu and grid cards do)."""
+    from neoarch.frontend.components.package_detail_card import PackageDetailCard
+    from neoarch.frontend.mixins.operations import _OperationsMixin
+    stub = _Stub()
+    stub.package_detail_card = PackageDetailCard()
+    stub.package_detail_card._pkg_data = {
+        "_view": "plugins", "id": "bleachbit", "name": "BleachBit", "source": "pacman"}
+    calls = []
+    stub.plugins_manager = _RecordingPluginsManager(calls)
+    stub.plugins_view = object()
+
+    stub.launch_from_detail = _OperationsMixin.launch_from_detail.__get__(stub, _Stub)
+
+    stub.launch_from_detail()
+
+    assert calls == [("launch", "bleachbit")]
+
+
+class _FilteredFakePluginsView(_FakePluginsView):
+    """Simulates the source-panel filters already applied on the grid."""
+
+    def _get_filtered_plugins(self):
+        return [card for card in super()._get_filtered_plugins()
+                if card.get("installed") is False]
+
+
+def test_sync_plugins_table_respects_source_panel_filters(qapp):
+    """Source/status/category filters must narrow the list view too: the
+    table is re-mapped from the grid's filtered card set, not the full
+    catalog."""
+    stub = _Stub()
+    stub.plugins_view = _FilteredFakePluginsView()   # Available-only filter
+
+    stub._sync_plugins_table()
+
+    rows = stub.updates_table.model.packages()
+    assert [p.get("name") for p in rows] == ["Timeshift"]
+    assert rows[0].get("status") == "Available"
+
+
+def test_plugins_row_menu_install_routes_through_plugins_manager(qapp):
+    """The list-view ⋯ menu's Install on an available plugin must go through
+    the plugins manager, matching the grid cards and detail card."""
+    stub = _Stub()
+    stub.current_view = "plugins"
+    calls = []
+    stub.plugins_manager = _RecordingPluginsManager(calls)
+    stub.plugins_view = object()
+    pkg = {"name": "Timeshift", "id": "timeshift", "source": "AUR"}
+
+    stub._on_updates_table_menu("install", pkg)
+
+    assert calls == [("install", "timeshift")]
+
+
+def test_plugins_row_menu_uninstall_routes_through_plugins_manager(qapp):
+    stub = _Stub()
+    stub.current_view = "plugins"
+    calls = []
+    stub.plugins_manager = _RecordingPluginsManager(calls)
+    stub.plugins_view = object()
+    pkg = {"name": "BleachBit", "id": "bleachbit", "source": "pacman"}
+
+    stub._on_updates_table_menu("uninstall", pkg)
+
+    assert calls == [("uninstall", "bleachbit")]
+
+
+class _FakeButton:
+    def __init__(self):
+        self.enabled = True
+
+    def setEnabled(self, state):
+        self.enabled = bool(state)
+
+
+class _FakeLabel:
+    def __init__(self):
+        self.text = ""
+
+    def setText(self, text):
+        self.text = text
+
+
+class _ToolbarPluginsView:
+    """Configurable plugins_view stand-in for toolbar selection-state tests."""
+
+    def __init__(self, installable_ids=()):
+        self.installable_ids = list(installable_ids)
+
+    def selected_installable_ids(self):
+        return list(self.installable_ids)
+
+
+def _plugins_toolbar_stub(plugins_view=None):
+    stub = _Stub()
+    stub.current_view = "plugins"
+    stub._view_mode = "grid"
+    stub.plugins_view = plugins_view or _ToolbarPluginsView()
+    stub._plugins_install_btn = _FakeButton()
+    stub._plugins_clear_btn = _FakeButton()
+    stub._plugins_selection_label = _FakeLabel()
+    stub.updates_table.checks_changed.connect(stub._on_table_checks_changed)
+    return stub
+
+
+def test_plugins_grid_installed_selection_enables_clear_only(qapp):
+    """Selecting an installed card must show the Clear button (total selection
+    counted) while Install Selected stays disabled — the old code counted only
+    installable cards, so checking an installed row left the toolbar dead."""
+    stub = _plugins_toolbar_stub(_ToolbarPluginsView([]))
+    stub._plugins_install_btn.setEnabled(False)
+    stub._plugins_clear_btn.setEnabled(False)
+
+    stub._on_plugins_selection_changed(1)   # installed card checked
+
+    assert stub._plugins_clear_btn.enabled is True
+    assert stub._plugins_install_btn.enabled is False
+    assert stub._plugins_selection_label.text == "1 plugin selected"
+
+
+def test_plugins_grid_available_selection_enables_install_and_clear(qapp):
+    """Available cards drive the full toolbar: Install Selected + Clear active
+    and the label showing the count."""
+    stub = _plugins_toolbar_stub(_ToolbarPluginsView(["timeshift"]))
+
+    stub._on_plugins_selection_changed(2)
+
+    assert stub._plugins_install_btn.enabled is True
+    assert stub._plugins_clear_btn.enabled is True
+    assert stub._plugins_selection_label.text == "2 plugins selected"
+
+
+def test_plugins_list_selection_toolbar_install_and_clear(qapp):
+    """List view: checking an available row must update the shared toolbar,
+    Install Selected must install exactly the checked non-installed rows, and
+    Clear must reset the table selection."""
+    stub = _plugins_toolbar_stub(_FakePluginsView())
+    stub._view_mode = "table"
+    stub._sync_plugins_table()
+    calls = []
+    stub.plugins_manager = _RecordingPluginsManager(calls)
+
+    table = stub.updates_table
+    rows = table.model.packages()
+    ts_row = next(i for i, p in enumerate(rows) if p.get("id") == "timeshift")
+    table._toggle_check(ts_row, None)
+    qapp.processEvents()
+
+    assert stub._plugins_install_btn.enabled is True
+    assert stub._plugins_clear_btn.enabled is True
+    assert stub._plugins_selection_label.text == "1 plugin selected"
+
+    stub._on_plugins_install_selected()
+
+    assert ("install_many", ["timeshift"]) in calls
+
+    stub._on_plugins_clear_selection()
+
+    assert not table.model.checked_names()
+    assert stub._plugins_selection_label.text == ""
+    assert stub._plugins_install_btn.enabled is False
+    assert stub._plugins_clear_btn.enabled is False
+
+
+def test_plugins_list_rerenders_on_sort_change(qapp):
+    """The list view must follow the source panel's Sort by menu like the
+    grid does."""
+    stub = _Stub()
+    stub.current_view = "plugins"
+    stub._view_mode = "table"
+    stub.plugins_view = _FakePluginsView()
+    stub._sync_plugins_table()
+
+    assert [p["name"] for p in stub.updates_table.model.packages()] == ["BleachBit", "Timeshift"]
+
+    stub.on_plugins_sort_changed("name_desc")
+
+    assert [p["name"] for p in stub.updates_table.model.packages()] == ["Timeshift", "BleachBit"]
+
+
+def test_plugins_list_installed_row_selects_enables_clear_only(qapp):
+    """Toggling an installed row in list view must surface the toolbar's Clear
+    button (like the grid cards) while Install Selected stays disabled and
+    never targets the installed plugin."""
+    stub = _plugins_toolbar_stub(_FakePluginsView())
+    stub._view_mode = "table"
+    stub._sync_plugins_table()
+    calls = []
+    stub.plugins_manager = _RecordingPluginsManager(calls)
+
+    table = stub.updates_table
+    rows = table.model.packages()
+    bb_row = next(i for i, p in enumerate(rows) if p.get("id") == "bleachbit")
+    assert rows[bb_row].get("_installed") is True
+
+    table._toggle_check(bb_row, None)
+    qapp.processEvents()
+
+    assert table.model.is_installed_selected(rows[bb_row]) is True
+    assert not table.model.checked_packages()
+    assert stub._plugins_install_btn.enabled is False
+    assert stub._plugins_clear_btn.enabled is True
+    assert stub._plugins_selection_label.text == "1 plugin selected"
+
+    stub._on_plugins_install_selected()
+    assert not calls, "installed plugins must never be batch-installed"
+
+    stub._on_plugins_clear_selection()
+    qapp.processEvents()
+
+    assert table.model.is_installed_selected(rows[bb_row]) is False
+    assert stub._plugins_clear_btn.enabled is False

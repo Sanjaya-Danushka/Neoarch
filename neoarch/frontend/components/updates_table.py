@@ -288,6 +288,7 @@ class UpdatesModel(QAbstractTableModel):
         self._checked = set()
         self._sort_col = 1
         self._sort_asc = True
+        self._preserve_order = False
 
     # ── helpers ───────────────────────────────────────────────────────
     @staticmethod
@@ -298,6 +299,7 @@ class UpdatesModel(QAbstractTableModel):
         self.beginResetModel()
         self._pkgs = [dict(p) for p in packages]
         self._checked = set()
+        self._selection = set()
         self.endResetModel()
         self._apply_sort()
         self.checked_changed.emit(0, len(self._pkgs))
@@ -339,6 +341,7 @@ class UpdatesModel(QAbstractTableModel):
             self._checked = set(self._pkg_key(p) for p in self._pkgs if not p.get("_installed"))
         else:
             self._checked = set()
+            self._selection = set()
         if self.rowCount():
             self.dataChanged.emit(
                 self.index(0, 0),
@@ -381,11 +384,16 @@ class UpdatesModel(QAbstractTableModel):
         return (pkg.get("name") or "").lower()
 
     def _apply_sort(self):
-        if self._sort_col in (0, 7, -1):
+        if self._preserve_order or self._sort_col in (0, 7, -1):
             return
         self._pkgs.sort(key=lambda p: self._sort_key(p, self._sort_col), reverse=not self._sort_asc)
         if self.rowCount():
             self.dataChanged.emit(self.index(0, 0), self.index(self.rowCount() - 1, self.columnCount() - 1))
+
+    def set_preserve_order(self, preserve):
+        """Keep rows in insertion order instead of re-sorting (Plugins list
+        preserves the source panel's Sort by order)."""
+        self._preserve_order = bool(preserve)
 
     # ── QAbstractTableModel ───────────────────────────────────────────
     def rowCount(self, parent=QModelIndex()):
@@ -410,10 +418,38 @@ class UpdatesModel(QAbstractTableModel):
             return None
         col = index.column()
         if role == Qt.ItemDataRole.CheckStateRole and col == 0:
-            return Qt.CheckState.Checked if self._pkg_key(pkg) in self._checked else Qt.CheckState.Unchecked
+            key = self._pkg_key(pkg)
+            if key in self._checked or key in self._selection:
+                return Qt.CheckState.Checked
+            return Qt.CheckState.Unchecked
         if role == Qt.ItemDataRole.UserRole:
             return pkg
         return None
+
+    def is_installed_selected(self, pkg):
+        """A non-installable row carries a selection-only check (installed
+        plugins in list view mirror the grid cards' visual selection)."""
+        return self._pkg_key(pkg) in self._selection
+
+    def toggle_installed_selection(self, pkg):
+        """Flip the selection-only check for an installed (non-checkable) row."""
+        key = self._pkg_key(pkg)
+        if key in self._selection:
+            self._selection.discard(key)
+        else:
+            self._selection.add(key)
+        row = None
+        for i, p in enumerate(self._pkgs):
+            if self._pkg_key(p) == key:
+                row = i
+                break
+        if row is not None:
+            self.dataChanged.emit(self.index(row, 0), self.index(row, 0),
+                                  [Qt.ItemDataRole.CheckStateRole])
+        self.checked_changed.emit(len(self._checked) + len(self._selection), len(self._pkgs))
+
+    def selected_installed_count(self):
+        return len(self._selection)
 
     def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
         if index.column() == 0 and role == Qt.ItemDataRole.CheckStateRole and index.isValid():
@@ -760,6 +796,7 @@ class UpdatesTable(QTableView):
     # ── public API ────────────────────────────────────────────────────
     def set_packages(self, packages):
         self._loading_enrich = False
+        self.model.set_preserve_order(self._plugins_mode)
         self.model.set_packages(packages or [])
         self._header_sync()
         self.set_loading(False)
@@ -818,6 +855,7 @@ class UpdatesTable(QTableView):
         available, plus an Uninstall action)."""
         self._installed_mode = bool(installed)
         if installed:
+            self._plugins_mode = False
             self._bundles_mode = False
 
     def set_discover_mode(self, discover):
@@ -829,6 +867,7 @@ class UpdatesTable(QTableView):
         it is handed instead of re-sorting by the default column.
         """
         self._discover_mode = bool(discover)
+        self._plugins_mode = False
         self._bundles_mode = False
         # Match the Updates page layout: same columns (Size / Status) and
         # widths; only the Installed-date column stays hidden because search
@@ -1077,9 +1116,19 @@ class UpdatesTable(QTableView):
         pkg = self.model.package_at(row)
         if pkg is None:
             return
-        if pkg.get("_installed"):
-            return
         idx = self.model.index(row, 0)
+        if pkg.get("_installed"):
+            # Installed rows have no batch-install checkbox, but the Plugins
+            # list mirrors the grid cards: toggling one still marks it as
+            # selected so the toolbar's Clear reacts, while Install Selected
+            # ignores it. A click keeps opening the right-hand detail card.
+            self.model.toggle_installed_selection(pkg)
+            sel_model = self.selectionModel()
+            sel_model.select(idx,
+                             sel_model.SelectionFlag.ClearAndSelect
+                             | sel_model.SelectionFlag.Rows)
+            self.setCurrentIndex(idx)
+            return
         checked = self.model.is_checked(pkg)
         self.model.setData(idx, Qt.CheckState.Unchecked if checked else Qt.CheckState.Checked,
                            Qt.ItemDataRole.CheckStateRole)

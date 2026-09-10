@@ -674,6 +674,11 @@ class _OperationsMixin:
         pkg = getattr(self.package_detail_card, '_pkg_data', None)
         if not pkg:
             return
+        if pkg.get('_view') == 'plugins':
+            plugin_id = pkg.get('id') or pkg.get('name') or ''
+            if plugin_id and hasattr(self, 'plugins_manager'):
+                self.plugins_manager.install_by_id(self.plugins_view, plugin_id)
+            return
         if not self.ensure_session_auth():
             self.log("Install cancelled: authentication required.")
             return
@@ -703,11 +708,25 @@ class _OperationsMixin:
         pkg = getattr(self.package_detail_card, '_pkg_data', None)
         if not pkg:
             return
+        if pkg.get('_view') == 'plugins':
+            plugin_id = pkg.get('id') or pkg.get('name') or ''
+            if plugin_id and hasattr(self, 'plugins_manager'):
+                self.plugins_manager.uninstall_by_id(self.plugins_view, plugin_id)
+            return
         if not self.ensure_session_auth():
             self.log("Uninstall cancelled: authentication required.")
             return
         source = pkg.get('source', 'pacman')
         uninstall_service.uninstall_packages(self, {source: [pkg['name']]})
+
+    def launch_from_detail(self):
+        pkg = getattr(self.package_detail_card, '_pkg_data', None)
+        if not pkg:
+            return
+        if pkg.get('_view') == 'plugins':
+            plugin_id = pkg.get('id') or pkg.get('name') or ''
+            if plugin_id and hasattr(self, 'plugins_manager'):
+                self.plugins_manager.launch_by_id(self.plugins_view, plugin_id)
 
     def _on_ui_call(self, fn):
         try:

@@ -1045,54 +1045,99 @@ class _ViewsMixin:
             pass
         self.plugins_view.selection_changed.connect(self._on_plugins_selection_changed)
 
-    def _on_plugins_selection_changed(self, count):
-        """Update the plugins toolbar buttons when card selection changes."""
+    def _refresh_plugins_selection_ui(self):
+        """Recompute the plugins toolbar from whichever view is active.
+
+        Grid and list share one toolbar: Install Selected should be enabled
+        only when installable (non-installed) items are checked, while Clear
+        works for any checked row — including installed plugins.
+        """
         try:
+            if getattr(self, 'current_view', None) != "plugins":
+                return
             btn = getattr(self, '_plugins_install_btn', None)
             clear = getattr(self, '_plugins_clear_btn', None)
             label = getattr(self, '_plugins_selection_label', None)
+            total, installable = 0, 0
+            if getattr(self, '_view_mode', None) == "table" and hasattr(self, 'updates_table'):
+                try:
+                    model = self.updates_table.model
+                    pairs = model.checked_packages()
+                    installable = len(pairs)
+                    total = installable + model.selected_installed_count()
+                except Exception:
+                    total, installable = 0, 0
+            else:
+                pv = getattr(self, 'plugins_view', None)
+                total = getattr(self, '_plugins_selected_total', 0)
+                installable = (len(pv.selected_installable_ids())
+                               if pv is not None and hasattr(pv, 'selected_installable_ids')
+                               else 0)
             if btn is not None:
-                btn.setEnabled(count > 0)
+                btn.setEnabled(installable > 0)
             if clear is not None:
-                clear.setEnabled(count > 0)
+                clear.setEnabled(total > 0)
             if label is not None:
-                if count > 0:
-                    label.setText(_("{count} plugin{s} selected").format(count=count, s="s" if count != 1 else ""))
+                if total > 0:
+                    label.setText(_("{count} plugin{s} selected").format(count=total, s="s" if total != 1 else ""))
                 else:
                     label.setText("")
         except Exception:
             pass
 
+    def _on_plugins_selection_changed(self, count):
+        """Update the plugins toolbar when a selection changes (grid or list)."""
+        try:
+            if getattr(self, 'current_view', None) != "plugins":
+                return
+            self._plugins_selected_total = count
+            self._refresh_plugins_selection_ui()
+        except Exception:
+            pass
+
     def _on_plugins_install_selected(self):
-        """Install all selected plugin cards."""
+        """Install all selected plugin cards (grid) or table rows (list)."""
         try:
             if not (self.plugins_view and hasattr(self.plugins_view, 'selected_installable_ids')):
                 return
-            ids = self.plugins_view.selected_installable_ids()
+            ids = []
+            if getattr(self, '_view_mode', None) == "table" and hasattr(self, 'updates_table'):
+                ids = [p.get('id') or p.get('name')
+                       for p in self.updates_table.model.checked_packages()
+                       if not p.get('_installed')]
+                ids = [i for i in ids if i]
+            else:
+                ids = self.plugins_view.selected_installable_ids()
             if ids:
                 self.plugins_manager.install_many_by_id(self.plugins_view, ids)
         except Exception as e:
             self._show_message("Plugins", f"Install error: {e}")
 
     def _on_plugins_clear_selection(self):
-        """Clear all card selections on the plugins page."""
+        """Clear all selections on the plugins page (grid and/or list)."""
         try:
             if self.plugins_view and hasattr(self.plugins_view, 'clear_selection'):
                 self.plugins_view.clear_selection()
+            if hasattr(self, 'updates_table'):
+                self.updates_table.set_all_checked(False)
+            self._plugins_selected_total = 0
+            self._refresh_plugins_selection_ui()
         except Exception:
             pass
 
     def _sync_plugins_table(self):
         """Populate the shared UpdatesTable with plugin data for list view."""
         try:
-            if not (self.plugins_view and hasattr(self.plugins_view, '_all_card_data')):
+            if not (self.plugins_view and hasattr(self.plugins_view, '_get_filtered_plugins')):
                 return
+            if not getattr(self.plugins_view, '_all_plugins', None) and hasattr(self.plugins_view, 'populate_app_cards'):
+                self.plugins_view.populate_app_cards()
             self.updates_table.set_plugins_mode(True)
             self.updates_table.set_loading(False)
             self.updates_table.set_empty_text(
                 "No plugins found", "Extensions will appear here after loading")
             mapped = []
-            for card_data in self.plugins_view._all_card_data():
+            for card_data in self.plugins_view._get_filtered_plugins():
                 plugin = card_data.get('plugin', {})
                 installed = card_data.get('installed', False)
                 mapped.append({
@@ -1121,6 +1166,8 @@ class _ViewsMixin:
         try:
             if hasattr(self, 'plugins_view') and self.plugins_view:
                 self.plugins_view.set_sort(mode)
+            if getattr(self, '_view_mode', None) == "table":
+                self._sync_plugins_table()
         except Exception:
             pass
 
@@ -1283,6 +1330,7 @@ class _ViewsMixin:
         self.package_detail_card.install_requested.connect(self.install_from_detail)
         self.package_detail_card.update_requested.connect(self.update_from_detail)
         self.package_detail_card.uninstall_requested.connect(self.uninstall_from_detail)
+        self.package_detail_card.launch_requested.connect(self.launch_from_detail)
         self.package_detail_card.check_updates_btn.clicked.connect(self._check_updates_for_detail)
         self.package_detail_card.updates_check_completed.connect(self._on_update_check_result)
         packages_content_layout.addWidget(self.package_detail_card, 0, Qt.AlignmentFlag.AlignRight)
@@ -3212,6 +3260,8 @@ class _ViewsMixin:
     def _on_updates_table_row_selected(self, pkg):
         if self.current_view == "discover":
             self._show_detail_for_discover(pkg)
+        elif self.current_view == "plugins":
+            self._show_detail_for_plugins(pkg)
         else:
             self._show_detail_for_updates(pkg)
 
@@ -3232,6 +3282,34 @@ class _ViewsMixin:
                 'has_update': False,
                 'description': src.get('description') or pkg.get('description') or '',
                 '_view': 'discover',
+            }
+            self.package_detail_card.show_package(pkg_data)
+        except Exception:
+            self.package_detail_card.clear()
+
+    def _show_detail_for_plugins(self, pkg):
+        """Open the detail card for a Plugins list row.
+
+        Plugin rows must not inherit the Updates detail (which advertises an
+        'Update Package' action): available plugins get Install, installed
+        ones get Uninstall, exactly like the grid cards.
+        """
+        try:
+            if pkg is None:
+                self.package_detail_card.clear()
+                return
+            src = pkg.get('_src') or pkg.get('plugin') or {}
+            pkg_data = {
+                'name': pkg.get('name') or pkg.get('id') or '',
+                'id': pkg.get('id') or pkg.get('name') or '',
+                'version': pkg.get('version') or '',
+                'new_version': '',
+                'source': pkg.get('source') or 'pacman',
+                'installed': bool(pkg.get('_installed')),
+                'has_update': False,
+                'description': src.get('desc') or src.get('description')
+                or pkg.get('description') or '',
+                '_view': 'plugins',
             }
             self.package_detail_card.show_package(pkg_data)
         except Exception:
@@ -3309,6 +3387,11 @@ class _ViewsMixin:
         name = (pkg.get('name') or '').strip()
         source = pkg.get('source') or 'pacman'
         if action == "install":
+            if getattr(self, 'current_view', '') == "plugins" and hasattr(self, 'plugins_manager'):
+                pid = pkg.get('id') or pkg.get('name')
+                if pid:
+                    self.plugins_manager.install_by_id(self.plugins_view, pid)
+                return
             if not name:
                 return
             if not self.ensure_session_auth():
@@ -3330,6 +3413,11 @@ class _ViewsMixin:
             self.installation_progress.emit("start", True)
             update_service.update_packages(self, {source: [name]})
         elif action == "uninstall":
+            if getattr(self, 'current_view', '') == "plugins" and hasattr(self, 'plugins_manager'):
+                pid = pkg.get('id') or pkg.get('name')
+                if pid:
+                    self.plugins_manager.uninstall_by_id(self.plugins_view, pid)
+                return
             if not name:
                 return
             if not self.ensure_session_auth():
@@ -3802,6 +3890,9 @@ class _ViewsMixin:
     # ── live selection summary (Updates / Installed toolbars) ──────────
 
     def _on_table_checks_changed(self, checked, total):
+        if self.current_view == "plugins":
+            self._on_plugins_selection_changed(checked)
+            return
         if self.current_view == "discover":
             self._update_discover_install_btn_state()
             return

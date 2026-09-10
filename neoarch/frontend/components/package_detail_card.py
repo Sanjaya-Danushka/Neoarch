@@ -137,6 +137,7 @@ class PackageDetailCard(QFrame):
     install_requested = pyqtSignal()
     update_requested = pyqtSignal()
     uninstall_requested = pyqtSignal()
+    launch_requested = pyqtSignal()
     updates_check_completed = pyqtSignal(str, str, bool, bool)  # name, new_version, has_updates, check_ok
 
     def __init__(self, parent=None):
@@ -329,6 +330,15 @@ class PackageDetailCard(QFrame):
         self.uninstall_btn.clicked.connect(self.uninstall_requested.emit)
         self.action_layout.addWidget(self.uninstall_btn)
 
+        self.launch_btn = QPushButton(_("Launch"))
+        self.launch_btn.setMinimumHeight(40)
+        self.launch_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.launch_btn.setStyleSheet(
+            _nav_btn_stylesheet(Colors.ACCENT)
+        )
+        self.launch_btn.clicked.connect(self.launch_requested.emit)
+        self.action_layout.addWidget(self.launch_btn)
+
         self.check_updates_btn = QPushButton(_("Check for Updates"))
         self.check_updates_btn.setMinimumHeight(40)
         self.check_updates_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -468,7 +478,15 @@ class PackageDetailCard(QFrame):
             else:
                 self.revdeps_label.setText(_("Nothing depends on this package (it is not needed by anything installed)."))
 
-        if view == "updates":
+        self.launch_btn.setVisible(False)
+        if view == "plugins":
+            self.install_btn.setVisible(not installed)
+            self.update_btn.setVisible(False)
+            self.uninstall_btn.setVisible(installed)
+            self.launch_btn.setVisible(installed)
+            self.check_updates_btn.setVisible(False)
+            self.up_to_date_label.setVisible(False)
+        elif view == "updates":
             self.install_btn.setVisible(False)
             self.update_btn.setVisible(True)
             self.uninstall_btn.setVisible(False)

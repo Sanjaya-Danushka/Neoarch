@@ -373,6 +373,57 @@ def test_selection_emits_signal_and_batch_installs(qapp, monkeypatch):
     assert all(not d["widget"].is_checked() for d in view._all_cards)
 
 
+def test_installed_card_selection_counts_for_clear(qapp, monkeypatch):
+    """Ticking an installed card's checkbox must surface in the selection count
+    (so the toolbar's Clear button appears). Batch install must still ignore
+    it — only non-installed checks are installable."""
+    specs = [
+        {"id": pid, "name": pid.capitalize(), "pkg": pid, "desc": "x", "cmd": pid}
+        for pid in ("alpha", "beta")
+    ]
+    view = _make_view(qapp, specs, monkeypatch)
+    view.refresh_all()
+    qapp.processEvents()
+
+    counts = []
+    view.selection_changed.connect(lambda n: counts.append(n))
+
+    alpha = next(d for d in view._all_cards if d["plugin"]["id"] == "alpha")
+    alpha["installed"] = True          # simulate an installed plugin card
+    alpha["widget"].set_installed(True)
+    alpha["widget"].set_checked(True)
+    qapp.processEvents()
+
+    assert counts[-1] == 1
+    assert len(view.selected_installable_ids()) == 0
+
+    view.clear_selection()
+    assert counts[-1] == 0
+
+
+def test_get_filtered_plugins_fallback_respects_sort(qapp, monkeypatch):
+    """With no active filters, the plugins list/grid must still honor the
+    source panel's Sort by setting (the previous fallback returned the raw
+    catalog order, breaking the list view's sort menu)."""
+    specs = [
+        {"id": pid, "name": pid.capitalize(), "pkg": pid, "desc": "x", "cmd": pid}
+        for pid in ("gamma", "alpha", "beta")
+    ]
+    view = _make_view(qapp, specs, monkeypatch)
+    view.refresh_all()                 # populate the catalog
+    view._current_filter_states = {}
+    view._all_filtered_cards = None
+    view._all_filtered_search_cards = None
+
+    view._sort_mode = "name_desc"
+    cards = view._get_filtered_plugins()
+    assert [c["plugin"]["id"] for c in cards] == ["gamma", "beta", "alpha"]
+
+    view._sort_mode = "name_asc"
+    cards = view._get_filtered_plugins()
+    assert [c["plugin"]["id"] for c in cards] == ["alpha", "beta", "gamma"]
+
+
 def test_plugins_view_set_installed_updates_card_data(qapp, monkeypatch):
     specs = [{"id": "alpha", "name": "Alpha", "pkg": "alpha", "desc": "x", "cmd": "alpha"}]
     view = _make_view(qapp, specs, monkeypatch)
