@@ -885,6 +885,7 @@ class UpdatesTable(QTableView):
         header = self.horizontalHeader()
         if hasattr(header, "set_sort"):
             header.set_sort(self.model.get_sort_column(), self.model.get_sort_ascending())
+        header._refresh_section_rects()
         self.viewport().update()
 
     def set_plugins_mode(self, plugins):
@@ -908,6 +909,7 @@ class UpdatesTable(QTableView):
             header.set_header_labels(None)
         self.set_enrich(False)
         self.setColumnWidth(4, 110)
+        header._refresh_section_rects()
         self.viewport().update()
 
     def set_bundles_mode(self, bundles):
@@ -930,6 +932,7 @@ class UpdatesTable(QTableView):
             header.set_header_labels(None)
         self.set_enrich(False)
         self.setColumnWidth(4, 110)
+        header._refresh_section_rects()
         self.viewport().update()
 
     def set_header_labels(self, labels):
