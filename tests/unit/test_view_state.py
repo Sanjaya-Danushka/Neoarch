@@ -408,3 +408,48 @@ class _FakeLegacy:
 
     def setVisible(self, *a):
         return None
+
+
+def test_sync_updates_table_empty_before_first_load_leaves_clean_slate(qapp):
+    """A filter-panel rebuild before the Updates loader delivered anything
+    must not paint a bogus 'All caught up', claim the shared table, or make
+    switch_view's restore skip the real load."""
+    stub = _Stub()
+    stub.current_view = "updates"
+    stub.updates_all = []
+    stub.updates_table.set_packages([])
+
+    stub._sync_updates_table()
+
+    assert getattr(stub, '_table_view_owner', "") != "updates"
+    assert getattr(stub, '_updates_loaded', False) is False
+    assert _rows_of(stub) == [], "empty state must not be painted early"
+
+
+def test_sync_updates_table_empty_after_real_load_shows_all_caught_up(qapp):
+    """Once real updates data arrived (even as an empty list), the legit
+    'All caught up' paint is allowed and owns the table as before."""
+    stub = _Stub()
+    stub.current_view = "updates"
+    stub._updates_loaded = True
+    stub.updates_all = []
+
+    stub._sync_updates_table()
+
+    assert stub._table_view_owner == "updates"
+    assert stub._updates_loaded is True
+    assert _rows_of(stub) == []
+
+
+def test_on_packages_loaded_marks_updates_received(qapp):
+    """An accepted Updates loader result flags the dataset as received so a
+    later genuine empty paint ('All caught up') is not mistaken for a pre-load
+    rebuild."""
+    stub = _Stub()
+    stub.current_view = "updates"
+    stub._updates_load_id = 3
+
+    stub.on_packages_loaded([_pkg("linux")], 3, False)
+
+    assert stub._updates_loaded is True
+    assert stub._updates_loading is False

@@ -2494,6 +2494,8 @@ class _ViewsMixin:
             # The full updates dataset has arrived for the pending update-all.
             self._pending_update_all = False
             self.updates_all = packages
+            self._updates_loaded = True
+            self._updates_loading = False
             if self.current_view != "updates":
                 # Start it right away WITHOUT painting the updates list onto
                 # the page the user is currently viewing (the Installed table
@@ -2507,6 +2509,8 @@ class _ViewsMixin:
         self.all_packages = packages
         if self.current_view == "updates":
             self.updates_all = packages
+            self._updates_loaded = True
+            self._updates_loading = False
         elif self.current_view == "installed":
             self.installed_all = packages
             self._installed_loading = False
@@ -3065,6 +3069,15 @@ class _ViewsMixin:
             if dataset is None:
                 dataset = getattr(self, 'updates_all', None) or self.all_packages
             rows = dataset or []
+            if not rows and not getattr(self, '_updates_loaded', False):
+                # No Updates data has been delivered yet this session. This call
+                # is a UI rebuild (filter panel / source toggles) running before
+                # the page's first load emits: painting here materializes a
+                # bogus "All caught up" empty state, claims the shared table,
+                # and makes switch_view's can_restore skip the real load — the
+                # "no updates until a manual refresh" bug. Leave a clean slate;
+                # the loader paints once its results land.
+                return
             q = ''
             try:
                 q = (self.search_input.text() or '').strip()
