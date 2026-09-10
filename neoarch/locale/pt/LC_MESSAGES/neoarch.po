@@ -2360,3 +2360,9 @@ msgstr "Todos os {n} pacotes AUR verificados estão limpos."
 
 msgid "I understand, continue"
 msgstr "Entendido, continuar"
+
+msgid "Waiting for the update to finish…"
+msgstr "A aguardar o fim da atualização…"
+
+msgid "Installed packages will appear here automatically once it completes."
+msgstr "Os pacotes instalados aparecerão aqui automaticamente quando terminar."

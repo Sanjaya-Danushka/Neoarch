@@ -2360,3 +2360,9 @@ msgstr "スキャンした {n} 個の AUR パッケージはすべて安全で�
 
 msgid "I understand, continue"
 msgstr "承知しました。続行します"
+
+msgid "Waiting for the update to finish…"
+msgstr "アップデートの完了を待っています…"
+
+msgid "Installed packages will appear here automatically once it completes."
+msgstr "完了すると、インストール済みパッケージがここに自動的に表示されます。"

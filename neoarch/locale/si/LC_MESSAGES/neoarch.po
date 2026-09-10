@@ -2360,3 +2360,9 @@ msgstr "පරික්ෂා කළ AUR පැකේජ {n} සියල්ල 
 
 msgid "I understand, continue"
 msgstr "තේරුම් ගත්තා, ඉදිරියට යන්න"
+
+msgid "Waiting for the update to finish…"
+msgstr "උඩුගත කිරීම අවසන් වන තෙක් රැඳී සිටිමින්…"
+
+msgid "Installed packages will appear here automatically once it completes."
+msgstr "අවසන් වූ පසු ස්ථාපිත පැකේජ මෙහි ස්වයංක්රීයව දිස්වනු ඇත."

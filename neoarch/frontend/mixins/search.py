@@ -704,6 +704,7 @@ class _SearchMixin:
                 # no pagination / Load More button.
                 mapped = [self._map_discover_pkg(p) for p in filtered]
                 self.updates_table.set_packages(mapped)
+                self._table_view_owner = "discover"
         except Exception:
             pass
 

@@ -2360,3 +2360,9 @@ msgstr "扫描的所有 {n} 个 AUR 软件包均安全。"
 
 msgid "I understand, continue"
 msgstr "了解，继续"
+
+msgid "Waiting for the update to finish…"
+msgstr "正在等待更新完成…"
+
+msgid "Installed packages will appear here automatically once it completes."
+msgstr "完成后，已安装的软件包将自动显示在这里。"

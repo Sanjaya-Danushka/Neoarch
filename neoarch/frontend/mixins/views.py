@@ -544,6 +544,17 @@ class _ViewsMixin:
         # install completion, search timers) fire regardless of the active
         # page, so this guard is the single place that keeps cross-page
         # rendering correct.
+        # While an operation runs, its origin page must stay spinner-only: no
+        # background callback may re-plant the table beneath the progress
+        # overlay (that stacking is the "animation on top, table below"
+        # corruption).
+        if (getattr(self, '_installing', False) and
+                getattr(self, '_operation_view', None) == getattr(self, 'current_view', None)):
+            self.package_table.setVisible(False)
+            self.packages_grid.setVisible(False)
+            if hasattr(self, 'updates_table'):
+                self.updates_table.setVisible(False)
+            return
         if getattr(self, 'current_view', '') in _SELF_CONTAINED_VIEWS:
             self.package_table.setVisible(False)
             self.packages_grid.setVisible(False)
@@ -590,6 +601,24 @@ class _ViewsMixin:
             self.package_detail_card.clear()
         if hasattr(self, 'about_view') and self.about_view:
             self.about_view.setVisible(False)
+
+    def _restore_checked(self, keys):
+        """Re-check (name, source) rows after a table repaint.
+
+        Used to keep the user's install selection across a view round-trip
+        that had to re-render the shared table (e.g. restoring Discover
+        results). Rows that no longer exist or that are already installed
+        are skipped silently.
+        """
+        try:
+            model = self.updates_table.model
+            for row, pkg in enumerate(model.packages()):
+                if model._pkg_key(pkg) in keys and not pkg.get("_installed"):
+                    index = model.index(row, 0)
+                    model.setData(index, Qt.CheckState.Checked,
+                                  Qt.ItemDataRole.CheckStateRole)
+        except Exception:
+            pass
 
     def _update_nav_greeting(self, user=None):
         if not hasattr(self, '_greeting_label') or not self._greeting_label:
@@ -1720,6 +1749,14 @@ class _ViewsMixin:
             traceback.print_exc()
 
     def switch_view(self, view_id, load=True):
+        # Preserve the leaving page's search text so a navigation round-trip
+        # restores it (each page keeps its own query).
+        self._view_search_queries = getattr(self, '_view_search_queries', {})
+        try:
+            if hasattr(self, 'search_input'):
+                self._view_search_queries[self.current_view] = self.search_input.text()
+        except Exception:
+            pass
         self.current_view = view_id
         # Any navigation away from the startup page counts as the user having
         # taken control; background timers must then never hijack the view.
@@ -1732,10 +1769,21 @@ class _ViewsMixin:
         if not _installing:
             self.console.clear()
         # Stop any spinners and cancel background loads when switching views.
-        # During an active install the operation spinner and cancel button
-        # must stay visible (they are owned by the operation, not the view).
+        # During an active install the operation spinner, loading overlay and
+        # cancel button belong to the operation's ORIGIN page: they are shown
+        # again only when the user returns to that page, and hidden on every
+        # other page so each page keeps rendering only its own content.
+        _op_view = getattr(self, '_operation_view', view_id)
         try:
-            if not _installing:
+            if _installing and view_id == _op_view:
+                self.loading_widget.setVisible(True)
+                self.loading_widget.start_animation()
+                if hasattr(self, 'loading_container'):
+                    self.loading_container.setVisible(True)
+                # Re-show the operation's Cancel button when returning to its
+                # origin page (a previous SwitchView hid it on other pages).
+                self.cancel_install_btn.setVisible(getattr(self, '_operation_can_cancel', False))
+            else:
                 self.loading_widget.stop_animation()
                 self.loading_widget.setVisible(False)
                 if hasattr(self, 'loading_container'):
@@ -1812,7 +1860,23 @@ class _ViewsMixin:
         self.update_table_columns(view_id)
         self.update_filters_panel(view_id)
         self.update_toolbar()
-        self.search_input.clear()
+        # Restore this page's saved query instead of always clearing it; the
+        # per-view state was captured at the top of switch_view(), so the
+        # text survives navigation without retriggering a search. Only the
+        # pages that also restore their rendered data re-fill the box; self-
+        # contained views (plugins/git) keep the prior clear-on-switch.
+        try:
+            self.search_input.blockSignals(True)
+            if view_id in ("discover", "updates", "installed"):
+                self.search_input.setText(
+                    self._view_search_queries.get(view_id, ""))
+            else:
+                self.search_input.setText("")
+        finally:
+            try:
+                self.search_input.blockSignals(False)
+            except Exception:
+                pass
         if view_id != "discover":
             self.large_search_box.setVisible(False)
 
@@ -1846,8 +1910,31 @@ class _ViewsMixin:
             except Exception:
                 pass
             if load and not _installing:
-                self._hide_all_package_views()
-                self.load_updates()
+                if (getattr(self, '_table_view_owner', '') == "updates" and
+                        getattr(self, '_updates_loaded', False)):
+                    # Data is already in the shared table from this session.
+                    # Skipping the reload keeps checkboxes, scroll position,
+                    # and any applied search/filter exactly as the user left
+                    # them instead of wiping the page on return.
+                    self._hide_all_package_views()
+                    self.updates_table.set_loading(False)
+                    self._show_active_view()
+                else:
+                    self._hide_all_package_views()
+                    self.load_updates()
+            elif _installing:
+                # An install/update is running. On the origin page keep the
+                # progress spinner + console only (never re-show the table
+                # under the animation). Other pages may show their cached
+                # list; the terminal keeps working in the background.
+                if view_id != getattr(self, '_operation_view', view_id):
+                    if (getattr(self, '_table_view_owner', '') == "updates" and
+                            getattr(self, '_updates_loaded', False)):
+                        self._hide_all_package_views()
+                        self.updates_table.set_loading(False)
+                        self._show_active_view()
+                else:
+                    self._hide_all_package_views()
         elif view_id == "installed":
             try:
                 self.console_label.setVisible(False)
@@ -1857,16 +1944,55 @@ class _ViewsMixin:
                     self.console_toggle_btn.setToolTip(_("Show Console"))
             except Exception:
                 pass
+            can_restore = False
             try:
+                can_restore = (
+                    not getattr(self, '_installed_loading', False) and
+                    getattr(self, '_table_view_owner', '') == "installed" and
+                    getattr(self, '_installed_loaded', False))
+                op_active = getattr(self, '_installing', False) or hasattr(self, 'install_cancel_event')
                 self._hide_all_package_views()
-                # Match the Updates page: same table widget, checkbox design and
-                # skeleton loading state inside the table
-                self._installed_loading = True
-                self.updates_table.setVisible(True)
-                self.updates_table.set_loading(True, _("Loading packages\u2026"))
+                if can_restore:
+                    # List is already loaded and owned by this page — keep it
+                    # in place, checkboxes and scroll intact.
+                    self.updates_table.set_loading(False)
+                    self.updates_table.setVisible(True)
+                elif op_active and getattr(self, '_installed_loaded', False) and getattr(self, 'installed_all', None):
+                    # An install/update is running and may hold the pacman DB
+                    # lock; re-querying now comes back empty. Reuse the last
+                    # successfully rendered installed list (from installed_all,
+                    # never the updates dataset) instead of showing a bogus
+                    # "no installed packages" page.
+                    self.updates_table.setVisible(True)
+                    self.updates_table.set_loading(False)
+                    self._sync_installed_table(dataset=self.installed_all)
+                elif op_active:
+                    # No installed list was loaded this session. The pacman
+                    # DB may be locked by the runnning operation, so show a
+                    # calm, honest waiting state instead of an animated
+                    # skeleton (which reads as "nothing installed") or a bogus
+                    # "no installed packages" claim. The query is deferred
+                    # until the operation finishes (see
+                    # finish_installation_progress), which replaces this
+                    # placeholder with the real list automatically.
+                    self._installed_loading = True
+                    self._deferred_installed_load = True
+                    self.updates_table.setVisible(True)
+                    self.updates_table.set_loading(False)
+                    self.updates_table.set_empty_text(
+                        _("Waiting for the update to finish\u2026"),
+                        _("Installed packages will appear here automatically once it completes."))
+                    self.updates_table.set_packages([])
+                else:
+                    self._installed_loading = True
+                    self.updates_table.setVisible(True)
+                    self.updates_table.set_loading(True, _("Loading packages\u2026"))
             except Exception as e:
                 self.log(f"Error showing installed loading state: {e}")
-            self.load_installed_packages()
+            if (not can_restore and
+                    not (getattr(self, '_installing', False) and
+                         getattr(self, '_deferred_installed_load', False))):
+                self.load_installed_packages()
         elif view_id == "discover":
             self.large_search_box.setVisible(True)
             self._hide_all_package_views()
@@ -1887,6 +2013,35 @@ class _ViewsMixin:
                 self.search_input.setPlaceholderText(_("Search for packages"))
             except Exception:
                 pass
+            # Restore the previous session's Discover results (query + cached
+            # rows) instead of showing a blank page after a round-trip. The
+            # search box text was already restored above; re-render from the
+            # cached, filtered result set so it is instant and offline-safe.
+            if (self._view_search_queries.get("discover", "") and
+                    getattr(self, "filtered_results", None)):
+                self.large_search_box.setVisible(False)
+                if hasattr(self, '_greeting_label') and self._greeting_label:
+                    self._greeting_label.setVisible(False)
+                if hasattr(self, 'packages_content_area'):
+                    self.packages_content_area.setVisible(True)
+                try:
+                    if hasattr(self, 'filters_panel'):
+                        self.filters_panel.setVisible(True)
+                except Exception:
+                    pass
+                saved_check = set()
+                try:
+                    saved_check = set(self.updates_table.model.checked_names())
+                except Exception:
+                    pass
+                self.loading_context = "discover"
+                self.cancel_discover_search = True
+                self._refresh_discover_results()
+                if saved_check:
+                    try:
+                        self._restore_checked(saved_check)
+                    except Exception:
+                        pass
             # Removed verbose log: self.log("Type a package name to search in AUR and official repositories")
             # Hide console in Discover view
             try:
@@ -1901,7 +2056,7 @@ class _ViewsMixin:
                 _installing = getattr(self, "_installing", False) or hasattr(self, 'install_cancel_event')
             except Exception:
                 _installing = False
-            if _installing:
+            if (getattr(self, '_installing', False) or hasattr(self, 'install_cancel_event')) and view_id == getattr(self, '_operation_view', view_id):
                 try:
                     self.loading_widget.set_message(_("Processing..."))
                     self.loading_widget.setVisible(True)
@@ -1916,7 +2071,7 @@ class _ViewsMixin:
                 except Exception:
                     pass
                 try:
-                    self.cancel_install_btn.setVisible(True)
+                    self.cancel_install_btn.setVisible(getattr(self, '_operation_can_cancel', False))
                 except Exception:
                     pass
         elif view_id == "bundles":
@@ -2416,6 +2571,12 @@ class _ViewsMixin:
     def on_installation_progress(self, status, can_cancel):
         if status == "start":
             self._installing = True
+            # The page that started the operation owns its spinner/cancel
+            # button; navigation elsewhere hides them so no other page shows
+            # the operation's animation.
+            self._operation_view = self.current_view
+            self._operation_can_cancel = can_cancel
+            self._deferred_installed_load = False
             self.load_more_btn.setVisible(False)
             self.loading_widget.set_message(_("Processing..."))
             self.loading_widget.set_progress(-1)
@@ -2516,8 +2677,13 @@ class _ViewsMixin:
             pass
 
     def finish_installation_progress(self):
+        deferred_installed = getattr(self, '_deferred_installed_load', False)
         self._installing = False
+        self._operation_view = None
+        self._operation_can_cancel = False
+        self._deferred_installed_load = False
         self.loading_widget.setVisible(False)
+        self.cancel_install_btn.setVisible(False)
         self.loading_widget.stop_animation()
         self.loading_widget.hide_progress()
         try:
@@ -2530,6 +2696,16 @@ class _ViewsMixin:
         except Exception as e:
             self.log(f"Error restoring view after operation: {e}")
         self.update_load_more_visibility()
+        if self.current_view == "installed":
+            try:
+                # The operation changed what is installed (update/uninstall),
+                # or a load was deferred while the pacman DB was locked:
+                # refresh the Installed list now that the operation ended.
+                if deferred_installed or getattr(self, '_install_succeeded', False):
+                    self._installed_loading = True
+                    self.load_installed_packages()
+            except Exception as e:
+                self.log(f"Error refreshing installed after operation: {e}")
         if self.current_view == "discover":
             installed = getattr(self, '_installed_packages', None)
             if not installed:
@@ -2850,6 +3026,10 @@ class _ViewsMixin:
             self.updates_table.set_enrich(True)
             self.updates_table.set_packages(rows)
             self.updates_table.set_loading(False)
+            # Track which page owns the shared table so a later re-entry can
+            # restore the visible list without reloading from scratch.
+            self._table_view_owner = "updates"
+            self._updates_loaded = True
         except Exception as e:
             self.log(f"Error syncing updates table: {e}")
             self.updates_table.set_loading(False)
@@ -2918,6 +3098,13 @@ class _ViewsMixin:
                 # Initial load still in flight - keep the skeleton instead of
                 # flashing an empty state that claims nothing is installed.
                 return
+            if not mapped and (getattr(self, '_installing', False) or hasattr(self, 'install_cancel_event')):
+                # An operation is running and may hold the pacman DB lock
+                # (or a stale query already returned empty mid-update). Never
+                # replace the "waiting for the update" state with a bogus
+                # "no installed packages" claim; finish_installation_progress
+                # reloads the real list once the operation ends.
+                return
             self.updates_table.set_empty_text(
                 _("No installed packages"), _("Packages installed on this system will appear here"))
             if not mapped:
@@ -2930,6 +3117,8 @@ class _ViewsMixin:
                         _("No packages found matching '{q}'.").format(q=q), _("Try a different search term"))
             self.updates_table.set_packages(mapped)
             self.updates_table.set_loading(False)
+            self._table_view_owner = "installed"
+            self._installed_loaded = True
             try:
                 field = self.source_card.get_sort() if hasattr(self, 'source_card') and self.source_card else 'name'
                 asc = self.source_card.get_sort_asc() if hasattr(self, 'source_card') and self.source_card else True

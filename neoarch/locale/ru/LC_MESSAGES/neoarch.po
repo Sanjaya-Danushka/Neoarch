@@ -2360,3 +2360,9 @@ msgstr "Все {n} проверенных AUR-пакетов безопасны.
 
 msgid "I understand, continue"
 msgstr "Понял, продолжить"
+
+msgid "Waiting for the update to finish…"
+msgstr "Ожидание завершения обновления…"
+
+msgid "Installed packages will appear here automatically once it completes."
+msgstr "Установленные пакеты появятся здесь автоматически после завершения."

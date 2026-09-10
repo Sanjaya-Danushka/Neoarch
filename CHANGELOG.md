@@ -14,6 +14,24 @@ dialog shows after an update.
 
 Changes on the `dev` branch that will land in the next release.
 
+### Bug Fixes
+
+- Navigating between pages no longer discards the page's state. Returning to
+  **Updates**, **Installed**, or **Discover** restores your search text, the
+  displayed results, and the checked/selected packages instead of wiping the
+  page; re-entering **Updates** during a running install shows the list in
+  place (the operation keeps running in the console) rather than a blank
+  page. The install/update progress animation and its Cancel button are now
+  confined to the page where the operation started: navigating away hides
+  them, and returning to that page brings the spinner **and** the Cancel
+  button back (a previous visit to another page had left the button hidden).
+  During a running install/update the
+  **Installed** page never claims the system is empty: it reuses the last
+  loaded installed list, or shows a calm "Waiting for the update to finish"
+  message and refreshes automatically once the operation releases the
+  package database. Use the toolbar Refresh button to force a fresh data
+  reload.
+
 ### Improvements
 
 - The PKGBUILD pre-install scanner now detects byte-level command obfuscation

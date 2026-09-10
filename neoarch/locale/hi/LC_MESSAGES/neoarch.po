@@ -2360,3 +2360,9 @@ msgstr "स्कैन किए गए सभी {n} AUR पैकेज स�
 
 msgid "I understand, continue"
 msgstr "समझ गया, जारी रखें"
+
+msgid "Waiting for the update to finish…"
+msgstr "अपडेट समाप्त होने की प्रतीक्षा…"
+
+msgid "Installed packages will appear here automatically once it completes."
+msgstr "समाप्त होते ही स्थापित पैकेज यहाँ स्वतः दिखाई देंगे।"

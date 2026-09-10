@@ -2360,3 +2360,9 @@ msgstr "Taranan tüm {n} AUR paketi temiz."
 
 msgid "I understand, continue"
 msgstr "Anladım, devam et"
+
+msgid "Waiting for the update to finish…"
+msgstr "Güncellemenin bitmesi bekleniyor…"
+
+msgid "Installed packages will appear here automatically once it completes."
+msgstr "Tamamlandığında yüklü paketler otomatik olarak burada görünecek."
