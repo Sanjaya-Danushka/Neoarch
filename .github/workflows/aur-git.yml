@@ -1,8 +1,11 @@
 name: AUR - neoarch-git
 
+# Manual only: publish a neoarch-git AUR update on demand.
+# Every push to dev used to trigger this, bumping pkgver by rev-count+hash
+# on each commit (a new AUR version for every dev push).
+# Run it from the Actions tab or: gh workflow run "AUR - neoarch-git"
 on:
-  push:
-    branches: [dev]
+  workflow_dispatch:
 
 permissions:
   contents: read
