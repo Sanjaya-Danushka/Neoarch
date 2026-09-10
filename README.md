@@ -21,7 +21,32 @@
 
 ---
 
-<sup>Jump to: <kbd>App features</kbd> · <kbd>CLI reference</kbd> · [<kbd>Install</kbd>](#install) · [<kbd>Support</kbd>](#support) · [<kbd>License</kbd>](#license)</sup>
+## Quick start
+
+Install the stable release with your AUR helper:
+
+```bash
+yay -S neoarch        # or: paru -S neoarch
+```
+
+Then run it — a GUI and a CLI come together:
+
+```bash
+neoarch                # launch the desktop app (also in your app menu)
+neo --help             # scriptable CLI; try: neo search cmatrix
+```
+
+New to it? In a nutshell NeoArch lets you **search, install, and update
+packages from pacman, AUR, Flatpak, and npm in one place**, keep those
+packages clean (orphans, cache, `.pacnew` diffs), snapshot before risky
+operations, and **scan PKGBUILDs for dangerous code before you install from
+the AUR**. Full capability list under <kbd>App features</kbd>;
+the complete CLI lives under <kbd>CLI reference</kbd>,
+and dependencies/source builds are in [Install](#install) below.
+
+---
+
+<sup>Jump to: [<kbd>Quick start</kbd>](#quick-start) · <kbd>App features</kbd> · <kbd>CLI reference</kbd> · [<kbd>Install</kbd>](#install) · [<kbd>Support</kbd>](#support) · [<kbd>License</kbd>](#license)</sup>
 
 <details open>
 <summary><b>App — GUI &amp; features</b> <i>(click to view)</i></summary>
@@ -171,22 +196,32 @@ Output adapts to terminal width (tables on wide, compact lists on small), and co
 
 ## Install
 
-**Requirements:** Arch Linux · Python 3.8+ · PyQt6 · sudo.
+**Option A — AUR package (easiest, recommended)**
+
+```bash
+yay -S neoarch        # stable release — or: paru -S neoarch
+yay -S neoarch-git    # latest development build (adds neo/neoarch-cli to PATH)
+```
+
+Launch the app from your application menu or run `neoarch`; the CLI runs as `neo` (same as `neoarch-cli`). The AUR packages install the runtime dependencies for you.
+
+**Option B — from source**
+
+Requirements: Arch Linux · Python 3.8+ · PyQt6 · sudo.
 
 ```bash
 sudo pacman -S --needed python python-pyqt6 python-requests qt6-svg git flatpak nodejs npm
 python Neoarch.py
 ```
 
-AUR packages — `neoarch` is the stable release, `neoarch-git` tracks latest dev (adds `neo`/`neoarch-cli` to PATH):
+Virtual environment (avoids Arch's "externally-managed-environment" pip guard):
 
 ```bash
-yay -S neoarch        # or paru -S neoarch
-yay -S neoarch-git    # latest development build
+python -m venv .venv && source .venv/bin/activate && pip install -r requirements_pyqt.txt
+python Neoarch.py
 ```
 
-Virtual environment: `python -m venv .venv && source .venv/bin/activate && pip install -r requirements_pyqt.txt`.
-On Arch, system `pip` usually triggers "externally-managed-environment" — prefer pacman, a venv, or `pipx`.
+On Arch, system `pip` usually triggers `externally-managed-environment` — prefer pacman, a venv, or `pipx`.
 
 ---
 
