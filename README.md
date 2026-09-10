@@ -44,6 +44,8 @@ the AUR**. Full capability list under <kbd>App features</kbd>;
 the complete CLI lives under <kbd>CLI reference</kbd>,
 and dependencies/source builds are in [Install](#install) below.
 
+> **💡 Save your setup for life** — NeoArch bundles let you capture every package you love into a portable bundle. Fresh install? One click brings your entire setup back. Share bundles with friends or sync them across your machines. [Learn more → Bundles](https://github.com/Sanjaya-Danushka/Neoarch/wiki/Bundles)
+
 ---
 
 <sup>Jump to: [<kbd>Quick start</kbd>](#quick-start) · <kbd>App features</kbd> · <kbd>CLI reference</kbd> · [<kbd>Install</kbd>](#install) · [<kbd>Support</kbd>](#support) · [<kbd>License</kbd>](#license)</sup>
@@ -69,7 +71,7 @@ and dependencies/source builds are in [Install](#install) below.
 
 - **Docker manager** — pull, run, stop, clean containers; port mappings, volumes, env, GPU passthrough, restart policies.
 - **Git manager** — clone, build, update, clean; auto-detects Cargo, Autotools, Makefile, and custom builds.
-- **Bundles** — portable package bundles; export, import, install, share locally or as community bundles.
+- **Bundles** — save your favourite packages for life; export, import, install, share locally or as community bundles. Never lose your setup again.
 - **Plugin system** — 50+ built-in plugins with Python lifecycle hooks (`on_startup`, `on_tick`, `on_view_changed`) and a community store.
 - **Cloud sync** — Supabase OAuth sign-in; favorites and bundles sync across devices with exp-aware token caching.
 
