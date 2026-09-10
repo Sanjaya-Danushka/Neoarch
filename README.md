@@ -19,6 +19,9 @@
 
 > **One app for everything you install.** Search, install, update, and clean across **pacman, AUR (live search), Flatpak, and npm** — from a native PyQt6 desktop app or a headless `neo` CLI with `--json` automation.
 
+> [!NOTE]
+> **📖 Read before use** — the [Wiki](https://github.com/Sanjaya-Danushka/Neoarch/wiki) covers every feature with screenshots, tips, and a video tutorial. Start here before your first install.
+
 ---
 
 ## Quick start
