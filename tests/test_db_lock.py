@@ -1,7 +1,6 @@
 """Tests for the pacman DB lock detection helpers."""
 
 import os
-import subprocess
 
 from neoarch.backend import sys_utils
 

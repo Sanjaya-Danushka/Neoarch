@@ -766,9 +766,9 @@ class _OperationsMixin:
             self.log("Install cancelled: authentication required.")
             return
         source = pkg.get('source', 'pacman')
-        if source in ('pacman', 'AUR'):
-            if not self._db_lock_preflight(operation="Install package"):
-                return
+        if source in ('pacman', 'AUR') and not self._db_lock_preflight(
+                operation="Install package"):
+            return
         name = (pkg.get('id') or '').strip() if source == 'Flatpak' else (pkg.get('name') or '').strip()
         if not name:
             return
@@ -784,9 +784,9 @@ class _OperationsMixin:
         name = pkg.get('name') or pkg.get('id') or ''
         if not self._confirm_partial_update({source: [name]}):
             return
-        if source in ('pacman', 'AUR'):
-            if not self._db_lock_preflight(operation="Update package"):
-                return
+        if source in ('pacman', 'AUR') and not self._db_lock_preflight(
+                operation="Update package"):
+            return
         if not self.ensure_session_auth():
             self.log("Update cancelled: authentication required.")
             return
@@ -803,9 +803,9 @@ class _OperationsMixin:
                 self.plugins_manager.uninstall_by_id(self.plugins_view, plugin_id)
             return
         source = pkg.get('source', 'pacman')
-        if source in ('pacman', 'AUR'):
-            if not self._db_lock_preflight(operation="Uninstall package"):
-                return
+        if source in ('pacman', 'AUR') and not self._db_lock_preflight(
+                operation="Uninstall package"):
+            return
         if not self.ensure_session_auth():
             self.log("Uninstall cancelled: authentication required.")
             return
