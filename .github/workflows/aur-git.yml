@@ -1,10 +1,18 @@
 name: AUR - neoarch-git
 
-# Manual only: publish a neoarch-git AUR update on demand.
-# Every push to dev used to trigger this, bumping pkgver by rev-count+hash
-# on each commit (a new AUR version for every dev push).
-# Run it from the Actions tab or: gh workflow run "AUR - neoarch-git"
+# Every push to dev publishes a neoarch-git AUR update, bumping pkgver by
+# rev-count+hash (a new AUR version for each dev push).
 on:
+  push:
+    branches: [dev]
+    paths:
+      - 'neoarch/**'
+      - 'packaging/**'
+      - 'CHANGELOG.md'
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'requirements.txt'
+      - '.github/workflows/aur-git.yml'
   workflow_dispatch:
 
 permissions:
