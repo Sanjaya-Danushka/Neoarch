@@ -190,14 +190,12 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         self.setStyleSheet(DARK_STYLESHEET)
 
     def _check_release_notes(self):
-        """Show 'What's New' once after the app updates; then silently
-        check whether a newer GitHub release exists.
+        """Show 'What's New' once after the app updates.
 
         Dev preview toggles (skip the once-per-version logic):
           NEOARCH_PREVIEW_WHATS_NEW=1        force the What's New dialog
           NEOARCH_PREVIEW_UPDATE=3.2.0       force the update-available dialog
         """
-        from threading import Thread
         import os as _os
         try:
             from neoarch.resources.paths import APP_VERSION
@@ -240,55 +238,6 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
                         current_version=APP_VERSION, parent=self).exec()
                 finally:
                     self.save_settings()
-                return
-
-        if not self.settings.get('auto_check_updates', True):
-            return
-
-        def _fetch():
-            try:
-                from neoarch.backend.services.release_notes import (
-                    latest_release, version_key)
-                from neoarch.resources.paths import APP_VERSION as _version
-                info = latest_release()
-                if not info:
-                    return
-                if version_key(info['version']) <= version_key(_version):
-                    return
-                self.ui_call.emit(
-                    lambda: self._offer_update(info))
-            except Exception:
-                pass
-
-        Thread(target=_fetch, daemon=True).start()
-
-    def _offer_update(self, info):
-        """'Update available' dialog, at most once per week."""
-        import time
-        last_shown = self.settings.get('last_update_banner_ts', 0.0) or 0.0
-        now = time.time()
-        if now - float(last_shown) < 7 * 24 * 3600:
-            return
-        try:
-            from neoarch.backend.services.release_notes import (
-                parse_changelog, whats_new)
-            from neoarch.frontend.components.whats_new_dialog import (
-                WhatIsNewDialog)
-        except Exception as e:
-            self.log(f"Update check failed: {e}")
-            return
-        try:
-            blocks = whats_new(
-                parse_changelog(),
-                str(self.settings.get('last_seen_version', '') or ''),
-                limit=2)
-        except Exception:
-            blocks = []
-        try:
-            WhatIsNewDialog(blocks, mode='update', latest=info,
-                            parent=self).exec()
-        finally:
-            self.update_setting('last_update_banner_ts', now)
 
     def closeEvent(self, event):
         try:

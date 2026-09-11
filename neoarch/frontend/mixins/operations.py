@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
 
 from PyQt6.QtWidgets import QMessageBox, QLabel, QDialog
+from neoarch.frontend.tokens import Colors, Fonts, Radii
 from PyQt6.QtCore import QTimer
 
 from neoarch.backend.package import installer as install_service
@@ -152,8 +153,23 @@ class _OperationsMixin:
         else:
             dlg.setInformativeText(_("Remove the stale lock and continue?"))
         remove_btn = dlg.addButton(_("Remove Lock"), QMessageBox.ButtonRole.AcceptRole)
-        dlg.addButton(_("Cancel"), QMessageBox.ButtonRole.RejectRole)
+        cancel_btn = dlg.addButton(_("Cancel"), QMessageBox.ButtonRole.RejectRole)
         dlg.setDefaultButton(remove_btn)
+        from neoarch.frontend.styles import Styles
+        remove_btn.setStyleSheet(Styles.btn_white(
+            padding="8px 18px", size=Fonts.BASE, radius=Radii.XL))
+        cancel_btn.setStyleSheet(
+            f"QPushButton {{"
+            f" background-color: rgba(255, 255, 255, 0.06);"
+            f" color: {Colors.TEXT};"
+            f" border: 1px solid rgba(255, 255, 255, 0.1);"
+            f" border-radius: 10px; padding: 8px 18px;"
+            f" font-size: {Fonts.BASE}; font-weight: 500;"
+            f" }}"
+            f"QPushButton:hover {{"
+            f" background-color: rgba(255, 255, 255, 0.1);"
+            f" border-color: rgba(0, 191, 174, 0.4);"
+            f" }}")
         dlg.exec()
         if dlg.clickedButton() != remove_btn:
             return False
