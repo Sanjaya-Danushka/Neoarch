@@ -94,8 +94,87 @@ class _OperationsMixin:
         warn.setDefaultButton(QMessageBox.StandardButton.No)
         return warn.exec() == QMessageBox.StandardButton.Yes
 
+    def _db_lock_preflight(self, operation: str = "") -> bool:
+        """Return False and show a dialog when the pacman DB is locked.
+
+        Distinguishes three cases via ``sys_utils.check_db_lock``:
+
+        * **ours**  — this app already holds the lock (an operation is running):
+          block the request, there's no need to wait.
+        * **other** — another package manager (pacman/yay/paru in a terminal)
+          holds it: warn and let the user retry once it's done.
+        * **stale** — a leftover ``/var/lib/pacman/db.lck`` from a crash/kill:
+          offer to remove it so operations can proceed.
+
+        ``None`` (no lock) always returns True.
+        """
+        from neoarch.backend.sys_utils import check_db_lock
+
+        state = check_db_lock()
+        if state is None:
+            return True
+        status = state.get("status")
+        if status == "ours":
+            self.log("Pacman DB already locked by this app; ignoring request.")
+            return False
+        if status == "other":
+            self.show_busy_pm_warning(
+                details=(f"Lock: /var/lib/pacman/db.lck held by "
+                         f"{state.get('pid', 'another package manager')}"))
+            return False
+        if status == "stale":
+            return self._offer_stale_lock_removal(operation)
+        self.show_busy_pm_warning(
+            details=(f"Lock: /var/lib/pacman/db.lck (pid "
+                     f"{state.get('pid', 'unknown')})"))
+        return False
+
+    def _offer_stale_lock_removal(self, operation: str) -> bool:
+        """Ask whether to delete a leftover pacman DB lock and proceed.
+
+        The lock file is root-owned, so removal runs through the same
+        session-auth/sudo path as every other privileged action.
+        """
+        from neoarch.backend.sys_utils import PACMAN_DB_LOCK
+
+        dlg = QMessageBox(self)
+        dlg.setIcon(QMessageBox.Icon.Question)
+        dlg.setWindowTitle(_("Pacman Database Lock"))
+        dlg.setText(_("A stale lock file was found:\n\n"
+                      "{lock}\n\n"
+                      "No package manager is running, so this is a leftover "
+                      "from a previous interrupted operation.").format(
+                          lock=PACMAN_DB_LOCK))
+        if operation:
+            dlg.setInformativeText(_(
+                "Remove the stale lock and continue with \"{operation}\"?").format(
+                    operation=operation))
+        else:
+            dlg.setInformativeText(_("Remove the stale lock and continue?"))
+        remove_btn = dlg.addButton(_("Remove Lock"), QMessageBox.ButtonRole.AcceptRole)
+        dlg.addButton(_("Cancel"), QMessageBox.ButtonRole.RejectRole)
+        dlg.setDefaultButton(remove_btn)
+        dlg.exec()
+        if dlg.clickedButton() != remove_btn:
+            return False
+        if not self.ensure_session_auth():
+            self.log_signal.emit(
+                "Stale lock removal cancelled: authentication required.")
+            return False
+        try:
+            from neoarch.backend.session_auth import run_sudo_command
+            run_sudo_command(["rm", "-f", PACMAN_DB_LOCK])
+        except Exception as e:
+            self.log(f"Could not remove stale pacman lock: {e}")
+            self.show_busy_pm_warning(details=str(e))
+            return False
+        self.log(f"Removed stale pacman DB lock: {PACMAN_DB_LOCK}")
+        return True
+
     def sudo_install_selected(self):
         """Install selected packages with sudo privileges"""
+        if not self._db_lock_preflight(operation="Install packages"):
+            return
         packages_by_source = {}
         for row in range(self.package_table.rowCount()):
             checkbox = self.get_row_checkbox(row)
@@ -165,6 +244,8 @@ class _OperationsMixin:
 
     def perform_update_all(self):
         """Update all available packages."""
+        if not self._db_lock_preflight(operation="Update all packages"):
+            return
         upgrades = getattr(self, 'updates_all', None)
         if upgrades is not None and len(upgrades) == 0:
             self.log("No updates available.")
@@ -629,6 +710,8 @@ class _OperationsMixin:
             pass
     
     def uninstall_selected(self):
+        if not self._db_lock_preflight(operation="Uninstall packages"):
+            return
         if self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
             checked = self.updates_table.checked_packages()
             if not checked:
@@ -683,6 +766,9 @@ class _OperationsMixin:
             self.log("Install cancelled: authentication required.")
             return
         source = pkg.get('source', 'pacman')
+        if source in ('pacman', 'AUR'):
+            if not self._db_lock_preflight(operation="Install package"):
+                return
         name = (pkg.get('id') or '').strip() if source == 'Flatpak' else (pkg.get('name') or '').strip()
         if not name:
             return
@@ -698,6 +784,9 @@ class _OperationsMixin:
         name = pkg.get('name') or pkg.get('id') or ''
         if not self._confirm_partial_update({source: [name]}):
             return
+        if source in ('pacman', 'AUR'):
+            if not self._db_lock_preflight(operation="Update package"):
+                return
         if not self.ensure_session_auth():
             self.log("Update cancelled: authentication required.")
             return
@@ -713,6 +802,10 @@ class _OperationsMixin:
             if plugin_id and hasattr(self, 'plugins_manager'):
                 self.plugins_manager.uninstall_by_id(self.plugins_view, plugin_id)
             return
+        source = pkg.get('source', 'pacman')
+        if source in ('pacman', 'AUR'):
+            if not self._db_lock_preflight(operation="Uninstall package"):
+                return
         if not self.ensure_session_auth():
             self.log("Uninstall cancelled: authentication required.")
             return

@@ -2372,3 +2372,20 @@ msgstr "Esperando a que termine la actualización…"
 
 msgid "Installed packages will appear here automatically once it completes."
 msgstr "Los paquetes instalados aparecerán aquí automáticamente cuando termine."
+
+# Pacman database lock
+
+msgid "Pacman Database Lock"
+msgstr "Bloqueo de base de datos de pacman"
+
+msgid "A stale lock file was found:\n\n{lock}\n\nNo package manager is running, so this is a leftover from a previous interrupted operation."
+msgstr "Se encontró un archivo de bloqueo obsoleto:\n\n{lock}\n\nNingún gestor de paquetes está en ejecución, así que es un resto de una operación interrumpida anteriormente."
+
+msgid "Remove the stale lock and continue with \"{operation}\"?"
+msgstr "¿Eliminar el bloqueo obsoleto y continuar con \"{operation}\"?"
+
+msgid "Remove the stale lock and continue?"
+msgstr "¿Eliminar el bloqueo obsoleto y continuar?"
+
+msgid "Remove Lock"
+msgstr "Eliminar bloqueo"

@@ -363,6 +363,26 @@ def _sync_pacman_db(app):
     if not session_auth.is_session_active():
         app.log("Skipping database sync: not authenticated in this session")
         return []
+    from neoarch.backend.sys_utils import check_db_lock
+    lock = check_db_lock()
+    if lock is not None and lock.get("status") == "other":
+        try:
+            app.ui_call.emit(lambda: app.show_busy_pm_warning(
+                details="Lock: /var/lib/pacman/db.lck held by another "
+                        "package manager (pacman/yay/paru)."))
+        except Exception:
+            pass
+        app.log("Skipping database sync: pacman DB locked by another "
+                "package manager.")
+        return []
+    if lock is not None and lock.get("status") == "stale":
+        try:
+            app.ui_call.emit(lambda: app.show_busy_pm_warning(
+                details="Stale lock found: /var/lib/pacman/db.lck."))
+        except Exception:
+            pass
+        app.log("Skipping database sync: stale pacman DB lock present.")
+        return []
     try:
         app.log("Syncing package database...")
         worker = CommandWorker(

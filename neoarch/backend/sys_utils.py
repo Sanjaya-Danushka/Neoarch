@@ -14,6 +14,7 @@ __all__ = [
     "get_dependency_catalog", "get_missing_required",
     "get_missing_optional", "get_missing_dependencies",
     "get_missing_auth_tools", "check_aur_authentication_support",
+    "check_db_lock",
 ]
 
 # GUI-launched apps often inherit a trimmed PATH; probe these directly.
@@ -201,3 +202,147 @@ def check_aur_authentication_support() -> Tuple[bool, str]:
         tuple: (is_supported, message)
     """
     return True, "NeoArch uses its built-in authentication dialog."
+
+
+PACMAN_DB_LOCK = "/var/lib/pacman/db.lck"
+
+# AUR helpers and wrappers also take the pacman DB lock when they run
+# pacman underneath. A process with any of these in its argv is "another
+# package manager" holding the lock.
+_OTHER_PM_NAMES = (
+    "pacman", "yay", "paru", "trizen", "pikaur", "aur", "pamac", "octopi",
+    "pkgfile", "checkupdates", "pacaur",
+)
+
+
+def check_db_lock():
+    """Inspect the pacman DB lock and report who holds it.
+
+    Returns one of::
+
+        None                              -> no lock file present
+        {"status": "ours"}                -> lock held by this app's process
+        {"status": "other"}               -> lock held by another package manager
+        {"status": "stale"}               -> lock file exists but nobody holds it
+        {"status": "unknown", "pid": n}   -> lock file exists, holder unknown
+
+    This lets callers distinguish "pacman is legitimately busy elsewhere"
+    from "a leftover db.lck is blocking everything" (the common case after a
+    crash, a killed terminal, or a ctrl-C'd pacman).
+    """
+    if not os.path.exists(PACMAN_DB_LOCK):
+        return None
+
+    holder_pids = _lock_holder_pids()
+    if not holder_pids:
+        return {"status": "stale"}
+
+    my_pid = os.getpid()
+    if my_pid in holder_pids:
+        return {"status": "ours"}
+
+    # A child pacman spawned by us shares our identity through env/argv.
+    if _is_neoarch_child(holder_pids):
+        return {"status": "ours"}
+
+    if _holder_is_other_package_manager(holder_pids):
+        return {"status": "other"}
+
+    return {"status": "unknown", "pid": holder_pids[0]}
+
+
+def _lock_holder_pids() -> List[int]:
+    """Return PIDs currently holding the pacman DB lock (best-effort)."""
+    candidates = []
+
+    # fuser(1) is the most direct way to find lock holders.
+    if cmd_exists("fuser"):
+        try:
+            import subprocess
+            out = subprocess.run(
+                ["fuser", PACMAN_DB_LOCK],
+                capture_output=True, text=True, timeout=5,
+            )
+            for tok in out.stdout.replace(":", " ").split():
+                try:
+                    candidates.append(int(tok))
+                except ValueError:
+                    continue
+        except Exception:
+            pass
+        else:
+            if candidates:
+                return list(dict.fromkeys(candidates))
+
+    # Fallback: scan /proc for processes with the lock path open.
+    try:
+        import subprocess
+        out = subprocess.run(
+            ["lsof", PACMAN_DB_LOCK],
+            capture_output=True, text=True, timeout=5,
+        )
+        for line in out.stdout.splitlines()[1:]:
+            parts = line.split()
+            if len(parts) >= 2:
+                try:
+                    candidates.append(int(parts[1]))
+                except ValueError:
+                    continue
+    except Exception:
+        pass
+
+    return list(dict.fromkeys(candidates))
+
+
+def _is_neoarch_child(holder_pids: List[int]) -> bool:
+    """True if any lock holder is a pacman child of this app."""
+    import subprocess
+    try:
+        out = subprocess.run(
+            ["pgrep", "-P", str(os.getpid())],
+            capture_output=True, text=True, timeout=5,
+        )
+        direct_children = {
+            int(p) for p in out.stdout.split() if p.isdigit()
+        }
+    except Exception:
+        return False
+    if direct_children & set(holder_pids):
+        return True
+    # Grandchildren (pacman -> a helper script) too.
+    for pid in holder_pids:
+        if _descends_from(pid, os.getpid()):
+            return True
+    return False
+
+
+def _descends_from(pid: int, ancestor: int) -> bool:
+    """Walk /proc == pid parent chain to see if `ancestor` is an ancestor."""
+    seen = set()
+    cur = pid
+    while cur and cur not in seen:
+        seen.add(cur)
+        try:
+            with open(f"/proc/{cur}/stat", "rb") as f:
+                data = f.read()
+            ppid = int(data.split(b")")[1].split()[1])
+        except Exception:
+            return False
+        if ppid == ancestor:
+            return True
+        cur = ppid
+    return False
+
+
+def _holder_is_other_package_manager(holder_pids: List[int]) -> bool:
+    """True if a lock holder is another package manager (not this app)."""
+    for pid in holder_pids:
+        try:
+            with open(f"/proc/{pid}/cmdline", "rb") as f:
+                argv = f.read().replace(b"\x00", b" ").decode(errors="ignore")
+        except Exception:
+            continue
+        name = argv.split()[0].rsplit("/", 1)[-1] if argv.strip() else ""
+        if name in _OTHER_PM_NAMES:
+            return True
+    return False
