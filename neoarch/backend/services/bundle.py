@@ -55,7 +55,7 @@ def add_selected_to_bundle(app):
     if callable(getattr(app, 'get_checked_packages_for_view', None)):
         try:
             items = list(app.get_checked_packages_for_view())
-        except Exception:
+        except (AttributeError, RuntimeError):
             items = []
     # Legacy table fallback
     if not items:
@@ -135,12 +135,10 @@ def export_bundle(app):
         app.display_message("Export Bundle", "Bundle is empty")
         return
     default_dir = os.path.expanduser("~")
-    try:
-        autosave_path = (getattr(app, 'settings', {}) or {}).get('bundle_autosave_path')
-        if autosave_path and os.path.dirname(autosave_path):
-            default_dir = os.path.dirname(autosave_path)
-    except Exception:
-        pass
+    settings = getattr(app, 'settings', {}) or {}
+    autosave_path = settings.get('bundle_autosave_path')
+    if autosave_path and os.path.dirname(autosave_path):
+        default_dir = os.path.dirname(autosave_path)
     path, _ = QFileDialog.getSaveFileName(
         app, "Export Bundle",
         os.path.join(default_dir, "neoarch-bundle.json"),

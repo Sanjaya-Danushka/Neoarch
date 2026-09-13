@@ -551,12 +551,10 @@ class PackagesGridView(QScrollArea):
         self._emit_check_state()
 
     def _emit_check_state(self):
-        try:
-            self.check_state_changed.emit(
-                sum(1 for c in self._cards if c.is_checked()),
-                len(self._cards))
-        except Exception:
-            pass
+        """Announce how many cards are currently selected for the select-all state."""
+        self.check_state_changed.emit(
+            sum(1 for c in self._cards if c.is_checked()),
+            len(self._cards))
 
     def _on_card_clicked(self, row: int, pkg: dict):
         if row == self._selected_row:
@@ -613,6 +611,7 @@ class PackagesGridView(QScrollArea):
         self._emit_check_state()
 
     def is_all_checked(self) -> bool:
+        """True when every card is selected (or there are no cards)."""
         if not self._cards:
             return False
         return all(c.is_checked() for c in self._cards)

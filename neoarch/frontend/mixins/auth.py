@@ -1,13 +1,13 @@
 """Authentication, first-run setup, and system utility mixin."""
 
-import os
 import sys
 import subprocess
 import tempfile
 import shutil
 from threading import Thread, Event
 
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import QMessageBox
 
 from neoarch.backend import config_utils, sys_utils
@@ -169,8 +169,8 @@ class _AuthMixin:
             worker = CommandWorker(cmd, sudo=False)
             worker.output.connect(self.log)
             worker.error.connect(self.log)
-            worker.error.connect(lambda _msg: failed.__setitem__("v", True))
-            worker.finished.connect(lambda: done.set())
+            worker.error.connect(lambda _msg, failed=failed: failed.__setitem__("v", True))
+            worker.finished.connect(lambda done=done: done.set())
             worker.run()
             done.wait(timeout=300)
             if not failed["v"]:
@@ -376,8 +376,6 @@ class _AuthMixin:
     def manage_pacnew(self):
         """Show the .pacnew file manager dialog."""
         from neoarch.backend.services.hygiene import list_pacnew, diff_pacnew, accept_pacnew, delete_pacnew
-        from PyQt6.QtCore import Qt
-        from PyQt6.QtGui import QGuiApplication
         from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLabel,
                                      QListWidget, QListWidgetItem, QDialogButtonBox,
                                      QPlainTextEdit, QMessageBox, QSplitter)

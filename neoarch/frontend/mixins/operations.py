@@ -518,7 +518,11 @@ class _OperationsMixin:
             if (force or ('pacman' not in _sources) or ('AUR' not in _sources)) and (show_pacman or show_aur):
                 r = subprocess.run(["pacman", "-Qq"], capture_output=True, text=True, timeout=30)
                 if r.returncode == 0 and r.stdout:
-                    names = [pkg_line.strip() for pkg_line in r.stdout.strip().split('\n') if pkg_line.strip()]
+                    names = [
+                        pkg_line.strip()
+                        for pkg_line in r.stdout.strip().split('\n')
+                        if pkg_line.strip()
+                    ]
                     idx['pacman'].update(names)
                     idx['AUR'].update(names)
                     _sources.update(["pacman", "AUR"])
@@ -611,19 +615,17 @@ class _OperationsMixin:
         actually looking at, or grid selections are silently ignored.
         """
         if getattr(self, '_view_mode', 'table') == "grid":
-            try:
-                grid = getattr(self, 'packages_grid', None)
-                if grid is not None and hasattr(grid, 'get_checked_packages'):
+            grid = getattr(self, 'packages_grid', None)
+            if grid is not None and hasattr(grid, 'get_checked_packages'):
+                try:
                     pkgs = grid.get_checked_packages()
-                    if pkgs:
-                        return list(pkgs)
-            except Exception:
-                pass
-        try:
-            if getattr(self, 'updates_table', None) is not None:
-                return list(self.updates_table.checked_packages())
-        except Exception:
-            pass
+                except (AttributeError, RuntimeError):
+                    pkgs = []
+                if pkgs:
+                    return list(pkgs)
+        table = getattr(self, 'updates_table', None)
+        if table is not None:
+            return list(table.checked_packages())
         return []
 
     def install_selected(self):

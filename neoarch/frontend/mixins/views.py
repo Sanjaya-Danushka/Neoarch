@@ -3822,8 +3822,8 @@ class _ViewsMixin:
                 try:
                     if hasattr(self, 'updates_table') and self.updates_table:
                         all_checked = self.updates_table.model.all_installable_checked()
-                except Exception:
-                    pass
+                except (AttributeError, RuntimeError):
+                    all_checked = False
             btn.setText(_("Clear selection") if all_checked else _("Select all"))
 
     def _toggle_select_all(self):
@@ -3836,7 +3836,7 @@ class _ViewsMixin:
                 if grid is not None:
                     state = not grid.is_all_checked()
                     grid.set_all_checked(state)
-            except Exception as e:
+            except (AttributeError, RuntimeError) as e:
                 self.log(f"Select-all (grid) error: {e}")
                 return
         else:
@@ -3844,13 +3844,13 @@ class _ViewsMixin:
                 if self.updates_table is not None:
                     state = not self.updates_table.model.all_installable_checked()
                     self.updates_table.set_all_checked(state)
-            except Exception as e:
+            except (AttributeError, RuntimeError) as e:
                 self.log(f"Select-all error: {e}")
                 return
         try:
             self._update_discover_install_btn_state()
-        except Exception:
-            pass
+        except (AttributeError, RuntimeError):
+            self.log("Could not refresh the install button state")
         self.log(f"{'Selected' if state else 'Cleared'} all package results")
 
     def on_checkbox_changed(self, row, state):
