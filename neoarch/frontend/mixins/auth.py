@@ -1,5 +1,7 @@
 """Authentication, first-run setup, and system utility mixin."""
 
+import os
+import sys
 import subprocess
 import tempfile
 import shutil
@@ -107,10 +109,17 @@ class _AuthMixin:
                 self._install_pip_module("supabase")
             if ("yay or paru" in missing or "yay" in missing or "paru" in missing) and self.cmd_exists("git"):
                 self.install_aur_helper()
-            remaining = self.get_missing_dependencies()
-            self._update_dep_alert(remaining)
+            # Whatever was attempted but is still missing cannot be fixed by
+            # re-offering it — the prompt/pip loop ends here. Only the names the
+            # user actually asked to install are suppressed; untouched optional
+            # deps stay visible in Diagnostics. A fresh start re-evaluates all.
+            still_missing = self.get_missing_dependencies()
+            remaining = [n for n in missing if n in still_missing]
+            for name in remaining:
+                sys_utils.suppress_missing(name)
+            self._update_dep_alert(self.get_missing_dependencies())
             if remaining:
-                self.log(f"Still missing after setup: {', '.join(remaining)}")
+                self.log(f"Could not install: {', '.join(remaining)} (not re-offered this session)")
                 self.show_message.emit(_("Environment"), _("Dependency setup incomplete. Still missing: {list}").format(list=", ".join(remaining)))
             else:
                 self.show_message.emit(_("Environment"), _("Dependency setup completed"))
@@ -139,17 +148,34 @@ class _AuthMixin:
 
     def _install_pip_module(self, module):
         self.log(f"Installing Python module via pip: {module}")
-        done = Event()
-        failed = {"v": False}
-        worker = CommandWorker(["pip", "install", "--user", "--break-system-packages", module], sudo=False)
-        worker.output.connect(self.log)
-        worker.error.connect(self.log)
-        worker.error.connect(lambda _msg: failed.__setitem__("v", True))
-        worker.finished.connect(lambda: done.set())
-        worker.run()
-        done.wait(timeout=300)
-        if failed["v"]:
-            raise RuntimeError(f"pip install failed for: {module}")
+        # Always drive the *running* interpreter's own pip. A bare `pip` found
+        # on a GUI-launched PATH can belong to a different Python, in which
+        # case the module installs where importlib.find_spec never looks: the
+        # "success" then vanishes on the next re-check and the dependency is
+        # re-offered forever (the python-supabase loop).
+        attempts = [
+            # venv / writable user site.
+            [sys.executable, "-m", "pip", "install",
+             "--break-system-packages", module],
+            # System Python without write access to /usr: pip auto-falls back
+            # to --user if the default location is not writable, but an
+            # explicit --user is the reliable form there.
+            [sys.executable, "-m", "pip", "install",
+             "--user", "--break-system-packages", module],
+        ]
+        for cmd in attempts:
+            done = Event()
+            failed = {"v": False}
+            worker = CommandWorker(cmd, sudo=False)
+            worker.output.connect(self.log)
+            worker.error.connect(self.log)
+            worker.error.connect(lambda _msg: failed.__setitem__("v", True))
+            worker.finished.connect(lambda: done.set())
+            worker.run()
+            done.wait(timeout=300)
+            if not failed["v"]:
+                return
+        raise RuntimeError(f"pip install failed for: {module}")
 
     def install_aur_helper(self):
         tmpdir = tempfile.mkdtemp(prefix="neoarch-yay-")
@@ -350,9 +376,11 @@ class _AuthMixin:
     def manage_pacnew(self):
         """Show the .pacnew file manager dialog."""
         from neoarch.backend.services.hygiene import list_pacnew, diff_pacnew, accept_pacnew, delete_pacnew
+        from PyQt6.QtCore import Qt
+        from PyQt6.QtGui import QGuiApplication
         from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLabel,
                                      QListWidget, QListWidgetItem, QDialogButtonBox,
-                                     QPlainTextEdit, QMessageBox)
+                                     QPlainTextEdit, QMessageBox, QSplitter)
         files = list_pacnew()
         if not files:
             self.show_message.emit("Config Files", "No .pacnew files found. System is clean.")
@@ -360,7 +388,12 @@ class _AuthMixin:
 
         dlg = QDialog(self)
         dlg.setWindowTitle(_(".pacnew Files"))
-        dlg.resize(760, 520)
+        scr = QGuiApplication.primaryScreen()
+        if scr is not None:
+            geo = scr.availableGeometry()
+            dlg.resize(min(760, geo.width() - 120), min(560, geo.height() - 120))
+        else:
+            dlg.resize(760, 560)
         layout = QVBoxLayout(dlg)
 
         hint = QLabel(f"{len(files)} config files pending review. Select one to inspect the diff.")
@@ -373,12 +406,23 @@ class _AuthMixin:
             item = QListWidgetItem(label)
             item.setData(0x0100, f["path"])
             list_widget.addItem(item)
-        layout.addWidget(list_widget, 1)
 
+        # Resizable splitter between the file list and the diff preview: long
+        # diffs previously lived in a fixed 200px pane whose "very last entry"
+        # stayed hidden below the fold, even though the selection logic was
+        # fine. The pane now grows with the dialog / drag handle.
         diff_view = QPlainTextEdit()
         diff_view.setReadOnly(True)
-        diff_view.setMaximumHeight(200)
-        layout.addWidget(diff_view)
+        diff_view.setMinimumHeight(160)
+        diff_view.setPlaceholderText(_("Select a file to inspect its diff"))
+
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        splitter.addWidget(list_widget)
+        splitter.addWidget(diff_view)
+        splitter.setStretchFactor(0, 2)
+        splitter.setStretchFactor(1, 3)
+        splitter.setSizes([220, 320])
+        layout.addWidget(splitter, 1)
 
         buttons = QDialogButtonBox()
         btn_accept = buttons.addButton("Accept .pacnew", QDialogButtonBox.ButtonRole.AcceptRole)
@@ -390,6 +434,21 @@ class _AuthMixin:
             if not item:
                 return
             diff_view.setPlainText(diff_pacnew(item.data(0x0100)))
+
+        def keep_selection():
+            # After Accept/Delete the current row vanishes; move to an adjacent
+            # item (never to an out-of-range row) so the diff doesn't blank out
+            # and the last remaining entry stays reachable without reopening.
+            if list_widget.count() == 0:
+                diff_view.clear()
+                return
+            row = list_widget.currentRow()
+            if row < 0:
+                row = 0
+            elif row >= list_widget.count():
+                row = list_widget.count() - 1
+            list_widget.setCurrentRow(row)
+            show_diff()
 
         list_widget.currentItemChanged.connect(lambda *a: show_diff())
 
@@ -410,7 +469,7 @@ class _AuthMixin:
                 return
             if accept_pacnew(path):
                 list_widget.takeItem(list_widget.row(item))
-                diff_view.clear()
+                keep_selection()
                 self.show_message.emit("Config Files", "Config updated.")
                 try:
                     self._refresh_installed_health_async()
@@ -433,7 +492,7 @@ class _AuthMixin:
                 return
             if delete_pacnew(path):
                 list_widget.takeItem(list_widget.row(item))
-                diff_view.clear()
+                keep_selection()
                 self.show_message.emit("Config Files", ".pacnew file deleted.")
                 try:
                     self._refresh_installed_health_async()

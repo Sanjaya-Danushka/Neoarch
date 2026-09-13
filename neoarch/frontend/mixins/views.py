@@ -1313,6 +1313,7 @@ class _ViewsMixin:
         self.packages_grid.setVisible(False)
         self.packages_grid.card_selected.connect(self._show_detail_for_grid)
         self.packages_grid.card_cleared.connect(lambda: self.package_detail_card.clear())
+        self.packages_grid.check_state_changed.connect(self._on_table_checks_changed)
         self.packages_grid.load_more_requested.connect(self._on_grid_load_more)
         table_area_layout.addWidget(self.packages_grid, 1)
 
@@ -1576,6 +1577,30 @@ class _ViewsMixin:
             self.discover_install_btn.setVisible(False)
             self.discover_install_btn.setEnabled(False)
             layout.addWidget(self.discover_install_btn)
+
+            self._select_all_btn = QPushButton(_("Select all"))
+            self._select_all_btn.setMinimumHeight(36)
+            self._select_all_btn.setCursor(
+                Qt.CursorShape.PointingHandCursor)
+            self._select_all_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: transparent;
+                    color: {Colors.TEXT_2};
+                    border: 1px solid rgba(255,255,255,0.14);
+                    border-radius: 10px;
+                    padding: 8px 16px;
+                    font-size: {Fonts.BASE};
+                    font-weight: 600;
+                }}
+                QPushButton:hover {{
+                    color: {Colors.TEXT};
+                    background-color: rgba(255,255,255,0.06);
+                    border-color: rgba(255,255,255,0.28);
+                }}
+                QPushButton:pressed {{ background-color: rgba(255,255,255,0.1); }}
+            """)
+            self._select_all_btn.clicked.connect(self._toggle_select_all)
+            layout.addWidget(self._select_all_btn)
 
             self._greeting_label = QLabel()
             self._greeting_label.setVisible(False)
@@ -3780,14 +3805,53 @@ class _ViewsMixin:
             return
         has_checked = False
         try:
-            if hasattr(self, 'updates_table') and self.updates_table:
-                for pkg in self.updates_table.checked_packages():
-                    if not pkg.get('_installed'):
-                        has_checked = True
-                        break
+            for pkg in self.get_checked_packages_for_view():
+                if not pkg.get('_installed'):
+                    has_checked = True
+                    break
         except Exception as e:
             self.log(f"Error reading checked packages: {e}")
         self.discover_install_btn.setEnabled(has_checked)
+        btn = getattr(self, '_select_all_btn', None)
+        if btn is not None:
+            if getattr(self, '_view_mode', 'table') == "grid":
+                all_checked = bool(getattr(self, 'packages_grid', None)
+                                   and self.packages_grid.is_all_checked())
+            else:
+                all_checked = False
+                try:
+                    if hasattr(self, 'updates_table') and self.updates_table:
+                        all_checked = self.updates_table.model.all_installable_checked()
+                except Exception:
+                    pass
+            btn.setText(_("Clear selection") if all_checked else _("Select all"))
+
+    def _toggle_select_all(self):
+        """Select / clear every result on the active Discover surface."""
+        view_mode = getattr(self, '_view_mode', 'table')
+        state = True
+        if view_mode == "grid":
+            try:
+                grid = getattr(self, 'packages_grid', None)
+                if grid is not None:
+                    state = not grid.is_all_checked()
+                    grid.set_all_checked(state)
+            except Exception as e:
+                self.log(f"Select-all (grid) error: {e}")
+                return
+        else:
+            try:
+                if self.updates_table is not None:
+                    state = not self.updates_table.model.all_installable_checked()
+                    self.updates_table.set_all_checked(state)
+            except Exception as e:
+                self.log(f"Select-all error: {e}")
+                return
+        try:
+            self._update_discover_install_btn_state()
+        except Exception:
+            pass
+        self.log(f"{'Selected' if state else 'Cleared'} all package results")
 
     def on_checkbox_changed(self, row, state):
         if self._updating_selection:

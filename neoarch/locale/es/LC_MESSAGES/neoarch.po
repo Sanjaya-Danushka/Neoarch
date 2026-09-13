@@ -2389,3 +2389,14 @@ msgstr "¿Eliminar el bloqueo obsoleto y continuar?"
 
 msgid "Remove Lock"
 msgstr "Eliminar bloqueo"
+
+# .pacnew manager + Discover select-all toolbar
+
+msgid "Select a file to inspect its diff"
+msgstr "Selecciona un archivo para inspeccionar su diff"
+
+msgid "Select all"
+msgstr "Seleccionar todo"
+
+msgid "Clear selection"
+msgstr "Limpiar selección"

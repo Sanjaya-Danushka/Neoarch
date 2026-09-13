@@ -49,11 +49,14 @@ def _auto_save(app):
 def add_selected_to_bundle(app):
     """Add currently selected packages from the main table to the bundle."""
     items = []
-    # Modern table (Discover/Updates/Installed views)
-    if hasattr(app, 'updates_table') and app.updates_table and hasattr(app.updates_table, 'checked_packages'):
-        for pkg in app.updates_table.checked_packages():
-            if pkg.get("name") and pkg.get("source"):
-                items.append(pkg)
+    # Active surface first: in grid view the checks live on the cards, not in
+    # the table model — without this, Home in grid mode silently ignores every
+    # selection (the reported "can't select all / add to bundle" behavior).
+    if callable(getattr(app, 'get_checked_packages_for_view', None)):
+        try:
+            items = list(app.get_checked_packages_for_view())
+        except Exception:
+            items = []
     # Legacy table fallback
     if not items:
         for row in range(app.package_table.rowCount()):
@@ -131,15 +134,31 @@ def export_bundle(app):
     if not app.bundle_items:
         app.display_message("Export Bundle", "Bundle is empty")
         return
-    path, _ = QFileDialog.getSaveFileName(app, "Export Bundle", os.path.expanduser("~"), "Bundle JSON (*.json)")
+    default_dir = os.path.expanduser("~")
+    try:
+        autosave_path = (getattr(app, 'settings', {}) or {}).get('bundle_autosave_path')
+        if autosave_path and os.path.dirname(autosave_path):
+            default_dir = os.path.dirname(autosave_path)
+    except Exception:
+        pass
+    path, _ = QFileDialog.getSaveFileName(
+        app, "Export Bundle",
+        os.path.join(default_dir, "neoarch-bundle.json"),
+        "Bundle JSON (*.json)")
     if not path:
         return
+    if not path.lower().endswith(".json"):
+        path += ".json"
     data = {"app": "NeoArch", "items": app.bundle_items}
     try:
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2)
         app.display_message("Export Bundle", f"Saved {len(app.bundle_items)} items to {path}")
     except Exception as e:
+        app.log(f"Export bundle failed: {e}")
         app.display_message("Export Bundle", f"Failed: {e}")
 
 

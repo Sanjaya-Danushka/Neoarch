@@ -466,6 +466,7 @@ class PackagesGridView(QScrollArea):
 
     card_selected = pyqtSignal(object)
     card_cleared = pyqtSignal()
+    check_state_changed = pyqtSignal(int, int)  # (checked, total)
     load_more_requested = pyqtSignal()
 
     def __init__(self, app=None, parent=None):
@@ -538,6 +539,7 @@ class PackagesGridView(QScrollArea):
                 item.widget().deleteLater()
         self._cards.clear()
         self._sync_empty()
+        self._emit_check_state()
 
     def add_package(self, pkg: dict, row: int):
         card = PackageCard(pkg, row, self._app)
@@ -546,7 +548,15 @@ class PackagesGridView(QScrollArea):
         self._cards.append(card)
 
     def _on_card_toggled(self, row: int, state: int):
-        pass
+        self._emit_check_state()
+
+    def _emit_check_state(self):
+        try:
+            self.check_state_changed.emit(
+                sum(1 for c in self._cards if c.is_checked()),
+                len(self._cards))
+        except Exception:
+            pass
 
     def _on_card_clicked(self, row: int, pkg: dict):
         if row == self._selected_row:
@@ -595,3 +605,14 @@ class PackagesGridView(QScrollArea):
 
     def get_checked_packages(self) -> list[dict]:
         return [c.pkg for c in self._cards if c.is_checked()]
+
+    def set_all_checked(self, checked: bool) -> None:
+        """Tick/un-tick every card in the grid (select-all in grid view)."""
+        for c in self._cards:
+            c.set_checked(checked)
+        self._emit_check_state()
+
+    def is_all_checked(self) -> bool:
+        if not self._cards:
+            return False
+        return all(c.is_checked() for c in self._cards)

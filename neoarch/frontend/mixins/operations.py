@@ -406,7 +406,7 @@ class _OperationsMixin:
     def _update_selected_updates_table(self):
         """Update the packages checked in the redesigned updates table."""
         packages_by_source = {}
-        for pkg in self.updates_table.checked_packages():
+        for pkg in self.get_checked_packages_for_view():
             source = pkg.get('source') or 'pacman'
             name = (pkg.get('name') or '').strip()
             if not name:
@@ -518,7 +518,7 @@ class _OperationsMixin:
             if (force or ('pacman' not in _sources) or ('AUR' not in _sources)) and (show_pacman or show_aur):
                 r = subprocess.run(["pacman", "-Qq"], capture_output=True, text=True, timeout=30)
                 if r.returncode == 0 and r.stdout:
-                    names = [l.strip() for l in r.stdout.strip().split('\n') if l.strip()]
+                    names = [pkg_line.strip() for pkg_line in r.stdout.strip().split('\n') if pkg_line.strip()]
                     idx['pacman'].update(names)
                     idx['AUR'].update(names)
                     _sources.update(["pacman", "AUR"])
@@ -602,12 +602,36 @@ class _OperationsMixin:
         except Exception:
             return False
 
+    def get_checked_packages_for_view(self):
+        """Packages currently checked in the ACTIVE surface (grid cards or table).
+
+        The Updates table and the grid are parallel surfaces: in grid view the
+        checkboxes live on the cards, leaving the table model empty. Operation
+        handlers (install / bundle / update) must read the surface the user is
+        actually looking at, or grid selections are silently ignored.
+        """
+        if getattr(self, '_view_mode', 'table') == "grid":
+            try:
+                grid = getattr(self, 'packages_grid', None)
+                if grid is not None and hasattr(grid, 'get_checked_packages'):
+                    pkgs = grid.get_checked_packages()
+                    if pkgs:
+                        return list(pkgs)
+            except Exception:
+                pass
+        try:
+            if getattr(self, 'updates_table', None) is not None:
+                return list(self.updates_table.checked_packages())
+        except Exception:
+            pass
+        return []
+
     def install_selected(self):
         packages_by_source = {}
         if self.current_view == "discover":
             try:
                 if hasattr(self, 'updates_table') and self.updates_table:
-                    for pkg in self.updates_table.checked_packages():
+                    for pkg in self.get_checked_packages_for_view():
                         if pkg.get('_installed'):
                             continue
                         source = pkg.get('source') or 'pacman'
@@ -729,7 +753,7 @@ class _OperationsMixin:
         if not self._db_lock_preflight(operation="Uninstall packages"):
             return
         if self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
-            checked = self.updates_table.checked_packages()
+            checked = self.get_checked_packages_for_view()
             if not checked:
                 self.log("No packages selected for uninstallation")
                 return

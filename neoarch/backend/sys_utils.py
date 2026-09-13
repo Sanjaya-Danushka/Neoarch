@@ -14,8 +14,15 @@ __all__ = [
     "get_dependency_catalog", "get_missing_required",
     "get_missing_optional", "get_missing_dependencies",
     "get_missing_auth_tools", "check_aur_authentication_support",
-    "check_db_lock",
+    "check_db_lock", "suppress_missing", "clear_suppressed_missing",
 ]
+
+# Dependencies that a recent install attempt failed to fix. Re-offering the
+# same install every re-check (Diagnostics / first-run setup) loops forever
+# when pip/pacman cannot possibly succeed this session — e.g. pip targeting
+# a different interpreter, an offline source, or a broken helper. The set is
+# per-session only; a restart re-evaluates them fresh.
+_SUPPRESSED_MISSING = set()
 
 # GUI-launched apps often inherit a trimmed PATH; probe these directly.
 _GUI_FALLBACK_PATHS = [
@@ -106,10 +113,21 @@ def get_dependency_catalog() -> List[dict]:
     return cat
 
 
+def suppress_missing(name: str) -> None:
+    """Stop reporting a dependency as missing for the rest of this session."""
+    _SUPPRESSED_MISSING.add(name)
+
+
+def clear_suppressed_missing() -> None:
+    """Re-enable reporting for all previously-suppressed dependencies."""
+    _SUPPRESSED_MISSING.clear()
+
+
 def get_missing_required() -> List[str]:
     """Names of required dependencies that are missing."""
     return [d["name"] for d in get_dependency_catalog()
-            if d["required"] and not d["present"]]
+            if d["required"] and not d["present"]
+            and d["name"] not in _SUPPRESSED_MISSING]
 
 
 def fake_missing_active() -> bool:
@@ -142,7 +160,8 @@ def local_source_enabled() -> bool:
 def get_missing_optional() -> List[str]:
     """Names of optional integrations that are missing."""
     return [d["name"] for d in get_dependency_catalog()
-            if not d["required"] and not d["present"]]
+            if not d["required"] and not d["present"]
+            and d["name"] not in _SUPPRESSED_MISSING]
 
 
 def get_missing_dependencies() -> List[str]:

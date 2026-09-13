@@ -328,6 +328,19 @@ class UpdatesModel(QAbstractTableModel):
     def is_all_checked(self):
         return bool(self._pkgs) and len(self._checked) >= len(self._pkgs)
 
+    def all_installable_checked(self):
+        """True when every non-installed row is checked.
+
+        set_all_checked(True) deliberately skips installed rows, so
+        ``is_all_checked`` reads False on Discover (where installed results
+        sit among the rest). Select-all UI should toggle off
+        ``all_installable_checked`` instead, or the second click never clears.
+        """
+        installable = [p for p in self._pkgs if not p.get("_installed")]
+        if not installable:
+            return False
+        return all(self._pkg_key(p) in self._checked for p in installable)
+
     def checked_names(self):
         return set(self._checked)
 
