@@ -48,7 +48,7 @@ def is_cloud_venv_ready() -> bool:
     try:
         result = subprocess.run(
             [str(venv_python), "-c", "import supabase"],
-            capture_output=True, timeout=30,
+            capture_output=True, timeout=30, check=False,
         )
         return result.returncode == 0
     except Exception:

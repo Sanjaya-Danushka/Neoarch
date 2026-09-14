@@ -5,7 +5,7 @@ import tempfile
 import shutil
 from threading import Thread, Event
 
-from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import QMessageBox
 
