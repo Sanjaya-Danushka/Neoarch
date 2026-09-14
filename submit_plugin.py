@@ -181,7 +181,7 @@ Thank you for contributing to the NeoArch community! 🎉
         import subprocess
         open_dir = input("\n📂 Open submission directory? (y/n): ").strip().lower()
         if open_dir == 'y':
-            subprocess.run(['xdg-open', str(submission_dir)])
+            subprocess.run([shutil.which("xdg-open") or "xdg-open", str(submission_dir)])
     except Exception:
         pass
 

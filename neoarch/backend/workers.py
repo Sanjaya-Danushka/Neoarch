@@ -118,7 +118,7 @@ class CommandWorker(QObject):
             stdin=subprocess.DEVNULL,
             close_fds=True,
             text=True,
-            preexec_fn=os.setsid,
+            start_new_session=True,
             env=self.env
         )
 
