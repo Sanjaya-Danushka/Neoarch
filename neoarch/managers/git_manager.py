@@ -210,7 +210,7 @@ class GitManager(QObject):
                     self.log_signal.emit(f"Directory {clone_path} already exists. Pulling latest...")
                     r = subprocess.run(
                         [shutil.which("git") or "git", "-C", clone_path, "pull"],
-                        capture_output=True, text=True, timeout=60)
+                        capture_output=True, text=True, timeout=60, check=False)
                     if r.returncode != 0:
                         self.log_signal.emit(f"Failed to pull: {r.stderr}")
                         self.show_message.emit("Git Update Failed", r.stderr)
@@ -222,7 +222,7 @@ class GitManager(QObject):
                     self.log_signal.emit("Cloning repository...")
                     r = subprocess.run(
                         [shutil.which("git") or "git", "clone", git_url, clone_path],
-                        capture_output=True, text=True, timeout=300)
+                        capture_output=True, text=True, timeout=300, check=False)
                     if r.returncode != 0:
                         self.log_signal.emit(f"Failed to clone: {r.stderr}")
                         self.show_message.emit("Git Installation Failed", r.stderr)
@@ -233,7 +233,7 @@ class GitManager(QObject):
                             self.log_signal.emit("Detected Rust project, installing with cargo...")
                             r = subprocess.run(
                                 ["cargo" if shutil.which("cargo") is None else shutil.which("cargo"), "install", "--path", clone_path],
-                                capture_output=True, text=True, timeout=600)
+                                capture_output=True, text=True, timeout=600, check=False)
                             ok = r.returncode == 0
                             msg = "Rust package installed successfully" if ok else f"Failed: {r.stderr}"
                         elif build_sys == "Autotools":
@@ -246,7 +246,7 @@ class GitManager(QObject):
                             cmds += [["make", "-j$(nproc)"], ["sudo", "make", "install"]]
                             ok = True
                             for cmd in cmds:
-                                r = subprocess.run(cmd, cwd=clone_path, capture_output=True, text=True, timeout=600)
+                                r = subprocess.run(cmd, cwd=clone_path, capture_output=True, text=True, timeout=600, check=False)
                                 if r.returncode != 0:
                                     ok = False
                                     msg = f"Failed: {r.stderr}"
@@ -257,7 +257,7 @@ class GitManager(QObject):
                             self.log_signal.emit("Detected Makefile, building...")
                             ok = True
                             for cmd in [["make", "-j$(nproc)"], ["sudo", "make", "install"]]:
-                                r = subprocess.run(cmd, cwd=clone_path, capture_output=True, text=True, timeout=600)
+                                r = subprocess.run(cmd, cwd=clone_path, capture_output=True, text=True, timeout=600, check=False)
                                 if r.returncode != 0:
                                     ok = False
                                     msg = f"Failed: {r.stderr}"
@@ -316,7 +316,7 @@ class GitManager(QObject):
                 try:
                     r = subprocess.run(
                         [shutil.which("git") or "git", "-C", repo_path, "remote", "get-url", "origin"],
-                        capture_output=True, text=True, timeout=5)
+                        capture_output=True, text=True, timeout=5, check=False)
                     info["url"] = r.stdout.strip() if r.returncode == 0 else ""
                 except Exception:
                     info["url"] = ""
@@ -325,7 +325,7 @@ class GitManager(QObject):
                 try:
                     r = subprocess.run(
                         [shutil.which("git") or "git", "-C", repo_path, "rev-parse", "--abbrev-ref", "HEAD"],
-                        capture_output=True, text=True, timeout=5)
+                        capture_output=True, text=True, timeout=5, check=False)
                     info["branch"] = r.stdout.strip() if r.returncode == 0 else ""
                 except Exception:
                     info["branch"] = ""
@@ -334,7 +334,7 @@ class GitManager(QObject):
                 try:
                     r = subprocess.run(
                         [shutil.which("git") or "git", "-C", repo_path, "status", "--porcelain"],
-                        capture_output=True, text=True, timeout=5)
+                        capture_output=True, text=True, timeout=5, check=False)
                     modified = len([l for l in r.stdout.strip().split("\n") if l.strip()]) if r.returncode == 0 else 0
                     info["modified_count"] = modified
                 except Exception:
@@ -345,7 +345,7 @@ class GitManager(QObject):
                     r = subprocess.run(
                         [shutil.which("git") or "git", "-C", repo_path, "rev-list", "--count",
                          f"HEAD..@{{u}}"],
-                        capture_output=True, text=True, timeout=5)
+                        capture_output=True, text=True, timeout=5, check=False)
                     info["behind"] = int(r.stdout.strip()) if r.returncode == 0 else 0
                 except Exception:
                     info["behind"] = 0
@@ -354,7 +354,7 @@ class GitManager(QObject):
                 try:
                     r = subprocess.run(
                         [shutil.which("git") or "git", "-C", repo_path, "log", "-1", "--format=%ct"],
-                        capture_output=True, text=True, timeout=5)
+                        capture_output=True, text=True, timeout=5, check=False)
                     info["last_commit"] = int(r.stdout.strip()) if r.returncode == 0 else 0
                 except Exception:
                     info["last_commit"] = 0
@@ -395,7 +395,7 @@ class GitManager(QObject):
                 self.log_signal.emit(f"Updating {name}...")
                 r = subprocess.run(
                     [shutil.which("git") or "git", "-C", repo_path, "pull"],
-                    capture_output=True, text=True, timeout=60)
+                    capture_output=True, text=True, timeout=60, check=False)
                 if r.returncode == 0:
                     self.show_message.emit("Git Update Complete", f"Updated {name}")
                 else:
@@ -408,7 +408,6 @@ class GitManager(QObject):
 
     def remove_repo(self, repo_path):
         """Permanently delete a repository directory."""
-        import shutil
         try:
             shutil.rmtree(repo_path)
             self.log_signal.emit(f"Removed repository: {os.path.basename(repo_path)}")
@@ -429,7 +428,7 @@ class GitManager(QObject):
                 if build_sys == "Cargo":
                     r = subprocess.run(
                         ["cargo" if shutil.which("cargo") is None else shutil.which("cargo"), "build", "--release"],
-                        cwd=repo_path, capture_output=True, text=True, timeout=600)
+                        cwd=repo_path, capture_output=True, text=True, timeout=600, check=False)
                     success = r.returncode == 0
                     msg = "Build successful" if success else r.stderr[-500:]
                 elif build_sys == "CMake":
@@ -440,7 +439,7 @@ class GitManager(QObject):
                         ["cmake", "--build", ".", "-j$(nproc)"],
                     ]:
                         r = subprocess.run(
-                            cmd, cwd=build_dir, capture_output=True, text=True, timeout=600)
+                            cmd, cwd=build_dir, capture_output=True, text=True, timeout=600, check=False)
                         if r.returncode != 0:
                             msg = r.stderr[-500:]
                             break
@@ -454,7 +453,7 @@ class GitManager(QObject):
                         ["ninja", "-C", build_dir],
                     ]:
                         r = subprocess.run(
-                            cmd, cwd=repo_path, capture_output=True, text=True, timeout=600)
+                            cmd, cwd=repo_path, capture_output=True, text=True, timeout=600, check=False)
                         if r.returncode != 0:
                             msg = r.stderr[-500:]
                             break
@@ -464,19 +463,19 @@ class GitManager(QObject):
                 elif build_sys == "Go":
                     r = subprocess.run(
                         ["go" if shutil.which("go") is None else shutil.which("go"), "build", "./..."],
-                        cwd=repo_path, capture_output=True, text=True, timeout=600)
+                        cwd=repo_path, capture_output=True, text=True, timeout=600, check=False)
                     success = r.returncode == 0
                     msg = "Build successful" if success else r.stderr[-500:]
                 elif build_sys == "npm":
                     r = subprocess.run(
                         ["npm" if shutil.which("npm") is None else shutil.which("npm"), "run", "build"],
-                        cwd=repo_path, capture_output=True, text=True, timeout=600)
+                        cwd=repo_path, capture_output=True, text=True, timeout=600, check=False)
                     success = r.returncode == 0
                     msg = "Build successful" if success else r.stderr[-500:]
                 elif build_sys == "Make":
                     r = subprocess.run(
 ["make" if shutil.which("make") is None else shutil.which("make"), "-j$(nproc)"],
-                        cwd=repo_path, capture_output=True, text=True, timeout=600)
+                        cwd=repo_path, capture_output=True, text=True, timeout=600, check=False)
                     success = r.returncode == 0
                     msg = "Build successful" if success else r.stderr[-500:]
                 else:

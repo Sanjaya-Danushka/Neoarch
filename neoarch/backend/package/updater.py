@@ -84,7 +84,7 @@ def _clean_pacman_cache(app):
         env = get_askpass_env()
         subprocess.run(
             [shutil.which("sudo") or "sudo", "-A", "pacman", "-Sc", "--noconfirm"],
-            capture_output=True, text=True, timeout=120, env=env,
+            capture_output=True, text=True, timeout=120, env=env, check=False
         )
     except Exception:
         pass
@@ -277,7 +277,7 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                     for name in pkgs:
                         placed = False
                         try:
-                            r_user = subprocess.run([shutil.which("npm") or "npm", "ls", "-g", name, "--depth=0", "--json"], capture_output=True, text=True, env=env_user, timeout=30) if env_user else None
+                            r_user = subprocess.run([shutil.which("npm") or "npm", "ls", "-g", name, "--depth=0", "--json"], capture_output=True, text=True, env=env_user, timeout=30, check=False) if env_user else None
                             if r_user.returncode in (0, 1) and r_user.stdout:
                                 try:
                                     data = json.loads(r_user.stdout)
@@ -292,7 +292,7 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                         if placed:
                             continue
                         try:
-                            r_sys = subprocess.run([shutil.which("npm") or "npm", "ls", "-g", name, "--depth=0", "--json"], capture_output=True, text=True, timeout=30)
+                            r_sys = subprocess.run([shutil.which("npm") or "npm", "ls", "-g", name, "--depth=0", "--json"], capture_output=True, text=True, timeout=30, check=False)
                             if r_sys.returncode in (0, 1) and r_sys.stdout:
                                 try:
                                     data = json.loads(r_sys.stdout)

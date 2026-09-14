@@ -27,7 +27,7 @@ def _clean_pacman_cache(app):
         env = get_askpass_env()
         subprocess.run(
             [shutil.which("sudo") or "sudo", "-A", "pacman", "-Sc", "--noconfirm"],
-            capture_output=True, text=True, timeout=120, env=env,
+            capture_output=True, text=True, timeout=120, env=env, check=False
         )
     except Exception:
         pass

@@ -38,7 +38,7 @@ NEWS_CACHE_MAX_AGE = 60 * 60  # 1 hour
 def _run(cmd: List[str], timeout: int = 60) -> subprocess.CompletedProcess:
     """Run a command without elevation, tolerating failures."""
     try:
-        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False)
     except Exception:
         return subprocess.CompletedProcess(cmd, 1, "", "")
 
@@ -51,7 +51,7 @@ def _run_sudo(cmd: List[str], timeout: int = 600) -> subprocess.CompletedProcess
         from neoarch.backend.auth import get_askpass_env
         env = get_askpass_env()
     try:
-        return subprocess.run(auth + cmd, capture_output=True, text=True, timeout=timeout, env=env)
+        return subprocess.run(auth + cmd, capture_output=True, text=True, timeout=timeout, env=env, check=False)
     except Exception:
         return subprocess.CompletedProcess(auth + cmd, 1, "", "")
 
@@ -147,7 +147,7 @@ def _pacnew_info(path: str) -> Dict:
     try:
         result = subprocess.run(
             [shutil.which("pacman") or "pacman", "-Qo", original],
-            capture_output=True, text=True, timeout=10)
+            capture_output=True, text=True, timeout=10, check=False)
         if result.returncode == 0:
             match = re.match(r"^([^\s]+)", result.stdout.strip())
             if match:
@@ -162,7 +162,7 @@ def diff_pacnew(path: str) -> str:
     info = _pacnew_info(path)
     result = subprocess.run(
         [shutil.which("diff") or "diff", "-u", info["original"], path],
-        capture_output=True, text=True, timeout=30)
+        capture_output=True, text=True, timeout=30, check=False)
     if result.returncode == 0:
         return "(no differences)"
     return result.stdout or result.stderr or "(unable to diff)"
@@ -236,7 +236,7 @@ def merge_pacnew(path: str, accept: bool = False) -> Dict:
     try:
         result = subprocess.run(
             [shutil.which("diff3") or "diff3", "-m", tmp_ours, tmp_base, tmp_theirs],
-            capture_output=True, text=True, timeout=30)
+            capture_output=True, text=True, timeout=30, check=False)
         merged = result.stdout
         conflicts = result.returncode != 0  # 1 = conflicts, 2 = trouble
     finally:

@@ -72,7 +72,7 @@ def _installed() -> List[str]:
     import subprocess
     try:
         result = subprocess.run([shutil.which("pacman") or "pacman", "-Qq"], capture_output=True,
-                                text=True, timeout=30)
+                                text=True, timeout=30, check=False)
         if result.returncode != 0:
             return []
         return [line.strip() for line in result.stdout.splitlines() if line.strip()]

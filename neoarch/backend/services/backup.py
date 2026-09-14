@@ -52,7 +52,7 @@ def get_filesystem_type() -> str:
     try:
         result = subprocess.run(
             [shutil.which("findmnt") or "findmnt", "-n", "-o", "FSTYPE", "/"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True, text=True, timeout=10, check=False
         )
         return result.stdout.strip() or "unknown"
     except Exception:
@@ -66,7 +66,7 @@ def _btrfs_root_subvolume() -> Optional[str]:
     try:
         result = subprocess.run(
             [shutil.which("findmnt") or "findmnt", "-n", "-o", "TARGET", "/"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True, text=True, timeout=10, check=False
         )
         if result.returncode != 0:
             return None
@@ -84,7 +84,7 @@ def _run_sudo(cmd: List[str], timeout: int = 300) -> subprocess.CompletedProcess
     else:
         env = None
     full = auth + cmd
-    return subprocess.run(full, capture_output=True, text=True, timeout=timeout, env=env)
+    return subprocess.run(full, capture_output=True, text=True, timeout=timeout, env=env, check=False)
 
 
 def _export_package_list() -> Dict:
@@ -93,7 +93,7 @@ def _export_package_list() -> Dict:
 
     def _cmd(cmd: List[str]) -> List[str]:
         try:
-            r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            r = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=False)
             return [l.strip() for l in r.stdout.splitlines() if l.strip()]
         except Exception:
             return []

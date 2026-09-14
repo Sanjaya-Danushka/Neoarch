@@ -162,7 +162,7 @@ class _AuthMixin:
         tmpdir = tempfile.mkdtemp(prefix="neoarch-yay-")
         try:
             self.log("Installing yay AUR helper...")
-            clone = subprocess.run([shutil.which("git") or "git", "clone", "https://aur.archlinux.org/yay-bin.git", tmpdir], capture_output=True, text=True, timeout=120)
+            clone = subprocess.run([shutil.which("git") or "git", "clone", "https://aur.archlinux.org/yay-bin.git", tmpdir], capture_output=True, text=True, timeout=120, check=False)
             if clone.returncode != 0:
                 self.log(f"Error: {clone.stderr}")
                 return

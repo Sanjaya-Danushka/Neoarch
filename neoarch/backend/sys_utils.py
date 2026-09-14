@@ -361,7 +361,7 @@ def _lock_holder_pids() -> List[int]:
             import subprocess
             out = subprocess.run(
                 [shutil.which("fuser") or "fuser", PACMAN_DB_LOCK],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True, text=True, timeout=5, check=False
             )
             for tok in out.stdout.replace(":", " ").split():
                 try:
@@ -379,7 +379,7 @@ def _lock_holder_pids() -> List[int]:
         import subprocess
         out = subprocess.run(
             [shutil.which("lsof") or "lsof", PACMAN_DB_LOCK],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True, text=True, timeout=5, check=False
         )
         for line in out.stdout.splitlines()[1:]:
             parts = line.split()
@@ -400,7 +400,7 @@ def _is_neoarch_child(holder_pids: List[int]) -> bool:
     try:
         out = subprocess.run(
             [shutil.which("pgrep") or "pgrep", "-P", str(os.getpid())],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True, text=True, timeout=5, check=False
         )
         direct_children = {
             int(p) for p in out.stdout.split() if p.isdigit()

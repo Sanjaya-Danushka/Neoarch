@@ -187,7 +187,7 @@ class _EnrichWorker(QObject):
             try:
                 r = subprocess.run(
                     ["pacman", "-Si"] + pacman_names,
-                    capture_output=True, text=True, timeout=120,
+                    capture_output=True, text=True, timeout=120, check=False
                 )
                 if r.stdout:
                     section = {}

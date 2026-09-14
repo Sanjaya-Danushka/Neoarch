@@ -37,10 +37,10 @@ def create_snapshot(app):
 
     def do_create():
         try:
-            timestamp = subprocess.run([shutil.which("date") or "date", "+%Y-%m-%d_%H-%M-%S"], capture_output=True, text=True).stdout.strip()
+            timestamp = subprocess.run([shutil.which("date") or "date", "+%Y-%m-%d_%H-%M-%S"], capture_output=True, text=True, check=False).stdout.strip()
             comment = f"NeoArch manual snapshot {timestamp}"
             result = subprocess.run(get_auth_command() + ["timeshift", "--create", "--comments", comment],
-                                    capture_output=True, text=True, timeout=300)
+                                    capture_output=True, text=True, timeout=300, check=False)
             if result.returncode == 0:
                 app.show_message.emit("Snapshot", f"Snapshot created successfully: {comment}")
             else:
@@ -63,7 +63,7 @@ def revert_to_snapshot(app):
                             "Timeshift is not installed.")
         return
     try:
-        result = subprocess.run([shutil.which("timeshift") or "timeshift", "--list"], capture_output=True, text=True, timeout=30)
+        result = subprocess.run([shutil.which("timeshift") or "timeshift", "--list"], capture_output=True, text=True, timeout=30, check=False)
         if result.returncode != 0:
             QMessageBox.warning(app, "No Snapshots", "No snapshots found or Timeshift error.")
             return
@@ -120,10 +120,10 @@ def restore_snapshot(app, snapshot_num):
     def do_restore():
         try:
             result = subprocess.run(get_auth_command() + ["timeshift", "--restore", "--snapshot", snapshot_num],
-                                    capture_output=True, text=True, timeout=600)
+                                    capture_output=True, text=True, timeout=600, check=False)
             if result.returncode == 0:
                 app.show_message.emit("Snapshot", "Snapshot restoration initiated. System will reboot.")
-                QTimer.singleShot(3000, lambda: subprocess.run(["reboot"] if _is_rooted() else get_auth_command() + ["reboot"], env=get_askpass_env()))
+                QTimer.singleShot(3000, lambda: subprocess.run(["reboot"] if _is_rooted() else get_auth_command() + ["reboot"], env=get_askpass_env(), check=False))
             else:
                 app.show_message.emit("Snapshot", f"Failed to restore snapshot: {result.stderr}")
         except Exception as e:
@@ -157,7 +157,7 @@ def delete_snapshots(app):
     def do_delete():
         try:
             result = subprocess.run(get_auth_command() + ["timeshift", "--delete-all", "--skip", "2"],
-                                    capture_output=True, text=True, timeout=300)
+                                    capture_output=True, text=True, timeout=300, check=False)
             if result.returncode == 0:
                 app.show_message.emit("Snapshot", "Old snapshots deleted successfully")
             else:

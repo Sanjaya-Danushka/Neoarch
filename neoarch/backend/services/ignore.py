@@ -25,7 +25,7 @@ class IgnoredMetaWorker(QObject):
     def run(self):
         installed = {}
         try:
-            r = subprocess.run([shutil.which("pacman") or "pacman", "-Q"], capture_output=True, text=True, timeout=20)
+            r = subprocess.run([shutil.which("pacman") or "pacman", "-Q"], capture_output=True, text=True, timeout=20, check=False)
             if r.returncode == 0 and r.stdout:
                 for ln in r.stdout.strip().split('\n'):
                     ps = ln.split()
@@ -35,7 +35,7 @@ class IgnoredMetaWorker(QObject):
             pass
         aur_set = set()
         try:
-            r = subprocess.run([shutil.which("pacman") or "pacman", "-Qm"], capture_output=True, text=True, timeout=10)
+            r = subprocess.run([shutil.which("pacman") or "pacman", "-Qm"], capture_output=True, text=True, timeout=10, check=False)
             if r.returncode == 0 and r.stdout:
                 for ln in r.stdout.strip().split('\n'):
                     ps = ln.split()
@@ -45,7 +45,7 @@ class IgnoredMetaWorker(QObject):
             pass
         new_versions = {}
         try:
-            r = subprocess.run([shutil.which("pacman") or "pacman", "-Qu"], capture_output=True, text=True, timeout=20)
+            r = subprocess.run([shutil.which("pacman") or "pacman", "-Qu"], capture_output=True, text=True, timeout=20, check=False)
             if r.returncode == 0 and r.stdout:
                 for ln in r.stdout.strip().split('\n'):
                     if ' -> ' in ln:
@@ -55,7 +55,7 @@ class IgnoredMetaWorker(QObject):
         except Exception:
             pass
         try:
-            r = subprocess.run([shutil.which("yay") or "yay", "-Qua"], capture_output=True, text=True, timeout=20)
+            r = subprocess.run([shutil.which("yay") or "yay", "-Qua"], capture_output=True, text=True, timeout=20, check=False)
             if r.returncode == 0 and r.stdout:
                 for ln in r.stdout.strip().split('\n'):
                     if ' -> ' in ln:

@@ -434,12 +434,12 @@ class _ViewsMixin:
         try:
             result = subprocess.run([
                 shutil.which("flatpak") or "flatpak", "--user", "remotes"
-            ], capture_output=True, text=True, timeout=10)
+            ], capture_output=True, text=True, timeout=10, check=False)
             if result.returncode != 0 or "flathub" not in (result.stdout or ""):
                 subprocess.run([
                     shutil.which("flatpak") or "flatpak", "--user", "remote-add", "--if-not-exists",
                     "flathub", "https://flathub.org/repo/flathub.flatpakrepo"
-                ], capture_output=True, text=True, timeout=30)
+                ], capture_output=True, text=True, timeout=30, check=False)
         except Exception as e:
             self.log(f"Flathub remote setup failed: {e}")
         self._flathub_checked = True
@@ -788,7 +788,7 @@ class _ViewsMixin:
             env = self.get_askpass_env()
             try:
                 result = subprocess.run(cmd, capture_output=True, text=True,
-                                        timeout=600, env=env)
+                                        timeout=600, env=env, check=False)
             except Exception as e:
                 result = subprocess.CompletedProcess(cmd, 1, "", str(e))
             finally:
@@ -879,7 +879,7 @@ class _ViewsMixin:
                 self.log(f"{label}...")
                 self._show_operation_spinner(label)
                 env = self.get_askpass_env()
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300, env=env)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300, env=env, check=False)
                 if result.returncode == 0:
                     self.log(f"{label}: done")
                     self.refresh_packages()
@@ -3755,7 +3755,7 @@ class _ViewsMixin:
                 if source == 'Flatpak':
                     r = subprocess.run(
                         [shutil.which("flatpak") or "flatpak", "remote-ls", "--updates", name],
-                        capture_output=True, text=True, timeout=30
+                        capture_output=True, text=True, timeout=30, check=False
                     )
                     check_ok = True
                     has_updates = r.returncode == 0 and bool(r.stdout.strip())
@@ -3766,7 +3766,7 @@ class _ViewsMixin:
                 else:
                     r = subprocess.run(
                         [shutil.which("pacman") or "pacman", "-Qu", name],
-                        capture_output=True, text=True, timeout=30
+                        capture_output=True, text=True, timeout=30, check=False
                     )
                     check_ok = True
                     has_updates = r.returncode == 0 and bool(r.stdout.strip())

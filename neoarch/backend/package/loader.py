@@ -24,7 +24,7 @@ __all__ = ["load_updates", "load_installed_packages"]
 
 def _run_cmd(cmd, timeout=60, env=None):
     try:
-        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env, check=False)
     except FileNotFoundError:
         return None
     except Exception:
@@ -506,7 +506,7 @@ def load_updates(app):
                                 installed = (e.get('installed_version') or '').strip()
                                 if not installed and e.get('installed_version_cmd'):
                                     try:
-                                        r = subprocess.run([shutil.which("bash") or "bash", "-lc", e['installed_version_cmd']], capture_output=True, text=True, timeout=30)
+                                        r = subprocess.run([shutil.which("bash") or "bash", "-lc", e['installed_version_cmd']], capture_output=True, text=True, timeout=30, check=False)
                                         if r.returncode == 0:
                                             installed = (r.stdout or '').strip().splitlines()[0].strip()
                                     except Exception:
@@ -514,7 +514,7 @@ def load_updates(app):
                                 latest = (e.get('latest_version') or '').strip()
                                 if not latest and e.get('latest_version_cmd'):
                                     try:
-                                        r = subprocess.run([shutil.which("bash") or "bash", "-lc", e['latest_version_cmd']], capture_output=True, text=True, timeout=30)
+                                        r = subprocess.run([shutil.which("bash") or "bash", "-lc", e['latest_version_cmd']], capture_output=True, text=True, timeout=30, check=False)
                                         if r.returncode == 0:
                                             latest = (r.stdout or '').strip().splitlines()[0].strip()
                                     except Exception:
@@ -867,7 +867,7 @@ def load_installed_packages(app):
                     installed = (e.get('installed_version') or '').strip()
                     if not installed and e.get('installed_version_cmd'):
                         try:
-                            r = subprocess.run([shutil.which("bash") or "bash", "-lc", e['installed_version_cmd']], capture_output=True, text=True, timeout=30)
+                            r = subprocess.run([shutil.which("bash") or "bash", "-lc", e['installed_version_cmd']], capture_output=True, text=True, timeout=30, check=False)
                             if r.returncode == 0 and r.stdout:
                                 installed = (r.stdout or '').strip().splitlines()[0].strip()
                         except Exception:
@@ -875,7 +875,7 @@ def load_installed_packages(app):
                     latest = (e.get('latest_version') or '').strip()
                     if not latest and e.get('latest_version_cmd'):
                         try:
-                            r = subprocess.run([shutil.which("bash") or "bash", "-lc", e['latest_version_cmd']], capture_output=True, text=True, timeout=30)
+                            r = subprocess.run([shutil.which("bash") or "bash", "-lc", e['latest_version_cmd']], capture_output=True, text=True, timeout=30, check=False)
                             if r.returncode == 0 and r.stdout:
                                 latest = (r.stdout or '').strip().splitlines()[0].strip()
                         except Exception:

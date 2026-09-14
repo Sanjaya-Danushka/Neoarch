@@ -403,7 +403,7 @@ class LargeSearchBox(QWidget):
         def _run():
             installed_count = 0
             try:
-                r = subprocess.run([shutil.which("pacman") or "pacman", "-Q"], capture_output=True, text=True, timeout=3)
+                r = subprocess.run([shutil.which("pacman") or "pacman", "-Q"], capture_output=True, text=True, timeout=3, check=False)
                 if r.returncode == 0:
                     installed_count = len([l for l in r.stdout.strip().split("\n") if l.strip()])
             except Exception:
@@ -414,7 +414,7 @@ class LargeSearchBox(QWidget):
                 updates_count = len(cached_updates)
             else:
                 try:
-                    r = subprocess.run([shutil.which("checkupdates") or "checkupdates"], capture_output=True, text=True, timeout=5)
+                    r = subprocess.run([shutil.which("checkupdates") or "checkupdates"], capture_output=True, text=True, timeout=5, check=False)
                     if r.returncode == 0 and r.stdout.strip():
                         updates_count = len(r.stdout.strip().split("\n"))
                 except Exception:
@@ -424,7 +424,7 @@ class LargeSearchBox(QWidget):
             for cmd in (["which", "yay", "paru"], ["flatpak", "list"],
                         ["which", "npm"], ["which", "docker"]):
                 try:
-                    r = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
+                    r = subprocess.run(cmd, capture_output=True, text=True, timeout=2, check=False)
                     if r.returncode == 0 and r.stdout.strip():
                         sources_count += 1
                 except Exception:

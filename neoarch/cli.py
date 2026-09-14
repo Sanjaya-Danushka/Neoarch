@@ -358,7 +358,7 @@ def _run(cmd: List[str], timeout: int = 600, sudo: bool = False, check: bool = F
     """Run a command, optionally elevated, with captured output."""
     full = (["sudo"] if sudo else []) + cmd
     try:
-        result = subprocess.run(full, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(full, capture_output=True, text=True, timeout=timeout, check=False)
     except FileNotFoundError:
         print(f"error: command not found: {cmd[0]}", file=sys.stderr)
         return subprocess.CompletedProcess(full, 127, "", "")
@@ -374,7 +374,7 @@ def _stream(cmd: List[str], sudo: bool = False, check: bool = False) -> int:
     full = (["sudo"] if sudo else []) + cmd
     print(f"[neoarch] $ {' '.join(full)}", file=sys.stderr)
     try:
-        result = subprocess.run(full)
+        result = subprocess.run(full, check=False)
         if check and result.returncode != 0:
             sys.exit(result.returncode)
         return result.returncode

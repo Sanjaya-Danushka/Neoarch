@@ -233,12 +233,12 @@ class _IconsMixin:
         try:
             result = subprocess.run([
                 shutil.which("flatpak") or "flatpak", "--user", "remotes"
-            ], capture_output=True, text=True, timeout=10)
+            ], capture_output=True, text=True, timeout=10, check=False)
             if result.returncode != 0 or "flathub" not in (result.stdout or ""):
                 subprocess.run([
                     shutil.which("flatpak") or "flatpak", "--user", "remote-add", "--if-not-exists",
                     "flathub", "https://flathub.org/repo/flathub.flatpakrepo"
-                ], capture_output=True, text=True, timeout=30)
+                ], capture_output=True, text=True, timeout=30, check=False)
         except Exception:
             pass
         try:
