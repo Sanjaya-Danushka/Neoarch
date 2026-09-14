@@ -6,7 +6,10 @@ and required system dependencies.
 
 import shutil
 import os
+import sys
+import subprocess
 import importlib.util
+from pathlib import Path
 from typing import List, Tuple, Optional
 
 __all__ = [
@@ -15,6 +18,7 @@ __all__ = [
     "get_missing_optional", "get_missing_dependencies",
     "get_missing_auth_tools", "check_aur_authentication_support",
     "check_db_lock", "suppress_missing", "clear_suppressed_missing",
+    "ensure_cloud_venv", "is_cloud_venv_ready", "add_cloud_venv_to_path",
 ]
 
 # Dependencies that a recent install attempt failed to fix. Re-offering the
@@ -29,6 +33,76 @@ _GUI_FALLBACK_PATHS = [
     "/usr/local/bin", "/usr/bin", "/bin",
     "/usr/local/sbin", "/usr/sbin", "/sbin",
 ]
+
+# App-owned virtualenv for cloud-sync dependencies (supabase + httpx).
+# Kept isolated from system site-packages to avoid PEP 668 conflicts
+# (supabase pins httpx<0.26 while Arch ships httpx>=0.28).
+CLOUD_VENV_DIR = Path.home() / ".local/share/neoarch/venv"
+
+
+def is_cloud_venv_ready() -> bool:
+    """Check if the cloud venv exists and has supabase installed."""
+    venv_python = CLOUD_VENV_DIR / "bin" / "python"
+    if not venv_python.exists():
+        return False
+    try:
+        result = subprocess.run(
+            [str(venv_python), "-c", "import supabase"],
+            capture_output=True, timeout=30,
+        )
+        return result.returncode == 0
+    except Exception:
+        return False
+
+
+def ensure_cloud_venv(log_fn=None) -> None:
+    """Create the app venv and install supabase if not already present.
+
+    Raises RuntimeError on failure so the caller can decide how to handle it.
+
+    Args:
+        log_fn: Optional callable for progress messages (str -> None).
+    """
+    if is_cloud_venv_ready():
+        return
+
+    if log_fn:
+        log_fn("Creating cloud-sync virtual environment...")
+
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "venv", str(CLOUD_VENV_DIR)],
+            check=True, capture_output=True, timeout=60,
+        )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Failed to create venv: {e.stderr.decode(errors='ignore')}") from e
+    except subprocess.TimeoutExpired as e:
+        raise RuntimeError("Venv creation timed out") from e
+
+    venv_pip = CLOUD_VENV_DIR / "bin" / "pip"
+    if log_fn:
+        log_fn("Installing supabase in virtual environment...")
+
+    try:
+        subprocess.run(
+            [str(venv_pip), "install", "--quiet", "supabase"],
+            check=True, capture_output=True, timeout=180,
+        )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"pip install supabase failed: {e.stderr.decode(errors='ignore')}") from e
+    except subprocess.TimeoutExpired as e:
+        raise RuntimeError("pip install supabase timed out") from e
+
+    if not is_cloud_venv_ready():
+        raise RuntimeError("Venv created but supabase import still fails")
+
+
+def add_cloud_venv_to_path() -> None:
+    """Add the cloud venv's site-packages to sys.path if available."""
+    import glob
+    for sp in sorted(glob.glob(str(CLOUD_VENV_DIR / "lib" / "python*" / "site-packages"))):
+        if sp not in sys.path:
+            sys.path.insert(0, sp)
 
 
 def cmd_exists(cmd: str) -> bool:
@@ -98,12 +172,14 @@ def get_dependency_catalog() -> List[dict]:
 
     python_mods = {
         "keyring": ("python-keyring", "Saving sudo password"),
-        "httpx": ("python-httpx", "Cloud sync"),
-        "supabase": ("python-supabase", "Cloud sync"),
     }
     for module, (pkg, feature) in python_mods.items():
         add(pkg, pkg, False, feature,
             importlib.util.find_spec(module) is not None)
+
+    # Cloud sync: supabase lives in an app-owned venv (PEP 668 safe).
+    add("python-supabase", "python-supabase", False, "Cloud sync",
+        is_cloud_venv_ready())
 
     # Test hook: NEOARCH_FAKE_MISSING="a,b" simulates absent dependencies
     fake = os.environ.get("NEOARCH_FAKE_MISSING", "")

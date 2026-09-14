@@ -144,3 +144,53 @@ class TestAURHelperIntegration:
         assert helper is None or isinstance(helper, str)
         if helper:
             assert helper in ['yay', 'paru', 'trizen', 'pikaur']
+
+
+class TestCloudVenv:
+    """Test app-owned virtualenv for cloud sync dependencies."""
+
+    @pytest.mark.unit
+    def test_is_cloud_venv_ready_returns_false_without_venv(self, tmp_path, monkeypatch):
+        """Returns False when no venv exists."""
+        monkeypatch.setattr(sys_utils, "CLOUD_VENV_DIR", tmp_path / "no_venv")
+        assert sys_utils.is_cloud_venv_ready() is False
+
+    @pytest.mark.unit
+    def test_ensure_cloud_venv_skips_when_ready(self, monkeypatch):
+        """ensure_cloud_venv does nothing if already ready."""
+        called = False
+
+        def fake_ready():
+            return True
+
+        def fake_run(*a, **kw):
+            nonlocal called
+            called = True
+            raise AssertionError("subprocess should not be called")
+
+        monkeypatch.setattr(sys_utils, "is_cloud_venv_ready", fake_ready)
+        monkeypatch.setattr(sys_utils.subprocess, "run", fake_run)
+        sys_utils.ensure_cloud_venv()
+        assert called is False
+
+    @pytest.mark.unit
+    def test_add_cloud_venv_to_path_with_venv(self, tmp_path, monkeypatch):
+        """add_cloud_venv_to_path inserts venv site-packages."""
+        venv_sp = tmp_path / "lib" / "python3.11" / "site-packages"
+        venv_sp.mkdir(parents=True)
+        monkeypatch.setattr(sys_utils, "CLOUD_VENV_DIR", tmp_path)
+        import sys
+        before = len(sys.path)
+        sys_utils.add_cloud_venv_to_path()
+        assert len(sys.path) == before + 1
+        assert str(venv_sp) in sys.path
+        sys.path.remove(str(venv_sp))
+
+    @pytest.mark.unit
+    def test_add_cloud_venv_to_path_no_venv(self, tmp_path, monkeypatch):
+        """add_cloud_venv_to_path is a no-op when venv dir is missing."""
+        monkeypatch.setattr(sys_utils, "CLOUD_VENV_DIR", tmp_path / "no_venv")
+        import sys
+        before = list(sys.path)
+        sys_utils.add_cloud_venv_to_path()
+        assert sys.path == before

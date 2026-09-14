@@ -1,6 +1,5 @@
 """Authentication, first-run setup, and system utility mixin."""
 
-import sys
 import subprocess
 import tempfile
 import shutil
@@ -106,7 +105,7 @@ class _AuthMixin:
             if pacman_pkgs:
                 self._run_sudo_install(pacman_pkgs)
             if "python-supabase" in missing:
-                self._install_pip_module("supabase")
+                self._install_cloud_venv()
             if ("yay or paru" in missing or "yay" in missing or "paru" in missing) and self.cmd_exists("git"):
                 self.install_aur_helper()
             # Whatever was attempted but is still missing cannot be fixed by
@@ -146,36 +145,18 @@ class _AuthMixin:
         if failed["v"]:
             raise RuntimeError(f"pacman install failed for: {', '.join(packages)}")
 
-    def _install_pip_module(self, module):
-        self.log(f"Installing Python module via pip: {module}")
-        # Always drive the *running* interpreter's own pip. A bare `pip` found
-        # on a GUI-launched PATH can belong to a different Python, in which
-        # case the module installs where importlib.find_spec never looks: the
-        # "success" then vanishes on the next re-check and the dependency is
-        # re-offered forever (the python-supabase loop).
-        attempts = [
-            # venv / writable user site.
-            [sys.executable, "-m", "pip", "install",
-             "--break-system-packages", module],
-            # System Python without write access to /usr: pip auto-falls back
-            # to --user if the default location is not writable, but an
-            # explicit --user is the reliable form there.
-            [sys.executable, "-m", "pip", "install",
-             "--user", "--break-system-packages", module],
-        ]
-        for cmd in attempts:
-            done = Event()
-            failed = {"v": False}
-            worker = CommandWorker(cmd, sudo=False)
-            worker.output.connect(self.log)
-            worker.error.connect(self.log)
-            worker.error.connect(lambda _msg, failed=failed: failed.__setitem__("v", True))
-            worker.finished.connect(lambda done=done: done.set())
-            worker.run()
-            done.wait(timeout=300)
-            if not failed["v"]:
-                return
-        raise RuntimeError(f"pip install failed for: {module}")
+    def _install_cloud_venv(self):
+        """Set up the app-owned venv hosting supabase for cloud sync.
+
+        supabase pins httpx<0.26 while Arch ships httpx>=0.28, so it must NOT
+        land in user site-packages — that would shadow pacman-owned httpx for
+        every Python program under this user. An isolated app venv keeps the
+        pinned dependency graph out of the system interpreter entirely.
+        """
+        self.log("Setting up cloud sync (supabase) in an app virtual environment...")
+        sys_utils.ensure_cloud_venv(log_fn=self.log)
+        if not sys_utils.is_cloud_venv_ready():
+            raise RuntimeError("supabase did not become importable in the app venv")
 
     def install_aur_helper(self):
         tmpdir = tempfile.mkdtemp(prefix="neoarch-yay-")

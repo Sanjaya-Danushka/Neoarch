@@ -21,6 +21,13 @@ SUPABASE_ANON_KEY = "sb_publishable_IlIXtZ8W3lnrkGli9TXVRA_XrrzIOPH"
 # Default — overridden at runtime if cloud_website_url is in settings.json
 DEFAULT_WEBSITE_URL = "https://neoarch.dpdns.org"
 
+# Ensure the cloud venv's site-packages is importable before the supabase
+# import below. supabase lives in an app-owned venv (PEP 668 safe), so its
+# pinned httpx never leaks into system site-packages.
+from neoarch.backend.sys_utils import add_cloud_venv_to_path
+
+add_cloud_venv_to_path()
+
 try:
     from supabase import create_client, ClientOptions, Client as SupabaseClient
 except ImportError:
