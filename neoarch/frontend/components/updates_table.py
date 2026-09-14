@@ -378,7 +378,8 @@ class UpdatesModel(QAbstractTableModel):
             if changed:
                 self.dataChanged.emit(self.index(row, 1), self.index(row, 3))
 
-    def _sort_key(self, pkg, col):
+    @staticmethod
+    def _sort_key(pkg, col):
         if col == 1:
             return (pkg.get("name") or "").lower()
         if col == 2:
@@ -681,7 +682,8 @@ class _UpdatesHeader(QHeaderView):
         painter.drawLine(int(rect.left()), int(rect.bottom()) - 1, int(rect.right()), int(rect.bottom()) - 1)
         painter.restore()
 
-    def _draw_check(self, painter, r, checked, indeterminate):
+    @staticmethod
+    def _draw_check(painter, r, checked, indeterminate):
         path = QPainterPath()
         path.addRoundedRect(r, 5, 5)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)

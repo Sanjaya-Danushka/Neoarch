@@ -97,7 +97,8 @@ class LargeSearchBox(QWidget):
         self.setStyleSheet(self._qss())
 
     # ── Hero Search ────────────────────────────────────────────────
-    def _hero_header(self) -> QHBoxLayout:
+    @staticmethod
+    def _hero_header() -> QHBoxLayout:
         header = QHBoxLayout()
         header.setContentsMargins(4, 0, 0, 0)
 
@@ -521,7 +522,8 @@ class LargeSearchBox(QWidget):
             pass
         label.setText("🔍")
 
-    def _qss(self):
+    @staticmethod
+    def _qss():
         return """
             LargeSearchBox {
                 background-color: transparent;

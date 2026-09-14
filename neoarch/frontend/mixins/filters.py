@@ -267,7 +267,8 @@ class _BundlesSourcePanel(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._init_ui()
 
-    def _section_header(self, text):
+    @staticmethod
+    def _section_header(text):
         label = QLabel(text.upper())
         label.setStyleSheet(f"""
             color: {Colors.ACCENT};
@@ -404,7 +405,8 @@ class _BundlesSourcePanel(QWidget):
         sec.setStyleSheet(self._SECTION_SS)
         layout.addWidget(sec)
 
-    def _get_panel_icon(self, path, size=18):
+    @staticmethod
+    def _get_panel_icon(path, size=18):
         pixmap = QPixmap(path)
         if pixmap.isNull():
             pixmap = QPixmap(QSize(size, size))
@@ -1345,13 +1347,15 @@ class _FiltersMixin:
     def on_updates_source_changed(self, source_states):
         self._recompute_updates()
 
-    def _pkg_status(self, pkg):
+    @staticmethod
+    def _pkg_status(pkg):
         try:
             return pkg.get("status") or classify_update(pkg.get("version"), pkg.get("new_version"))
         except Exception:
             return "Maintenance"
 
-    def _matches_query(self, pkg, query, mode):
+    @staticmethod
+    def _matches_query(pkg, query, mode):
         name = (pkg.get('name') or '').lower()
         pid = (pkg.get('id') or pkg.get('name') or '').lower()
         if mode == 'name':
@@ -1360,7 +1364,8 @@ class _FiltersMixin:
             return query in pid
         return query in name or query in pid
 
-    def _sort_updates(self, dataset, field, asc):
+    @staticmethod
+    def _sort_updates(dataset, field, asc):
         try:
             if field == 'size':
                 def key(p): return _parse_size(p.get('download_size') or '')

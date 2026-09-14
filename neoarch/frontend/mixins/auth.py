@@ -27,25 +27,32 @@ from neoarch.backend.services.snapshot import (
 
 
 class _AuthMixin:
-    def get_ignore_file_path(self):
+    @staticmethod
+    def get_ignore_file_path():
         return config_utils.get_ignore_file_path()
 
-    def load_ignored_updates(self):
+    @staticmethod
+    def load_ignored_updates():
         return config_utils.load_ignored_updates()
 
-    def save_ignored_updates(self, items):
+    @staticmethod
+    def save_ignored_updates(items):
         return config_utils.save_ignored_updates(items)
 
-    def get_local_updates_file_path(self):
+    @staticmethod
+    def get_local_updates_file_path():
         return config_utils.get_local_updates_file_path()
 
-    def load_local_update_entries(self):
+    @staticmethod
+    def load_local_update_entries():
         return config_utils.load_local_update_entries()
 
-    def cmd_exists(self, cmd):
+    @staticmethod
+    def cmd_exists(cmd):
         return sys_utils.cmd_exists(cmd)
 
-    def get_missing_dependencies(self):
+    @staticmethod
+    def get_missing_dependencies():
         return sys_utils.get_missing_dependencies()
 
     def run_first_run_checks(self):
@@ -209,14 +216,17 @@ class _AuthMixin:
             return
         return update_core_tools(self)
 
-    def prepare_askpass_env(self):
+    @staticmethod
+    def prepare_askpass_env():
         from neoarch.backend.auth import prepare_askpass_env
         return prepare_askpass_env()
 
-    def get_askpass_env(self):
+    @staticmethod
+    def get_askpass_env():
         return _get_askpass_env()
 
-    def check_authentication_tools(self):
+    @staticmethod
+    def check_authentication_tools():
         # NeoArch ships its own themed authentication dialog with session
         # caching; no external GUI auth tools are required anymore.
         pass

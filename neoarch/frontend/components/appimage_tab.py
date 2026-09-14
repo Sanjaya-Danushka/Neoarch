@@ -667,7 +667,8 @@ class AppImageTab(QWidget):
             return
         self._run("Remove AppImage", lambda: _remove_ids([aid]))
 
-    def _on_open(self, aid):
+    @staticmethod
+    def _on_open(aid):
         import subprocess
         from neoarch.backend.services import appimage
         try:

@@ -28,7 +28,8 @@ _aur_scan_cache = {}
 class _OperationsMixin:
     """Mixin providing package operation methods for the main window."""
 
-    def _preflight_aur_scan(self, names):
+    @staticmethod
+    def _preflight_aur_scan(names):
         """Fetch + statically scan AUR PKGBUILDs before installation.
 
         Returns ``{name: [findings]}`` (may contain empty lists). Returns
@@ -864,7 +865,8 @@ class _OperationsMixin:
             if plugin_id and hasattr(self, 'plugins_manager'):
                 self.plugins_manager.launch_by_id(self.plugins_view, plugin_id)
 
-    def _on_ui_call(self, fn):
+    @staticmethod
+    def _on_ui_call(fn):
         try:
             if callable(fn):
                 fn()

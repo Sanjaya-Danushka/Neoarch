@@ -3558,7 +3558,8 @@ class _ViewsMixin:
 
         menu.exec(self.package_table.viewport().mapToGlobal(pos))
 
-    def _load_marks_for(self, name):
+    @staticmethod
+    def _load_marks_for(name):
         from neoarch.backend.services import marks
         try:
             ignore = set(marks.get_ignorepkg())
@@ -4543,7 +4544,8 @@ class _ViewsMixin:
         except Exception:
             pass
 
-    def _make_circular_pixmap(self, pixmap, size=36):
+    @staticmethod
+    def _make_circular_pixmap(pixmap, size=36):
         result = QPixmap(size, size)
         result.fill(Qt.GlobalColor.transparent)
         painter = QPainter(result)

@@ -751,7 +751,8 @@ class SourceCard(QWidget):
                 }}
             """
 
-    def _section_header(self, text):
+    @staticmethod
+    def _section_header(text):
         label = QLabel(text.upper())
         label.setObjectName("sectionHeaderLabel")
         label.setCursor(Qt.CursorShape.ArrowCursor)
@@ -860,7 +861,8 @@ class SourceCard(QWidget):
             self.health_status_title.setStyleSheet(self._health_title_style("#EF4444"))
             self.health_status_subtitle.setText(_("{issues} issues need resolving").format(issues=issues))
 
-    def _health_title_style(self, color):
+    @staticmethod
+    def _health_title_style(color):
         return f"""
             color: {color};
             font-size: {Fonts.BASE};
@@ -1446,7 +1448,8 @@ class SourceCard(QWidget):
         self.quick_actions_widget.setVisible(False)
         layout.addWidget(self.quick_actions_widget)
 
-    def _sort_btn_style(self):
+    @staticmethod
+    def _sort_btn_style():
         return f"""
             QPushButton#sortBtn {{
                 color: #A7B1C2;
@@ -1604,7 +1607,8 @@ class SourceCard(QWidget):
         self.actions_widget.setVisible(False)
         layout.addWidget(self.actions_widget)
 
-    def _section_stylesheet(self):
+    @staticmethod
+    def _section_stylesheet():
         return """
             QWidget#statusWidget, QWidget#sortWidget, QWidget#actionsWidget, QWidget#summaryWidget, QWidget#healthWidget {
                 border-top: 1px solid rgba(255, 255, 255, 0.03);

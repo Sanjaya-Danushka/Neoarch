@@ -148,7 +148,8 @@ class CloudAuthManager(QObject):
 
     # ── Local callback server ───────────────────────────────────────
 
-    def _find_free_port(self) -> int:
+    @staticmethod
+    def _find_free_port() -> int:
         import socket
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind(("127.0.0.1", 0))
@@ -196,7 +197,8 @@ class CloudAuthManager(QObject):
                     self.end_headers()
                     self.wfile.write(b"Missing token")
 
-            def log_message(self, *a, **kw):
+            @staticmethod
+            def log_message(*a, **kw):
                 pass
 
         self._httpd = http.server.HTTPServer(("127.0.0.1", port), CallbackHandler)
