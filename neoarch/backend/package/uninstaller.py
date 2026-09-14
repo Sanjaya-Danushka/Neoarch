@@ -5,6 +5,7 @@ using appropriate commands for each.
 """
 
 import os
+import shutil
 import subprocess
 from threading import Thread
 from PyQt6.QtCore import QTimer
@@ -77,7 +78,7 @@ def uninstall_packages(app, packages_by_source: dict):
 
                     def _list_installed(env=None):
                         try:
-                            r = subprocess.run(["npm", "ls", "-g", "--depth=0", "--json"], capture_output=True, text=True, env=env, timeout=30)
+                            r = subprocess.run([shutil.which("npm") or "npm", "ls", "-g", "--depth=0", "--json"], capture_output=True, text=True, env=env, timeout=30)
                             if r.returncode == 0 and r.stdout and r.stdout.strip():
                                 import json
                                 data = json.loads(r.stdout)
@@ -89,7 +90,7 @@ def uninstall_packages(app, packages_by_source: dict):
 
                     def _npm_root_writable(env=None):
                         try:
-                            r = subprocess.run(["npm", "root", "-g"], capture_output=True, text=True, env=env, timeout=10)
+                            r = subprocess.run([shutil.which("npm") or "npm", "root", "-g"], capture_output=True, text=True, env=env, timeout=10)
                             root = (r.stdout or '').strip()
                             return bool(root) and os.access(root, os.W_OK)
                         except Exception:

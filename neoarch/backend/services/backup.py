@@ -51,7 +51,7 @@ def get_filesystem_type() -> str:
     """Detect the filesystem type of the root mount."""
     try:
         result = subprocess.run(
-            ["findmnt", "-n", "-o", "FSTYPE", "/"],
+            [shutil.which("findmnt") or "findmnt", "-n", "-o", "FSTYPE", "/"],
             capture_output=True, text=True, timeout=10,
         )
         return result.stdout.strip() or "unknown"
@@ -65,7 +65,7 @@ def _btrfs_root_subvolume() -> Optional[str]:
         return None
     try:
         result = subprocess.run(
-            ["findmnt", "-n", "-o", "TARGET", "/"],
+            [shutil.which("findmnt") or "findmnt", "-n", "-o", "TARGET", "/"],
             capture_output=True, text=True, timeout=10,
         )
         if result.returncode != 0:

@@ -159,6 +159,11 @@ def get_dependency_catalog() -> List[dict]:
     add("pacman", "pacman", True, "Package operations", cmd_exists("pacman"))
     add("git", "git", True, "AUR builds and Git projects", cmd_exists("git"))
 
+    # Dependencies of bundled parsers — required at runtime
+    add("python-defusedxml", "python-defusedxml", True,
+        "Secure XML parsing (news feed)",
+        importlib.util.find_spec("defusedxml") is not None)
+
     # Optional integrations — features degrade gracefully
     add("flatpak", "flatpak", False, "Flatpak page", cmd_exists("flatpak"))
     add("nodejs", "nodejs", False, "Discover page (npm)", cmd_exists("node"))
@@ -272,7 +277,7 @@ def _start_secret_service() -> None:
     import subprocess
     try:
         subprocess.run(
-            ["gnome-keyring-daemon", "--start", "--components=secrets"],
+            [shutil.which("gnome-keyring-daemon") or "gnome-keyring-daemon", "--start", "--components=secrets"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             timeout=5, check=False)
     except Exception:
@@ -355,7 +360,7 @@ def _lock_holder_pids() -> List[int]:
         try:
             import subprocess
             out = subprocess.run(
-                ["fuser", PACMAN_DB_LOCK],
+                [shutil.which("fuser") or "fuser", PACMAN_DB_LOCK],
                 capture_output=True, text=True, timeout=5,
             )
             for tok in out.stdout.replace(":", " ").split():
@@ -373,7 +378,7 @@ def _lock_holder_pids() -> List[int]:
     try:
         import subprocess
         out = subprocess.run(
-            ["lsof", PACMAN_DB_LOCK],
+            [shutil.which("lsof") or "lsof", PACMAN_DB_LOCK],
             capture_output=True, text=True, timeout=5,
         )
         for line in out.stdout.splitlines()[1:]:
@@ -394,7 +399,7 @@ def _is_neoarch_child(holder_pids: List[int]) -> bool:
     import subprocess
     try:
         out = subprocess.run(
-            ["pgrep", "-P", str(os.getpid())],
+            [shutil.which("pgrep") or "pgrep", "-P", str(os.getpid())],
             capture_output=True, text=True, timeout=5,
         )
         direct_children = {

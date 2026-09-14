@@ -131,7 +131,8 @@ def latest_release(timeout: float = 5.0) -> Optional[Dict]:
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        from neoarch.backend.services.network import urlopen as _urlopen
+        with _urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode("utf-8"))
     except Exception:
         return None

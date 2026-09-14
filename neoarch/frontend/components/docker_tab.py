@@ -1125,7 +1125,7 @@ class DockerTab(QWidget):
         def task():
             try:
                 result = sp.run(
-                    ["docker", "network", "create", "--driver", driver, name],
+                    [shutil.which("docker") or "docker", "network", "create", "--driver", driver, name],
                     check=False, capture_output=True, text=True, timeout=15,
                 )
                 if result.returncode == 0:

@@ -8,8 +8,8 @@ and uses the same auth/elevation helpers as the rest of the app.
 import json
 import os
 import re
+import shutil
 import subprocess
-import xml.etree.ElementTree as ET
 from threading import Thread
 from typing import List, Dict, Optional
 
@@ -146,7 +146,7 @@ def _pacnew_info(path: str) -> Dict:
     pkg = "unknown"
     try:
         result = subprocess.run(
-            ["pacman", "-Qo", original],
+            [shutil.which("pacman") or "pacman", "-Qo", original],
             capture_output=True, text=True, timeout=10)
         if result.returncode == 0:
             match = re.match(r"^([^\s]+)", result.stdout.strip())
@@ -161,7 +161,7 @@ def diff_pacnew(path: str) -> str:
     """Return the diff between a .pacnew file and its current original."""
     info = _pacnew_info(path)
     result = subprocess.run(
-        ["diff", "-u", info["original"], path],
+        [shutil.which("diff") or "diff", "-u", info["original"], path],
         capture_output=True, text=True, timeout=30)
     if result.returncode == 0:
         return "(no differences)"
@@ -235,7 +235,7 @@ def merge_pacnew(path: str, accept: bool = False) -> Dict:
     tmp_ours, tmp_base, tmp_theirs = _write(ours), _write(base), _write(theirs)
     try:
         result = subprocess.run(
-            ["diff3", "-m", tmp_ours, tmp_base, tmp_theirs],
+            [shutil.which("diff3") or "diff3", "-m", tmp_ours, tmp_base, tmp_theirs],
             capture_output=True, text=True, timeout=30)
         merged = result.stdout
         conflicts = result.returncode != 0  # 1 = conflicts, 2 = trouble
@@ -598,6 +598,7 @@ def _fetch_news_xml() -> str:
 
 def _parse_news(xml_text: str, limit: int = 10) -> List[Dict]:
     """Parse an RSS feed into {title, link, published, summary} entries."""
+    from defusedxml import ElementTree as ET
     items = []
     try:
         root = ET.fromstring(xml_text)

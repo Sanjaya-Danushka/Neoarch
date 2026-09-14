@@ -9,6 +9,7 @@ import os
 import pty
 import re
 import select
+import shutil
 import subprocess
 from threading import Thread, Event
 
@@ -25,7 +26,7 @@ def _clean_pacman_cache(app):
     try:
         env = get_askpass_env()
         subprocess.run(
-            ["sudo", "-A", "pacman", "-Sc", "--noconfirm"],
+            [shutil.which("sudo") or "sudo", "-A", "pacman", "-Sc", "--noconfirm"],
             capture_output=True, text=True, timeout=120, env=env,
         )
     except Exception:

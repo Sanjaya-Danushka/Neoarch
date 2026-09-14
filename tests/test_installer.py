@@ -1,5 +1,7 @@
 """Tests for neoarch.backend.workers.strip_ansi and
    neoarch.backend.package.installer pure/mockable helpers."""
+import shutil
+
 from unittest.mock import MagicMock
 
 from tests.conftest import FakeCompletedProcess
@@ -175,7 +177,9 @@ def test_clean_pacman_cache_calls_sudo_sc(monkeypatch):
 
     _clean_pacman_cache(MagicMock())
 
-    assert recorded == [["sudo", "-A", "pacman", "-Sc", "--noconfirm"]]
+    assert recorded == [
+        [shutil.which("sudo") or "sudo", "-A", "pacman", "-Sc", "--noconfirm"]
+    ]
 
 
 def test_clean_pacman_cache_suppresses_error(monkeypatch):

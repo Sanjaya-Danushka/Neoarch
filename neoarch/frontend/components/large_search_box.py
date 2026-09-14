@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 from threading import Thread
 
@@ -402,7 +403,7 @@ class LargeSearchBox(QWidget):
         def _run():
             installed_count = 0
             try:
-                r = subprocess.run(["pacman", "-Q"], capture_output=True, text=True, timeout=3)
+                r = subprocess.run([shutil.which("pacman") or "pacman", "-Q"], capture_output=True, text=True, timeout=3)
                 if r.returncode == 0:
                     installed_count = len([l for l in r.stdout.strip().split("\n") if l.strip()])
             except Exception:
@@ -413,7 +414,7 @@ class LargeSearchBox(QWidget):
                 updates_count = len(cached_updates)
             else:
                 try:
-                    r = subprocess.run(["checkupdates"], capture_output=True, text=True, timeout=5)
+                    r = subprocess.run([shutil.which("checkupdates") or "checkupdates"], capture_output=True, text=True, timeout=5)
                     if r.returncode == 0 and r.stdout.strip():
                         updates_count = len(r.stdout.strip().split("\n"))
                 except Exception:

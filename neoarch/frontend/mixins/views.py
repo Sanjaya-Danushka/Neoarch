@@ -3,6 +3,7 @@ Views mixin for NeoArch - UI setup, navigation, display, and progress
 """
 
 import os
+import shutil
 import subprocess
 from threading import Thread
 
@@ -432,11 +433,11 @@ class _ViewsMixin:
     def ensure_flathub_user_remote(self):
         try:
             result = subprocess.run([
-                "flatpak", "--user", "remotes"
+                shutil.which("flatpak") or "flatpak", "--user", "remotes"
             ], capture_output=True, text=True, timeout=10)
             if result.returncode != 0 or "flathub" not in (result.stdout or ""):
                 subprocess.run([
-                    "flatpak", "--user", "remote-add", "--if-not-exists",
+                    shutil.which("flatpak") or "flatpak", "--user", "remote-add", "--if-not-exists",
                     "flathub", "https://flathub.org/repo/flathub.flatpakrepo"
                 ], capture_output=True, text=True, timeout=30)
         except Exception as e:
@@ -3753,7 +3754,7 @@ class _ViewsMixin:
             try:
                 if source == 'Flatpak':
                     r = subprocess.run(
-                        ["flatpak", "remote-ls", "--updates", name],
+                        [shutil.which("flatpak") or "flatpak", "remote-ls", "--updates", name],
                         capture_output=True, text=True, timeout=30
                     )
                     check_ok = True
@@ -3764,7 +3765,7 @@ class _ViewsMixin:
                             new_ver = parts[1]
                 else:
                     r = subprocess.run(
-                        ["pacman", "-Qu", name],
+                        [shutil.which("pacman") or "pacman", "-Qu", name],
                         capture_output=True, text=True, timeout=30
                     )
                     check_ok = True
@@ -4565,8 +4566,9 @@ class _ViewsMixin:
                 data = resp.content if resp.status_code == 200 else None
             except ImportError:
                 import urllib.request
+                from neoarch.backend.services.network import urlopen as _urlopen
                 req = urllib.request.Request(url, headers={"User-Agent": "NeoArch"})
-                data = urllib.request.urlopen(req, timeout=5).read()
+                data = _urlopen(req, timeout=5).read()
 
             if data:
                 pixmap = QPixmap()

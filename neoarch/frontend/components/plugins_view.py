@@ -628,7 +628,7 @@ class PluginsView(QWidget):
             from neoarch.resources.plugin_data import get_all_plugins_data
             plugins = get_all_plugins_data()
             import subprocess
-            r = subprocess.run(["pacman", "-Qq"], capture_output=True, text=True, timeout=5, check=False)
+            r = subprocess.run([shutil.which("pacman") or "pacman", "-Qq"], capture_output=True, text=True, timeout=5, check=False)
             if r.returncode != 0 or not r.stdout:
                 return
             installed = {l.strip() for l in r.stdout.strip().split('\n') if l.strip()}
@@ -655,7 +655,7 @@ class PluginsView(QWidget):
                 result = True
             else:
                 import subprocess
-                r = subprocess.run(["pacman", "-Qi", pkg], capture_output=True, text=True, timeout=5, check=False)
+                r = subprocess.run([shutil.which("pacman") or "pacman", "-Qi", pkg], capture_output=True, text=True, timeout=5, check=False)
                 result = r.returncode == 0
         except Exception:
             result = False

@@ -208,7 +208,7 @@ class _EnrichWorker(QObject):
         if flatpak_names:
             try:
                 r = subprocess.run(
-                    ["flatpak", "list", "--columns=application,description"],
+                    [shutil.which("flatpak") or "flatpak", "list", "--columns=application,description"],
                     capture_output=True, text=True, timeout=60, check=False,
                 )
                 if r.returncode == 0 and r.stdout:

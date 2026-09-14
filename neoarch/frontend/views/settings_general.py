@@ -19,7 +19,8 @@ class _AurApiTestThread(QThread):
     def run(self):
         t0 = time.time()
         try:
-            with urllib.request.urlopen(
+            from neoarch.backend.services.network import urlopen as _urlopen
+            with _urlopen(
                 "https://aur.archlinux.org/rpc/?v=5&type=info&arg[]=bash",
                 timeout=15,
             ) as resp:

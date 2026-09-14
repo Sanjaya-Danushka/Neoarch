@@ -52,7 +52,6 @@ import subprocess
 import sys
 import textwrap
 import time
-import xml.etree.ElementTree as ET
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -707,8 +706,9 @@ def _fetch_news(limit: int) -> List[Dict]:
             xml_text = ""
     try:
         import urllib.request
+        from neoarch.backend.services.network import urlopen as _urlopen
         req = urllib.request.Request(_NEWS_URL, headers={"User-Agent": f"{APP_NAME}/{APP_VERSION}"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with _urlopen(req, timeout=15) as resp:
             fresh = resp.read().decode("utf-8")
         if fresh:
             xml_text = fresh
@@ -721,9 +721,10 @@ def _fetch_news(limit: int) -> List[Dict]:
     except Exception:
         pass
     items = []
+    from defusedxml import ElementTree as _SafeET
     try:
-        root = ET.fromstring(xml_text)
-    except ET.ParseError:
+        root = _SafeET.fromstring(xml_text)
+    except _SafeET.ParseError:
         return items
     for item in root.iter("item"):
         entry: Dict = {}

@@ -146,7 +146,16 @@ def refresh():
 
 
 def urlopen(req, timeout=None):
-    """urllib.request.urlopen with configured opener and timeout."""
+    """urllib.request.urlopen with configured opener and timeout.
+
+    Only http/https URLs are allowed; file:// or custom schemes are
+    rejected to avoid SSRF/file-read surprises.
+    """
+    from urllib.parse import urlparse
+    target = req if isinstance(req, str) else (req.full_url if req else "")
+    scheme = urlparse(target).scheme
+    if scheme not in ("http", "https"):
+        raise ValueError(f"disallowed URL scheme: {scheme!r}")
     with _lock:
         opener = _opener
     if opener is None:

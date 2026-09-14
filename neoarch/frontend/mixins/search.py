@@ -3,6 +3,7 @@
 import os
 import re
 import json
+import shutil
 import subprocess
 from threading import Thread
 
@@ -31,7 +32,7 @@ class _SearchMixin:
                 try:
                     env = self.get_askpass_env()
                     result = subprocess.run(
-                        ["sudo", "-A", "pacman", "-Sy", "--noconfirm"],
+                        [shutil.which("sudo") or "sudo", "-A", "pacman", "-Sy", "--noconfirm"],
                         capture_output=True, text=True, timeout=120, env=env,
                         check=False,
                     )
@@ -420,7 +421,7 @@ class _SearchMixin:
                     if len(tokens) > 1:
                         for tok in tokens:
                             try:
-                                result = subprocess.run(["pacman", "-Ss", tok], capture_output=True, text=True, timeout=30, check=False)
+                                result = subprocess.run([shutil.which("pacman") or "pacman", "-Ss", tok], capture_output=True, text=True, timeout=30, check=False)
                             except Exception:
                                 result = None
                             if result and result.returncode == 0 and result.stdout:
@@ -446,7 +447,7 @@ class _SearchMixin:
                                                 })
                                     i += 1
                     else:
-                        result = subprocess.run(["pacman", "-Ss", query], capture_output=True, text=True, timeout=30, check=False)
+                        result = subprocess.run([shutil.which("pacman") or "pacman", "-Ss", query], capture_output=True, text=True, timeout=30, check=False)
                         if result.returncode == 0 and result.stdout:
                             lines = result.stdout.strip().split('\n')
                             i = 0
@@ -471,7 +472,7 @@ class _SearchMixin:
 
             if show_aur:
                 try:
-                    result_aur = subprocess.run(["curl", "-s", f"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg={query}"], capture_output=True, text=True, timeout=10, check=False)
+                    result_aur = subprocess.run([shutil.which("curl") or "curl", "-s", f"https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg={query}"], capture_output=True, text=True, timeout=10, check=False)
                     if result_aur.returncode == 0:
                         data = json.loads(result_aur.stdout)
                         if data.get('results'):
@@ -499,7 +500,7 @@ class _SearchMixin:
                         except Exception:
                             pass
                     result_flatpak = subprocess.run([
-                        "flatpak", "search", "--columns=application,name,description,version", query
+                        shutil.which("flatpak") or "flatpak", "search", "--columns=application,name,description,version", query
                     ], capture_output=True, text=True, timeout=30, check=False)
                     if result_flatpak.returncode == 0 and result_flatpak.stdout:
                         lines = [l for l in result_flatpak.stdout.strip().split('\n') if l.strip()]
@@ -529,7 +530,7 @@ class _SearchMixin:
 
             if show_npm:
                 try:
-                    result_npm = subprocess.run(["npm", "search", "--json", query], capture_output=True, text=True, timeout=30, check=False)
+                    result_npm = subprocess.run([shutil.which("npm") or "npm", "search", "--json", query], capture_output=True, text=True, timeout=30, check=False)
                     if result_npm.returncode == 0 and result_npm.stdout:
                         npm_data = json.loads(result_npm.stdout)
                         for pkg in npm_data:

@@ -164,7 +164,8 @@ def probe(url=_PROBE_URL, timeout=_PROBE_TIMEOUT):
         url, headers={"User-Agent": "NeoArch-signal-probe"}
     )
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        from neoarch.backend.services.network import urlopen as _urlopen
+        with _urlopen(req, timeout=timeout) as resp:
             resp.read(1)
     except Exception:
         pass
@@ -195,7 +196,7 @@ def start_probing(interval=30.0):
 
 
 def install():
-    """Wrap ``urllib.request.urlopen`` and ``requests.get`` once."""
+    """Wrap ``urllib.request.urlopen``, ``network.urlopen`` and ``requests.get`` once."""
     if _recorder.is_installed():
         return
     _recorder.mark_installed()
@@ -216,6 +217,30 @@ def install():
         return result
 
     urllib.request.urlopen = wrapped_urlopen
+
+    try:
+        from neoarch.backend.services.network import urlopen as _network_urlopen_original
+    except ImportError:
+        _network_urlopen_original = None
+
+    if _network_urlopen_original is not None:
+
+        def wrapped_network_urlopen(*args, **kwargs):
+            _recorder.begin()
+            start = time.monotonic()
+            try:
+                result = _network_urlopen_original(*args, **kwargs)
+            except Exception:
+                _recorder.record_failure()
+                raise
+            finally:
+                _recorder.end()
+            _recorder.record(time.monotonic() - start)
+            return result
+
+        import neoarch.backend.services.network as _network_mod
+
+        _network_mod.urlopen = wrapped_network_urlopen
 
     try:
         import requests

@@ -4,6 +4,7 @@ Operations mixin for NeoArch - package install/update/uninstall operations
 
 import os
 import json
+import shutil
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -340,11 +341,11 @@ class _OperationsMixin:
             self.log("Cleaning package cache\u2026")
             # BleachBit system cache cleaning
             try:
-                r = subprocess.run(["which", "bleachbit"], capture_output=True, text=True, timeout=5)
+                r = subprocess.run([shutil.which("which") or "which", "bleachbit"], capture_output=True, text=True, timeout=5)
                 if r.returncode == 0:
                     self.log("Running BleachBit cache cleaner\u2026")
                     bb = subprocess.run(
-                        ["bleachbit", "--clean", "system.cache", "system.tmp", "system.trash",
+                        [shutil.which("bleachbit") or "bleachbit", "--clean", "system.cache", "system.tmp", "system.trash",
                          "system.recent_documents", "system.clipboard"],
                         capture_output=True, text=True, timeout=120,
                     )
@@ -360,7 +361,7 @@ class _OperationsMixin:
             try:
                 env = self.get_askpass_env()
                 result = subprocess.run(
-                    ["sudo", "-A", "pacman", "-Sc", "--noconfirm"],
+                    [shutil.which("sudo") or "sudo", "-A", "pacman", "-Sc", "--noconfirm"],
                     capture_output=True, text=True, timeout=60, env=env,
                 )
                 if result.returncode == 0:
@@ -516,7 +517,7 @@ class _OperationsMixin:
         def _build_pacman():
             nonlocal built_any
             if (force or ('pacman' not in _sources) or ('AUR' not in _sources)) and (show_pacman or show_aur):
-                r = subprocess.run(["pacman", "-Qq"], capture_output=True, text=True, timeout=30)
+                r = subprocess.run([shutil.which("pacman") or "pacman", "-Qq"], capture_output=True, text=True, timeout=30)
                 if r.returncode == 0 and r.stdout:
                     names = [
                         pkg_line.strip()
@@ -553,7 +554,7 @@ class _OperationsMixin:
             import shutil as _sh
             if (force or ('npm' not in _sources)) and show_npm and _sh.which('npm'):
                 results = []
-                np_def = subprocess.run(["npm", "ls", "-g", "--depth=0", "--json"], capture_output=True, text=True, timeout=30)
+                np_def = subprocess.run([shutil.which("npm") or "npm", "ls", "-g", "--depth=0", "--json"], capture_output=True, text=True, timeout=30)
                 results.append((np_def.returncode, np_def.stdout))
                 env_user = os.environ.copy()
                 try:
@@ -564,7 +565,7 @@ class _OperationsMixin:
                     env_user['PATH'] = os.path.join(npm_prefix, 'bin') + os.pathsep + env_user.get('PATH', '')
                 except Exception:
                     pass
-                np_user = subprocess.run(["npm", "ls", "-g", "--depth=0", "--json"], capture_output=True, text=True, env=env_user, timeout=30)
+                np_user = subprocess.run([shutil.which("npm") or "npm", "ls", "-g", "--depth=0", "--json"], capture_output=True, text=True, env=env_user, timeout=30)
                 results.append((np_user.returncode, np_user.stdout))
                 for code, out in results:
                     if code == 0 and out and out.strip():

@@ -5,6 +5,7 @@ checkbox styling, drop shadows, and related utilities.
 """
 
 import os
+import shutil
 import subprocess
 
 from PyQt6.QtCore import Qt, QRectF
@@ -231,11 +232,11 @@ class _IconsMixin:
     def ensure_flathub_user_remote(self):
         try:
             result = subprocess.run([
-                "flatpak", "--user", "remotes"
+                shutil.which("flatpak") or "flatpak", "--user", "remotes"
             ], capture_output=True, text=True, timeout=10)
             if result.returncode != 0 or "flathub" not in (result.stdout or ""):
                 subprocess.run([
-                    "flatpak", "--user", "remote-add", "--if-not-exists",
+                    shutil.which("flatpak") or "flatpak", "--user", "remote-add", "--if-not-exists",
                     "flathub", "https://flathub.org/repo/flathub.flatpakrepo"
                 ], capture_output=True, text=True, timeout=30)
         except Exception:

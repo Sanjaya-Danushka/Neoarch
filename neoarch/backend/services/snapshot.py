@@ -4,6 +4,7 @@ Provides system snapshot creation, restoration, listing, and deletion
 via the Timeshift backup utility.
 """
 
+import shutil
 import subprocess
 from threading import Thread
 from PyQt6.QtWidgets import QMessageBox, QLabel, QComboBox, QVBoxLayout, QDialog, QDialogButtonBox
@@ -36,7 +37,7 @@ def create_snapshot(app):
 
     def do_create():
         try:
-            timestamp = subprocess.run(["date", "+%Y-%m-%d_%H-%M-%S"], capture_output=True, text=True).stdout.strip()
+            timestamp = subprocess.run([shutil.which("date") or "date", "+%Y-%m-%d_%H-%M-%S"], capture_output=True, text=True).stdout.strip()
             comment = f"NeoArch manual snapshot {timestamp}"
             result = subprocess.run(get_auth_command() + ["timeshift", "--create", "--comments", comment],
                                     capture_output=True, text=True, timeout=300)
@@ -62,7 +63,7 @@ def revert_to_snapshot(app):
                             "Timeshift is not installed.")
         return
     try:
-        result = subprocess.run(["timeshift", "--list"], capture_output=True, text=True, timeout=30)
+        result = subprocess.run([shutil.which("timeshift") or "timeshift", "--list"], capture_output=True, text=True, timeout=30)
         if result.returncode != 0:
             QMessageBox.warning(app, "No Snapshots", "No snapshots found or Timeshift error.")
             return

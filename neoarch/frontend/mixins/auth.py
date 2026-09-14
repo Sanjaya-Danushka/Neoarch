@@ -162,13 +162,13 @@ class _AuthMixin:
         tmpdir = tempfile.mkdtemp(prefix="neoarch-yay-")
         try:
             self.log("Installing yay AUR helper...")
-            clone = subprocess.run(["git", "clone", "https://aur.archlinux.org/yay-bin.git", tmpdir], capture_output=True, text=True, timeout=120)
+            clone = subprocess.run([shutil.which("git") or "git", "clone", "https://aur.archlinux.org/yay-bin.git", tmpdir], capture_output=True, text=True, timeout=120)
             if clone.returncode != 0:
                 self.log(f"Error: {clone.stderr}")
                 return
             env, cleanup = self.prepare_askpass_env()
             cmd = f"cd '{tmpdir}' && makepkg -si --noconfirm"
-            process = subprocess.Popen(["bash", "-lc", cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env)
+            process = subprocess.Popen([shutil.which("bash") or "bash", "-lc", cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env)
             while True:
                 line = process.stdout.readline() if process.stdout else ""
                 if not line and process.poll() is not None:

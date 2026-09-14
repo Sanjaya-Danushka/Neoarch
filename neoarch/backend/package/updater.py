@@ -7,6 +7,7 @@ with appropriate privilege elevation.
 import os
 import json
 import re
+import shutil
 import subprocess
 from threading import Thread
 
@@ -82,7 +83,7 @@ def _clean_pacman_cache(app):
     try:
         env = get_askpass_env()
         subprocess.run(
-            ["sudo", "-A", "pacman", "-Sc", "--noconfirm"],
+            [shutil.which("sudo") or "sudo", "-A", "pacman", "-Sc", "--noconfirm"],
             capture_output=True, text=True, timeout=120, env=env,
         )
     except Exception:
@@ -276,7 +277,7 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                     for name in pkgs:
                         placed = False
                         try:
-                            r_user = subprocess.run(["npm", "ls", "-g", name, "--depth=0", "--json"], capture_output=True, text=True, env=env_user, timeout=30) if env_user else None
+                            r_user = subprocess.run([shutil.which("npm") or "npm", "ls", "-g", name, "--depth=0", "--json"], capture_output=True, text=True, env=env_user, timeout=30) if env_user else None
                             if r_user.returncode in (0, 1) and r_user.stdout:
                                 try:
                                     data = json.loads(r_user.stdout)
@@ -291,7 +292,7 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                         if placed:
                             continue
                         try:
-                            r_sys = subprocess.run(["npm", "ls", "-g", name, "--depth=0", "--json"], capture_output=True, text=True, timeout=30)
+                            r_sys = subprocess.run([shutil.which("npm") or "npm", "ls", "-g", name, "--depth=0", "--json"], capture_output=True, text=True, timeout=30)
                             if r_sys.returncode in (0, 1) and r_sys.stdout:
                                 try:
                                     data = json.loads(r_sys.stdout)
@@ -347,7 +348,7 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                         if not upd:
                             continue
                         try:
-                            process = subprocess.Popen(["bash", "-lc", upd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                            process = subprocess.Popen([shutil.which("bash") or "bash", "-lc", upd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
                             while True:
                                 line = process.stdout.readline() if process.stdout else ""
                                 if not line and process.poll() is not None:
