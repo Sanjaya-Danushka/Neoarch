@@ -67,6 +67,7 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         self._resize_edge = None
         self._edge_cursor = None
         self._resize_active = False
+        self._resize_watchdog: Any = None
         self.setMouseTracking(True)
         try:
             from PyQt6.QtWidgets import QApplication
@@ -309,10 +310,20 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         if etype in (QEvent.Type.MouseButtonRelease, QEvent.Type.Resize):
             if self._resize_active:
                 self._resize_active = False
+                self._stop_resize_watchdog()
                 self.unsetCursor()
                 self._edge_cursor = None
             if etype == QEvent.Type.Resize:
                 return super().eventFilter(obj, event)
+        elif etype in (QEvent.Type.WindowDeactivate, QEvent.Type.ApplicationStateChange):
+            # Alt-tabbing away mid-resize can leave the hand-off dangling with
+            # no release/resize event to unset the gate — clear defensively.
+            if self._resize_active:
+                self._resize_active = False
+                self._stop_resize_watchdog()
+                self.unsetCursor()
+                self._edge_cursor = None
+                self.log("Resize hand-off cancelled (window deactivated)")
         if etype == QEvent.Type.MouseMove or etype == QEvent.Type.MouseButtonPress:
             if self.isMaximized() or self.isFullScreen():
                 return super().eventFilter(obj, event)
@@ -334,8 +345,38 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
                     handle = self.windowHandle()
                     if handle is not None:
                         self._resize_active = True
+                        self._start_resize_watchdog()
                         handle.startSystemResize(edge)
                         return True
         return super().eventFilter(obj, event)
+
+    def _start_resize_watchdog(self):
+        """Arm a single-shot guard that releases the resize gate if the
+        window-manager hand-off never sends a confirming release/resize."""
+        try:
+            self._resize_watchdog = QTimer(self)
+            self._resize_watchdog.setSingleShot(True)
+            self._resize_watchdog.setInterval(1500)
+            self._resize_watchdog.timeout.connect(self._resize_watchdog_fired)
+            self._resize_watchdog.start()
+        except Exception:
+            pass
+
+    def _stop_resize_watchdog(self):
+        if self._resize_watchdog is not None:
+            try:
+                self._resize_watchdog.stop()
+            except Exception:
+                pass
+            self._resize_watchdog = None
+
+    def _resize_watchdog_fired(self):
+        if not self._resize_active:
+            return
+        self._resize_active = False
+        self._resize_watchdog = None
+        self.unsetCursor()
+        self._edge_cursor = None
+        self.log("Resize hand-off timed out; released the resize gate")
 
 
