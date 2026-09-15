@@ -456,7 +456,11 @@ class _OperationsMixin:
             self.log(f"Partial-update check skipped: {e}")
         return True
 
-    def _confirm_uninstall(self, packages_by_source):
+    def set_pending_install(self, packages_by_source):
+        """Record an in-flight install so the UI reflects a pending operation."""
+        self._pending_install_packages = packages_by_source
+
+    def confirm_uninstall(self, packages_by_source):
         """Confirm a package removal before it runs.
 
         Removals are destructive and have no undo, so a confirmation dialog
@@ -818,7 +822,7 @@ class _OperationsMixin:
                 packages_by_source[source].append(token)
         
         flat_summary = ', '.join([f"{pkg} ({src})" for src, pkgs in packages_by_source.items() for pkg in pkgs])
-        if not self._confirm_uninstall(packages_by_source):
+        if not self.confirm_uninstall(packages_by_source):
             self.log("Uninstall cancelled.")
             return
         if not self.ensure_session_auth():
@@ -884,7 +888,7 @@ class _OperationsMixin:
         name = (pkg.get('name') or '').strip()
         if not name:
             return
-        if not self._confirm_uninstall({source: [name]}):
+        if not self.confirm_uninstall({source: [name]}):
             self.log("Uninstall cancelled.")
             return
         if not self.ensure_session_auth():

@@ -63,7 +63,7 @@ class PluginsManager:
                 return
             QTimer.singleShot(0, lambda: plugins_view.set_installing(plugin_id, True))
             self.app.force_sudo_install = False
-            self.app._pending_install_packages = {source: [name]}
+            self.app.set_pending_install({source: [name]})
             self._log(f"Installing plugin package: {name} ({source})")
             self._watch_completion(plugins_view, plugin_id, "install")
             install_service.install_packages(self.app, {source: [name]})
@@ -103,7 +103,7 @@ class PluginsManager:
                 pid = spec.get('id')
                 QTimer.singleShot(0, lambda pid=pid: plugins_view.set_installing(pid, True))
             self.app.force_sudo_install = False
-            self.app._pending_install_packages = by_source
+            self.app.set_pending_install(by_source)
             self._log(f"Installing {len(specs)} plugin package(s): {by_source}")
             for spec in specs:
                 self._watch_completion(plugins_view, spec.get('id'), "install")
@@ -160,7 +160,7 @@ class PluginsManager:
             if source not in _SUPPORTED_SOURCES:
                 self._message("Plugins", f"Unsupported package source: {source}")
                 return
-            if not self.app._confirm_uninstall({source: [name]}):
+            if not self.app.confirm_uninstall({source: [name]}):
                 self._message("Plugins", "Uninstall cancelled.")
                 return
             if not self.app.ensure_session_auth():

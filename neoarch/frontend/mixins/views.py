@@ -911,7 +911,6 @@ class _ViewsMixin:
             os.makedirs(dest, exist_ok=True)
             dest_path = os.path.join(dest, os.path.basename(path))
             try:
-                import shutil
                 shutil.copy2(path, dest_path)
                 self.log(f"Copied AppImage to {dest_path}")
             except Exception as e:
@@ -3446,7 +3445,7 @@ class _ViewsMixin:
                 return
             if not name:
                 return
-            if not self._confirm_uninstall({source: [name]}):
+            if not self.confirm_uninstall({source: [name]}):
                 self.log("Uninstall cancelled.")
                 return
             if not self.ensure_session_auth():
@@ -3651,7 +3650,7 @@ class _ViewsMixin:
         if self._updating_selection:
             return
         self._updating_selection = True
-        selected_rows = set(index.row() for index in self.package_table.selectionModel().selectedRows())
+        selected_rows = {index.row() for index in self.package_table.selectionModel().selectedRows()}
         for row in range(self.package_table.rowCount()):
             checkbox = self.get_row_checkbox(row)
             if checkbox is not None:
@@ -3869,7 +3868,7 @@ class _ViewsMixin:
         else:
             sel_model.select(idx, QItemSelectionModel.SelectionFlag.Deselect | QItemSelectionModel.SelectionFlag.Rows)
 
-        selected_rows = set(index.row() for index in sel_model.selectedRows())
+        selected_rows = {index.row() for index in sel_model.selectedRows()}
         if len(selected_rows) == 1 and row in selected_rows:
             self._show_detail_for_row(row)
         else:
@@ -3926,7 +3925,6 @@ class _ViewsMixin:
 
     def _desktop_notify(self, title, text):
         try:
-            import shutil
             if shutil.which("notify-send") is None:
                 return
             cmd = ["notify-send", "-a", "Neoarch"]

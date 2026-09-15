@@ -484,6 +484,9 @@ def test_install_many_batches_into_single_operation(qapp, monkeypatch):
             self.force_sudo_install = False
             self._pending_install_packages = {}
 
+        def set_pending_install(self, packages_by_source):
+            self._pending_install_packages = packages_by_source
+
     app = _App()
     view = _RecordingView()
     manager = PluginsManager(app)
