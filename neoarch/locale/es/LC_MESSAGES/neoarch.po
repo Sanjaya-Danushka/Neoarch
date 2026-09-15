@@ -2400,3 +2400,11 @@ msgstr "Seleccionar todo"
 
 msgid "Clear selection"
 msgstr "Limpiar selección"
+
+# Uninstall confirmation (musqz issue)
+
+msgid "Confirm Uninstall"
+msgstr "Confirmar desinstalación"
+
+msgid "Uninstall the following package(s)?\n\n{summary}\n\nThis will remove them from your system and cannot be undone."
+msgstr "¿Desinstalar los siguientes paquetes?\n\n{summary}\n\nEsto los eliminará de tu sistema y no puede deshacerse."

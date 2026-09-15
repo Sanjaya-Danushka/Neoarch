@@ -170,7 +170,7 @@ def test_emits_completion(monkeypatch):
     assert done.wait(timeout=5)
 
     assert app.show_message.calls == [
-        ("Uninstallation Complete", "Successfully processed 1 package(s).")
+        ("Uninstallation Complete", "Removed: pkg1 (pacman)")
     ]
     assert ("success", False) in app.installation_progress.calls
 

@@ -14,8 +14,6 @@ from PyQt6.QtWidgets import QLabel
 from neoarch.backend.services import network_latency
 from neoarch.resources.paths import PROJECT_ROOT
 from neoarch.backend.services.i18n import _
-from neoarch.backend.services.i18n import _
-from neoarch.backend.services.i18n import _
 
 _ICON_DIR = os.path.join(str(PROJECT_ROOT), "assets", "icons", "status")
 
@@ -84,8 +82,6 @@ class SignalIndicator(QLabel):
 
     def refresh_state(self):
         if not self._baseline_set:
-            if not network_latency.has_samples():
-                return
             self._baseline_set = True
             self._suppress_next_notify = True
 
@@ -94,6 +90,12 @@ class SignalIndicator(QLabel):
             return
 
         avg = network_latency.average()
+        if avg is None:
+            # Fast socket check says online but the HTTP latency probe
+            # hasn't produced a sample yet (slow/failing at launch).
+            # Show a neutral state instead of a false offline indicator.
+            self._render("medium", None)
+            return
         self._render(_state_for(avg), avg)
 
     def _render(self, state, avg):

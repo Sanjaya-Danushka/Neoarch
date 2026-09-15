@@ -122,7 +122,14 @@ def uninstall_packages(app, packages_by_source: dict):
                 app.progress_update.emit("Uninstall complete!", 100)
             except Exception:
                 pass
-            app.show_message.emit("Uninstallation Complete", f"Successfully processed {total} package(s).")
+            app.show_message.emit(
+                "Uninstallation Complete",
+                "Removed: " + ", ".join(
+                    f"{pkg} ({src})"
+                    for src, pkgs in packages_by_source.items()
+                    for pkg in pkgs
+                ),
+            )
             try:
                 app.installation_progress.emit("success", False)
             except Exception:

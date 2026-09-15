@@ -3446,6 +3446,9 @@ class _ViewsMixin:
                 return
             if not name:
                 return
+            if not self._confirm_uninstall({source: [name]}):
+                self.log("Uninstall cancelled.")
+                return
             if not self.ensure_session_auth():
                 self.log("Uninstall cancelled: authentication required.")
                 return

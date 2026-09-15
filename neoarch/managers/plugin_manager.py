@@ -160,6 +160,9 @@ class PluginsManager:
             if source not in _SUPPORTED_SOURCES:
                 self._message("Plugins", f"Unsupported package source: {source}")
                 return
+            if not self.app._confirm_uninstall({source: [name]}):
+                self._message("Plugins", "Uninstall cancelled.")
+                return
             if not self.app.ensure_session_auth():
                 self._message("Plugins", "Uninstall cancelled: authentication required.")
                 return

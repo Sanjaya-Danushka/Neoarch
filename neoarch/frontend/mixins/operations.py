@@ -456,6 +456,34 @@ class _OperationsMixin:
             self.log(f"Partial-update check skipped: {e}")
         return True
 
+    def _confirm_uninstall(self, packages_by_source):
+        """Confirm a package removal before it runs.
+
+        Removals are destructive and have no undo, so a confirmation dialog
+        lists exactly what will be removed. Returns False if the user
+        cancels. Applied at every uninstall entry point.
+        """
+        try:
+            from neoarch.frontend.components.dark_dialogs import dark_confirm
+        except Exception as e:
+            self.log(f"Uninstall confirmation skipped: {e}")
+            return True
+        summary = ", ".join(
+            f"{pkg} ({src})"
+            for src, pkgs in packages_by_source.items()
+            for pkg in pkgs
+        )
+        if not summary:
+            return False
+        return dark_confirm(
+            self,
+            _("Confirm Uninstall"),
+            _("Uninstall the following package(s)?\n\n{summary}\n\n"
+              "This will remove them from your system and cannot be undone.")
+            .format(summary=summary),
+            danger=True,
+        )
+
     def _available_arch_updates(self):
         """The pacman/AUR update set for the current page.
 
@@ -790,6 +818,9 @@ class _OperationsMixin:
                 packages_by_source[source].append(token)
         
         flat_summary = ', '.join([f"{pkg} ({src})" for src, pkgs in packages_by_source.items() for pkg in pkgs])
+        if not self._confirm_uninstall(packages_by_source):
+            self.log("Uninstall cancelled.")
+            return
         if not self.ensure_session_auth():
             self.log("Uninstall cancelled: authentication required.")
             return
@@ -849,6 +880,12 @@ class _OperationsMixin:
         source = pkg.get('source', 'pacman')
         if source in ('pacman', 'AUR') and not self._db_lock_preflight(
                 operation="Uninstall package"):
+            return
+        name = (pkg.get('name') or '').strip()
+        if not name:
+            return
+        if not self._confirm_uninstall({source: [name]}):
+            self.log("Uninstall cancelled.")
             return
         if not self.ensure_session_auth():
             self.log("Uninstall cancelled: authentication required.")
