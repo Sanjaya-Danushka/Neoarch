@@ -42,6 +42,7 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
     search_timer = QTimer()
     installation_progress = pyqtSignal(str, bool)  # status, can_cancel
     progress_update = pyqtSignal(str, int)  # message, percent (-1 = indeterminate)
+    snapshot_progress = pyqtSignal(str, str)  # state ("busy"|"done"|"error"), detail
     ui_call = pyqtSignal(object)
     
     def __init__(self):
@@ -176,6 +177,18 @@ class ArchPkgManagerUniGetUI(_ViewsMixin, _OperationsMixin, _BundlesMixin, _Sear
         QTimer.singleShot(2000, lambda: self._on_cloud_user_changed(self._cloud_auth.user))
         # Release notes: What's New after an update, then silently detect newer releases
         QTimer.singleShot(3200, self._check_release_notes)
+        # Clean up orphaned snapshot processes left over from a previously
+        # interrupted session (they hold lock files and would freeze new runs)
+        QTimer.singleShot(4000, self._cleanup_stale_snapshot_procs)
+
+    def _cleanup_stale_snapshot_procs(self):
+        """Kill orphaned timeshift/snapper processes in the background."""
+        try:
+            from threading import Thread
+            from neoarch.backend.services.snapshot import kill_stale_snapshot_procs
+            Thread(target=kill_stale_snapshot_procs, daemon=True).start()
+        except Exception:
+            pass
 
     def _on_cloud_user_changed(self, user):
         if hasattr(self, 'update_user_avatar'):

@@ -19,11 +19,6 @@ from neoarch.backend.package.updater import update_core_tools
 
 class DependencyAuthCancelled(RuntimeError):
     """User closed the authentication prompt — setup must stop, not fake success."""
-from neoarch.backend.services.snapshot import (
-    create_snapshot,
-    revert_to_snapshot,
-    delete_snapshots,
-)
 
 
 class _AuthMixin:
@@ -231,14 +226,48 @@ class _AuthMixin:
         # caching; no external GUI auth tools are required anymore.
         pass
 
+    @staticmethod
+    def _snapshot_engine(settings):
+        """Return the snapshot service module matching the configured backend."""
+        if settings.get('snapshot_backend') == 'snapper':
+            from neoarch.backend.services import snapper
+            return snapper
+        from neoarch.backend.services import snapshot as snapshot_svc
+        return snapshot_svc
+
     def create_snapshot(self):
-        return create_snapshot(self)
+        if not self.ensure_session_auth():
+            self.log("Snapshot cancelled: authentication required.")
+            return
+        return self._snapshot_engine(self.settings).create_snapshot(self)
 
     def revert_to_snapshot(self):
-        return revert_to_snapshot(self)
+        if not self.ensure_session_auth():
+            self.log("Snapshot cancelled: authentication required.")
+            return
+        return self._snapshot_engine(self.settings).revert_to_snapshot(self)
 
     def delete_snapshots(self):
-        return delete_snapshots(self)
+        if not self.ensure_session_auth():
+            self.log("Snapshot cancelled: authentication required.")
+            return
+        return self._snapshot_engine(self.settings).delete_snapshots(self)
+
+    def install_snapshot_hooks(self):
+        """Install system-wide pacman snapper hooks (Snapper only)."""
+        if not self.ensure_session_auth():
+            self.log("Hook install cancelled: authentication required.")
+            return
+        from neoarch.backend.services.snapper import install_pacman_hooks
+        install_pacman_hooks(self)
+
+    def remove_snapshot_hooks(self):
+        """Remove the system-wide pacman snapper hooks."""
+        if not self.ensure_session_auth():
+            self.log("Hook removal cancelled: authentication required.")
+            return
+        from neoarch.backend.services.snapper import remove_pacman_hooks
+        remove_pacman_hooks(self)
 
     # ── Built-in backup (replaces timeshift as default) ──
 

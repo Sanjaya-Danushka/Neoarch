@@ -118,6 +118,8 @@ def test_config_defaults(tmp_path, monkeypatch):
     data = _load_config()
     assert data["autoupdate_enabled"] is False
     assert data["snapshot_before_update"] is False
+    assert data["snapshot_backend"] == "timeshift"
+    assert data["snapper_config"] == ""
 
 
 def test_cmd_scan_flags_json(tmp_path):

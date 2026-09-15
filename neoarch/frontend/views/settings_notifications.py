@@ -1,9 +1,26 @@
 from typing import Any
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
-                             QLabel, QCheckBox, QSpinBox)
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel)
 
-from neoarch.frontend.tokens import QSS, Colors, Fonts, Radii
+from neoarch.frontend.tokens import Colors, Fonts
 from neoarch.backend.services.i18n import _
+from neoarch.frontend.components.toggle_switch import ToggleSwitch
+from neoarch.frontend.views._settings_kit import make_card, row, sep, Stepper
+
+_ICON_BELL = (
+    '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>'
+    '<path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>'
+)
+_ICON_BELL_RING = (
+    '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>'
+    '<path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>'
+    '<path d="M4 2a10.2 10.2 0 0 0-2 5.5"/>'
+    '<path d="M22 2a10.2 10.2 0 0 1 2 5.5"/>'
+)
+_ICON_TIMER = (
+    '<line x1="10" x2="14" y1="2" y2="2"/>'
+    '<line x1="12" x2="15" y1="14" y2="11"/>'
+    '<circle cx="12" cy="14" r="8"/>'
+)
 
 
 class NotificationsSettingsWidget(QWidget):
@@ -16,96 +33,101 @@ class NotificationsSettingsWidget(QWidget):
 
         self.setup_ui()
 
-    def _make_card(self, title_text):
-        card = QFrame()
-        card.setObjectName("settingsCard")
-        card.setStyleSheet(QSS.CARD)
-        card_layout = QVBoxLayout(card)
-        card_layout.setContentsMargins(20, 18, 20, 20)
-        card_layout.setSpacing(16)
-
-        title = QLabel(title_text)
-        title.setStyleSheet(f"font-size: {Fonts.CARD_TITLE}; font-weight: {Fonts.SEMI}; color: {Colors.TEXT}; border: none;")
-        card_layout.addWidget(title)
-
-        return card, card_layout
-
     def setup_ui(self):
         title = QLabel(_("Notifications"))
-        title.setStyleSheet(f"font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD}; color: {Colors.TEXT}; letter-spacing: -0.5px;")
+        title.setStyleSheet(
+            f"font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD};"
+            f" color: {Colors.TEXT}; letter-spacing: -0.5px;")
         self.layout.addWidget(title)
 
         subtitle = QLabel(_("Control which events show notifications and alerts"))
-        subtitle.setStyleSheet(f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2}; margin-top: -16px;")
+        subtitle.setStyleSheet(
+            f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
+            " border: none; background: transparent; margin-top: 0;")
         self.layout.addWidget(subtitle)
 
-        # ── Channels Card ──
-        channel_card, channel_layout = self._make_card(_("Notification Channels"))
+        self.setup_channels()
+        self.layout.addWidget(self.channel_card)
 
-        self.cb_desktop = QCheckBox(_("Desktop notifications (system tray)"))
-        self.cb_desktop.setStyleSheet(QSS.CHECKBOX)
-        self.cb_desktop.setChecked(bool(self.app.settings.get('notify_desktop', True)))
-        self.cb_desktop.toggled.connect(lambda v: self.app.update_setting('notify_desktop', v))
-        channel_layout.addWidget(self.cb_desktop)
+        self.setup_events()
+        self.layout.addWidget(self.event_card)
 
-        self.cb_inapp = QCheckBox(_("In-app toast messages"))
-        self.cb_inapp.setStyleSheet(QSS.CHECKBOX)
-        self.cb_inapp.setChecked(bool(self.app.settings.get('notify_inapp', True)))
-        self.cb_inapp.toggled.connect(lambda v: self.app.update_setting('notify_inapp', v))
-        channel_layout.addWidget(self.cb_inapp)
+        self.setup_rate_limiting()
+        self.layout.addWidget(self.rate_card)
 
-        self.cb_sound = QCheckBox(_("Play sound on events"))
-        self.cb_sound.setStyleSheet(QSS.CHECKBOX)
-        self.cb_sound.setChecked(bool(self.app.settings.get('notify_sound', False)))
-        self.cb_sound.toggled.connect(lambda v: self.app.update_setting('notify_sound', v))
-        channel_layout.addWidget(self.cb_sound)
+    def _toggle(self, key, default, name):
+        toggle = ToggleSwitch(self, name)
+        toggle.setChecked(
+            bool(self.app.settings.get(key, default)), animate=False)
+        toggle.toggled.connect(
+            lambda v: self.app.update_setting(key, v))
+        return toggle
 
-        self.layout.addWidget(channel_card)
+    def setup_channels(self):
+        self.channel_card, lay = make_card(
+            _("Notification Channels"), _ICON_BELL)
 
-        # ── Events Card ──
-        event_card, event_layout = self._make_card(_("Events"))
+        self.sw_desktop = self._toggle(
+            'notify_desktop', True, _("Desktop notifications"))
+        lay.addWidget(row(
+            _("Desktop notifications"),
+            _("Show a pop-up notification from the system tray "
+              "when a task completes."),
+            control=self.sw_desktop))
+        lay.addWidget(sep())
 
-        self.cb_install = QCheckBox(_("Package install / uninstall complete"))
-        self.cb_install.setStyleSheet(QSS.CHECKBOX)
-        self.cb_install.setChecked(bool(self.app.settings.get('notify_on_install', True)))
-        self.cb_install.toggled.connect(lambda v: self.app.update_setting('notify_on_install', v))
-        event_layout.addWidget(self.cb_install)
+        self.sw_inapp = self._toggle(
+            'notify_inapp', True, _("In-app toast messages"))
+        lay.addWidget(row(
+            _("In-app toast messages"),
+            _("Show a message banner inside the app when a task completes."),
+            control=self.sw_inapp))
+        lay.addWidget(sep())
 
-        self.cb_updates = QCheckBox(_("Updates available"))
-        self.cb_updates.setStyleSheet(QSS.CHECKBOX)
-        self.cb_updates.setChecked(bool(self.app.settings.get('notify_on_updates', True)))
-        self.cb_updates.toggled.connect(lambda v: self.app.update_setting('notify_on_updates', v))
-        event_layout.addWidget(self.cb_updates)
+        self.sw_sound = self._toggle(
+            'notify_sound', False, _("Play sound on events"))
+        lay.addWidget(row(
+            _("Play sound on events"),
+            _("Play a short alert sound together with each notification."),
+            control=self.sw_sound))
 
-        self.cb_errors = QCheckBox(_("Errors and warnings"))
-        self.cb_errors.setStyleSheet(QSS.CHECKBOX)
-        self.cb_errors.setChecked(bool(self.app.settings.get('notify_on_errors', True)))
-        self.cb_errors.toggled.connect(lambda v: self.app.update_setting('notify_on_errors', v))
-        event_layout.addWidget(self.cb_errors)
+    def setup_events(self):
+        self.event_card, lay = make_card(_("Events"), _ICON_BELL_RING)
 
-        self.layout.addWidget(event_card)
+        self.sw_install = self._toggle(
+            'notify_on_install', True, _("Package install / uninstall complete"))
+        lay.addWidget(row(
+            _("Package install / uninstall complete"),
+            _("When a package installation or removal finishes."),
+            control=self.sw_install))
+        lay.addWidget(sep())
 
-        # ── Rate Limiting Card ──
-        rate_card, rate_layout = self._make_card(_("Rate Limiting"))
+        self.sw_updates = self._toggle(
+            'notify_on_updates', True, _("Updates available"))
+        lay.addWidget(row(
+            _("Updates available"),
+            _("When new system and package updates are ready."),
+            control=self.sw_updates))
+        lay.addWidget(sep())
 
-        rate_row = QHBoxLayout()
-        rate_row.setSpacing(12)
-        rate_label = QLabel(_("Cooldown between notifications (seconds):"))
-        rate_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
-        rate_row.addWidget(rate_label)
+        self.sw_errors = self._toggle(
+            'notify_on_errors', True, _("Errors and warnings"))
+        lay.addWidget(row(
+            _("Errors and warnings"),
+            _("When an operation fails or emits warnings."),
+            control=self.sw_errors))
 
-        self.cooldown_spin = QSpinBox()
-        self.cooldown_spin.setStyleSheet(QSS.SPINBOX)
-        self.cooldown_spin.setRange(0, 300)
-        self.cooldown_spin.setSingleStep(5)
-        self.cooldown_spin.setValue(int(self.app.settings.get('notify_cooldown', 10)))
-        self.cooldown_spin.valueChanged.connect(lambda v: self.app.update_setting('notify_cooldown', v))
-        rate_row.addWidget(self.cooldown_spin)
+    def setup_rate_limiting(self):
+        self.rate_card, lay = make_card(_("Rate Limiting"), _ICON_TIMER)
 
-        rate_unit = QLabel(_("sec"))
-        rate_unit.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
-        rate_row.addWidget(rate_unit)
-        rate_row.addStretch()
+        self.cooldown_stepper = Stepper(
+            0, 300, step=5, suffix=_(" s"), on_text=_("No cooldown"))
+        self.cooldown_stepper.setValue(
+            int(self.app.settings.get('notify_cooldown', 10)))
+        self.cooldown_stepper.valueChanged.connect(
+            lambda v: self.app.update_setting('notify_cooldown', v))
 
-        rate_layout.addLayout(rate_row)
-        self.layout.addWidget(rate_card)
+        lay.addWidget(row(
+            _("Cooldown between notifications (seconds):"),
+            _("Seconds to wait before repeating the same notification."),
+            control=self.cooldown_stepper))

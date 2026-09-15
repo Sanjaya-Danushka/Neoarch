@@ -65,7 +65,7 @@ and dependencies/source builds are in [Install](#install) below.
 
 ### Safety and maintenance
 
-- **Snapshots** — Timeshift integration (list, create, restore, prune) before risky operations.
+- **Snapshots** — pick your engine, Timeshift **or** Snapper (BTRFS): list, create, revert, delete — automatically before risky operations, with optional pacman hooks so every update captures a Snapper snapshot.
 - **System backups** — Btrfs-aware backups (package list + config export) with auto-prune keeping the last 5.
 - **Hygiene tools** — orphan removal, `.pacnew`/`.pacsave` diffs and merging, cache + BleachBit cleaning, and Arch news with offline caching.
 - **PKGBUILD scanner** — static analysis mode flags risky post-install tools, elevation, dynamic shell, local binaries, and Unicode homograph spoofing (rules ported from [ArchCanary](https://github.com/musqz/archcanary)).
@@ -233,7 +233,7 @@ On Arch, system `pip` usually triggers `externally-managed-environment` — pref
 ## Credits &amp; acknowledgment
 
 - **ArchCanary** — the PKGBUILD security scanner is built on rule sets ported from [ArchCanary](https://github.com/musqz/archcanary) (MIT) by [musqz](https://github.com/musqz), our pre-install scan gate. Thanks for the groundwork.
-- Built on the shoulders of the Arch Linux ecosystem — **pacman**, **AUR helpers** (yay, paru), **Flatpak**, **npm**, **PyQt6**, and **Timeshift**.
+- Built on the shoulders of the Arch Linux ecosystem — **pacman**, **AUR helpers** (yay, paru), **Flatpak**, **npm**, **PyQt6**, and the snapshot backends **Timeshift** &amp; **Snapper**.
 
 ---
 

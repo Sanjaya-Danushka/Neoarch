@@ -20,11 +20,19 @@ _MAX_SAMPLES = 10
 _PROBE_URL = "https://archlinux.org/"
 _PROBE_TIMEOUT = 5.0
 _CONSECUTIVE_FAILURES_THRESHOLD = 2
-_SOCKET_CHECK_HOST = "1.1.1.1"
-_SOCKET_CHECK_PORT = 53
 _SOCKET_CHECK_TIMEOUT = 2.0
 _CONNECTIVITY_CHECK_INTERVAL = 1.0
 _SOCKET_DEBOUNCE_FAILURES = 3
+_HTTP_SUCCESS_FRESH_SECS = 60.0
+# Any of these reachable = internet up. Port 443 (not just 53) survives
+# networks that filter raw DNS egress, IPs from different providers
+# survive single-region outages, and a proxy-only setup is covered by the
+# HTTP-success path (record()).
+_SOCKET_CHECK_TARGETS = (
+    ("1.1.1.1", 443),
+    ("8.8.8.8", 443),
+    ("1.1.1.1", 53),
+)
 
 
 class _Recorder:
@@ -87,11 +95,13 @@ class _Recorder:
 
 _recorder = _Recorder()
 
-_conn_state = {"online": True, "failures": 0}
+_conn_state = {"online": True, "failures": 0, "last_http_success": 0.0}
 
 
 def record(seconds):
     """Record a successful request duration in seconds."""
+    if seconds is not None:
+        _conn_state["last_http_success"] = time.monotonic()
     _recorder.record(seconds)
 
 
@@ -113,23 +123,33 @@ def has_samples():
 def is_online():
     """Non-blocking check if the machine has internet connectivity.
 
-    Returns a cached boolean updated by a background thread (see
-    ``_connectivity_loop``). Safe to call from the UI thread on every tick.
+    A successful HTTP request within the last ``_HTTP_SUCCESS_FRESH_SECS``
+    is authoritative proof of connectivity (the socket check can miss
+    proxy-only networks or filtered raw-DNS egress). Otherwise the cached
+    result of the background socket loop (see ``_connectivity_loop``) is
+    used. Safe to call from the UI thread on every tick.
     """
+    if time.monotonic() - _conn_state["last_http_success"] < _HTTP_SUCCESS_FRESH_SECS:
+        return True
     return _conn_state["online"]
 
 
 def _socket_check():
-    """Single TCP socket check. Returns True if reachable."""
-    try:
-        sock = socket.create_connection(
-            (_SOCKET_CHECK_HOST, _SOCKET_CHECK_PORT),
-            timeout=_SOCKET_CHECK_TIMEOUT,
-        )
-        sock.close()
-        return True
-    except OSError:
-        return False
+    """Single TCP socket check against a set of fallback targets.
+
+    Returns True if any target is reachable.
+    """
+    for host, port in _SOCKET_CHECK_TARGETS:
+        try:
+            sock = socket.create_connection(
+                (host, port),
+                timeout=_SOCKET_CHECK_TIMEOUT,
+            )
+            sock.close()
+            return True
+        except OSError:
+            continue
+    return False
 
 
 def _connectivity_loop():

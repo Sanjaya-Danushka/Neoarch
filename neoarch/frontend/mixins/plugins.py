@@ -261,6 +261,21 @@ _state = _load_state()
 _last_update = float(_state.get('last_update', 0) or 0)
 _last_check = float(_state.get('last_check', 0) or 0)
 
+def _run_pre_update_snapshot(app):
+    backend = app.settings.get('snapshot_backend', 'timeshift')
+    if backend == 'snapper':
+        if not app.cmd_exists("snapper"):
+            app.log("Auto-update: snapper not installed, skipping snapshot")
+            return
+        from neoarch.backend.services.snapper import pre_update_snapshot
+    else:
+        if not app.cmd_exists("timeshift"):
+            app.log("Auto-update: timeshift not installed, skipping snapshot")
+            return
+        from neoarch.backend.services.snapshot import pre_update_snapshot
+    pre_update_snapshot(app)
+
+
 def on_tick(app):
     global _last_update, _last_check, _state
     try:
@@ -290,28 +305,7 @@ def on_tick(app):
         _save_state(_state)
         if app.settings.get('snapshot_before_update', False):
             try:
-                if app.cmd_exists("timeshift"):
-                    try:
-                        result = subprocess.run(["timeshift", "--list"], capture_output=True, text=True, timeout=30)
-                        if result.returncode == 0:
-                            lines = result.stdout.strip().split('\\n')
-                            snapshot_count = sum(1 for line in lines if line.strip() and not line.startswith('Num') and not line.startswith('---'))
-                            if snapshot_count > 2:
-                                delete_result = subprocess.run(get_auth_command() + ["timeshift", "--delete-all", "--skip", "2"], capture_output=True, text=True, timeout=300, env=get_askpass_env())
-                                if delete_result.returncode == 0:
-                                    app.log("Auto-update: Cleaned up old snapshots (kept latest 2)")
-                                else:
-                                    app.log(f"Auto-update: Failed to clean up snapshots: {delete_result.stderr}")
-                    except Exception as e:
-                        app.log(f"Auto-update: Error checking snapshots: {e}")
-                    timestamp = subprocess.run(["date", "+%Y-%m-%d_%H-%M-%S"], capture_output=True, text=True).stdout.strip()
-                    comment = f"NeoArch pre-update snapshot {timestamp}"
-                    result = subprocess.run(get_auth_command() + ["timeshift", "--create", "--comments", comment], capture_output=True, text=True, timeout=300, env=get_askpass_env())
-                    if result.returncode == 0:
-                        app.log(f"Auto-update: Pre-update snapshot created: {comment}")
-                        app.show_message.emit(_("Snapshot"), _("Pre-update snapshot created: {comment}").format(comment=comment))
-                    else:
-                        app.log(f"Auto-update: Failed to create pre-update snapshot: {result.stderr}")
+                _run_pre_update_snapshot(app)
             except Exception as e:
                 app.log(f"Auto-update: Pre-update snapshot creation failed: {e}")
         update_success = False

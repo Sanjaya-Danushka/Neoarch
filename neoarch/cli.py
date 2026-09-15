@@ -878,6 +878,8 @@ _DEFAULTS = {
     "autoupdate_enabled": False,
     "autoupdate_interval_days": 7,
     "snapshot_before_update": False,
+    "snapshot_backend": "timeshift",
+    "snapper_config": "",
     "auto_clean_cache": False,
     "schedule_enabled": False,
     "schedule_days": [0, 1, 2, 3, 4, 5, 6],

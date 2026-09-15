@@ -19,6 +19,9 @@ msgstr " min"
 msgid " re-checking"
 msgstr " re-comprobando"
 
+msgid " s"
+msgstr " s"
+
 msgid " vols"
 msgstr " volúmenes"
 
@@ -66,6 +69,9 @@ msgstr "Ayudante AUR:"
 
 msgid "AUR RPC Connectivity"
 msgstr "Conectividad RPC de AUR"
+
+msgid "AUR Resources"
+msgstr "Recursos de AUR"
 
 msgid "AUR Security Notice"
 msgstr "Aviso de seguridad de AUR"
@@ -570,6 +576,9 @@ msgstr "Descripción"
 
 msgid "Designs, builds and maintains every part of NeoArch."
 msgstr "Diseña, compila y mantiene cada parte de NeoArch."
+
+msgid "Desktop notifications"
+msgstr "Notificaciones de escritorio"
 
 msgid "Desktop notifications (system tray)"
 msgstr "Notificaciones de escritorio (bandeja del sistema)"
@@ -1198,6 +1207,9 @@ msgstr "Sin selección"
 msgid "No containers yet"
 msgstr "Aún no hay contenedores"
 
+msgid "No cooldown"
+msgstr "Sin espera"
+
 msgid "No corrupted package archives found."
 msgstr "No se encontraron archivos de paquetes corruptos."
 
@@ -1407,6 +1419,9 @@ msgstr "Fija los paquetes que nunca quieres actualizar"
 
 msgid "Platform"
 msgstr "Plataforma"
+
+msgid "Play a short alert sound together with each notification."
+msgstr "Reproduce un sonido de alerta corto junto con cada notificación."
 
 msgid "Play sound on events"
 msgstr "Reproducir sonido en los eventos"
@@ -1717,6 +1732,9 @@ msgstr "Buscando en repositorios oficiales y AUR..."
 msgid "Searching packages..."
 msgstr "Buscando paquetes..."
 
+msgid "Seconds to wait before repeating the same notification."
+msgstr "Segundos de espera antes de repetir la misma notificación."
+
 msgid "Secure browser-based authentication"
 msgstr "Autenticación segura basada en el navegador"
 
@@ -1777,6 +1795,12 @@ msgstr "Mostrar noticias"
 msgid "Show News ({n} new)"
 msgstr "Mostrar noticias ({n} nueva)"
 
+msgid "Show a message banner inside the app when a task completes."
+msgstr "Muestra un banner dentro de la aplicación cuando una tarea termina."
+
+msgid "Show a pop-up notification from the system tray when a task completes."
+msgstr "Muestra una notificación emergente desde la bandeja del sistema cuando una tarea termina."
+
 msgid "Show available or installed only"
 msgstr "Mostrar solo disponibles o instalados"
 
@@ -1827,6 +1851,9 @@ msgstr "Filtros de fuente"
 
 msgid "Sources"
 msgstr "Fuentes"
+
+msgid "Sources & Community Packages"
+msgstr "Fuentes y paquetes comunitarios"
 
 msgid "Sources & Plugins"
 msgstr "Fuentes y plugins"
@@ -1896,6 +1923,9 @@ msgstr "Estado del sistema"
 
 msgid "System Healthy"
 msgstr "Sistema sano"
+
+msgid "System Protection & Habits"
+msgstr "Protección del sistema y buenas prácticas"
 
 msgid "System Status"
 msgstr "Estado del sistema"
@@ -2059,6 +2089,9 @@ msgstr "Revisión de actualización"
 msgid "Updates"
 msgstr "Actualizaciones"
 
+msgid "Updates & Review"
+msgstr "Actualizaciones y revisión"
+
 msgid "Updates ({n})"
 msgstr "Actualizaciones ({n})"
 
@@ -2172,6 +2205,15 @@ msgstr "Novedades"
 
 msgid "What's New in NeoArch {version}"
 msgstr "Novedades en NeoArch {version}"
+
+msgid "When a package installation or removal finishes."
+msgstr "Cuando termina la instalación o eliminación de un paquete."
+
+msgid "When an operation fails or emits warnings."
+msgstr "Cuando una operación falla o emite advertencias."
+
+msgid "When new system and package updates are ready."
+msgstr "Cuando hay nuevas actualizaciones del sistema y de paquetes."
 
 msgid "When packages ship new configs, the old one is kept as .pacnew."
 msgstr "Cuando los paquetes incluyen configuraciones nuevas, la anterior se conserva como .pacnew."
@@ -2408,3 +2450,361 @@ msgstr "Confirmar desinstalación"
 
 msgid "Uninstall the following package(s)?\n\n{summary}\n\nThis will remove them from your system and cannot be undone."
 msgstr "¿Desinstalar los siguientes paquetes?\n\n{summary}\n\nEsto los eliminará de tu sistema y no puede deshacerse."
+
+# Premium dark glass General settings redesign
+
+msgid "AUR Helper"
+msgstr "Complemento AUR"
+
+msgid "AUR RPC endpoint"
+msgstr "Punto de acceso RPC de AUR"
+
+msgid "Autosave"
+msgstr "Guardado automático"
+
+msgid "Autosave path"
+msgstr "Ruta de guardado automático"
+
+msgid "Checks for available updates each time the app starts."
+msgstr "Comprueba si hay actualizaciones disponibles cada vez que se inicia la aplicación."
+
+msgid "Data"
+msgstr "Datos"
+
+msgid "Export settings to file"
+msgstr "Exportar la configuración a un archivo"
+
+msgid "Import settings from file"
+msgstr "Importar la configuración desde un archivo"
+
+msgid "Include Local source"
+msgstr "Incluir fuente local"
+
+msgid "Includes custom local scripts in search and installs."
+msgstr "Incluye scripts locales personalizados en búsquedas e instalaciones."
+
+msgid "Installs global npm packages to ~/.npm-global without sudo."
+msgstr "Instala paquetes npm globales en ~/.npm-global sin sudo."
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "Package Sources"
+msgstr "Fuentes de paquetes"
+
+msgid "Save the selected bundle automatically."
+msgstr "Guarda el paquete seleccionado automáticamente."
+
+msgid "Settings Backup"
+msgstr "Copia de seguridad de la configuración"
+
+msgid "Use npm user mode"
+msgstr "Usar modo de usuario de npm"
+
+msgid "Connectivity"
+msgstr "Conectividad"
+
+msgid "Themes"
+msgstr "Temas"
+
+msgid "Decorative teal rim on the translucent window frame."
+msgstr "Borde decorativo de color azul verdoso en el marco de ventana translúcido."
+
+msgid "Rounded corners on the translucent window frame."
+msgstr "Esquinas redondeadas en el marco de ventana translúcido."
+
+msgid "%(n)d px"
+msgstr "%(n)d px"
+
+msgid " days"
+msgstr " días"
+
+msgid "Background re-check while the app is open."
+msgstr "Revisión de fondo mientras la aplicación está abierta."
+
+msgid "Backs up your package list and config before installing."
+msgstr "Copia tu lista de paquetes y configuración antes de instalar."
+
+msgid "Backup method"
+msgstr "Método de copia de seguridad"
+
+msgid "Checks for new packages on the configured schedule."
+msgstr "Comprueba paquetes nuevos según el horario configurado."
+
+msgid "Days"
+msgstr "Días"
+
+msgid "Days between automatic update checks."
+msgstr "Días entre comprobaciones de actualización automáticas."
+
+msgid "Next run"
+msgstr "Próxima ejecución"
+
+msgid "Optional. Requires the external 'timeshift' tool — the built-in backup above is recommended."
+msgstr "Opcional. Requiere la herramienta externa «timeshift»; se recomienda la copia de seguridad integrada de arriba."
+
+msgid "Pick the weekdays on which the check runs."
+msgstr "Elige los días de la semana en que se ejecuta la comprobación."
+
+msgid "Re-check for updates"
+msgstr "Recomprobar actualizaciones"
+
+msgid "Runs the update check automatically on a weekly schedule (applies while the app is running)."
+msgstr "Ejecuta la comprobación de actualizaciones automáticamente con un horario semanal (se aplica mientras la aplicación está abierta)."
+
+msgid "Time"
+msgstr "Hora"
+
+msgid "Time of day to run the check."
+msgstr "Hora del día para ejecutar la comprobación."
+
+msgid "Update interval"
+msgstr "Intervalo de actualización"
+
+msgid "How many days between automatic update checks."
+msgstr "Cuántos días entre comprobaciones de actualización automáticas."
+
+msgid "Re-check while open (min)"
+msgstr "Recomprobar con la app abierta (min)"
+
+msgid "Re-checks for updates in the background every X minutes while the app is running. Set to Off to disable."
+msgstr "Recomprueba actualizaciones en segundo plano cada X minutos mientras la aplicación está abierta. Ajústalo a Off para desactivarlo."
+
+msgid "Run at"
+msgstr "Ejecutar a las"
+
+msgid "Select the days the scheduled check runs on."
+msgstr "Selecciona los días en que se ejecuta la comprobación programada."
+
+msgid "Time of day the weekly check starts."
+msgstr "Hora del día en que comienza la comprobación semanal."
+
+msgid "Update interval (days)"
+msgstr "Intervalo de actualización (días)"
+
+msgid "Weekdays"
+msgstr "Días de la semana"
+
+msgid "Mo"
+msgstr "Lu"
+
+msgid "Tu"
+msgstr "Ma"
+
+msgid "We"
+msgstr "Mi"
+
+msgid "Th"
+msgstr "Ju"
+
+msgid "Fr"
+msgstr "Vi"
+
+msgid "Sa"
+msgstr "Sá"
+
+msgid "Su"
+msgstr "Do"
+
+# neoarch: snapper backend integration
+
+msgid "BTRFS detected — the external 'snapper' tool is ready."
+msgstr "BTRFS detectado: la herramienta externa 'snapper' está lista."
+
+msgid "Confirm Restoration"
+msgstr "Confirmar restauración"
+
+msgid "Create a system snapshot before proceeding?\n\nThis will take some time."
+msgstr "¿Crear una instantánea del sistema antes de continuar?\n\nEsto llevará algo de tiempo."
+
+msgid "Creating snapshot..."
+msgstr "Creando instantánea..."
+
+msgid "Deleting old snapshots..."
+msgstr "Eliminando instantáneas antiguas..."
+
+msgid "Error creating snapshot: {err}"
+msgstr "Error al crear la instantánea: {err}"
+
+msgid "Error deleting snapshots: {err}"
+msgstr "Error al eliminar instantáneas: {err}"
+
+msgid "Error installing pacman hooks: {err}"
+msgstr "Error al instalar los hooks de pacman: {err}"
+
+msgid "Error removing pacman hooks: {err}"
+msgstr "Error al eliminar los hooks de pacman: {err}"
+
+msgid "Error restoring snapshot: {err}"
+msgstr "Error al restaurar la instantánea: {err}"
+
+msgid "Failed to create snapshot: {err}"
+msgstr "No se pudo crear la instantánea: {err}"
+
+msgid "Failed to delete snapshots: {err}"
+msgstr "No se pudieron eliminar las instantáneas: {err}"
+
+msgid "Failed to install pacman hook: {path} - {err}"
+msgstr "No se pudo instalar el hook de pacman: {path} - {err}"
+
+msgid "Failed to remove pacman hooks: {err}"
+msgstr "No se pudieron eliminar los hooks de pacman: {err}"
+
+msgid "Failed to restore snapshot: {err}"
+msgstr "No se pudo restaurar la instantánea: {err}"
+
+msgid "Install update-time hooks"
+msgstr "Instalar hooks de actualización"
+
+msgid "Needs a BTRFS filesystem, the 'snapper' tool and a config (sudo snapper create-config /)."
+msgstr "Requiere un sistema de archivos BTRFS, la herramienta 'snapper' y una configuración (sudo snapper create-config /)."
+
+msgid "NeoArch manual snapshot {ts}"
+msgstr "Instantánea manual de NeoArch {ts}"
+
+msgid "No Snapshots"
+msgstr "Sin instantáneas"
+
+msgid "No snapper configuration found."
+msgstr "No se encontró configuración de snapper."
+
+msgid "No snapshots available for restoration."
+msgstr "No hay instantáneas disponibles para restaurar."
+
+msgid "Nothing to delete — 2 or fewer snapshots."
+msgstr "Nada que eliminar: hay 2 o menos instantáneas."
+
+msgid "Old snapshots deleted successfully"
+msgstr "Instantáneas antiguas eliminadas correctamente"
+
+msgid "Pacman hooks installed — every system update will now capture Snapper snapshots."
+msgstr "Hooks de pacman instalados: cada actualización del sistema capturará instantáneas de Snapper."
+
+msgid "Pacman hooks removed."
+msgstr "Hooks de pacman eliminados."
+
+msgid "Pre-update snapshot created: {comment}"
+msgstr "Instantánea previa a la actualización creada: {comment}"
+
+msgid "Remove hooks"
+msgstr "Eliminar hooks"
+
+msgid "Restoring snapshot..."
+msgstr "Restaurando instantánea..."
+
+msgid "Rollback initiated for snapshot #{num}. Reboot to complete."
+msgstr "Reversión iniciada para la instantánea #{num}. Reinicia para completar."
+
+msgid "Select Snapshot to Restore"
+msgstr "Selecciona la instantánea a restaurar"
+
+msgid "Select a snapshot to restore the system to:"
+msgstr "Selecciona una instantánea para restaurar el sistema:"
+
+msgid "Snapper"
+msgstr "Snapper"
+
+msgid "Snapper Not Available"
+msgstr "Snapper no disponible"
+
+msgid "Snapper needs a BTRFS filesystem and a configuration."
+msgstr "Snapper requiere un sistema de archivos BTRFS y una configuración."
+
+msgid "Snapper needs a BTRFS filesystem, the 'snapper' tool and a configuration. Create one with: sudo snapper create-config /"
+msgstr "Snapper requiere un sistema de archivos BTRFS, la herramienta 'snapper' y una configuración. Crea una con: sudo snapper create-config /"
+
+msgid "Snapshot"
+msgstr "Instantánea"
+
+msgid "Snapshot created successfully: {comment}"
+msgstr "Instantánea creada correctamente: {comment}"
+
+msgid "Snapshot tool"
+msgstr "Herramienta de instantáneas"
+
+msgid "Snapshots"
+msgstr "Instantáneas"
+
+msgid "This will delete old snapshots to free up disk space.\n\nKeep only the 2 most recent snapshots?\n\nThis action cannot be undone."
+msgstr "Esto eliminará instantáneas antiguas para liberar espacio en disco.\n\n¿Conservar solo las 2 instantáneas más recientes?\n\nEsta acción no se puede deshacer."
+
+msgid "This will roll back the system to snapper snapshot #{num}.\n\nSnapper switches the default subvolume; a reboot is required.\n\nAre you sure you want to proceed?"
+msgstr "Esto revertirá el sistema a la instantánea de snapper #{num}.\n\nSnapper cambia el subvolumen predeterminado; se requiere reiniciar.\n\n¿Seguro que quieres continuar?"
+
+msgid "Timeshift"
+msgstr "Timeshift"
+
+msgid "Which snapshot engine the buttons and pre-update snapshots use."
+msgstr "Qué motor de instantáneas usan los botones y las instantáneas previas a la actualización."
+
+msgid "Ready — snapshots available"
+msgstr "Listo: instantáneas disponibles"
+
+msgid "Needs a BTRFS filesystem"
+msgstr "Requiere un sistema de archivos BTRFS"
+
+msgid "Requires the 'snapper' tool"
+msgstr "Requiere la herramienta 'snapper'"
+
+msgid "Requires the 'timeshift' tool"
+msgstr "Requiere la herramienta 'timeshift'"
+
+msgid "Needs a snapper config (sudo snapper create-config /)"
+msgstr "Necesita una configuración de snapper (sudo snapper create-config /)"
+
+msgid "Snapper setup is incomplete"
+msgstr "La configuración de Snapper está incompleta"
+
+msgid "Snapshot restoration initiated. System will reboot."
+msgstr "Restauración de instantánea iniciada. El sistema se reiniciará."
+
+msgid "Snapshot created successfully: {date}"
+msgstr "Instantánea creada correctamente: {date}"
+
+msgid "The snapshot did not appear in Timeshift's list.\nCommand output: {out}"
+msgstr "La instantánea no aparece en la lista de Timeshift.\nSalida del comando: {out}"
+
+msgid "(empty)"
+msgstr "(vacío)"
+
+msgid "Last snapshot: —"
+msgstr "Última instantánea: —"
+
+msgid "Last snapshot: {date}"
+msgstr "Última instantánea: {date}"
+
+msgid "Creating pre-update snapshot..."
+msgstr "Creando instantánea previa a la actualización..."
+
+msgid "Failed to create pre-update snapshot: {err}"
+msgstr "No se pudo crear la instantánea previa a la actualización: {err}"
+
+msgid "Error creating pre-update snapshot: {err}"
+msgstr "Error al crear la instantánea previa a la actualización: {err}"
+
+msgid "Installing update-time hooks..."
+msgstr "Instalando hooks de actualización..."
+
+msgid "Removing update-time hooks..."
+msgstr "Eliminando hooks de actualización..."
+
+msgid "Cancelling…"
+msgstr "Cancelando…"
+
+msgid "Operation cancelled."
+msgstr "Operación cancelada."
+
+msgid "Another snapshot operation is already running."
+msgstr "Ya se está ejecutando otra operación de instantáneas."
+
+msgid "Loading snapshots..."
+msgstr "Cargando instantáneas..."
+
+msgid "Failed to list snapshots: {err}"
+msgstr "No se pudieron listar las instantáneas: {err}"
+
+msgid "Timeshift is busy with another backup in progress (scheduled or manual). Try again after it finishes."
+msgstr "Timeshift está ocupado con otra copia de seguridad en curso (programada o manual). Inténtalo de nuevo cuando termine."
+
+msgid "Timeshift list failed"
+msgstr "El listado de Timeshift falló"

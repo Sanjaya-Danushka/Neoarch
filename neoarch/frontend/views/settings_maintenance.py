@@ -80,7 +80,9 @@ class MaintenanceSettingsWidget(QWidget):
         self.layout.addWidget(title)
 
         subtitle = QLabel(_("Keep your system tidy: orphans, leftover configs, and news"))
-        subtitle.setStyleSheet(f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2}; margin-top: -16px;")
+        subtitle.setStyleSheet(
+            f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
+            " border: none; background: transparent; margin-top: 0;")
         self.layout.addWidget(subtitle)
 
         # ── Orphans ──

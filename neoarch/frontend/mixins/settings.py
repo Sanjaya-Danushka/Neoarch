@@ -17,6 +17,7 @@ from neoarch.frontend.views.settings_proxy import ProxySettingsWidget
 from neoarch.frontend.views.settings_maintenance import MaintenanceSettingsWidget
 from neoarch.frontend.views.settings_appearance import AppearanceSettingsWidget
 from neoarch.frontend.tokens import Colors, Fonts, Radii
+from neoarch.frontend.styles import Styles
 
 
 class _SettingsMixin:
@@ -188,13 +189,9 @@ class _SettingsMixin:
         content_scroll.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         content_scroll.setStyleSheet(
-            "QScrollArea { background: transparent; border: none; }"
-            "QScrollBar:vertical { background: transparent; width: 6px; }"
-            "QScrollBar::handle:vertical { background: rgba(255,255,255,0.08);"
-            "  border-radius: 3px; min-height: 30px; }"
-            "QScrollBar::handle:vertical:hover { background: rgba(255,255,255,0.14); }"
-            "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"
-            f"QWidget#settingsInner {{ background-color: {Colors.BG}; }}")
+            Styles.scrollbar(width=8, color="rgba(255,255,255,0.12)",
+                             hover="rgba(255,255,255,0.22)", min_len=36)
+            + f"\nQWidget#settingsInner {{ background-color: {Colors.BG}; }}")
 
         settings_inner = QWidget()
         settings_inner.setObjectName("settingsInner")

@@ -15,11 +15,13 @@ def _clean_recorder():
     network_latency._recorder._consecutive_failures = 0
     network_latency._conn_state["online"] = True
     network_latency._conn_state["failures"] = 0
+    network_latency._conn_state["last_http_success"] = 0.0
     yield
     network_latency._recorder._samples = []
     network_latency._recorder._consecutive_failures = 0
     network_latency._conn_state["online"] = True
     network_latency._conn_state["failures"] = 0
+    network_latency._conn_state["last_http_success"] = 0.0
 
 
 def test_average_rolling_window():
@@ -47,6 +49,55 @@ def test_consecutive_failures_map_to_no_signal():
     network_latency.record_failure()
     network_latency.record_failure()
     assert network_latency.average() is None
+
+
+def test_recent_http_success_overrides_socket_offline():
+    network_latency._conn_state["online"] = False
+    assert network_latency.is_online() is False
+    network_latency.record(0.2)
+    assert network_latency.is_online() is True
+
+
+def test_stale_http_success_does_not_mask_offline():
+    network_latency._conn_state["online"] = False
+    network_latency._conn_state["last_http_success"] = 0.0
+    assert network_latency.is_online() is False
+
+
+def test_socket_check_falls_back_across_targets(monkeypatch):
+    import socket
+
+    class _FakeSock:
+        def __init__(self):
+            self.closed = False
+
+        def close(self):
+            self.closed = True
+
+    calls = []
+    fails = iter([True, False])
+
+    def fake_create_connection(target, timeout=None):
+        calls.append(target)
+        if next(fails):
+            raise OSError("filtered")
+        return _FakeSock()
+
+    monkeypatch.setattr(network_latency.socket, "create_connection",
+                        fake_create_connection)
+    assert network_latency._socket_check() is True
+    assert calls == list(network_latency._SOCKET_CHECK_TARGETS[:2])
+
+
+def test_socket_check_offline_when_all_targets_fail(monkeypatch):
+    import socket
+
+    def fake_create_connection(target, timeout=0):
+        raise OSError("filtered")
+
+    monkeypatch.setattr(network_latency.socket, "create_connection",
+                        fake_create_connection)
+    assert network_latency._socket_check() is False
 
 
 def test_install_patches_urlopen_and_records_latency():

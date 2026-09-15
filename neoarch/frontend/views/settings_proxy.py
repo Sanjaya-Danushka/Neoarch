@@ -37,7 +37,9 @@ class ProxySettingsWidget(QWidget):
         self.layout.addWidget(title)
 
         subtitle = QLabel(_("Configure network proxy settings and connection options"))
-        subtitle.setStyleSheet(f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2}; margin-top: -16px;")
+        subtitle.setStyleSheet(
+            f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
+            " border: none; background: transparent; margin-top: 0;")
         self.layout.addWidget(subtitle)
 
         # ── Proxy Card ──
