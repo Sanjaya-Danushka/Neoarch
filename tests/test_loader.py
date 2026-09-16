@@ -152,13 +152,13 @@ def test_pacman_fallback(monkeypatch):
 def test_pacman_retry_once(monkeypatch):
     monkeypatch.setattr("shutil.which", lambda name: "/usr/bin/" + name)
     monkeypatch.setattr("time.sleep", lambda _: None)
-    results = iter([
+    results = [
         FakeCompletedProcess(returncode=1),
         FakeCompletedProcess(stdout="pkg 1.0 -> 2.0"),
-    ])
+    ]
     monkeypatch.setattr(
         "neoarch.backend.package.loader._run_cmd",
-        lambda cmd, **kw: next(results),
+        lambda cmd, **kw: results.pop(0),
     )
     assert len(_check_pacman_updates()) == 1
 
@@ -166,14 +166,14 @@ def test_pacman_retry_once(monkeypatch):
 def test_pacman_all_fail(monkeypatch):
     monkeypatch.setattr("shutil.which", lambda name: "/usr/bin/" + name)
     monkeypatch.setattr("time.sleep", lambda _: None)
-    results = iter([
+    results = [
         FakeCompletedProcess(returncode=1),
         FakeCompletedProcess(returncode=1),
         FakeCompletedProcess(returncode=1),
-    ])
+    ]
     monkeypatch.setattr(
         "neoarch.backend.package.loader._run_cmd",
-        lambda cmd, **kw: next(results),
+        lambda cmd, **kw: results.pop(0),
     )
     assert _check_pacman_updates() == []
 

@@ -113,7 +113,7 @@ def test_holdpkg_roundtrip_dispatch(tmp_path, monkeypatch):
 
     def fake_run(cmd, timeout=600, env=None, **kw):
         calls.append(cmd)
-        assert f"HoldPkg = linux" in " ".join(cmd)
+        assert "HoldPkg = linux" in " ".join(cmd)
         return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
 
     monkeypatch.setattr(marks, "get_auth_command", lambda: ["sudo", "-A"])
