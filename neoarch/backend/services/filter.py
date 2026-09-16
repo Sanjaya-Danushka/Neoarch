@@ -36,7 +36,7 @@ def apply_filters(app):
     if app.current_view != "installed":
         return
     base = getattr(app, 'installed_all', []) or []
-    selected_sources = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True, "Local": True}
+    selected_sources = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True, "Firmware": True}
     if hasattr(app, 'source_card') and app.source_card:
         try:
             selected_sources.update(app.source_card.get_selected_sources())
@@ -103,12 +103,12 @@ def apply_update_filters(app):
         except Exception:
             selected_sources = {}
     if not selected_sources:
-        selected_sources = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True, "Local": True}
+        selected_sources = {"pacman": True, "AUR": True, "Flatpak": True, "npm": True, "Firmware": True}
     show_pacman = selected_sources.get("pacman", True)
     show_aur = selected_sources.get("AUR", True)
     show_flatpak = selected_sources.get("Flatpak", True)
     show_npm = selected_sources.get("npm", True)
-    show_local = selected_sources.get("Local", True)
+    show_firmware = selected_sources.get("Firmware", True)
     filtered = []
     for pkg in app.all_packages:
         src = pkg.get('source')
@@ -120,7 +120,7 @@ def apply_update_filters(app):
             filtered.append(pkg)
         elif src == 'npm' and show_npm:
             filtered.append(pkg)
-        elif src == 'Local' and show_local:
+        elif src == 'Firmware' and show_firmware:
             filtered.append(pkg)
     app.all_packages = filtered
     app.current_page = 0

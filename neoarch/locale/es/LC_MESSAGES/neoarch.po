@@ -223,6 +223,9 @@ msgstr "Antes de instalar desde AUR, revisa el PKGBUILD."
 msgid "Best Match"
 msgstr "Mejor coincidencia"
 
+msgid "BIOS/UEFI and device firmware via fwupd.\nThe linux-firmware package is a pacman update, not this source."
+msgstr "Firmware de BIOS/UEFI y de dispositivos mediante fwupd.\nEl paquete linux-firmware es una actualización de pacman, no esta fuente."
+
 msgid "Both"
 msgstr "Ambos"
 
@@ -318,6 +321,9 @@ msgstr "Comprobación fallida: {e}"
 
 msgid "Check for Updates"
 msgstr "Buscar actualizaciones"
+
+msgid "Check for firmware updates"
+msgstr "Buscar actualizaciones de firmware"
 
 msgid "Checking for updates..."
 msgstr "Comprobando actualizaciones..."
@@ -585,6 +591,9 @@ msgstr "Notificaciones de escritorio (bandeja del sistema)"
 
 msgid "Details"
 msgstr "Detalles"
+
+msgid "Detects firmware updates via fwupd on the Updates page. Applying always requires your explicit confirmation."
+msgstr "Detecta actualizaciones de firmware mediante fwupd en la página de Actualizaciones. Aplicar siempre requiere tu confirmación explícita."
 
 msgid "Diagnostics"
 msgstr "Diagnóstico"
@@ -1740,6 +1749,9 @@ msgstr "Autenticación segura basada en el navegador"
 
 msgid "Security"
 msgstr "Seguridad"
+
+msgid "Security Settings"
+msgstr "Configuración de seguridad"
 
 msgid "See console output for details."
 msgstr "Consulta la salida de consola para más detalles."

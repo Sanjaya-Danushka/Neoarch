@@ -225,13 +225,14 @@ class GeneralSettingsWidget(QWidget):
             control=self.sw_auto_check))
         basic_layout.addWidget(self._sep())
 
-        self.sw_local = ToggleSwitch(self, _("Include Local source"))
-        self.sw_local.setChecked(bool(self.app.settings.get('include_local_source', True)), animate=False)
-        self.sw_local.toggled.connect(lambda v: self.app.update_setting('include_local_source', v))
+        self.sw_firmware = ToggleSwitch(self, _("Check for firmware updates"))
+        self.sw_firmware.setChecked(bool(self.app.settings.get('include_firmware_updates', True)), animate=False)
+        self.sw_firmware.toggled.connect(lambda v: self.app.update_setting('include_firmware_updates', v))
         basic_layout.addWidget(self._row(
-            _("Include Local source (custom scripts)"),
-            _("Includes custom local scripts in search and installs."),
-            control=self.sw_local))
+            _("Check for firmware updates"),
+            _("Detects firmware updates via fwupd on the Updates page. Applying "
+              "always requires your explicit confirmation."),
+            control=self.sw_firmware))
         basic_layout.addWidget(self._sep())
 
         self.sw_npm = ToggleSwitch(self, _("Use npm user mode"))

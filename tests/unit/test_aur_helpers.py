@@ -146,6 +146,30 @@ class TestAURHelperIntegration:
             assert helper in ['yay', 'paru', 'trizen', 'pikaur']
 
 
+class TestResolvePkgNames:
+    """Test mapping catalog identifiers to real pacman package names."""
+
+    @pytest.mark.unit
+    @patch('neoarch.backend.sys_utils.cmd_exists')
+    def test_maps_catalog_name_to_pkg(self, mock_cmd_exists):
+        """fwupdmgr (command name) resolves to fwupd (pacman package)."""
+        mock_cmd_exists.return_value = False  # everything missing -> catalog present
+        assert sys_utils.resolve_pkg_names(['fwupdmgr']) == ['fwupd']
+
+    @pytest.mark.unit
+    @patch('neoarch.backend.sys_utils.cmd_exists')
+    def test_identity_when_name_is_pkg(self, mock_cmd_exists):
+        """Names equal to their packages pass through unchanged."""
+        mock_cmd_exists.return_value = True
+        assert sys_utils.resolve_pkg_names(['git', 'flatpak']) == ['git', 'flatpak']
+
+    @pytest.mark.unit
+    def test_unknown_names_pass_through(self):
+        """Uncataloged names are never dropped by the mapping."""
+        assert sys_utils.resolve_pkg_names(['python-supabase', 'something-else']) == \
+            ['python-supabase', 'something-else']
+
+
 class TestCloudVenv:
     """Test app-owned virtualenv for cloud sync dependencies."""
 

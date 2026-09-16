@@ -468,7 +468,7 @@ class PackageDetailCard(QFrame):
         self.revdeps_widget.setVisible(show_installed_extra)
 
         if show_installed_extra:
-            self._set_row_text(self.reason_row, install_reason or "Explicitly installed")
+            self._set_row_text(self.reason_row, install_reason or "—")
             if installed_size:
                 self._set_row_text(self.size_row, _fmt_size(installed_size))
             else:
@@ -564,7 +564,7 @@ class PackageDetailCard(QFrame):
         required_by = info.get("required_by") or []
 
         self.reason_row.setVisible(True)
-        self._set_row_text(self.reason_row, install_reason or "Explicitly installed")
+        self._set_row_text(self.reason_row, install_reason or "—")
 
         if installed_size:
             self.size_row.setVisible(True)

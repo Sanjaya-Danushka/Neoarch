@@ -42,6 +42,16 @@ _OP_BUSY = False
 _CANCEL_EVENT = threading.Event()
 
 
+# timeshift --create is a full rsync copy and can take hours on large
+# disks.  A short deadline would kill the process mid-copy, leave a
+# broken snapshot, and still report "[timeout]" — even though the user
+# sees nothing wrong in Timeshift itself.  Cancel (via the UI button /
+# SIGTERM) is the only way to abort; the poll deadline is just a safety
+# net, so give it generous headroom.
+TIMESHIFT_CREATE_TIMEOUT = 6 * 3600       # 6 h — safety net only
+TIMESHIFT_CLEANUP_TIMEOUT = 60 * 60       # 1 h for --delete-all
+
+
 def snapshot_op_active():
     """Return True when a snapshot operation is currently running."""
     with _OP_LOCK:
@@ -373,6 +383,26 @@ def _find_snapshot(comment):
     return None
 
 
+def _report_created(app, comment):
+    """Verify and report a newly created snapshot.
+
+    Timeshift can exit non-zero or hit a deadline while the snapshot is
+    still produced in the background.  When the comment actually appears
+    in ``timeshift --list``, report success and return True.
+    """
+    created = _find_snapshot(comment)
+    if not created:
+        return False
+    _emit_progress(
+        app, "done",
+        _("Snapshot created successfully: {date}").format(date=created))
+    _report(
+        app, _("Snapshot"),
+        _("Snapshot created successfully: {date}").format(date=created),
+        "success")
+    return True
+
+
 def create_snapshot(app):
     """Create a new Timeshift system snapshot."""
     if not app.cmd_exists("timeshift"):
@@ -401,23 +431,12 @@ def create_snapshot(app):
             if _system_timeshift_busy():
                 raise _TimeshiftBusy()
             result = run_auth_cmd(
-                ["timeshift", "--create", "--comments", comment], timeout=300)
+                ["timeshift", "--create", "--comments", comment],
+                timeout=TIMESHIFT_CREATE_TIMEOUT)
             if result.returncode is None:
                 _cancelled(app)
             elif result.returncode == 0:
-                # timeshift --create can report success without actually
-                # producing a snapshot (bad config / silent failure), so
-                # verify through --list before claiming success.
-                created = _find_snapshot(comment)
-                if created:
-                    _emit_progress(
-                        app, "done",
-                        _("Snapshot created successfully: {date}")
-                        .format(date=created))
-                    _report(app, _("Snapshot"),
-                            _("Snapshot created successfully: {date}")
-                            .format(date=created), "success")
-                else:
+                if not _report_created(app, comment):
                     detail = (result.stdout or result.stderr or "").strip()
                     _emit_progress(
                         app, "error",
@@ -430,6 +449,22 @@ def create_snapshot(app):
                           "\nCommand output: {out}").format(
                               out=detail[-500:] or _("(empty)")),
                         "error", "errors")
+            elif result.returncode == -1:
+                # Deadline / timeout: on slow disks timeshift may have
+                # produced the snapshot in the background regardless.
+                if _report_created(app, comment):
+                    return
+                _emit_progress(
+                    app, "error",
+                    _("Snapshot creation timed out and no snapshot appeared"
+                      " in Timeshift's list.\n{err}").format(
+                          err=result.stderr))
+                _report(
+                    app, _("Snapshot"),
+                    _("Snapshot creation timed out and no snapshot appeared"
+                      " in Timeshift's list.\n{err}").format(
+                          err=result.stderr),
+                    "error", "errors")
             else:
                 app.log(f"Snapshot create failed "
                         f"(rc={result.returncode}): {result.stderr}")
@@ -625,7 +660,8 @@ def pre_update_snapshot(app):
                                  and not line.startswith('---'))
             if snapshot_count > 2:
                 delete_result = run_auth_cmd(
-                    ["timeshift", "--delete-all", "--skip", "2"], timeout=300)
+                    ["timeshift", "--delete-all", "--skip", "2"],
+                    timeout=TIMESHIFT_CLEANUP_TIMEOUT)
                 if delete_result.returncode is None:
                     app.log("Auto-update: cleanup cancelled")
                 elif delete_result.returncode == 0:
@@ -642,7 +678,8 @@ def pre_update_snapshot(app):
         if _system_timeshift_busy():
             raise _TimeshiftBusy()
         result = run_auth_cmd(
-            ["timeshift", "--create", "--comments", comment], timeout=300)
+            ["timeshift", "--create", "--comments", comment],
+            timeout=TIMESHIFT_CREATE_TIMEOUT)
         if result.returncode is None:
             app.log("Auto-update: Pre-update snapshot cancelled")
             _emit_progress(app, "error", _("Operation cancelled."))
@@ -653,6 +690,20 @@ def pre_update_snapshot(app):
             _report(app, _("Snapshot"),
                     _("Pre-update snapshot created: {comment}").format(comment=comment),
                     "success")
+        elif result.returncode == -1:
+            # Timeout: a slow rsync copy may still have finished. Never
+            # surface a failure for a snapshot that actually exists.
+            created = _find_snapshot(comment)
+            if created:
+                app.log(f"Auto-update: Pre-update snapshot created (late): {comment}")
+                _emit_progress(app, "done",
+                               _("Pre-update snapshot created: {comment}")
+                               .format(comment=comment))
+            else:
+                app.log(f"Auto-update: Pre-update snapshot timed out: {result.stderr}")
+                _emit_progress(app, "error",
+                               _("Failed to create pre-update snapshot: {err}")
+                               .format(err=result.stderr))
         else:
             app.log(f"Auto-update: Failed to create pre-update snapshot: {result.stderr}")
             if "Another instance" in result.stderr:
@@ -700,7 +751,8 @@ def delete_snapshots(app):
             if _system_timeshift_busy():
                 raise _TimeshiftBusy()
             result = run_auth_cmd(
-                ["timeshift", "--delete-all", "--skip", "2"], timeout=300)
+                ["timeshift", "--delete-all", "--skip", "2"],
+                timeout=TIMESHIFT_CLEANUP_TIMEOUT)
             if result.returncode is None:
                 _cancelled(app)
             elif result.returncode == 0:

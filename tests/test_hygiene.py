@@ -74,6 +74,20 @@ def test_pacnew_info_extracts_package(monkeypatch, tmp_path):
     assert info["original"] == str(tmp_path / "foo.conf")
 
 
+def test_pacnew_info_parses_owner(monkeypatch, tmp_path):
+    pacnew = tmp_path / "foo.conf.pacnew"
+    pacnew.write_text("x")
+
+    def fake_run(cmd, capture_output=False, text=False, timeout=10, check=False):
+        assert cmd[0].endswith("pacman") and cmd[1] == "-Qo"
+        return subprocess.CompletedProcess(
+            cmd, 0, stdout="/etc/foo.conf is owned by confpkg 1.2-3\n", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    info = hygiene._pacnew_info(str(pacnew))
+    assert info["package"] == "confpkg"
+
+
 def test_diff_pacnew_identical(monkeypatch, tmp_path):
     original = tmp_path / "foo.conf"
     original.write_text("same")

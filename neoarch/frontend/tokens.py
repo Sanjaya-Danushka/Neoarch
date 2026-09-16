@@ -72,6 +72,7 @@ class Colors:
     SRC_FLATPAK = "#26A69A"
     SRC_NPM = "#E53935"
     SRC_LOCAL = "#A3A6B0"
+    SRC_FIRMWARE = "#A3A6B0"
     SRC_DOCKER = "#2496ED"
     SRC_BREW = "#8B5CF6"
 
@@ -89,7 +90,7 @@ SourceColors = {
     "AUR": Colors.SRC_AUR,
     "Flatpak": Colors.SRC_FLATPAK,
     "npm": Colors.SRC_NPM,
-    "Local": Colors.SRC_LOCAL,
+    "Firmware": Colors.SRC_FIRMWARE,
     "Docker": Colors.SRC_DOCKER,
     "Brew": Colors.SRC_BREW,
 }

@@ -15,6 +15,7 @@ import subprocess
 from typing import List, Optional
 
 from neoarch.backend.auth import get_auth_command, get_askpass_env
+from neoarch.backend.sys_utils import c_locale_env
 
 __all__ = [
     "PACMAN_CONF",
@@ -29,9 +30,9 @@ PACMAN_CONF = "/etc/pacman.conf"
 _SAFE_NAME_RE = re.compile(r"^[\w@.+:\-]+$")
 
 
-def _run(cmd: List[str], timeout: int = 60) -> subprocess.CompletedProcess:
+def _run(cmd: List[str], timeout: int = 60, env=None) -> subprocess.CompletedProcess:
     try:
-        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
     except Exception:
         return subprocess.CompletedProcess(cmd, 1, "", "")
 
@@ -127,7 +128,7 @@ def remove_holdpkg(pkg: str) -> bool:
 
 def get_install_reason(pkg: str) -> Optional[str]:
     """Return the install reason for `pkg`: 'explicit' or 'deps' (or None)."""
-    result = _run(["pacman", "-Qi", pkg])
+    result = _run(["pacman", "-Qi", pkg], env=c_locale_env())
     if result.returncode != 0:
         return None
     m = re.search(r"Install Reason\s*:\s*(.+)", result.stdout)

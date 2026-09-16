@@ -213,7 +213,7 @@ class SourceItem(QWidget):
 
         _src_key = {
             "pacman": "pacman", "aur": "AUR", "flatpak": "Flatpak",
-            "npm": "npm", "local": "Local",
+            "npm": "npm", "firmware": "Firmware",
         }
         src_name = _src_key.get(self.source_name.lower())
         src_color = SourceColors.get(src_name, Colors.TEXT_3) if src_name else Colors.TEXT_3
@@ -254,7 +254,7 @@ class SourceItem(QWidget):
     def get_accent_color(self, name):
         _src_key = {
             "pacman": "pacman", "aur": "AUR", "flatpak": "Flatpak",
-            "npm": "npm", "local": "Local",
+            "npm": "npm", "firmware": "Firmware",
         }
         src_name = _src_key.get(name.lower())
         return SourceColors.get(src_name, Colors.ACCENT) if src_name else Colors.ACCENT

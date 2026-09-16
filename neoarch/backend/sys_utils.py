@@ -19,6 +19,7 @@ __all__ = [
     "get_missing_auth_tools", "check_aur_authentication_support",
     "check_db_lock", "suppress_missing", "clear_suppressed_missing",
     "ensure_cloud_venv", "is_cloud_venv_ready", "add_cloud_venv_to_path",
+    "c_locale_env",
 ]
 
 # Dependencies that a recent install attempt failed to fix. Re-offering the
@@ -38,6 +39,22 @@ _GUI_FALLBACK_PATHS = [
 # Kept isolated from system site-packages to avoid PEP 668 conflicts
 # (supabase pins httpx<0.26 while Arch ships httpx>=0.28).
 CLOUD_VENV_DIR = Path.home() / ".local/share/neoarch/venv"
+
+
+def c_locale_env() -> dict:
+    """Environment dict that forces C locale for subprocesses.
+
+    gettext-based tools (pacman, …) localize their field labels
+    (e.g. 'Install Reason' → 'Motif d'installation'); parsers match the
+    English labels, so such queries must run under LC_ALL=C to stay stable
+    for every user language.
+    """
+    env = os.environ.copy()
+    env.pop("LANG", None)
+    env.pop("LANGUAGE", None)
+    env["LC_ALL"] = "C"
+    env["LC_MESSAGES"] = "C"
+    return env
 
 
 def is_cloud_venv_ready() -> bool:
@@ -169,6 +186,7 @@ def get_dependency_catalog() -> List[dict]:
     add("nodejs", "nodejs", False, "Discover page (npm)", cmd_exists("node"))
     add("npm", "npm", False, "Discover page (npm)", cmd_exists("npm"))
     add("docker", "docker", False, "Docker page", cmd_exists("docker"))
+    add("fwupdmgr", "fwupd", False, "Firmware updates", cmd_exists("fwupdmgr"))
     add("gnome-keyring", "gnome-keyring", False,
         "Saving sudo password", cmd_exists("gnome-keyring-daemon"))
     add("curl", "curl", False, "Network downloads", cmd_exists("curl"))
@@ -204,6 +222,16 @@ def clear_suppressed_missing() -> None:
     _SUPPRESSED_MISSING.clear()
 
 
+def resolve_pkg_names(names):
+    """Map dependency catalog names to their actual pacman package names.
+
+    The setup flow uses catalog ``name`` identifiers (e.g. ``fwupdmgr``),
+    but pacman needs the real package name (``fwupd``).
+    """
+    cat = {e['name']: e['pkg'] for e in get_dependency_catalog()}
+    return [cat.get(n, n) for n in names]
+
+
 def get_missing_required() -> List[str]:
     """Names of required dependencies that are missing."""
     return [d["name"] for d in get_dependency_catalog()
@@ -233,7 +261,16 @@ def local_source_enabled() -> bool:
     """Setting ▸ General ▸ 'Include Local source (custom scripts)'."""
     try:
         from neoarch.backend.services.settings import load_settings
-        return bool(load_settings().get('include_local_source', True))
+        return bool(load_settings().get('include_local_source', False))
+    except Exception:
+        return False
+
+
+def firmware_source_enabled() -> bool:
+    """Setting ▸ General ▸ 'Check for firmware updates'."""
+    try:
+        from neoarch.backend.services.settings import load_settings
+        return bool(load_settings().get('include_firmware_updates', True))
     except Exception:
         return True
 

@@ -61,6 +61,7 @@ from PyQt6.QtWidgets import (
 )
 from neoarch.frontend.tokens import Colors, Fonts, SourceColors
 from neoarch.backend.services.i18n import _
+from neoarch.backend.sys_utils import c_locale_env
 
 # ── theme (from centralized tokens.py) ─────────────────────────────
 _ACCENT = QColor(Colors.ACCENT)
@@ -187,7 +188,8 @@ class _EnrichWorker(QObject):
             try:
                 r = subprocess.run(
                     ["pacman", "-Si"] + pacman_names,
-                    capture_output=True, text=True, timeout=120, check=False
+                    capture_output=True, text=True, timeout=120, check=False,
+                    env=c_locale_env(),
                 )
                 if r.stdout:
                     section = {}
@@ -1586,7 +1588,7 @@ def _fallback_description(pkg):
         "AUR": "Arch User Repository package",
         "Flatpak": "Flatpak application",
         "npm": "Global npm package",
-        "Local": "Local update entry",
+        "Firmware": "fwupd device firmware (BIOS/UEFI, controllers, drives)",
     }.get(source, "Update available")
 
 
