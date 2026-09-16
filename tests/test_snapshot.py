@@ -6,13 +6,12 @@ being produced, so the service must never surface a failure for a
 snapshot that actually exists.
 """
 
-import subprocess
-
 import neoarch.backend.services.snapshot as snapshot
 
 
 class _Events:
-    def emit(self, fn=None):
+    @staticmethod
+    def emit(fn=None):
         if fn is not None:
             fn()
 

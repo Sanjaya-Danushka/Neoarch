@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import functools
 from typing import Any
 from PyQt6.QtCore import QThread, pyqtSignal, QTimer, Qt
 from PyQt6.QtGui import QPixmap, QPainter
@@ -375,14 +376,14 @@ class GeneralSettingsWidget(QWidget):
         # ── Data ──
         data_card, data_layout = self._make_card(_("Data"), _ICON_DATABASE)
 
-        export_btn = self._btn(_("Export Settings"), lambda: self.app.export_settings())
+        export_btn = self._btn(_("Export Settings"), functools.partial(self.app.export_settings))
         export_btn.setMinimumWidth(132)
         data_layout.addWidget(self._row(
             _("Export settings to file"),
             control=export_btn))
         data_layout.addWidget(self._sep())
 
-        import_btn = self._btn(_("Import Settings"), lambda: self.app.import_settings())
+        import_btn = self._btn(_("Import Settings"), functools.partial(self.app.import_settings))
         import_btn.setMinimumWidth(132)
         data_layout.addWidget(self._row(
             _("Import settings from file"),
@@ -403,7 +404,7 @@ class GeneralSettingsWidget(QWidget):
             set_language(culture or 'en')
         except Exception:
             pass
-        QTimer.singleShot(0, lambda: self.app.rebuild_ui())
+        QTimer.singleShot(0, functools.partial(self.app.rebuild_ui))
 
     def test_aur_api(self):
         if self._aur_thread is not None and self._aur_thread.isRunning():
