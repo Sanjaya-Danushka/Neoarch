@@ -13,7 +13,7 @@ def test_list_explicit_packages(monkeypatch):
     monkeypatch.setattr(
         hygiene,
         "_run",
-        lambda cmd, timeout=60: _fake_result("linux\nfirefox 6.1-1\npython\n"),
+        lambda cmd, timeout=60, env=None, **k: _fake_result("linux\nfirefox 6.1-1\npython\n"),
     )
     assert hygiene.list_explicit_packages() == {"linux", "firefox", "python"}
 
@@ -24,7 +24,7 @@ def test_list_explicit_packages_error(monkeypatch):
     monkeypatch.setattr(
         hygiene,
         "_run",
-        lambda cmd, timeout=60: _fake_result("error: you cannot perform this operation", returncode=1),
+        lambda cmd, timeout=60, env=None, **k: _fake_result("error: you cannot perform this operation", returncode=1),
     )
     assert hygiene.list_explicit_packages() == set()
 
@@ -40,12 +40,33 @@ def test_package_info_parses_qi(monkeypatch):
         "Required By     : None\n"
         "Installed Size  : 273.34 MiB\n"
     )
-    monkeypatch.setattr(hygiene, "_run", lambda cmd, timeout=30: _fake_result(sample))
+    monkeypatch.setattr(hygiene, "_run", lambda cmd, timeout=30, env=None, **k: _fake_result(sample))
     info = hygiene.package_info("firefox")
     assert info["install_reason"] == "Explicitly installed"
     assert info["required_by"] == []
     assert info["installed_size"] == int(273.34 * 1024 * 1024)
     assert info["description"] == "Standalone web browser"
+
+
+def test_package_info_forces_c_locale(monkeypatch):
+    """pacman -Qi output is locale-dependent; parsing must request C locale
+    so non-English systems still yield English field names (regression for
+    'Explicitly installed' shown for dependency packages on fr locale)."""
+    from neoarch.backend.services import hygiene
+
+    captured = {}
+
+    def fake_run(cmd, timeout=30, env=None, **k):
+        captured["env"] = env
+        return _fake_result("")
+
+    monkeypatch.setattr(hygiene, "_run", fake_run)
+    hygiene.package_info("opencv")
+    env = captured["env"]
+    assert isinstance(env, dict)
+    assert env["LC_ALL"] == "C"
+    assert env["LC_MESSAGES"] == "C"
+    assert "LANG" not in env
 
 
 def test_package_info_required_by(monkeypatch):
@@ -57,7 +78,7 @@ def test_package_info_required_by(monkeypatch):
         "Required By     : firefox dolphin ark\n"
         "Installed Size  : 102.00 MiB\n"
     )
-    monkeypatch.setattr(hygiene, "_run", lambda cmd, timeout=30: _fake_result(sample))
+    monkeypatch.setattr(hygiene, "_run", lambda cmd, timeout=30, env=None, **k: _fake_result(sample))
     info = hygiene.package_info("qt5-base")
     assert info["install_reason"] == "Installed as a dependency for another package"
     assert info["required_by"] == ["firefox", "dolphin", "ark"]
@@ -69,7 +90,7 @@ def test_package_info_missing(monkeypatch):
     monkeypatch.setattr(
         hygiene,
         "_run",
-        lambda cmd, timeout=30: _fake_result("error: package 'nope' was not found", returncode=1),
+        lambda cmd, timeout=30, env=None, **k: _fake_result("error: package 'nope' was not found", returncode=1),
     )
     assert hygiene.package_info("nope") == {}
 

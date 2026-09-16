@@ -12,6 +12,9 @@ from neoarch.backend.package.loader import (
     _check_aur_updates,
     _check_flatpak_updates,
     _check_npm_updates,
+    _parse_fwupd_json,
+    _parse_fwupd_text,
+    _check_fwupd_updates,
 )
 
 
@@ -65,7 +68,7 @@ def test_attach_installed_dates(monkeypatch):
         {"name": "a", "source": "pacman", "version": "1.0"},
         {"name": "b", "source": "Flatpak"},
         {"name": "c", "source": "npm"},
-        {"name": "d", "source": "Local"},
+        {"name": "d", "source": "Firmware"},
         {"name": "e", "source": "pacman", "installed_date": 9},
     ])
     by_name = {r["name"]: r for r in rows}
@@ -323,6 +326,155 @@ def test_npm_invalid_json(monkeypatch):
         lambda cmd, **kw: FakeCompletedProcess(stdout="not json"),
     )
     assert _check_npm_updates() == []
+
+
+# ---------------------------------------------------------------------------
+# Firmware (fwupd) parsing
+# ---------------------------------------------------------------------------
+
+_FWUPD_JSON = {
+    "devices": [
+        {"name": "System Firmware", "installed-version": "1.2.0",
+         "updates": [{"version": "1.3.0", "name": "System Firmware",
+                      "id": "com.tux.test.firmware",
+                      "description": "Fixes boot issues"}]},
+        {"name": "Touchpad", "installed-version": "0.9", "updates": []},
+        {"name": "Thunderbolt Controller", "installed-version": "2.0",
+         "updates": [{"version": "2.1", "id": "com.tux.test.tb",
+                      "name": "Thunderbolt Controller"}]},
+    ]
+}
+
+
+def test_fwupd_parse_json_lowercase():
+    result = _parse_fwupd_json(json.dumps(_FWUPD_JSON))
+    assert len(result) == 2
+    assert result[0]["source"] == "Firmware"
+    assert result[0]["name"] == "System Firmware"
+    assert result[0]["version"] == "1.2.0"
+    assert result[0]["new_version"] == "1.3.0"
+    assert result[0]["id"] == "com.tux.test.firmware"
+    assert result[0]["description"] == "Fixes boot issues"
+    assert result[1]["new_version"] == "2.1"
+
+
+def test_fwupd_parse_json_pascalcase():
+    payload = {
+        "Devices": [
+            {"Name": "BIOS", "InstalledVersion": "A03",
+             "Updates": [{"Version": "A05", "Id": "bios.old",
+                          "Name": "BIOS"}]},
+        ]
+    }
+    result = _parse_fwupd_json(json.dumps(payload))
+    assert len(result) == 1
+    assert result[0]["name"] == "BIOS"
+    assert result[0]["version"] == "A03"
+    assert result[0]["new_version"] == "A05"
+    assert result[0]["id"] == "bios.old"
+
+
+def test_fwupd_parse_json_empty():
+    assert _parse_fwupd_json("") == []
+    assert _parse_fwupd_json(None) == []
+    assert _parse_fwupd_json("not json") == []
+    assert _parse_fwupd_json("{}") == []
+    assert _parse_fwupd_json("[]") == []
+    assert _parse_fwupd_json('{"devices": []}') == []
+
+
+def test_fwupd_parse_json_skips_update_without_version():
+    payload = {"devices": [{"name": "X", "updates": [{"name": "Y"}]}]}
+    assert _parse_fwupd_json(json.dumps(payload)) == []
+
+
+def test_fwupd_parse_text():
+    stdout = (
+        "Devices with available updates:\n"
+        "├─ System Firmware:\n"
+        "│  New version:  1.3.0\n"
+        "├─ Thunderbolt Controller:\n"
+        "│  New version:  2.1\n"
+        "├─ Mouse:\n"
+        "│  No updates available\n"
+    )
+    result = _parse_fwupd_text(stdout)
+    assert len(result) == 2
+    assert result[0]["source"] == "Firmware"
+    assert result[0]["name"] == "System Firmware"
+    assert result[0]["new_version"] == "1.3.0"
+    assert result[1]["new_version"] == "2.1"
+
+
+def test_fwupd_parse_text_empty():
+    assert _parse_fwupd_text("") == []
+    assert _parse_fwupd_text(None) == []
+    assert _parse_fwupd_text("No updates available") == []
+
+
+def test_fwupd_check_refresh_then_json(monkeypatch):
+    calls = []
+
+    def fake_run_cmd(cmd, timeout=60, env=None):
+        calls.append(cmd)
+        if "refresh" in cmd:
+            return FakeCompletedProcess(stdout="")
+        return FakeCompletedProcess(stdout=json.dumps(_FWUPD_JSON))
+
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.cmd_exists",
+                        lambda name: name == "fwupdmgr")
+    monkeypatch.setattr("neoarch.backend.package.loader._run_cmd", fake_run_cmd)
+    monkeypatch.setattr("neoarch.backend.package.loader._FWUPD_REFRESH_ONCE", False)
+
+    result = _check_fwupd_updates()
+    assert calls[0] == ["fwupdmgr", "refresh", "--force", "--quiet"]
+    assert calls[1][0:3] == ["fwupdmgr", "get-updates", "--json"]
+    assert len(result) == 2
+    assert all(p["source"] == "Firmware" for p in result)
+
+
+def test_fwupd_check_text_fallback(monkeypatch):
+    def fake_run_cmd(cmd, timeout=60, env=None):
+        if "refresh" in cmd:
+            return FakeCompletedProcess(stdout="")
+        if "--json" in cmd:
+            return FakeCompletedProcess(stdout='{"devices": []}')
+        return FakeCompletedProcess(stdout="├─ System Firmware:\n│  New version:  1.3.0")
+
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.cmd_exists",
+                        lambda name: name == "fwupdmgr")
+    monkeypatch.setattr("neoarch.backend.package.loader._run_cmd", fake_run_cmd)
+    monkeypatch.setattr("neoarch.backend.package.loader._FWUPD_REFRESH_ONCE", False)
+
+    result = _check_fwupd_updates()
+    assert len(result) == 1
+    assert result[0]["new_version"] == "1.3.0"
+
+
+def test_fwupd_check_refresh_only_once(monkeypatch):
+    calls = []
+
+    def fake_run_cmd(cmd, timeout=60, env=None):
+        calls.append(cmd)
+        if "refresh" in cmd:
+            return FakeCompletedProcess(stdout="")
+        return FakeCompletedProcess(stdout=json.dumps(_FWUPD_JSON))
+
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.cmd_exists",
+                        lambda name: name == "fwupdmgr")
+    monkeypatch.setattr("neoarch.backend.package.loader._run_cmd", fake_run_cmd)
+    monkeypatch.setattr("neoarch.backend.package.loader._FWUPD_REFRESH_ONCE", True)
+
+    result = _check_fwupd_updates()
+    assert len(calls) == 1
+    assert "refresh" not in calls[0]
+    assert len(result) == 2
+
+
+def test_fwupd_check_no_binary(monkeypatch):
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.cmd_exists",
+                        lambda name: name == "pacman")
+    assert _check_fwupd_updates() == []
 
 
 # ---------------------------------------------------------------------------

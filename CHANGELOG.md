@@ -10,9 +10,16 @@ dialog shows after an update.
 
 ---
 
-## Unreleased (dev branch)
+## 3.3.0 — 2026-09-16
 
-Changes on the `dev` branch that will land in the next release.
+Changes on the `dev` branch that land in this release.
+
+### New Features
+
+- Snapper (BTRFS) support with a reworked Settings UI.
+- Header quick actions: Refresh, Security Settings, and Arch News buttons in
+  a transparent-black pill alongside quick search and the live signal
+  indicator, with uniform 30px icons.
 
 ### Bug Fixes
 

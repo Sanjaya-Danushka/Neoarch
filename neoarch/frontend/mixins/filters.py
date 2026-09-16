@@ -981,10 +981,24 @@ class _FiltersMixin:
             ("AUR", os.path.join(_BASE_DIR, "assets", "icons", "sources", "aur.svg")),
             ("Flatpak", os.path.join(_BASE_DIR, "assets", "icons", "sources", "flatpack.svg")),
             ("npm", os.path.join(_BASE_DIR, "assets", "icons", "sources", "node.svg")),
-            ("Local", os.path.join(_BASE_DIR, "assets", "icons", "sources", "local.svg"))
+            ("Firmware", os.path.join(_BASE_DIR, "assets", "icons", "sources", "firmware.svg"))
         ]
         for source_name, source_icon_path in sources:
             self.source_card.add_source(source_name, source_icon_path)
+        # The pacman package "linux-firmware" is a regular repo update, NOT a
+        # fwupd device update; label the toggle with a smaller font so the
+        # count badge still has room, and keep the clarifying tooltip.
+        try:
+            fw = self.source_card.sources["Firmware"]
+            fw.name_label.setText("Firmware (fwupd)")
+            fw.name_label.setStyleSheet(
+                f"color: {Colors.TEXT}; font-size: {Fonts.XS};"
+                " font-weight: 500; background: transparent; border: none;")
+            fw.setToolTip(
+                _("BIOS/UEFI and device firmware via fwupd.\n"
+                  "The linux-firmware package is a pacman update, not this source."))
+        except Exception:
+            pass
         self.sources_layout.addWidget(self.source_card)
         self.source_card.source_changed.connect(self.on_updates_source_changed)
         self.source_card.search_mode_changed.connect(self.on_search_mode_changed)

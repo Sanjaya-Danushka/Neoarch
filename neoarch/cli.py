@@ -354,11 +354,11 @@ def _now() -> str:
 # Command runners
 # ──────────────────────────────────────────────────────────────────────────
 
-def _run(cmd: List[str], timeout: int = 600, sudo: bool = False, check: bool = False) -> subprocess.CompletedProcess:
+def _run(cmd: List[str], timeout: int = 600, sudo: bool = False, check: bool = False, env=None) -> subprocess.CompletedProcess:
     """Run a command, optionally elevated, with captured output."""
     full = (["sudo"] if sudo else []) + cmd
     try:
-        result = subprocess.run(full, capture_output=True, text=True, timeout=timeout, check=False)
+        result = subprocess.run(full, capture_output=True, text=True, timeout=timeout, check=False, env=env)
     except FileNotFoundError:
         print(f"error: command not found: {cmd[0]}", file=sys.stderr)
         return subprocess.CompletedProcess(full, 127, "", "")
@@ -448,7 +448,7 @@ def _is_url(s: str) -> bool:
 def _plot_install(packages: List[str]) -> None:
     """Print which repo each package will come from before it's run."""
     for pkg in packages:
-        r = _run(["pacman", "-Si", pkg], timeout=60)
+        r = _run(["pacman", "-Si", pkg], timeout=60, env=sys_utils.c_locale_env())
         if r.returncode == 0 and r.stdout:
             m = re.search(r"^Repository\s*:\s*(.+)$", r.stdout, re.M)
             repo = (m.group(1).strip() if m else "repos")
@@ -569,6 +569,10 @@ def cmd_upgrade(args) -> None:
     if args.npm:
         _stream(["npm", "update", "-g"], check=True)
         return
+    if args.firmware:
+        _stream(["fwupdmgr", "refresh", "--force", "--quiet"], sudo=True, check=False)
+        _stream(["fwupdmgr", "update", "--assume-yes"], sudo=True, check=True)
+        return
     _stream(["pacman", "-Syu", "--noconfirm"], sudo=True, check=True)
 
 
@@ -653,6 +657,25 @@ def cmd_list_updates(args) -> None:
             line = line.strip()
             if line:
                 updates.append({"name": line, "available": "", "source": "flatpak"})
+    if args.firmware:
+        r = _run(["fwupdmgr", "get-updates", "--json"], timeout=60)
+        try:
+            data = json.loads(r.stdout)
+            for dev in data.get("devices", []) or data.get("Devices", []):
+                for upd in dev.get("updates", []) or dev.get("Updates", []):
+                    name = upd.get("name") or upd.get("Name") or dev.get("name") or ""
+                    new_version = (upd.get("new-version") or upd.get("NewVersion")
+                                   or upd.get("version") or "")
+                    if name and new_version:
+                        updates.append({
+                            "name": name,
+                            "installed": (dev.get("installed-version")
+                                          or dev.get("InstalledVersion") or ""),
+                            "available": new_version,
+                            "source": "firmware",
+                        })
+        except json.JSONDecodeError:
+            pass
     if args.json:
         print(json.dumps(updates, indent=2))
     elif updates:
@@ -1511,6 +1534,7 @@ def _build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--aur", action="store_true", help="AUR packages only")
     sp.add_argument("--flatpak", action="store_true", help="Flatpak only")
     sp.add_argument("--npm", action="store_true", help="npm globals only")
+    sp.add_argument("--firmware", action="store_true", help="firmware only")
     sp.set_defaults(func=cmd_upgrade)
 
     # update
@@ -1530,6 +1554,7 @@ def _build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("list-updates", parents=[common], help="list available updates")
     sp.add_argument("--aur", action="store_true", help="include AUR updates")
     sp.add_argument("--flatpak", action="store_true", help="include Flatpak updates")
+    sp.add_argument("--firmware", action="store_true", help="include firmware updates")
     sp.set_defaults(func=cmd_list_updates)
 
     # ignore

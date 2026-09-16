@@ -127,7 +127,7 @@ def _fallback_description(pkg):
         "AUR": "Arch User Repository package",
         "Flatpak": "Flatpak application",
         "npm": "Global npm package",
-        "Local": "Local package",
+        "Firmware": "fwupd device firmware (BIOS/UEFI, controllers, drives)",
     }.get(source, "Package")
 
 

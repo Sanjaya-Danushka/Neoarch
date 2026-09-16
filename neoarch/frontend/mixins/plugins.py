@@ -366,6 +366,25 @@ def on_tick(app):
                         app.log(f"Auto-update: NPM update failed: {result.stderr}")
                 except Exception as e:
                     app.log(f"Auto-update: NPM update error: {e}")
+            if app.settings.get('auto_update_firmware', False) and app.cmd_exists("fwupdmgr"):
+                try:
+                    env, _ = app.prepare_askpass_env()
+                    auth_cmd = get_auth_command(env)
+                    subprocess.run(auth_cmd + ["fwupdmgr", "refresh", "--force", "--quiet"],
+                                   capture_output=True, text=True, timeout=300, env=env)
+                    result = subprocess.run(auth_cmd + ["fwupdmgr", "update", "--assume-yes"],
+                                            capture_output=True, text=True, timeout=1800, env=env)
+                    if result.returncode == 0:
+                        app.log("Auto-update: Firmware updates completed")
+                        update_success = True
+                        if (result.stdout + result.stderr).lower().find("reboot") != -1:
+                            app.log("Auto-update: Reboot required to finish firmware installation")
+                            app.show_message.emit(_("Auto Update"),
+                                _("Firmware was updated. A reboot is required to finish installation."))
+                    else:
+                        app.log(f"Auto-update: Firmware update failed: {result.stderr}")
+                except Exception as e:
+                    app.log(f"Auto-update: Firmware update error: {e}")
         except Exception as e:
             app.log(f"Auto-update: General error: {e}")
         if update_success:

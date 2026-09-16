@@ -105,6 +105,7 @@ class _AuthMixin:
                 self._run_sudo_install(["git"])
             pacman_pkgs = [p for p in missing if p not in ("yay or paru", "yay", "paru", "python-supabase")]
             if pacman_pkgs:
+                pacman_pkgs = sys_utils.resolve_pkg_names(pacman_pkgs)
                 self._run_sudo_install(pacman_pkgs)
             if "python-supabase" in missing:
                 self._install_cloud_venv()
