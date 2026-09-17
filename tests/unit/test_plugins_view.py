@@ -146,6 +146,98 @@ def test_package_source_resolution_for_cards(qapp):
     assert _canonical_source("flatpak") == "Flatpak"
 
 
+def test_plain_pkg_strips_source_prefixes(qapp):
+    from neoarch.frontend.components.plugins_view import _plain_pkg
+    assert _plain_pkg("aur/yay") == "yay"
+    assert _plain_pkg("npm-typescript") == "typescript"
+    assert _plain_pkg("brew-fd") == "fd"
+    assert _plain_pkg("org.gnome.Evolution.flatpak") == "org.gnome.Evolution"
+    assert _plain_pkg("pandoc") == "pandoc"
+    assert _plain_pkg("") == ""
+
+
+def test_prewarm_installed_cache_detects_meta_package_via_cmd(qapp, monkeypatch):
+    """A plugin whose pkg is a meta package (e.g. QEMU's 'qemu-full') must
+    still be marked installed when the launcher binary exists, even if the
+    meta package name is missing from `pacman -Qq` (split package install)."""
+    import neoarch.frontend.components.plugins_view as pv_mod
+    specs = [
+        {"id": "qemu", "name": "QEMU", "pkg": "qemu-full", "cmd": "qemu-system-x86_64"},
+        {"id": "optipng", "name": "Image Optimizer", "pkg": "optipng", "cmd": "optipng"},
+    ]
+    monkeypatch.setattr(pv_mod, "get_plugins_data", lambda: specs)
+    monkeypatch.setattr("neoarch.resources.plugin_data.get_all_plugins_data", lambda: specs)
+
+    import subprocess
+    called = []
+
+    def fake_run(cmd, capture_output=True, text=True, timeout=5, check=False):
+        called.append(cmd)
+        return type("R", (), {"returncode": 0, "stdout": "optipng\n"})()  # no qemu-full
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(pv_mod.shutil, "which",
+                        lambda name: "/usr/bin/" + name if name == "qemu-system-x86_64" else None)
+
+    view = PluginsView.__new__(PluginsView)
+    view._installed_cache = {}
+    view._prewarm_installed_cache()
+
+    assert view._installed_cache == {"qemu": True, "optipng": True}
+    assert any(a == "pacman" or "-Qq" in a for a in called)
+
+
+def test_is_installed_strips_aur_prefix_before_pacman_qi(qapp, monkeypatch):
+    """is_installed must query the plain package name, not the 'aur/' prefixed
+    pkg string, or an installed AUR package is reported as missing."""
+    import neoarch.frontend.components.plugins_view as pv_mod
+    import subprocess
+    seen = []
+    monkeypatch.setattr(pv_mod.shutil, "which", lambda name: None)
+
+    def fake_run(cmd, capture_output=True, text=True, timeout=5, check=False):
+        seen.append(cmd)
+        return type("R", (), {"returncode": 0, "stdout": ""})()
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    view = PluginsView.__new__(PluginsView)
+    view._installed_cache = {}
+    assert view.is_installed({"id": "aur-yay", "pkg": "aur/yay", "cmd": None}) is True
+    assert "-Qi" in seen[0] and seen[0][-1] == "yay"
+
+
+def test_get_plugin_resolves_live_search_specs(qapp):
+    """Cards created from pacman/AUR live-search results carry prefixed ids
+    ('pacman-pandoc'); get_plugin must resolve them so batch installs no longer
+    collapse into the misleading 'Nothing to install' path."""
+    view = PluginsView.__new__(PluginsView)
+    view.plugins = []
+    spec = {"id": "pacman-pandoc", "name": "pandoc", "pkg": "pandoc", "cmd": None}
+    view._dynamic_specs = {"pacman-pandoc": spec}
+    assert view.get_plugin("pacman-pandoc") is spec
+    assert view.get_plugin("pacman-missing") is None
+
+
+def test_live_search_ready_stores_dynamic_specs(qapp, monkeypatch):
+    """_on_live_search_ready must record non-curated specs so get_plugin can
+    find them later (install/extend via Batch install)."""
+    import neoarch.frontend.components.plugins_view as pv_mod
+    from neoarch.frontend.components.plugins_view import PluginsView
+    monkeypatch.setattr(pv_mod.PluginsView, "is_installed", lambda self, spec: False)
+    monkeypatch.setattr(pv_mod.PluginsView, "create_app_card",
+                        lambda self, spec, parent, installed: None)
+    monkeypatch.setattr(pv_mod.PluginsView, "_sort_cards", lambda self, cards: cards)
+    monkeypatch.setattr(pv_mod.PluginsView, "_refresh_content", lambda self: None)
+    view = PluginsView(None, lambda *a: None)
+    view._dynamic_specs.clear()
+    view._pending_live_query = "pandoc"
+    spec = {"id": "pacman-pandoc", "name": "pandoc", "pkg": "pandoc"}
+    view._on_live_search_ready(("pandoc", [spec]))
+    resolved = view.get_plugin("pacman-pandoc")
+    assert resolved is not None and resolved["id"] == "pacman-pandoc" and resolved["pkg"] == "pandoc"
+
+
 def test_plugin_card_double_click_launches_when_installed(qapp):
     from PyQt6.QtCore import QPointF
     from PyQt6.QtGui import QMouseEvent
