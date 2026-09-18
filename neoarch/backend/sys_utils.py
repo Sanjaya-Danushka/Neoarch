@@ -275,6 +275,15 @@ def firmware_source_enabled() -> bool:
         return True
 
 
+def pipx_source_enabled() -> bool:
+    """Setting ▸ General ▸ 'Check for pipx updates'."""
+    try:
+        from neoarch.backend.services.settings import load_settings
+        return bool(load_settings().get('check_pipx_updates', True))
+    except Exception:
+        return True
+
+
 def get_missing_optional() -> List[str]:
     """Names of optional integrations that are missing."""
     return [d["name"] for d in get_dependency_catalog()

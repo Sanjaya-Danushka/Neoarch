@@ -325,6 +325,12 @@ msgstr "Buscar actualizaciones"
 msgid "Check for firmware updates"
 msgstr "Buscar actualizaciones de firmware"
 
+msgid "Check for pipx updates"
+msgstr "Buscar actualizaciones de pipx"
+
+msgid "Detects apps installed with pipx (Python scripts) and lists their updates on the Updates page."
+msgstr "Detecta aplicaciones instaladas con pipx (scripts de Python) y lista sus actualizaciones en la página de Actualizaciones."
+
 msgid "Checking for updates..."
 msgstr "Comprobando actualizaciones..."
 

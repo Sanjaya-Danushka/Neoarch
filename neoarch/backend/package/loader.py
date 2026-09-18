@@ -1,11 +1,12 @@
 """Package loading operations.
 
 Loads installed packages and available updates from all sources
-(pacman, AUR, Flatpak, npm, Firmware) for display in the UI.
+(pacman, AUR, Flatpak, npm, Firmware, pipx) for display in the UI.
 """
 
 import os
 import json
+import re
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Thread
@@ -357,6 +358,127 @@ def _check_npm_updates():
     return packages
 
 
+def _parse_pipx_list(stdout):
+    """Parse ``pipx list --json`` snapshot into installed pipx apps.
+
+    The snapshot maps venv name -> metadata; the venv name is the identifier
+    ``pipx upgrade`` accepts, and ``main_package.package_version`` is the
+    installed version. Entries without a version are still listed (they may
+    be non-index installs) but carry an empty version.
+    """
+    packages = []
+    raw = (stdout or '').strip()
+    if not raw:
+        return packages
+    try:
+        data = json.loads(raw)
+    except Exception:
+        return packages
+    venvs = data.get('venvs') if isinstance(data, dict) else None
+    if not isinstance(venvs, dict):
+        return packages
+    for name, venv in venvs.items():
+        if not isinstance(venv, dict):
+            continue
+        meta = venv.get('metadata') if isinstance(venv.get('metadata'), dict) else venv
+        main = meta.get('main_package') if isinstance(meta, dict) else None
+        if isinstance(main, dict):
+            version = (main.get('package_version') or main.get('version') or '').strip()
+        elif isinstance(meta, dict):
+            version = (meta.get('package_version') or '').strip()
+        else:
+            version = ''
+        packages.append({
+            'name': name,
+            'version': version,
+            'new_version': '',
+            'id': name,
+            'source': 'pipx',
+        })
+    return packages
+
+
+def _parse_pipx_outdated(stdout):
+    """Parse ``pipx list --outdated`` output into a ``name -> new version`` map.
+
+    Modern pipx prints ``name: current -> latest`` per line (package names
+    only; injected/pinned entries carry text between the name and the colon,
+    so they never match). Older pipx versions printed a bare two-token
+    ``name current`` line under an "outdated packages" heading — that layout
+    is parsed as a fallback with an empty new version.
+    """
+    outdated = {}
+    text = (stdout or '').strip()
+    if not text:
+        return outdated
+    arrow = re.compile(
+        r'^\s*([A-Za-z][\w.\-]*[A-Za-z0-9]?)\s*:\s*([\w.!+\-]+)\s*(?:->|→)\s*([\w.!+\-]+)\s*$')
+    plain = re.compile(r'^\s*([A-Za-z][\w.\-]*[A-Za-z0-9]?)\s+([\w.!+\-]+)\s*$')
+    in_section = False
+    for line in text.split('\n'):
+        low = line.lower()
+        if ('outdated' in low and (':' not in line or line.lstrip().lower().startswith('the'))):
+            in_section = True
+            continue
+        m = arrow.search(line)
+        if m:
+            name, _cur, new = m.groups()
+            if name and name != new and name not in outdated:
+                outdated[name] = new
+            continue
+        if in_section:
+            m = plain.search(line)
+            if m:
+                name, ver = m.groups()
+                if name and ver and name not in outdated:
+                    outdated[name] = ''
+    return outdated
+
+
+def _pipx_install_state():
+    """Return installed pipx apps plus the ``name -> new version`` outdated map."""
+    installed = _run_cmd(["pipx", "list", "--json"], timeout=90)
+    packages = _parse_pipx_list(installed.stdout if installed else None)
+    outdated = _run_cmd(["pipx", "list", "--outdated"], timeout=180,
+                        env=sys_utils.c_locale_env())
+    latest = _parse_pipx_outdated(outdated.stdout if outdated else None)
+    return packages, latest
+
+
+def _check_pipx_updates():
+    """List available pipx app updates (runs entirely as the current user)."""
+    if not sys_utils.pipx_source_enabled():
+        return []
+    if not sys_utils.cmd_exists("pipx"):
+        return []
+    packages, latest = _pipx_install_state()
+    if not packages or not latest:
+        return []
+    updates = []
+    for pkg in packages:
+        new_version = latest.get(pkg['id'])
+        if new_version is None:
+            continue
+        pkg['new_version'] = str(new_version)
+        updates.append(pkg)
+    return updates
+
+
+def _check_pipx_installed():
+    """List installed pipx apps with their update status (Installed page)."""
+    if not sys_utils.pipx_source_enabled():
+        return []
+    if not sys_utils.cmd_exists("pipx"):
+        return []
+    packages, latest = _pipx_install_state()
+    for pkg in packages:
+        new_version = latest.get(pkg['id'])
+        pkg['has_update'] = new_version is not None
+        if new_version is not None:
+            pkg['new_version'] = str(new_version)
+    return packages
+
+
 def _parse_fwupd_json(stdout):
     """Parse ``fwupdmgr get-updates --json`` output into update entries.
 
@@ -588,6 +710,9 @@ def load_updates(app):
                 fut_npm = ex.submit(_check_npm_updates)
                 fut_firmware = (ex.submit(_check_fwupd_updates)
                                 if sys_utils.firmware_source_enabled() else None)
+                fut_pipx = (ex.submit(_check_pipx_updates)
+                            if sys_utils.pipx_source_enabled()
+                            and sys_utils.cmd_exists("pipx") else None)
                 # A rootless fresh sync (checkupdates) already refreshes the
                 # data; only sync the real database when that is unavailable.
                 import shutil as _sh
@@ -662,6 +787,8 @@ def load_updates(app):
                     packages.extend(_safe_result(fut, label))
                 if fut_firmware is not None:
                     packages.extend(_safe_result(fut_firmware, "Firmware"))
+                if fut_pipx is not None:
+                    packages.extend(_safe_result(fut_pipx, "pipx"))
                 packages = finalize(packages)
 
                 sources = {p.get("source") for p in packages}
@@ -915,6 +1042,9 @@ def load_installed_packages(app):
                 fut_flatpak = ex.submit(_check_flatpak_installed)
                 fut_npm_inst = ex.submit(_check_npm_installed)
                 fut_npm_out = ex.submit(_check_npm_outdated)
+                fut_pipx = (ex.submit(_check_pipx_installed)
+                            if sys_utils.pipx_source_enabled()
+                            and sys_utils.cmd_exists("pipx") else None)
 
                 fp_result, installed_map = fut_flatpak.result()
                 packages.extend(fp_result)
@@ -923,6 +1053,9 @@ def load_installed_packages(app):
                 packages.extend(npm_pkgs)
 
                 outdated = fut_npm_out.result()
+
+                if fut_pipx is not None:
+                    packages.extend(fut_pipx.result() or [])
 
             update_ids = _check_flatpak_updates_installed(installed_map)
             if update_ids:

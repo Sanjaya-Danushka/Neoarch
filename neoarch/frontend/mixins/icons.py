@@ -90,6 +90,7 @@ class _IconsMixin:
             "Flatpak": "flatpack.svg",
             "npm": "node.svg",
             "Firmware": "firmware.svg",
+            "pipx": "pipx.svg",
         }
         filename = mapping.get(source, "packagename.svg")
         icon_path = os.path.join(icon_dir, filename)

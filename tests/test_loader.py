@@ -15,6 +15,10 @@ from neoarch.backend.package.loader import (
     _parse_fwupd_json,
     _parse_fwupd_text,
     _check_fwupd_updates,
+    _parse_pipx_list,
+    _parse_pipx_outdated,
+    _check_pipx_updates,
+    _check_pipx_installed,
 )
 
 
@@ -491,3 +495,144 @@ def test_installed_ts_missing(monkeypatch):
         raise FileNotFoundError
     monkeypatch.setattr("neoarch.backend.package.loader.os.path.getmtime", raise_err)
     assert _installed_ts("pkg", "1.0") == 0
+
+
+# ---------------------------------------------------------------------------
+# pipx parsing
+# ---------------------------------------------------------------------------
+
+_PIPX_LIST_JSON = {
+    "pipx_spec_version": "0.1",
+    "venvs": {
+        "black": {
+            "metadata": {
+                "main_package": {"package": "black", "package_version": "24.1.0"},
+                "pipx_spec_version": "0.1",
+            },
+            "maintain_package": "black",
+            "package_metadata": {"black": {}, "my-custom": {}},
+            "python_path": "/usr/bin/python3",
+            "suffix": "",
+        },
+        "ruff": {
+            "metadata": {
+                "main_package": {"package": "ruff", "package_version": "0.3.0"},
+            },
+        },
+        "verbose": {
+            "metadata": {
+                "main_package": {"package": "verbose", "package_version": "1.0", "include_apps": []},
+            },
+        },
+    },
+}
+
+
+def test_parse_pipx_list_basic():
+    result = _parse_pipx_list(json.dumps(_PIPX_LIST_JSON))
+    assert len(result) == 3
+    assert result[0]["name"] == "black"
+    assert result[0]["version"] == "24.1.0"
+    assert result[0]["id"] == "black"
+    assert result[0]["source"] == "pipx"
+    assert result[0]["new_version"] == ""
+
+
+def test_parse_pipx_list_none_empty():
+    assert _parse_pipx_list(None) == []
+    assert _parse_pipx_list("") == []
+    assert _parse_pipx_list("not json") == []
+    assert _parse_pipx_list("{}") == []
+    assert _parse_pipx_list("[]") == []
+
+
+def test_parse_pipx_list_missing_version():
+    payload = {"venvs": {"plain": {"metadata": {"main_package": {"package": "plain"}}}},
+               "pipx_spec_version": "0.1"}
+    result = _parse_pipx_list(json.dumps(payload))
+    assert len(result) == 1
+    assert result[0]["name"] == "plain"
+    assert result[0]["version"] == ""
+
+
+def test_parse_pipx_outdated_arrow_format():
+    stdout = (
+        "These apps are shared between multiple locators...\n"
+        "black: 24.1.0 -> 24.3.0\n"
+        "ruff: 0.3.1 -> 0.4.2\n"
+        "pylint-plugin[extra]: 1.0 -> 2.0\n"
+    )
+    outdated = _parse_pipx_outdated(stdout)
+    assert outdated == {"black": "24.3.0", "ruff": "0.4.2"}
+
+
+def test_parse_pipx_outdated_legacy_section():
+    stdout = (
+        "The following packages are outdated:\n"
+        "    black 24.1.0\n"
+        "    ruff 0.3.1\n"
+    )
+    outdated = _parse_pipx_outdated(stdout)
+    assert outdated == {"black": "", "ruff": ""}
+
+
+def test_parse_pipx_outdated_empty():
+    assert _parse_pipx_outdated(None) == {}
+    assert _parse_pipx_outdated("") == {}
+    assert _parse_pipx_outdated("venvs are in /home/user/.local/share/pipx/venvs") == {}
+
+
+def test_pipx_updates_merges_outdated(monkeypatch):
+    def fake_run_cmd(cmd, timeout=90, env=None):
+        if "--outdated" in cmd:
+            return FakeCompletedProcess(stdout="black: 24.1.0 -> 24.3.0\nuptodate: 1.0 -> 1.0\n")
+        return FakeCompletedProcess(stdout=json.dumps(_PIPX_LIST_JSON))
+
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.pipx_source_enabled",
+                        lambda: True)
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.cmd_exists",
+                        lambda name: name == "pipx")
+    monkeypatch.setattr("neoarch.backend.package.loader._run_cmd", fake_run_cmd)
+
+    result = _check_pipx_updates()
+    assert len(result) == 1
+    assert result[0]["name"] == "black"
+    assert result[0]["new_version"] == "24.3.0"
+    assert result[0]["source"] == "pipx"
+
+
+def test_pipx_updates_disabled_or_missing(monkeypatch):
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.pipx_source_enabled",
+                        lambda: False)
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.cmd_exists",
+                        lambda name: True)
+    monkeypatch.setattr("neoarch.backend.package.loader._run_cmd",
+                        lambda cmd, **kw: FakeCompletedProcess(stdout=json.dumps(_PIPX_LIST_JSON)))
+    assert _check_pipx_updates() == []
+
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.pipx_source_enabled",
+                        lambda: True)
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.cmd_exists",
+                        lambda name: False)
+    assert _check_pipx_updates() == []
+
+
+def test_pipx_installed_marks_updates(monkeypatch):
+    def fake_run_cmd(cmd, timeout=90, env=None):
+        if "--outdated" in cmd:
+            return FakeCompletedProcess(stdout="black: 24.1.0 -> 24.3.0\n")
+        return FakeCompletedProcess(stdout=json.dumps(_PIPX_LIST_JSON))
+
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.pipx_source_enabled",
+                        lambda: True)
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.cmd_exists",
+                        lambda name: name == "pipx")
+    monkeypatch.setattr("neoarch.backend.package.loader._run_cmd", fake_run_cmd)
+
+    result = _check_pipx_installed()
+    assert len(result) == 3
+    by_name = {p["name"]: p for p in result}
+    assert by_name["black"]["has_update"] is True
+    assert by_name["black"]["new_version"] == "24.3.0"
+    assert by_name["ruff"]["has_update"] is False
+    assert by_name["verbose"]["has_update"] is False

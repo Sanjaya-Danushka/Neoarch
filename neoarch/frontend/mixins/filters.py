@@ -981,7 +981,8 @@ class _FiltersMixin:
             ("AUR", os.path.join(_BASE_DIR, "assets", "icons", "sources", "aur.svg")),
             ("Flatpak", os.path.join(_BASE_DIR, "assets", "icons", "sources", "flatpack.svg")),
             ("npm", os.path.join(_BASE_DIR, "assets", "icons", "sources", "node.svg")),
-            ("Firmware", os.path.join(_BASE_DIR, "assets", "icons", "sources", "firmware.svg"))
+            ("Firmware", os.path.join(_BASE_DIR, "assets", "icons", "sources", "firmware.svg")),
+            ("pipx", os.path.join(_BASE_DIR, "assets", "icons", "sources", "pipx.svg")),
         ]
         for source_name, source_icon_path in sources:
             self.source_card.add_source(source_name, source_icon_path)

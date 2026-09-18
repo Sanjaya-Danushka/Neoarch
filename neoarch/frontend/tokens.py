@@ -75,6 +75,7 @@ class Colors:
     SRC_FIRMWARE = "#A3A6B0"
     SRC_DOCKER = "#2496ED"
     SRC_BREW = "#8B5CF6"
+    SRC_PIPX = "#00ACC1"
 
     # Toast
     TOAST_INFO = "#4C9AFF"
@@ -93,6 +94,7 @@ SourceColors = {
     "Firmware": Colors.SRC_FIRMWARE,
     "Docker": Colors.SRC_DOCKER,
     "Brew": Colors.SRC_BREW,
+    "pipx": Colors.SRC_PIPX,
 }
 
 

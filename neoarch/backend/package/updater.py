@@ -1,7 +1,7 @@
 """Package update orchestrator.
 
 Handles updating packages from all sources (pacman, AUR, Flatpak, npm,
-Firmware) with appropriate privilege elevation.
+Firmware, pipx) with appropriate privilege elevation.
 """
 
 import os
@@ -334,6 +334,24 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                                 failed_sources.append('npm')
                         w_s.error.connect(_on_err_np_s)
                         w_s.run()
+                    emit_progress(f"Completed {source} packages", source_count)
+                    if app.install_cancel_event.is_set():
+                        app.log("Update cancelled by user")
+                        cancelled = True
+                        break
+                elif source == 'pipx':
+                    cmd = ["pipx", "upgrade"] + pkgs
+                    worker = CommandWorker(cmd, sudo=False, cancel_event=app.install_cancel_event)
+                    worker.output.connect(app.log)
+                    worker.line_update.connect(app.log_line_update)
+                    def _on_err_pipx(msg):
+                        nonlocal overall_success
+                        app.log(msg)
+                        overall_success = False
+                        if 'pipx' not in failed_sources:
+                            failed_sources.append('pipx')
+                    worker.error.connect(_on_err_pipx)
+                    worker.run()
                     emit_progress(f"Completed {source} packages", source_count)
                     if app.install_cancel_event.is_set():
                         app.log("Update cancelled by user")

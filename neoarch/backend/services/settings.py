@@ -15,6 +15,7 @@ DEFAULT_SETTINGS = {
     'npm_user_mode': True,
     'include_local_source': False,
     'include_firmware_updates': True,
+    'check_pipx_updates': True,
     'auto_update_firmware': False,
     'enabled_plugins': [],
     'bundle_autosave': True,

@@ -236,6 +236,16 @@ class GeneralSettingsWidget(QWidget):
             control=self.sw_firmware))
         basic_layout.addWidget(self._sep())
 
+        self.sw_pipx = ToggleSwitch(self, _("Check for pipx updates"))
+        self.sw_pipx.setChecked(bool(self.app.settings.get('check_pipx_updates', True)), animate=False)
+        self.sw_pipx.toggled.connect(lambda v: self.app.update_setting('check_pipx_updates', v))
+        basic_layout.addWidget(self._row(
+            _("Check for pipx updates"),
+            _("Detects apps installed with pipx (Python scripts) and lists "
+              "their updates on the Updates page."),
+            control=self.sw_pipx))
+        basic_layout.addWidget(self._sep())
+
         self.sw_npm = ToggleSwitch(self, _("Use npm user mode"))
         self.sw_npm.setChecked(bool(self.app.settings.get('npm_user_mode', True)), animate=False)
         self.sw_npm.toggled.connect(lambda v: self.app.update_setting('npm_user_mode', v))
