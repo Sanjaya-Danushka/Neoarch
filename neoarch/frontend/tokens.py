@@ -359,12 +359,14 @@ QSS._regenerate()
 # compositors/GPU drivers.
 WINDOW_GLOW = False
 WINDOW_RADIUS = 8
+WINDOW_OPACITY = 0.75
 
 
 def _build_main_stylesheet():
     frame_border = (
         f"border: 1px solid {Colors.ACCENT_SOFT};" if WINDOW_GLOW
         else "border: none;")
+    window_bg = f"rgba(12, 12, 14, {WINDOW_OPACITY})"
     return f"""
 QMainWindow {{
     background-color: transparent;
@@ -376,7 +378,7 @@ QWidget#appOuter {{
 }}
 
 QFrame#appWindow {{
-    background-color: rgba(12, 12, 14, 0.75);
+    background-color: {window_bg};
     {frame_border}
     border-radius: {WINDOW_RADIUS}px;
 }}

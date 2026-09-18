@@ -31,6 +31,7 @@ DEFAULT_SETTINGS = {
     'source_accent_colors': True,
     'window_glow': False,
     'window_radius': 8,
+    'window_opacity': 0.75,
     # Notifications
     'notify_desktop': True,
     'notify_inapp': True,
