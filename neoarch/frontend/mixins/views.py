@@ -42,44 +42,6 @@ from neoarch.frontend.styles import Styles
 
 _BASE_DIR = str(PROJECT_ROOT)
 
-_HEADER_PILL_STYLE = f"""
-    QFrame#headerPill {{
-        background-color: rgba(0, 0, 0, 0.34);
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        border-radius: {Radii.LG}px;
-    }}
-"""
-
-_HEADER_ICON_BTN_STYLE = """
-    QPushButton {
-        background: transparent;
-        border: none;
-        border-radius: 18px;
-    }
-    QPushButton:hover {
-        background: rgba(255, 255, 255, 0.10);
-    }
-    QPushButton:pressed {
-        background: rgba(0, 191, 174, 0.18);
-    }
-"""
-
-_HEADER_PILL_SEARCH_STYLE = """
-    QLineEdit {
-        background: transparent;
-        border: none;
-        color: #FFFFFF;
-        font-size: 13px;
-    }
-    QLineEdit:focus {
-        background: transparent;
-        border: none;
-    }
-    QLineEdit::placeholder {
-        color: rgba(255, 255, 255, 0.35);
-    }
-"""
-
 
 class _CloudHelper(QObject):
     """Tiny helper that owns cross-thread signals for cloud operations."""
@@ -1003,63 +965,62 @@ class _ViewsMixin:
 
         layout.addStretch()
 
-        pill = QFrame()
-        pill.setObjectName("headerPill")
-        pill.setFixedHeight(44)
-        pill.setStyleSheet(_HEADER_PILL_STYLE)
-        pill_layout = QHBoxLayout(pill)
-        pill_layout.setContentsMargins(10, 4, 8, 4)
-        pill_layout.setSpacing(4)
-
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText(_("Quick search…"))
-        self.search_input.setFixedWidth(220)
-        self.search_input.setFixedHeight(36)
-        self.search_input.setStyleSheet(_HEADER_PILL_SEARCH_STYLE)
-        pill_layout.addWidget(self.search_input)
-
-        pill_sep = QFrame()
-        pill_sep.setFixedSize(1, 22)
-        pill_sep.setStyleSheet("background: rgba(255,255,255,0.08); border: none;")
-        pill_layout.addWidget(pill_sep)
+        search_input = QLineEdit()
+        search_input.setPlaceholderText(_("Quick search…"))
+        search_input.setFixedWidth(220)
+        search_input.setFixedHeight(36)
+        search_input.setStyleSheet("""
+            QLineEdit {
+                background-color: rgba(0, 0, 0, 0.55);
+                border: 1px solid rgba(255, 255, 255, 0.10);
+                border-radius: 12px;
+                padding: 0 14px;
+                color: #FFFFFF;
+                font-size: 13px;
+                selection-background-color: rgba(0, 214, 213, 0.35);
+            }
+            QLineEdit:hover {
+                border: 1px solid rgba(0, 214, 213, 0.35);
+            }
+            QLineEdit:focus {
+                background-color: rgba(0, 0, 0, 0.78);
+                border: 1px solid rgba(0, 214, 213, 0.85);
+            }
+            QLineEdit::placeholder {
+                color: rgba(255, 255, 255, 0.35);
+            }
+        """)
+        self.search_input = search_input
+        layout.addWidget(search_input)
 
         self.signal_indicator = SignalIndicator()
         self.signal_indicator.no_signal.connect(self._on_no_signal)
         self.signal_indicator.connection_restored.connect(self._on_connection_restored)
-        pill_layout.addWidget(self.signal_indicator)
-
-        icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "ui")
-        toolbar_dir = os.path.join(_BASE_DIR, "assets", "icons", "toolbar")
+        layout.addWidget(self.signal_indicator)
 
         refresh_btn = QPushButton()
         refresh_btn.setFixedSize(36, 36)
         refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        refresh_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "refresh.svg"), 30))
+        icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "ui")
+        refresh_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "refresh.svg"), 18))
         refresh_btn.setToolTip(_("Refresh"))
         refresh_btn.clicked.connect(self.refresh_packages)
-        refresh_btn.setStyleSheet(_HEADER_ICON_BTN_STYLE)
-        pill_layout.addWidget(refresh_btn)
-
-        security_btn = QPushButton()
-        security_btn.setFixedSize(36, 36)
-        security_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        security_btn.setIcon(self.get_svg_icon(
-            os.path.join(toolbar_dir, "security-card.svg"), 30))
-        security_btn.setToolTip(_("Security Settings"))
-        security_btn.clicked.connect(self.open_security_settings)
-        security_btn.setStyleSheet(_HEADER_ICON_BTN_STYLE)
-        pill_layout.addWidget(security_btn)
-
-        news_btn = QPushButton()
-        news_btn.setFixedSize(36, 36)
-        news_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        news_btn.setIcon(self.get_svg_icon(os.path.join(toolbar_dir, "news.svg"), 24))
-        news_btn.setToolTip(_("Arch News"))
-        news_btn.clicked.connect(self.show_arch_news)
-        news_btn.setStyleSheet(_HEADER_ICON_BTN_STYLE)
-        pill_layout.addWidget(news_btn)
-
-        layout.addWidget(pill)
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(28, 30, 36, 0.75);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 18px;
+            }
+            QPushButton:hover {
+                background-color: rgba(34, 36, 42, 0.85);
+                border: 1px solid rgba(0, 214, 213, 0.45);
+            }
+            QPushButton:pressed {
+                background-color: rgba(0, 214, 213, 0.18);
+                border: 1px solid rgba(0, 214, 213, 0.60);
+            }
+        """)
+        layout.addWidget(refresh_btn)
 
         return header
 
