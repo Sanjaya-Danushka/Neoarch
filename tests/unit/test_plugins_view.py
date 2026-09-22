@@ -2,7 +2,7 @@
 
 import pytest
 from PyQt6.QtCore import QObject, pyqtSignal, Qt
-from PyQt6.QtWidgets import QApplication, QPushButton
+from PyQt6.QtWidgets import QApplication
 
 from neoarch.frontend.components.packages_grid_view import PackageCard
 from neoarch.frontend.components.plugins_view import PluginsView, _PluginPackageCard
@@ -223,7 +223,6 @@ def test_live_search_ready_stores_dynamic_specs(qapp, monkeypatch):
     """_on_live_search_ready must record non-curated specs so get_plugin can
     find them later (install/extend via Batch install)."""
     import neoarch.frontend.components.plugins_view as pv_mod
-    from neoarch.frontend.components.plugins_view import PluginsView
     monkeypatch.setattr(pv_mod.PluginsView, "is_installed", lambda self, spec: False)
     monkeypatch.setattr(pv_mod.PluginsView, "create_app_card",
                         lambda self, spec, parent, installed: None)
@@ -245,7 +244,7 @@ def test_plugin_card_double_click_launches_when_installed(qapp):
 
     launched = []
     inst = _PluginPackageCard(_spec(pid="htop"), True, None)
-    inst.launch_clicked.connect(lambda pid: launched.append(pid))
+    inst.launch_clicked.connect(launched.append)
     inst.mouseDoubleClickEvent(QMouseEvent(
         QEvent.Type.MouseButtonDblClick, QPointF(10, 10), Qt.MouseButton.LeftButton,
         Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier))
@@ -253,7 +252,7 @@ def test_plugin_card_double_click_launches_when_installed(qapp):
 
     launched.clear()
     avail = _PluginPackageCard(_spec(pid="bob"), False, None)
-    avail.launch_clicked.connect(lambda pid: launched.append(pid))
+    avail.launch_clicked.connect(launched.append)
     avail.mouseDoubleClickEvent(QMouseEvent(
         QEvent.Type.MouseButtonDblClick, QPointF(10, 10), Qt.MouseButton.LeftButton,
         Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier))
@@ -403,7 +402,6 @@ def test_toolbar_plugins_view_has_no_install_plugin_button(qapp):
 
 def _make_view(qapp, specs, monkeypatch):
     import neoarch.frontend.components.plugins_view as pv_mod
-    from neoarch.frontend.components.plugins_view import PluginsView
     monkeypatch.setattr(pv_mod, "get_all_plugins_data", lambda: specs)
     monkeypatch.setattr(pv_mod, "get_plugins_data", lambda: specs)
     monkeypatch.setattr(pv_mod.PluginsView, "is_installed", lambda self, spec: False)
@@ -447,7 +445,7 @@ def test_selection_emits_signal_and_batch_installs(qapp, monkeypatch):
     qapp.processEvents()
 
     counts = []
-    view.selection_changed.connect(lambda n: counts.append(n))
+    view.selection_changed.connect(counts.append)
 
     install_emitted = []
     view.install_many_requested.connect(lambda ids: install_emitted.append(list(ids)))
@@ -478,7 +476,7 @@ def test_installed_card_selection_counts_for_clear(qapp, monkeypatch):
     qapp.processEvents()
 
     counts = []
-    view.selection_changed.connect(lambda n: counts.append(n))
+    view.selection_changed.connect(counts.append)
 
     alpha = next(d for d in view._all_cards if d["plugin"]["id"] == "alpha")
     alpha["installed"] = True          # simulate an installed plugin card
@@ -531,7 +529,6 @@ def test_plugins_view_set_installed_updates_card_data(qapp, monkeypatch):
 def test_install_many_batches_into_single_operation(qapp, monkeypatch):
     """install_many_by_id merges all packages per source into one install call
     and flips every card to its real installed state on success."""
-    from PyQt6.QtCore import QObject, pyqtSignal
     import neoarch.managers.plugin_manager as pm_mod
     from neoarch.managers.plugin_manager import PluginsManager
 
@@ -550,10 +547,12 @@ def test_install_many_batches_into_single_operation(qapp, monkeypatch):
             self.installed = []
             self.refresh_forced = False
 
-        def get_plugin(self, pid):
+        @staticmethod
+        def get_plugin(pid):
             return specs.get(pid)
 
-        def is_installed(self, spec):
+        @staticmethod
+        def is_installed(spec):
             return False
 
         def set_installing(self, pid, state):
