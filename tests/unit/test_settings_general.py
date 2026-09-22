@@ -32,10 +32,12 @@ class _FakeApp(QWidget):
     def export_settings(self):
         return dict(self.settings)
 
-    def import_settings(self):
+    @staticmethod
+    def import_settings():
         return None
 
-    def rebuild_ui(self):
+    @staticmethod
+    def rebuild_ui():
         return None
 
 

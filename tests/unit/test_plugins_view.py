@@ -264,6 +264,13 @@ def _card_spec(pid, installed=False, category="", source="pacman"):
             "installed": installed, "widget": None}
 
 
+def _card_by_id(view, pid):
+    for entry in view._all_cards:
+        if entry["plugin"]["id"] == pid:
+            return entry
+    return None
+
+
 def test_plugins_view_sort_cards_orders_by_mode(qapp):
     cards = [
         _card_spec("b", installed=False, category="System"),
@@ -286,6 +293,8 @@ class _FakeLegacyWidget:
     def __init__(self, name):
         self.name = name
         self._vis = True
+        self._cleared = False
+        self._relaid_out = False
 
     def setVisible(self, v):
         self._vis = bool(v)
@@ -294,10 +303,10 @@ class _FakeLegacyWidget:
         return self._vis
 
     def clear(self):
-        pass
+        self._cleared = True
 
     def _relayout(self):
-        pass
+        self._relaid_out = True
 
 
 class _DummyApp:
@@ -478,7 +487,8 @@ def test_installed_card_selection_counts_for_clear(qapp, monkeypatch):
     counts = []
     view.selection_changed.connect(counts.append)
 
-    alpha = next(d for d in view._all_cards if d["plugin"]["id"] == "alpha")
+    alpha = _card_by_id(view, "alpha")
+    assert alpha is not None
     alpha["installed"] = True          # simulate an installed plugin card
     alpha["widget"].set_installed(True)
     alpha["widget"].set_checked(True)
@@ -521,7 +531,8 @@ def test_plugins_view_set_installed_updates_card_data(qapp, monkeypatch):
     qapp.processEvents()
 
     view.set_installed("alpha", True)
-    data = next(d for d in view._all_cards if d["plugin"]["id"] == "alpha")
+    data = _card_by_id(view, "alpha")
+    assert data is not None
     assert data["installed"] is True
     assert [b.text() for b in data["widget"]._action_buttons] == ["Open", "Uninstall"]
 
