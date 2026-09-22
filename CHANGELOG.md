@@ -10,7 +10,7 @@ dialog shows after an update.
 
 ---
 
-## Unreleased — dev branch
+## 3.3.1 — 2026-09-22
 
 ### New Features
 
