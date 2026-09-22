@@ -10,6 +10,32 @@ dialog shows after an update.
 
 ---
 
+## 3.3.1 — 2026-09-22
+
+### New Features
+
+- **Release notes before you update.** The Update Review dialog now has a
+  "Release notes" column: packages with a known changelog show a "View
+  changes ↗" link that opens the official changelog for that release. It is
+  backed by a small curated offline map (package → changelog URL) covering
+  common Arch packages and Flatpak apps, so nothing is fetched over the
+  network while you review an update.
+- **Unusable sources are visibly disabled.** On the Updates, Discover, and
+  Installed pages and in Settings, source rows for `flatpak`, `npm`, `pipx`,
+  and `fwupd` are greyed out and cannot be toggled when the backing tool is
+  not installed, with an install hint (`sudo pacman -S <package>`) on hover.
+
+### Improvements
+
+- **Dependency status now tells required from optional.** The About sidebar
+  icon, its count badge, and the Diagnostics nav dot turn red only when a
+  *required* dependency is missing. Missing optional components (flatpak,
+  npm, docker, pipx, fwupd, …) — which most users do not need — show a green
+  state instead, while remaining listed on Diagnostics with their Install
+  button. `pipx` was added to the dependency catalog as an optional entry.
+
+---
+
 ## 3.3.0 — 2026-09-16
 
 Changes on the `dev` branch that land in this release.

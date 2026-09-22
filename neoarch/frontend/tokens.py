@@ -75,6 +75,7 @@ class Colors:
     SRC_FIRMWARE = "#A3A6B0"
     SRC_DOCKER = "#2496ED"
     SRC_BREW = "#8B5CF6"
+    SRC_PIPX = "#00ACC1"
 
     # Toast
     TOAST_INFO = "#4C9AFF"
@@ -93,6 +94,7 @@ SourceColors = {
     "Firmware": Colors.SRC_FIRMWARE,
     "Docker": Colors.SRC_DOCKER,
     "Brew": Colors.SRC_BREW,
+    "pipx": Colors.SRC_PIPX,
 }
 
 
@@ -359,12 +361,14 @@ QSS._regenerate()
 # compositors/GPU drivers.
 WINDOW_GLOW = False
 WINDOW_RADIUS = 8
+WINDOW_OPACITY = 0.75
 
 
 def _build_main_stylesheet():
     frame_border = (
         f"border: 1px solid {Colors.ACCENT_SOFT};" if WINDOW_GLOW
         else "border: none;")
+    window_bg = f"rgba(12, 12, 14, {WINDOW_OPACITY})"
     return f"""
 QMainWindow {{
     background-color: transparent;
@@ -376,7 +380,7 @@ QWidget#appOuter {{
 }}
 
 QFrame#appWindow {{
-    background-color: rgba(12, 12, 14, 0.75);
+    background-color: {window_bg};
     {frame_border}
     border-radius: {WINDOW_RADIUS}px;
 }}

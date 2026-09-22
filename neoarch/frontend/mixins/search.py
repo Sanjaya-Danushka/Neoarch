@@ -18,6 +18,46 @@ def _parse_version(value):
     return [int(m) for m in re.findall(r"\d+", str(value))] or [0]
 
 
+def _parse_pacman_sync(out):
+    """Parse ``pacman -Ss`` output into Discover row dicts.
+
+    The header line is ``<repo>/<pkg> <version> [installed] [groups]...`` and the
+    real description lives on the following indented line — never on the header,
+    which is where pacman puts the ``[installed]`` / repo-group markers.
+    """
+    packages = []
+    lines = (out or "").split("\n")
+    i, n = 0, len(lines)
+    while i < n:
+        line = lines[i].rstrip()
+        if not line.strip() or "/" not in line:
+            i += 1
+            continue
+        parts = line.split()
+        if len(parts) < 2:
+            i += 1
+            continue
+        name = parts[0].split("/")[-1]
+        version = parts[1]
+        description = ""
+        i += 1
+        while i < n and (lines[i].startswith(" ") or lines[i].startswith("\t")):
+            if not description:
+                cand = lines[i].strip()
+                if cand:
+                    description = cand
+            i += 1
+        packages.append({
+            "name": name,
+            "version": version,
+            "id": name,
+            "source": "pacman",
+            "description": description,
+            "has_update": False,
+        })
+    return packages
+
+
 class _SearchMixin:
     def on_large_search_requested(self, query):
         """Handle search request from large search box"""
@@ -425,48 +465,15 @@ class _SearchMixin:
                             except Exception:
                                 result = None
                             if result and result.returncode == 0 and result.stdout:
-                                lines = result.stdout.strip().split('\n')
-                                i = 0
-                                while i < len(lines):
-                                    if lines[i].strip() and '/' in lines[i]:
-                                        parts = lines[i].split()
-                                        if len(parts) >= 2:
-                                            name = parts[0].split('/')[-1]
-                                            version = parts[1]
-                                            description = ' '.join(parts[2:]) if len(parts) > 2 else ''
-                                            key = ('pacman', name)
-                                            if key not in pacman_seen:
-                                                pacman_seen.add(key)
-                                                packages.append({
-                                                    'name': name,
-                                                    'version': version,
-                                                    'id': name,
-                                                    'source': 'pacman',
-                                                    'description': description,
-                                                    'has_update': False
-                                                })
-                                    i += 1
+                                for pkg in _parse_pacman_sync(result.stdout):
+                                    key = ('pacman', pkg['name'])
+                                    if key not in pacman_seen:
+                                        pacman_seen.add(key)
+                                        packages.append(pkg)
                     else:
                         result = subprocess.run([shutil.which("pacman") or "pacman", "-Ss", query], capture_output=True, text=True, timeout=30, check=False)
                         if result.returncode == 0 and result.stdout:
-                            lines = result.stdout.strip().split('\n')
-                            i = 0
-                            while i < len(lines):
-                                if lines[i].strip() and '/' in lines[i]:
-                                    parts = lines[i].split()
-                                    if len(parts) >= 2:
-                                        name = parts[0].split('/')[-1]
-                                        version = parts[1]
-                                        description = ' '.join(parts[2:]) if len(parts) > 2 else ''
-                                        packages.append({
-                                            'name': name,
-                                            'version': version,
-                                            'id': name,
-                                            'source': 'pacman',
-                                            'description': description,
-                                            'has_update': False
-                                        })
-                                i += 1
+                            packages.extend(_parse_pacman_sync(result.stdout))
                 except Exception:
                     pass
 

@@ -70,6 +70,7 @@ DARK = {
         "Firmware": "#A3A6B0",
         "Docker": "#2496ED",
         "Brew": "#8B5CF6",
+        "pipx": "#00ACC1",
     },
 }
 
@@ -127,6 +128,7 @@ LIGHT = {
         "Firmware": "#6B7280",
         "Docker": "#1565C0",
         "Brew": "#5C6BC0",
+        "pipx": "#00838F",
     },
 }
 
@@ -184,6 +186,7 @@ DRACULA = {
         "Firmware": "#6272A4",
         "Docker": "#8BE9FD",
         "Brew": "#BD93F9",
+        "pipx": "#8BE9FD",
     },
 }
 
@@ -241,6 +244,7 @@ NORD = {
         "Firmware": "#616E88",
         "Docker": "#88C0D0",
         "Brew": "#B48EAD",
+        "pipx": "#88C0D0",
     },
 }
 

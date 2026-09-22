@@ -42,44 +42,6 @@ from neoarch.frontend.styles import Styles
 
 _BASE_DIR = str(PROJECT_ROOT)
 
-_HEADER_PILL_STYLE = f"""
-    QFrame#headerPill {{
-        background-color: rgba(0, 0, 0, 0.34);
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        border-radius: {Radii.LG}px;
-    }}
-"""
-
-_HEADER_ICON_BTN_STYLE = """
-    QPushButton {
-        background: transparent;
-        border: none;
-        border-radius: 18px;
-    }
-    QPushButton:hover {
-        background: rgba(255, 255, 255, 0.10);
-    }
-    QPushButton:pressed {
-        background: rgba(0, 191, 174, 0.18);
-    }
-"""
-
-_HEADER_PILL_SEARCH_STYLE = """
-    QLineEdit {
-        background: transparent;
-        border: none;
-        color: #FFFFFF;
-        font-size: 13px;
-    }
-    QLineEdit:focus {
-        background: transparent;
-        border: none;
-    }
-    QLineEdit::placeholder {
-        color: rgba(255, 255, 255, 0.35);
-    }
-"""
-
 
 class _CloudHelper(QObject):
     """Tiny helper that owns cross-thread signals for cloud operations."""
@@ -1003,63 +965,62 @@ class _ViewsMixin:
 
         layout.addStretch()
 
-        pill = QFrame()
-        pill.setObjectName("headerPill")
-        pill.setFixedHeight(44)
-        pill.setStyleSheet(_HEADER_PILL_STYLE)
-        pill_layout = QHBoxLayout(pill)
-        pill_layout.setContentsMargins(10, 4, 8, 4)
-        pill_layout.setSpacing(4)
-
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText(_("Quick search…"))
-        self.search_input.setFixedWidth(220)
-        self.search_input.setFixedHeight(36)
-        self.search_input.setStyleSheet(_HEADER_PILL_SEARCH_STYLE)
-        pill_layout.addWidget(self.search_input)
-
-        pill_sep = QFrame()
-        pill_sep.setFixedSize(1, 22)
-        pill_sep.setStyleSheet("background: rgba(255,255,255,0.08); border: none;")
-        pill_layout.addWidget(pill_sep)
+        search_input = QLineEdit()
+        search_input.setPlaceholderText(_("Quick search…"))
+        search_input.setFixedWidth(220)
+        search_input.setFixedHeight(36)
+        search_input.setStyleSheet("""
+            QLineEdit {
+                background-color: rgba(0, 0, 0, 0.55);
+                border: 1px solid rgba(255, 255, 255, 0.10);
+                border-radius: 12px;
+                padding: 0 14px;
+                color: #FFFFFF;
+                font-size: 13px;
+                selection-background-color: rgba(0, 214, 213, 0.35);
+            }
+            QLineEdit:hover {
+                border: 1px solid rgba(0, 214, 213, 0.35);
+            }
+            QLineEdit:focus {
+                background-color: rgba(0, 0, 0, 0.78);
+                border: 1px solid rgba(0, 214, 213, 0.85);
+            }
+            QLineEdit::placeholder {
+                color: rgba(255, 255, 255, 0.35);
+            }
+        """)
+        self.search_input = search_input
+        layout.addWidget(search_input)
 
         self.signal_indicator = SignalIndicator()
         self.signal_indicator.no_signal.connect(self._on_no_signal)
         self.signal_indicator.connection_restored.connect(self._on_connection_restored)
-        pill_layout.addWidget(self.signal_indicator)
-
-        icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "ui")
-        toolbar_dir = os.path.join(_BASE_DIR, "assets", "icons", "toolbar")
+        layout.addWidget(self.signal_indicator)
 
         refresh_btn = QPushButton()
         refresh_btn.setFixedSize(36, 36)
         refresh_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        refresh_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "refresh.svg"), 30))
+        icon_dir = os.path.join(_BASE_DIR, "assets", "icons", "ui")
+        refresh_btn.setIcon(self.get_svg_icon(os.path.join(icon_dir, "refresh.svg"), 18))
         refresh_btn.setToolTip(_("Refresh"))
         refresh_btn.clicked.connect(self.refresh_packages)
-        refresh_btn.setStyleSheet(_HEADER_ICON_BTN_STYLE)
-        pill_layout.addWidget(refresh_btn)
-
-        security_btn = QPushButton()
-        security_btn.setFixedSize(36, 36)
-        security_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        security_btn.setIcon(self.get_svg_icon(
-            os.path.join(toolbar_dir, "security-card.svg"), 30))
-        security_btn.setToolTip(_("Security Settings"))
-        security_btn.clicked.connect(self.open_security_settings)
-        security_btn.setStyleSheet(_HEADER_ICON_BTN_STYLE)
-        pill_layout.addWidget(security_btn)
-
-        news_btn = QPushButton()
-        news_btn.setFixedSize(36, 36)
-        news_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        news_btn.setIcon(self.get_svg_icon(os.path.join(toolbar_dir, "news.svg"), 24))
-        news_btn.setToolTip(_("Arch News"))
-        news_btn.clicked.connect(self.show_arch_news)
-        news_btn.setStyleSheet(_HEADER_ICON_BTN_STYLE)
-        pill_layout.addWidget(news_btn)
-
-        layout.addWidget(pill)
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(28, 30, 36, 0.75);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 18px;
+            }
+            QPushButton:hover {
+                background-color: rgba(34, 36, 42, 0.85);
+                border: 1px solid rgba(0, 214, 213, 0.45);
+            }
+            QPushButton:pressed {
+                background-color: rgba(0, 214, 213, 0.18);
+                border: 1px solid rgba(0, 214, 213, 0.60);
+            }
+        """)
+        layout.addWidget(refresh_btn)
 
         return header
 
@@ -2464,6 +2425,11 @@ class _ViewsMixin:
             if not getattr(self, '_settings_built', False):
                 self._settings_built = True
                 QTimer.singleShot(0, self.build_settings_ui)
+            else:
+                try:
+                    self.settings_widgets["general"].refresh_source_states()
+                except Exception:
+                    pass
         elif view_id == "about":
             try:
                 self.loading_widget.setVisible(False)
@@ -2492,7 +2458,8 @@ class _ViewsMixin:
                 self.packages_panel_layout.insertWidget(6, self.about_view, 1)
                 # Apply any pending dependency alert now that UI exists
                 self.about_view.set_dep_alert(
-                    getattr(self, '_dep_missing', []))
+                    getattr(self, '_dep_missing', []),
+                    getattr(self, '_dep_optional_missing', []))
             self.about_view.setVisible(True)
             if getattr(self, '_dep_missing', None):
                 # Alert active: land on Diagnostics where the fix lives
@@ -4171,40 +4138,71 @@ class _ViewsMixin:
 
         Swaps between about.svg and about-fail.svg and forwards the list
         to the About page's Diagnostics tab indicator.
+
+        Only *required* dependencies flag the icon red: optional components
+        (flatpak, npm, docker, fwupd, pipx, \u2026) degrade gracefully and are
+        still listed with their Install button on the Diagnostics page.
         """
         try:
-            self._dep_missing = [m for m in (missing or []) if m]
+            missing = [m for m in (missing or []) if m]
         except Exception:
-            self._dep_missing = []
+            missing = []
+        try:
+            from neoarch.backend.sys_utils import get_dependency_catalog
+            required = {d["name"] for d in get_dependency_catalog()
+                        if d.get("required")}
+            self._dep_missing = [m for m in missing if m in required]
+            self._dep_optional_missing = [m for m in missing if m not in required]
+        except Exception:
+            self._dep_missing = list(missing)
+            self._dep_optional_missing = []
         has_issue = bool(self._dep_missing)
+        has_optional = bool(self._dep_optional_missing)
 
-        lbl = getattr(self, '_about_icon_label', None)
-        if lbl is not None:
+        label = getattr(self, '_about_icon_label', None)
+        about_icon_path = os.path.join(_BASE_DIR, "assets", "icons", "about.svg")
+        about_fail_path = os.path.join(_BASE_DIR, "assets", "icons",
+                                       "about-fail.svg")
+        if label is not None:
             if has_issue:
                 icon = self.get_svg_icon(
-                    os.path.join(_BASE_DIR, "assets", "icons",
-                                 "about-fail.svg"), 24, tint=Colors.RED)
-            else:
+                    about_fail_path, 24, tint=Colors.RED)
+            elif has_optional:
                 icon = self.get_svg_icon(
-                    os.path.join(_BASE_DIR, "assets", "icons", "about.svg"),
-                    24)
+                    about_icon_path, 24, tint=Colors.GREEN)
+            else:
+                icon = self.get_svg_icon(about_icon_path, 24)
             if not icon.isNull():
-                lbl.setPixmap(icon.pixmap(24, 24))
+                label.setPixmap(icon.pixmap(24, 24))
 
         about_btn = getattr(self, 'nav_buttons', {}).get('about')
         if about_btn is not None:
-            about_btn.setToolTip(
-                "About \u2014 dependencies need attention"
-                if has_issue else "About")
+            if has_issue:
+                about_btn.setToolTip(
+                    "About \u2014 dependencies need attention")
+            elif has_optional:
+                about_btn.setToolTip(
+                    "About \u2014 optional components missing")
+            else:
+                about_btn.setToolTip("About")
 
         av = getattr(self, 'about_view', None)
         if av is not None:
-            av.set_dep_alert(self._dep_missing)
+            av.set_dep_alert(
+                self._dep_missing, self._dep_optional_missing)
 
         badge = getattr(self, '_about_dep_badge', None)
         if badge is not None:
-            if has_issue:
-                badge.setText(str(len(self._dep_missing)))
+            if has_issue or has_optional:
+                count = (len(self._dep_missing) if has_issue
+                         else len(self._dep_optional_missing))
+                badge.setStyleSheet(f"""
+                    background-color: {Colors.RED if has_issue else Colors.GREEN};
+                    color: #FFFFFF;
+                    border: none; border-radius: 9px;
+                    font-size: {Fonts.XS}; font-weight: {Fonts.BOLD};
+                """)
+                badge.setText(str(count))
                 badge.adjustSize()
                 badge.setFixedSize(18, 18)
                 badge.show()

@@ -146,9 +146,18 @@ def test_accept_pacnew_backup_uses_sudo(monkeypatch, tmp_path):
     assert calls[2] == ["rm", "-f", str(pacnew)]
 
 
-def test_delete_pacnew(tmp_path):
+def test_delete_pacnew(monkeypatch, tmp_path):
     pacnew = tmp_path / "foo.conf.pacnew"
     pacnew.write_text("x")
+    calls = []
+
+    def fake_sudo(cmd, timeout=600):
+        calls.append(cmd)
+        if cmd[0] == "rm":
+            pacnew.unlink()
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    monkeypatch.setattr(hygiene, "_run_sudo", fake_sudo)
     assert hygiene.delete_pacnew(str(pacnew)) is True
     assert not pacnew.exists()
 

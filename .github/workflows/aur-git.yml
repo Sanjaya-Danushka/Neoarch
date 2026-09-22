@@ -29,10 +29,12 @@ jobs:
 
       - name: Generate version and .SRCINFO
         run: |
-          TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "3.2.0")
+          BASE=$(grep -m1 'APP_VERSION = ' neoarch/resources/paths.py \
+                   | sed -E 's/.*"([^"]+)".*/\1/')
+          if [[ -z "$BASE" ]]; then BASE="3.3.1"; fi
           REV=$(git rev-list --count HEAD)
           HASH=$(git rev-parse --short=7 HEAD)
-          VERSION="$(echo "$TAG" | sed 's/^v//;s/-/./g').r${REV}.g${HASH}"
+          VERSION="${BASE}.r${REV}.g${HASH}"
           echo "Version: $VERSION"
 
           printf 'pkgbase = neoarch-git\n' > packaging/.SRCINFO

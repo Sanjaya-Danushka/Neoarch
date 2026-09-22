@@ -49,3 +49,7 @@ src/
 *.pkg.tar.zst
 Aurora/
 neoarch-git/
+
+# Test coverage data
+.coverage
+.htmlcov/

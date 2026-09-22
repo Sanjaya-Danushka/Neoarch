@@ -1034,7 +1034,14 @@ class _DocumentationTab(QWidget):
 # ── Tab: Diagnostics ───────────────────────────────────────────────
 
 class _AlertNavButton(QPushButton):
-    """Sidebar nav button with an optional red alert dot."""
+    """Sidebar nav button with an optional alert dot.
+
+    ``set_alert`` accepts a state: ``"error"`` (required deps missing)
+    or ``"warn"`` (only optional components missing); anything else or
+    ``None``/``False`` hides the dot.
+    """
+
+    _DOT_COLORS = {"error": Colors.RED, "warn": Colors.GREEN}
 
     def __init__(self, label, parent=None):
         super().__init__(label, parent)
@@ -1048,8 +1055,18 @@ class _AlertNavButton(QPushButton):
             Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self._dot.hide()
 
-    def set_alert(self, active):
-        self._dot.setVisible(bool(active))
+    def set_alert(self, state):
+        color = self._DOT_COLORS.get(state)
+        if isinstance(state, bool):
+            color = Colors.RED if state else None
+        if color is None:
+            self._dot.hide()
+            return
+        self._dot.setStyleSheet(
+            f"color: {color}; font-size: {Fonts.TINY};"
+            f" font-weight: {Fonts.BOLD};"
+            "background: transparent; border: none;")
+        self._dot.show()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -1691,10 +1708,15 @@ class AboutTab(QWidget):
         self._nav_btns.append(btn)
         return btn
 
-    def set_dep_alert(self, missing):
-        """Red dot on the Diagnostics nav while dependencies are missing."""
+    def set_dep_alert(self, required, optional=()):
+        """Dot on the Diagnostics nav in the About sidebar.
+
+        Red when required dependencies are missing; green when only
+        optional components (flatpak, npm, pipx, fwupd, ...) are missing.
+        """
+        state = "error" if required else ("warn" if optional else None)
         if len(self._nav_btns) > 3:
-            self._nav_btns[3].set_alert(bool(missing))
+            self._nav_btns[3].set_alert(state)
 
     def show_diagnostics(self):
         self._switch_tab(3)

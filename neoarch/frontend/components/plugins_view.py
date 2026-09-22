@@ -32,6 +32,25 @@ def _canonical_source(source):
     }.get((source or "").lower(), source or "pacman")
 
 
+def _plain_pkg(pkg):
+    """Strip a plugin ``pkg`` field down to the real repository package name.
+
+    ``aur/yay`` -> ``yay``, ``npm-typescript`` -> ``typescript``,
+    ``org.foo.Bar.flatpak`` -> ``org.foo.Bar``, ``brew-fd`` -> ``fd``.
+    Used so ``pacman -Qq`` / ``pacman -Qi`` lookups match exactly the name
+    pacman actually reports for the package.
+    """
+    pkg = (pkg or "").strip()
+    for prefix in ("aur/", "npm-", "brew-"):
+        if pkg.lower().startswith(prefix):
+            return pkg[len(prefix):]
+    low = pkg.lower()
+    for suffix in (".flatpak", ".appimage"):
+        if low.endswith(suffix):
+            return pkg[: len(pkg) - len(suffix)]
+    return pkg
+
+
 _NEU_BTN_QSS = (
     Styles.btn_outline(padding="0 14px", size=Fonts.SM, radius=Radii.MD)
     + Styles.btn_disabled()
@@ -245,6 +264,9 @@ class PluginsView(QWidget):
 
         # Installation status cache — preserved across navigation, cleared only after install/uninstall
         self._installed_cache = {}
+
+        # Live-search specs (id -> spec) so their cards resolve via get_plugin
+        self._dynamic_specs = {}
 
         self._pending_live_query = None
 
@@ -635,17 +657,22 @@ class PluginsView(QWidget):
             for p in plugins:
                 pid = p.get('id')
                 pkg = p.get('pkg', '')
+                cmd = p.get('cmd')
                 if not pid or pid in self._installed_cache:
                     continue
-                plain = pkg.replace('aur/', '').replace('.flatpak', '').replace('.Flatpak', '')
+                plain = _plain_pkg(pkg)
                 if plain:
-                    self._installed_cache[pid] = plain in installed
+                    # A pkg can be a meta/virtual package (e.g. 'qemu-full' for
+                    # QEMU) that the user satisfied with split sub-packages, so
+                    # an exact `-Qq` match is too strict: the launcher binary
+                    # proves the tool is actually installed.
+                    self._installed_cache[pid] = plain in installed or bool(cmd and shutil.which(cmd))
         except Exception:
             pass
 
     def is_installed(self, spec):
         pid = spec.get('id')
-        if pid in self._installed_cache:
+        if pid and pid in self._installed_cache:
             return self._installed_cache[pid]
         cmd = spec.get('cmd')
         pkg = spec.get('pkg')
@@ -655,7 +682,10 @@ class PluginsView(QWidget):
                 result = True
             else:
                 import subprocess
-                r = subprocess.run([shutil.which("pacman") or "pacman", "-Qi", pkg], capture_output=True, text=True, timeout=5, check=False)
+                plain = _plain_pkg(pkg)
+                if not plain:
+                    return False
+                r = subprocess.run([shutil.which("pacman") or "pacman", "-Qi", plain], capture_output=True, text=True, timeout=5, check=False)
                 result = r.returncode == 0
         except Exception:
             result = False
@@ -697,7 +727,10 @@ class PluginsView(QWidget):
         for spec in self.plugins:
             if spec['id'] == plugin_id:
                 return spec
-        return None
+        # Live-search results use prefixed ids (e.g. 'pacman-pandoc'); they are
+        # not part of the curated catalog but must still resolve so install /
+        # uninstall actions can find their spec.
+        return (self._dynamic_specs or {}).get(plugin_id)
 
     def set_filter(self, text: str, installed_only: bool, categories=None):
         self._filter_text = (text or "").strip().lower()
@@ -788,12 +821,15 @@ class PluginsView(QWidget):
                     pass
                 return
             card_datas = []
+            new_specs = {}
             for spec in specs:
                 spec = dict(spec)
                 spec['icon'] = os.path.join(PLUGINS_ITEMS_DIR, 'default.png')
                 existing = self.get_plugin(spec['id'])
                 if existing:
                     spec = existing
+                else:
+                    new_specs[spec['id']] = spec
                 installed = self.is_installed(spec)
                 card = self.create_app_card(spec, None, installed)
                 card_datas.append({
@@ -801,6 +837,7 @@ class PluginsView(QWidget):
                     'installed': installed,
                     'widget': card,
                 })
+            self._dynamic_specs.update(new_specs)
             self._all_filtered_search_cards = self._sort_cards(card_datas)
             try:
                 self._live_search_label.hide()

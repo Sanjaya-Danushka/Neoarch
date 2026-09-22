@@ -1,4 +1,5 @@
 from neoarch.backend.services.search import _parse_pacman_ss, merge_results
+from neoarch.frontend.mixins.search import _parse_pacman_sync
 
 
 SAMPLE = """extra/firefox 138.0-1 (firefox) [extra]
@@ -28,6 +29,31 @@ def test_parse_pacman_ss_handles_aur_repo():
 
 def test_parse_pacman_ss_empty():
     assert _parse_pacman_ss("") == []
+
+
+def test_parse_pacman_sync_uses_indented_line_as_description():
+    """pacman -Ss puts '[installed]' and group markers on the header line; the
+    discover table must not leak them into the description (issue #62)."""
+    out = """extra/optipng 0.7.8-2 (extra)
+    Optimized PNG encoder
+extra/pandoc 3.6.4-1 [installed]
+    General markup converter
+aur/pandoc-bin 3.6.4-1 [installed]
+    Pandoc binary (Linux)
+"""
+    pkgs = _parse_pacman_sync(out)
+    assert len(pkgs) == 3
+    assert pkgs[0]["description"] == "Optimized PNG encoder"
+    assert pkgs[1]["description"] == "General markup converter"
+    assert pkgs[2]["description"] == "Pandoc binary (Linux)"
+    assert not any("installed" in p["description"] for p in pkgs)
+    assert pkgs[0]["id"] == "optipng"
+    assert pkgs[1]["version"] == "3.6.4-1"
+
+
+def test_parse_pacman_sync_skips_garbage_lines():
+    assert _parse_pacman_sync("") == []
+    assert _parse_pacman_sync("   \nblah\ncore/zlib 1.3.1-1\n    A compression library\n")[0]["description"] == "A compression library"
 
 
 def test_merge_results_dedupes_by_id_prefer_pacman():

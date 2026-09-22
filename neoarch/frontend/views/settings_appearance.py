@@ -389,12 +389,59 @@ class AppearanceSettingsWidget(QWidget):
             _("Rounded corners on the translucent window frame."),
             control=slider_box))
 
+        window_layout.addWidget(self._sep())
+
+        # Opacity slider
+        opacity_box = QWidget()
+        opacity_box.setStyleSheet("background: transparent;")
+        opacity_box.setFixedWidth(220)
+        opacity_lay = QHBoxLayout(opacity_box)
+        opacity_lay.setContentsMargins(0, 0, 0, 0)
+        opacity_lay.setSpacing(10)
+        self._opacity_slider = QSlider(Qt.Orientation.Horizontal)
+        self._opacity_slider.setRange(20, 100)
+        self._opacity_slider.setSingleStep(5)
+        self._opacity_slider.setPageStep(5)
+        self._opacity_slider.setStyleSheet(_SLIDER_QSS)
+        self._opacity_slider.setCursor(Qt.CursorShape.PointingHandCursor)
+        opacity_lay.addWidget(self._opacity_slider, 1)
+        self._opacity_value = QLabel()
+        self._opacity_value.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self._opacity_value.setFixedWidth(40)
+        self._opacity_value.setStyleSheet(
+            f"color: {Colors.TEXT}; font-size: {Fonts.BASE};"
+            f" font-weight: {Fonts.SEMI}; border: none; background: transparent;")
+        opacity_lay.addWidget(self._opacity_value)
+
+        current_opacity = self.app.settings.get('window_opacity', 0.75)
+        self._opacity_slider.setValue(int(round(current_opacity * 100)) if current_opacity else 75)
+        self._opacity_slider.valueChanged.connect(self._on_opacity_changed)
+        self._opacity_slider.sliderReleased.connect(self._on_opacity_released)
+        self._update_opacity_label()
+
+        window_layout.addWidget(self._row(
+            _("Window transparency"),
+            _("How much the desktop shows through the window body."),
+            control=opacity_box))
+
         self.layout.addWidget(window_card)
 
         self.layout.addStretch()
 
     def _update_radius_label(self):
         self._radius_value.setText(_("%(n)d px") % {"n": self._radius_slider.value()})
+
+    def _update_opacity_label(self):
+        self._opacity_value.setText(_("%(n)d%%") % {"n": self._opacity_slider.value()})
+
+    def _on_opacity_changed(self, value):
+        self._update_opacity_label()
+        self.app.update_setting('window_opacity', value / 100.0)
+        self.app.apply_window_effects()
+
+    def _on_opacity_released(self):
+        self.app.apply_window_effects()
 
     def _on_glow_toggled(self, checked):
         self.app.update_setting('window_glow', bool(checked))

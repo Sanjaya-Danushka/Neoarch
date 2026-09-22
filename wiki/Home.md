@@ -10,6 +10,7 @@ Welcome to the **NeoArch** wiki! A beautiful, unified GUI package manager for Ar
 - **[User Guide](User-Guide.md)** - Complete guide to using NeoArch
 
 ### Features & Usage
+- **[Features](Features.md)** - The complete feature overview of NeoArch
 - **[Package Management](Package-Management.md)** - Search, install, update, and remove packages
 - **[Package Sources](Package-Sources.md)** - Learn about Pacman, AUR, Flatpak, and npm
 - **[Bundles](Bundles.md)** - Create and manage package bundles

@@ -69,6 +69,7 @@ class GeneralSettingsWidget(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(24)
         self._aur_thread = None
+        self._source_rows = []
 
         self.setup_ui()
 
@@ -128,7 +129,8 @@ class GeneralSettingsWidget(QWidget):
         return card, card_layout
 
     @staticmethod
-    def _row(title_text, subtitle_text=None, subtitle_color=None, control=None):
+    def _row(title_text, subtitle_text=None, subtitle_color=None, control=None,
+             capture=None):
         row_widget = QWidget()
         row_widget.setStyleSheet("background: transparent;")
         row = QHBoxLayout(row_widget)
@@ -152,11 +154,54 @@ class GeneralSettingsWidget(QWidget):
                 f"font-size: {Fonts.SM}; color: {color};"
                 " border: none; background: transparent;")
             texts.addWidget(subtitle)
+            if isinstance(capture, dict):
+                capture["subtitle"] = subtitle
 
         row.addLayout(texts, 1)
         if control is not None:
             row.addWidget(control, 0, Qt.AlignmentFlag.AlignVCenter)
         return row_widget
+
+    def _add_source_toggle(self, layout, key, title, desc_ok, desc_missing,
+                           binary, pkg, tool):
+        """Build one optional-integration toggle whose disabled state tracks
+        whether ``binary`` is present on the system.  ``refresh_source_states``
+        re-evaluates them all (e.g. when Settings is re-opened)."""
+        toggle = ToggleSwitch(self, title)
+        toggle.setChecked(bool(self.app.settings.get(key, True)), animate=False)
+        toggle.toggled.connect(lambda v, k=key: self.app.update_setting(k, v))
+        capture = {}
+        layout.addWidget(self._row(title, desc_ok, control=toggle,
+                                   capture=capture))
+        self._source_rows.append({
+            "toggle": toggle,
+            "subtitle": capture.get("subtitle"),
+            "desc_ok": desc_ok,
+            "desc_missing": desc_missing,
+            "binary": binary, "pkg": pkg, "tool": tool,
+        })
+        return toggle
+
+    def refresh_source_states(self):
+        """Re-check tool availability and update the toggles/subtitles.
+
+        Idempotent and cheap: only re-runs ``cmd_exists`` on three binaries.
+        Keeps a package-installed-mid-session toggle from staying greyed out.
+        """
+        for entry in self._source_rows:
+            missing = not sys_utils.cmd_exists(entry["binary"])
+            toggle = entry["toggle"]
+            toggle.setEnabled(not missing)
+            toggle.setToolTip(
+                "" if not missing else entry["desc_missing"])
+            subtitle = entry["subtitle"]
+            if subtitle is not None:
+                subtitle.setText(entry["desc_missing"] if missing
+                                 else entry["desc_ok"])
+                subtitle.setStyleSheet(
+                    f"font-size: {Fonts.SM};"
+                    f" color: {Colors.RED if missing else Colors.TEXT_2};"
+                    " border: none; background: transparent;")
 
     @staticmethod
     def _sep():
@@ -226,23 +271,33 @@ class GeneralSettingsWidget(QWidget):
             control=self.sw_auto_check))
         basic_layout.addWidget(self._sep())
 
-        self.sw_firmware = ToggleSwitch(self, _("Check for firmware updates"))
-        self.sw_firmware.setChecked(bool(self.app.settings.get('include_firmware_updates', True)), animate=False)
-        self.sw_firmware.toggled.connect(lambda v: self.app.update_setting('include_firmware_updates', v))
-        basic_layout.addWidget(self._row(
-            _("Check for firmware updates"),
-            _("Detects firmware updates via fwupd on the Updates page. Applying "
-              "always requires your explicit confirmation."),
-            control=self.sw_firmware))
+        self.sw_firmware = self._add_source_toggle(
+            basic_layout,
+            key='include_firmware_updates',
+            title=_("Check for firmware updates"),
+            desc_ok=_("Detects firmware updates via fwupd on the Updates page. "
+                      "Applying always requires your explicit confirmation."),
+            desc_missing=_("fwupd is not installed — install with: sudo pacman -S fwupd"),
+            binary="fwupdmgr", pkg="fwupd", tool="fwupd")
         basic_layout.addWidget(self._sep())
 
-        self.sw_npm = ToggleSwitch(self, _("Use npm user mode"))
-        self.sw_npm.setChecked(bool(self.app.settings.get('npm_user_mode', True)), animate=False)
-        self.sw_npm.toggled.connect(lambda v: self.app.update_setting('npm_user_mode', v))
-        basic_layout.addWidget(self._row(
-            _("Use npm user mode for global installs"),
-            _("Installs global npm packages to ~/.npm-global without sudo."),
-            control=self.sw_npm))
+        self.sw_pipx = self._add_source_toggle(
+            basic_layout,
+            key='check_pipx_updates',
+            title=_("Check for pipx updates"),
+            desc_ok=_("Detects apps installed with pipx (Python scripts) and lists "
+                      "their updates on the Updates page."),
+            desc_missing=_("pipx is not installed — install with: sudo pacman -S pipx"),
+            binary="pipx", pkg="pipx", tool="pipx")
+        basic_layout.addWidget(self._sep())
+
+        self.sw_npm = self._add_source_toggle(
+            basic_layout,
+            key='npm_user_mode',
+            title=_("Use npm user mode"),
+            desc_ok=_("Installs global npm packages to ~/.npm-global without sudo."),
+            desc_missing=_("npm is not installed — install with: sudo pacman -S npm"),
+            binary="npm", pkg="npm", tool="npm")
 
         self.layout.addWidget(basic_card)
 
@@ -392,6 +447,8 @@ class GeneralSettingsWidget(QWidget):
         self.layout.addWidget(data_card)
 
         self.layout.addStretch()
+
+        self.refresh_source_states()
 
     def on_aur_helper_changed(self, index):
         helper = self.aur_helper_combo.currentData()

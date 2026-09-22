@@ -325,6 +325,12 @@ msgstr "Buscar actualizaciones"
 msgid "Check for firmware updates"
 msgstr "Buscar actualizaciones de firmware"
 
+msgid "Check for pipx updates"
+msgstr "Buscar actualizaciones de pipx"
+
+msgid "Detects apps installed with pipx (Python scripts) and lists their updates on the Updates page."
+msgstr "Detecta aplicaciones instaladas con pipx (scripts de Python) y lista sus actualizaciones en la página de Actualizaciones."
+
 msgid "Checking for updates..."
 msgstr "Comprobando actualizaciones..."
 
@@ -2236,6 +2242,12 @@ msgstr "Radio de las esquinas de la ventana"
 msgid "Window frame"
 msgstr "Marco de la ventana"
 
+msgid "Window transparency"
+msgstr "Transparencia de la ventana"
+
+msgid "How much the desktop shows through the window body."
+msgstr "Cuánto deja ver el cuerpo de la ventana del escritorio."
+
 msgid "You appear to be offline. Search results may be incomplete and installations may fail."
 msgstr "Parece que estás sin conexión. Los resultados de búsqueda pueden estar incompletos y las instalaciones pueden fallar."
 
@@ -2527,6 +2539,9 @@ msgstr "Esquinas redondeadas en el marco de ventana translúcido."
 
 msgid "%(n)d px"
 msgstr "%(n)d px"
+
+msgid "%(n)d%%"
+msgstr "%(n)d%%"
 
 msgid " days"
 msgstr " días"

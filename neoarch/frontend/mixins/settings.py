@@ -282,6 +282,12 @@ class _SettingsMixin:
             radius = 8
         tokens.WINDOW_RADIUS = max(0, min(radius, 24))
 
+        try:
+            opacity = float(self.settings.get('window_opacity', 0.75))
+        except (TypeError, ValueError):
+            opacity = 0.75
+        tokens.WINDOW_OPACITY = max(0.20, min(opacity, 1.0))
+
         outer = self.centralWidget()
         if outer is not None:
             lay = outer.layout()

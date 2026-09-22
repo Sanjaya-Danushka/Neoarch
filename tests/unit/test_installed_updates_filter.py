@@ -110,6 +110,8 @@ def test_build_installed_panel_shows_updates_filter(qapp):
     app._refresh_installed_health_async = lambda *a, **k: None
     app.log = lambda *a, **k: None
     app.ensure_session_auth = lambda *a, **k: True
+    app.cmd_exists = lambda name: True
+    app._disable_unavailable_sources = lambda *a, **k: None
     _FiltersMixin.update_installed_sources(app)
 
     assert app.source_card is not None

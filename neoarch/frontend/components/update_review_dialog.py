@@ -4,9 +4,16 @@ Built to match the app's standard prompt design (same shape as the
 "Manage Ignored" dialog): a native window with a header count, a clean
 table of pending changes, and a clear confirm button. Nothing starts
 unless Update All / Enter is used; Esc or close cancels.
+
+A read-only "Release notes" column links to the upstream release-notes
+page for packages known to the offline changelog map (nothing is fetched
+from the network here; unknown packages simply show no link).
 """
 
+import webbrowser
+
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QHeaderView, QWidget,
@@ -15,6 +22,7 @@ from PyQt6.QtWidgets import (
 
 from neoarch.frontend.tokens import Colors, Fonts
 from neoarch.backend.services.i18n import _
+from neoarch.resources.changelog_map import get_changelog_url
 
 _TABLE_NO_FOCUS = """
     QTableView { outline: none; }
@@ -60,12 +68,13 @@ class UpdateReviewDialog(QDialog):
         v.addWidget(self.header_label)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(4)
+        self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(
-            [_("Package"), _("Source"), _("Version"), _("New Version")])
+            [_("Package"), _("Source"), _("Version"), _("New Version"),
+             _("Release notes")])
         self.table.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.Stretch)
-        for col in range(1, 4):
+        for col in range(1, 5):
             self.table.horizontalHeader().setSectionResizeMode(
                 col, QHeaderView.ResizeMode.ResizeToContents)
         try:
@@ -106,6 +115,18 @@ class UpdateReviewDialog(QDialog):
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 self.table.setItem(i, col, item)
 
+            notes_url = get_changelog_url(name, source=pkg.get("source") or "")
+            notes_item = QTableWidgetItem(
+                _("View changes ↗") if notes_url else "")
+            notes_item.setFlags(notes_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            if notes_url:
+                notes_item.setForeground(QColor(Colors.ACCENT))
+                notes_item.setToolTip(notes_url)
+                notes_item.setData(Qt.ItemDataRole.UserRole, notes_url)
+            self.table.setItem(i, 4, notes_item)
+
+        self.table.itemClicked.connect(self._on_item_clicked)
+
         row = QWidget()
         h = QHBoxLayout(row)
         h.setContentsMargins(0, 0, 0, 0)
@@ -144,3 +165,15 @@ class UpdateReviewDialog(QDialog):
         h.addWidget(self.confirm_btn)
 
         v.addWidget(row)
+
+    def _on_item_clicked(self, item):
+        """Open the release-notes link when a notes cell is clicked."""
+        if item.column() != 4:
+            return
+        url = item.data(Qt.ItemDataRole.UserRole)
+        if not url:
+            return
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass

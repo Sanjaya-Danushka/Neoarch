@@ -15,6 +15,7 @@ DEFAULT_SETTINGS = {
     'npm_user_mode': True,
     'include_local_source': False,
     'include_firmware_updates': True,
+    'check_pipx_updates': True,
     'auto_update_firmware': False,
     'enabled_plugins': [],
     'bundle_autosave': True,
@@ -31,6 +32,7 @@ DEFAULT_SETTINGS = {
     'source_accent_colors': True,
     'window_glow': False,
     'window_radius': 8,
+    'window_opacity': 0.75,
     # Notifications
     'notify_desktop': True,
     'notify_inapp': True,

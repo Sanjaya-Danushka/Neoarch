@@ -1,7 +1,9 @@
 import pytest
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QDialog
 
 from neoarch.frontend.components.update_review_dialog import UpdateReviewDialog
+from neoarch.resources.changelog_map import get_changelog_url
 
 
 @pytest.fixture(scope="session")
@@ -53,3 +55,45 @@ def test_update_review_dialog_accept_reject(qapp):
     assert dlg.result() == QDialog.DialogCode.Accepted
     dlg.reject()
     assert dlg.result() == QDialog.DialogCode.Rejected
+
+
+def test_update_review_dialog_release_notes_column(qapp):
+    dlg = UpdateReviewDialog([
+        {"name": "firefox", "version": "128.0", "new_version": "129.0",
+         "source": "pacman"},
+        {"name": "no-such-package-xyz", "version": "1.0", "new_version": "2.0",
+         "source": "pacman"},
+    ])
+    notes_url = get_changelog_url("firefox")
+    assert notes_url is not None
+
+    known = dlg.table.item(0, 4)
+    assert known.text() == "View changes ↗"
+    assert known.data(Qt.ItemDataRole.UserRole) == notes_url
+
+    unknown = dlg.table.item(1, 4)
+    assert unknown.text() == ""
+    assert unknown.data(Qt.ItemDataRole.UserRole) is None
+
+
+def test_update_review_dialog_notes_click_opens_browser(qapp, monkeypatch):
+    opened = []
+    monkeypatch.setattr(
+        "neoarch.frontend.components.update_review_dialog.webbrowser.open",
+        lambda url: opened.append(url))
+    dlg = UpdateReviewDialog([
+        {"name": "firefox", "version": "128.0", "new_version": "129.0",
+         "source": "pacman"},
+    ])
+    dlg._on_item_clicked(dlg.table.item(0, 4))
+    assert opened == [get_changelog_url("firefox")]
+
+
+def test_update_review_dialog_notes_click_ignores_other_columns(qapp, monkeypatch):
+    opened = []
+    monkeypatch.setattr(
+        "neoarch.frontend.components.update_review_dialog.webbrowser.open",
+        lambda url: opened.append(url))
+    dlg = UpdateReviewDialog(_sample_packages())
+    dlg._on_item_clicked(dlg.table.item(0, 0))
+    assert opened == []
