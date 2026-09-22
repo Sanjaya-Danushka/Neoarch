@@ -185,6 +185,8 @@ def get_dependency_catalog() -> List[dict]:
     add("flatpak", "flatpak", False, "Flatpak page", cmd_exists("flatpak"))
     add("nodejs", "nodejs", False, "Discover page (npm)", cmd_exists("node"))
     add("npm", "npm", False, "Discover page (npm)", cmd_exists("npm"))
+    add("pipx", "pipx", False, "pipx-installed Python apps (Updates page)",
+        cmd_exists("pipx"))
     add("docker", "docker", False, "Docker page", cmd_exists("docker"))
     add("fwupdmgr", "fwupd", False, "Firmware updates", cmd_exists("fwupdmgr"))
     add("gnome-keyring", "gnome-keyring", False,

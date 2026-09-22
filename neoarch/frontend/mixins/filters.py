@@ -935,6 +935,7 @@ class _FiltersMixin:
         ])
         self.source_card.set_sort("relevance", True)
 
+        self._disable_unavailable_sources()
         self.sources_layout.addWidget(self.source_card)
         self.source_card.maintenance_action.connect(self.on_installed_maintenance_action)
         self.source_card.configure_sections(
@@ -970,6 +971,30 @@ class _FiltersMixin:
         except Exception:
             pass
 
+    def _disable_unavailable_sources(self):
+        """Disable source rows whose backing tool is not installed.
+
+        Leaves the row visible but inert (clicks are ignored) and replaces
+        the tooltip with a safe install path, matching the General settings
+        page.  Re-runs cheaply every time a source card is (re)built, so a
+        tool installed mid-session is picked up on the next page refresh.
+        """
+        for source_name, binary, pkg in (
+            ("Flatpak", "flatpak", "flatpak"),
+            ("npm", "npm", "npm"),
+            ("Firmware", "fwupdmgr", "fwupd"),
+            ("pipx", "pipx", "pipx"),
+        ):
+            item = self.source_card.sources.get(source_name)
+            if item is None:
+                continue
+            if self.cmd_exists(binary):
+                continue
+            item.setEnabled(False)
+            item.setToolTip(
+                _("{tool} is not installed — install with: sudo pacman -S {pkg}")
+                .format(tool=source_name, pkg=pkg))
+
     def update_updates_sources(self):
         while self.sources_layout.count():
             item = self.sources_layout.takeAt(0)
@@ -1000,6 +1025,10 @@ class _FiltersMixin:
                   "The linux-firmware package is a pacman update, not this source."))
         except Exception:
             pass
+        # Tools not present on the system can't produce updates: keep the row
+        # visible but inert, with a safe install path in the tooltip (same
+        # contract as the General settings page).
+        self._disable_unavailable_sources()
         self.sources_layout.addWidget(self.source_card)
         self.source_card.source_changed.connect(self.on_updates_source_changed)
         self.source_card.search_mode_changed.connect(self.on_search_mode_changed)
@@ -1037,6 +1066,7 @@ class _FiltersMixin:
         ]
         for source_name, source_icon_path in sources:
             self.source_card.add_source(source_name, source_icon_path)
+        self._disable_unavailable_sources()
         self.sources_layout.addWidget(self.source_card)
         self.source_card.health_action.connect(self.on_installed_health_action)
         self.source_card.sort_changed.connect(self.apply_filters)

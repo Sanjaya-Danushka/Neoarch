@@ -2425,6 +2425,11 @@ class _ViewsMixin:
             if not getattr(self, '_settings_built', False):
                 self._settings_built = True
                 QTimer.singleShot(0, self.build_settings_ui)
+            else:
+                try:
+                    self.settings_widgets["general"].refresh_source_states()
+                except Exception:
+                    pass
         elif view_id == "about":
             try:
                 self.loading_widget.setVisible(False)
@@ -2453,7 +2458,8 @@ class _ViewsMixin:
                 self.packages_panel_layout.insertWidget(6, self.about_view, 1)
                 # Apply any pending dependency alert now that UI exists
                 self.about_view.set_dep_alert(
-                    getattr(self, '_dep_missing', []))
+                    getattr(self, '_dep_missing', []),
+                    getattr(self, '_dep_optional_missing', []))
             self.about_view.setVisible(True)
             if getattr(self, '_dep_missing', None):
                 # Alert active: land on Diagnostics where the fix lives
@@ -4132,40 +4138,71 @@ class _ViewsMixin:
 
         Swaps between about.svg and about-fail.svg and forwards the list
         to the About page's Diagnostics tab indicator.
+
+        Only *required* dependencies flag the icon red: optional components
+        (flatpak, npm, docker, fwupd, pipx, \u2026) degrade gracefully and are
+        still listed with their Install button on the Diagnostics page.
         """
         try:
-            self._dep_missing = [m for m in (missing or []) if m]
+            missing = [m for m in (missing or []) if m]
         except Exception:
-            self._dep_missing = []
+            missing = []
+        try:
+            from neoarch.backend.sys_utils import get_dependency_catalog
+            required = {d["name"] for d in get_dependency_catalog()
+                        if d.get("required")}
+            self._dep_missing = [m for m in missing if m in required]
+            self._dep_optional_missing = [m for m in missing if m not in required]
+        except Exception:
+            self._dep_missing = list(missing)
+            self._dep_optional_missing = []
         has_issue = bool(self._dep_missing)
+        has_optional = bool(self._dep_optional_missing)
 
-        lbl = getattr(self, '_about_icon_label', None)
-        if lbl is not None:
+        label = getattr(self, '_about_icon_label', None)
+        about_icon_path = os.path.join(_BASE_DIR, "assets", "icons", "about.svg")
+        about_fail_path = os.path.join(_BASE_DIR, "assets", "icons",
+                                       "about-fail.svg")
+        if label is not None:
             if has_issue:
                 icon = self.get_svg_icon(
-                    os.path.join(_BASE_DIR, "assets", "icons",
-                                 "about-fail.svg"), 24, tint=Colors.RED)
-            else:
+                    about_fail_path, 24, tint=Colors.RED)
+            elif has_optional:
                 icon = self.get_svg_icon(
-                    os.path.join(_BASE_DIR, "assets", "icons", "about.svg"),
-                    24)
+                    about_icon_path, 24, tint=Colors.GREEN)
+            else:
+                icon = self.get_svg_icon(about_icon_path, 24)
             if not icon.isNull():
-                lbl.setPixmap(icon.pixmap(24, 24))
+                label.setPixmap(icon.pixmap(24, 24))
 
         about_btn = getattr(self, 'nav_buttons', {}).get('about')
         if about_btn is not None:
-            about_btn.setToolTip(
-                "About \u2014 dependencies need attention"
-                if has_issue else "About")
+            if has_issue:
+                about_btn.setToolTip(
+                    "About \u2014 dependencies need attention")
+            elif has_optional:
+                about_btn.setToolTip(
+                    "About \u2014 optional components missing")
+            else:
+                about_btn.setToolTip("About")
 
         av = getattr(self, 'about_view', None)
         if av is not None:
-            av.set_dep_alert(self._dep_missing)
+            av.set_dep_alert(
+                self._dep_missing, self._dep_optional_missing)
 
         badge = getattr(self, '_about_dep_badge', None)
         if badge is not None:
-            if has_issue:
-                badge.setText(str(len(self._dep_missing)))
+            if has_issue or has_optional:
+                count = (len(self._dep_missing) if has_issue
+                         else len(self._dep_optional_missing))
+                badge.setStyleSheet(f"""
+                    background-color: {Colors.RED if has_issue else Colors.GREEN};
+                    color: #FFFFFF;
+                    border: none; border-radius: 9px;
+                    font-size: {Fonts.XS}; font-weight: {Fonts.BOLD};
+                """)
+                badge.setText(str(count))
                 badge.adjustSize()
                 badge.setFixedSize(18, 18)
                 badge.show()
