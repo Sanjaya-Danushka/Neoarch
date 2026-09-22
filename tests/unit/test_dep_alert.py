@@ -66,10 +66,10 @@ class _Badge:
         self.stylesheet = css
 
     def adjustSize(self):
-        pass
+        self.adjust_count = getattr(self, "adjust_count", 0) + 1
 
     def setFixedSize(self, w, h):
-        pass
+        self.fixed_size = (w, h)
 
     def show(self):
         self.visible = True

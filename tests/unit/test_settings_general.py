@@ -30,13 +30,13 @@ class _FakeApp(QWidget):
         self.settings[key] = value
 
     def export_settings(self):
-        pass
+        return dict(self.settings)
 
     def import_settings(self):
-        pass
+        return None
 
     def rebuild_ui(self):
-        pass
+        return None
 
 
 def _build(monkeypatch, cmd_exists):

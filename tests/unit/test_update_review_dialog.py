@@ -80,7 +80,7 @@ def test_update_review_dialog_notes_click_opens_browser(qapp, monkeypatch):
     opened = []
     monkeypatch.setattr(
         "neoarch.frontend.components.update_review_dialog.webbrowser.open",
-        lambda url: opened.append(url))
+        opened.append)
     dlg = UpdateReviewDialog([
         {"name": "firefox", "version": "128.0", "new_version": "129.0",
          "source": "pacman"},
@@ -93,7 +93,7 @@ def test_update_review_dialog_notes_click_ignores_other_columns(qapp, monkeypatc
     opened = []
     monkeypatch.setattr(
         "neoarch.frontend.components.update_review_dialog.webbrowser.open",
-        lambda url: opened.append(url))
+        opened.append)
     dlg = UpdateReviewDialog(_sample_packages())
     dlg._on_item_clicked(dlg.table.item(0, 0))
     assert opened == []
