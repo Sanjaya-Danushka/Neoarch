@@ -40,11 +40,11 @@ def test_parse_repo_list_empty_input():
 def test_get_repo_map_starts_empty_and_refresh_fills(monkeypatch):
     repo_map._repo_map = {}
 
-    def fake_sl(*args, **kwargs):
+    def fake_run(*args, **_):
         import subprocess
         return subprocess.CompletedProcess(args[0] or ["pacman"], 0, _SAMPLE, "")
 
-    monkeypatch.setattr(repo_map.subprocess, "run", fake_sl)
+    monkeypatch.setattr(repo_map.subprocess, "run", fake_run)
     mapping = repo_map.refresh_repo_map()
     assert mapping["7zip"] == "extra"
     assert repo_map.get_repo_map() == mapping
@@ -53,7 +53,7 @@ def test_get_repo_map_starts_empty_and_refresh_fills(monkeypatch):
 def test_refresh_failure_clears_cache(monkeypatch):
     repo_map._repo_map = {"acl": "extra"}
 
-    def fail(*args, **kwargs):
+    def fail(*args, **_):
         import subprocess
         return subprocess.CompletedProcess(args[0] or ["pacman"], 1, "", "error")
 

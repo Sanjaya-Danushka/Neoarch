@@ -177,8 +177,7 @@ def test_catalog_failure_falls_back_to_all_missing(monkeypatch):
 
 
 def test_pipx_and_fwupd_are_optional_in_catalog():
-    from neoarch.backend.sys_utils import (get_dependency_catalog,
-                                           resolve_pkg_names)
+    from neoarch.backend.sys_utils import get_dependency_catalog
     catalog = {d["name"]: d for d in get_dependency_catalog()}
     assert catalog["pipx"]["required"] is False
     assert catalog["fwupdmgr"]["required"] is False
