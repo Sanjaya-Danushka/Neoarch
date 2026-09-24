@@ -38,8 +38,9 @@ def test_parse_detects_enabled_disabled_managed():
 
 def test_parse_collects_multiple_servers():
     text = "[myrepo]\nServer = https://a.example\nServer = https://b.example\n"
-    (section,) = repo_manager.parse_pacman_conf(text)
-    assert section["servers"] == ["https://a.example", "https://b.example"]
+    sections = repo_manager.parse_pacman_conf(text)
+    assert len(sections) == 1
+    assert sections[0]["servers"] == ["https://a.example", "https://b.example"]
 
 
 def test_build_block_marker_header_include_servers():
@@ -112,7 +113,9 @@ def test_apply_enable_comments_and_uncomments_header():
     lines = _lines_with_myrepo()
 
     out = repo_manager.apply_enable(lines, "myrepo", False)
-    disabled = next(l for l in out if l.lstrip("#").startswith("[myrepo]"))
+    candidates = [l for l in out if l.lstrip("#").startswith("[myrepo]")]
+    assert candidates, "expected a myrepo header line"
+    disabled = candidates[0]
     assert disabled.lstrip().startswith("#")
     assert disabled.lstrip("#").startswith("[myrepo]")
 
@@ -120,7 +123,9 @@ def test_apply_enable_comments_and_uncomments_header():
     assert "# neoarch-managed\n[chaotic-aur]" in text  # untouched section
 
     reenabled = repo_manager.apply_enable(out, "myrepo", True)
-    active = next(l for l in reenabled if l.lstrip("#").startswith("[myrepo]"))
+    candidates = [l for l in reenabled if l.lstrip("#").startswith("[myrepo]")]
+    assert candidates, "expected a myrepo header line"
+    active = candidates[0]
     assert not active.lstrip().startswith("#")
 
 

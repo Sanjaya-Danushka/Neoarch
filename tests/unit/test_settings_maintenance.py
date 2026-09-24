@@ -1,7 +1,6 @@
 """Smoke tests for the Maintenance settings page (card layout + actions)."""
 
 import pytest
-from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton
 
 from neoarch.frontend.views._settings_kit import Stepper

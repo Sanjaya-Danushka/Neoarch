@@ -19,7 +19,8 @@ def qapp():
 
 
 class _FakeApp:
-    def get_source_icon(self, source, size):
+    @staticmethod
+    def get_source_icon(source, size):
         return None
 
 
@@ -301,11 +302,13 @@ def test_discover_mapping_keeps_repo():
     from neoarch.frontend.mixins.views import _ViewsMixin
 
     class _Stub:
-        def is_package_installed(self, pkg):
+        @staticmethod
+        def is_package_installed(pkg):
             return False
 
-        def log(self, *args, **kwargs):
-            pass
+        @staticmethod
+        def log(*args, **kwargs):
+            return None
 
     out = _ViewsMixin._map_discover_pkg(
         _Stub(),

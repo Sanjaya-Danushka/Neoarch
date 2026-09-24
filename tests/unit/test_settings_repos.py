@@ -22,7 +22,7 @@ def _fake_list_repos(monkeypatch):
     """Keep the widget's async list_repos slot consistent with our samples."""
     from neoarch.backend.services import repo_manager
 
-    monkeypatch.setattr(repo_manager, "list_repos", lambda: _sample_repos())
+    monkeypatch.setattr(repo_manager, "list_repos", _sample_repos)
 
 
 def _sample_repos():

@@ -257,7 +257,7 @@ def _write_lines(lines):
         return False
 
 
-def _conf_message(err):
+def _conf_message():
     return _("Couldn't read {conf}.").format(conf=PACMAN_CONF)
 
 
