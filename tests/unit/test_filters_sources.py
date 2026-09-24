@@ -58,7 +58,7 @@ def test_no_tools_installed_disables_everything():
 
 def test_disabled_rows_show_install_path():
     card = _build(present=[])
-    assert "sudo pacman -S pipx" in card.sources["pipx"].tooltip
+    assert "sudo pacman -S python-pipx" in card.sources["pipx"].tooltip
     assert "sudo pacman -S fwupd" in card.sources["Firmware"].tooltip
     assert "sudo pacman -S flatpak" in card.sources["Flatpak"].tooltip
     assert "sudo pacman -S npm" in card.sources["npm"].tooltip

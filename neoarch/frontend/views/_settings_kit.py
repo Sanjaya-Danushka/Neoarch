@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
                              QVBoxLayout, QWidget)
 
 from neoarch.frontend.tokens import Colors, Fonts, QSS, Radii
+from neoarch.backend.services.i18n import _
 
 # ── Inline stroke icons (24x24 viewBox, lucide-style) ──────────────
 _ICON_MINUS = '<line x1="5" y1="12" x2="19" y2="12"/>'
@@ -141,6 +142,26 @@ def sep():
     line.setStyleSheet(
         f"background: {Colors.BORDER}; border: none; margin: 4px 0;")
     return line
+
+
+def chip(text, color):
+    """Small status pill — the DO / DON'T / WARNED look."""
+    pill = QLabel(text)
+    pill.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    pill.setStyleSheet(
+        f"font-size: {Fonts.XS}; font-weight: {Fonts.BOLD};"
+        f" color: {color}; background: transparent;"
+        f" border: 1px solid {color}; border-radius: {Radii.FULL}px;"
+        " padding: 3px 10px;")
+    return pill
+
+
+def advice(kind, title_text, desc):
+    """A descriptive row with a DO (green) or DON'T (orange) chip."""
+    color = Colors.GREEN if kind == "do" else Colors.ORANGE
+    return row(
+        title_text, desc, subtitle_color=Colors.TEXT_2,
+        control=chip(_("DO") if kind == "do" else _("DON'T"), color))
 
 
 def btn(text, on_click=None):

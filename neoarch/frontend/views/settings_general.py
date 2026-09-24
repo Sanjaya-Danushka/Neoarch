@@ -287,7 +287,7 @@ class GeneralSettingsWidget(QWidget):
             title=_("Check for pipx updates"),
             desc_ok=_("Detects apps installed with pipx (Python scripts) and lists "
                       "their updates on the Updates page."),
-            desc_missing=_("pipx is not installed — install with: sudo pacman -S pipx"),
+            desc_missing=_("pipx is not installed — install with: sudo pacman -S python-pipx"),
             binary="pipx", pkg="pipx", tool="pipx")
         basic_layout.addWidget(self._sep())
 

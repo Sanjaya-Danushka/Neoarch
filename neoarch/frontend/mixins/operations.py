@@ -433,14 +433,17 @@ class _OperationsMixin:
         update_service.update_packages(self, packages_by_source)
 
     def _confirm_partial_update(self, packages_by_source):
-        """Warn once before applying a *partial* Arch update.
+        """Warn once before applying a *partial* official-repo update.
 
-        A partial update is any Arch selection smaller than the full set of
-        available pacman/AUR upgrades. Full selections (and selections that
-        are exactly the whole set) skip the dialog. Returns False if the
-        user cancels. Applies to every update entry point, so a single
-        package updated from the detail card or the row menu is not silent
-        either.
+        A partial update is any official (pacman) selection smaller than the
+        full set of available pacman upgrades. AUR selections are excluded
+        from the check entirely: AUR packages build from source against the
+        current system, so they cannot cause the partial-upgrade desync.
+        Full selections (and selections that are exactly the whole set) skip
+        the dialog. Returns False if the user cancels — or chose "Update All",
+        which is then run here. Applies to every update entry point, so a
+        single package updated from the detail card or the row menu is not
+        silent either.
         """
         try:
             from neoarch.frontend.components.partial_update_dialog import (
@@ -448,9 +451,14 @@ class _OperationsMixin:
             available = self._available_arch_updates()
             if not is_partial_update(available, packages_by_source):
                 return True
-            dlg = PartialUpdateDialog(available, packages_by_source, self)
+            dlg = PartialUpdateDialog(
+                self._all_pending_updates(), packages_by_source, self)
             if dlg.exec() != QDialog.DialogCode.Accepted:
                 self.log("Partial update cancelled by user.")
+                return False
+            if dlg.result_choice() == "all":
+                self.log("User chose Update All from the partial-update dialog.")
+                self.perform_update_all()
                 return False
         except Exception as e:
             self.log(f"Partial-update check skipped: {e}")
@@ -488,25 +496,47 @@ class _OperationsMixin:
             danger=True,
         )
 
-    def _available_arch_updates(self):
-        """The pacman/AUR update set for the current page.
+    def _all_pending_updates(self):
+        """Every pending update on the current page (all sources).
 
-        Prefers the loaded ``updates_all`` list (Updates page); otherwise
-        falls back to rows in the shared updates table that still have a
-        pending upgrade, which covers the Installed page.
+        Used to show a truthful "Update All (n)" count in the partial-update
+        dialog: it reflects everything a full upgrade would touch.
         """
         updates = getattr(self, 'updates_all', None) or []
-        arch = [p for p in updates
-                if (p.get('source') or '').upper() in ('PACMAN', 'AUR')]
-        if arch:
-            return arch
+        if updates:
+            return updates
         try:
             tbl = getattr(self, 'updates_table', None)
             pkgs = tbl.model.packages() if tbl is not None else []
         except Exception:
             pkgs = []
         return [p for p in pkgs
-                if (p.get('source') or '').upper() in ('PACMAN', 'AUR')
+                if p.get('new_version')
+                and p.get('new_version') != p.get('version')]
+
+    def _available_arch_updates(self):
+        """The official pacman update set for the current page.
+
+        AUR rows are intentionally not included: they build from source
+        against the current system and cannot cause the partial-upgrade
+        library desync, so they should not weigh into the warning.
+
+        Prefers the loaded ``updates_all`` list (Updates page); otherwise
+        falls back to rows in the shared updates table that still have a
+        pending upgrade, which covers the Installed page.
+        """
+        updates = getattr(self, 'updates_all', None) or []
+        official = [p for p in updates
+                    if (p.get('source') or '').upper() == 'PACMAN']
+        if official:
+            return official
+        try:
+            tbl = getattr(self, 'updates_table', None)
+            pkgs = tbl.model.packages() if tbl is not None else []
+        except Exception:
+            pkgs = []
+        return [p for p in pkgs
+                if (p.get('source') or '').upper() == 'PACMAN'
                 and p.get('new_version')
                 and p.get('new_version') != p.get('version')]
     

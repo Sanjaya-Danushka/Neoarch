@@ -10,6 +10,79 @@ dialog shows after an update.
 
 ---
 
+## Unreleased
+
+### New Features
+
+- **i18n is now complete**: every string reachable from the interface is
+  translated in all ten bundled languages. The redesigned settings pages
+  (Security, Logging, Proxy & Network, Maintenance, Repositories),
+  the repositories manager, snapshot/snapper dialogs and firmware-update
+  flow no longer fall back to English for the de/fr/hi/ja/pt/ru/si/tr/zh
+  catalogs, and the Spanish catalog was brought up to date with the latest
+  strings too.
+- The Updates, Installed and Discover tables now show which pacman repository
+  a package comes from (e.g. `Pacman · extra`, `Pacman · chaotic-aur`). The
+  source is resolved offline from your synced repo databases, so packages from
+  third-party repos like Chaotic AUR are visible at a glance.
+- The Settings > **Security** page was redesigned to match the other
+  settings tabs (Appearance, Notifications) and now teaches instead of
+  merely listing facts:
+  - each card explains the *why* behind AUR handling, updates, sudo
+    prompts and token caching in plain language;
+  - a new **"Do's & Don'ts"** card color-codes the habits that keep an
+    Arch system healthy (full upgrades, reading PKGBUILDs, no `curl | bash`)
+    and makes clear that risky actions are **warned, never blocked**.
+- The header toolbar now has a **Security** quick-link (shield icon, Refresh
+  button style) that jumps straight to the Security tab in Settings — on the
+  Home header and in the right corner of the Updates/Discover toolbars, next
+  to a new Refresh button.
+- The Settings > **Logging** page was redesigned to match the other settings
+  tabs: the level decoder, console echo and log-file options live in icon
+  badged cards with plain-language explanations of *why* each one matters, a
+  new **Good Habits** card adds a DO/DON'T quick reference (attach a DEBUG log
+  when reporting bugs, leave console echo off during normal use), and the
+  size limit uses the same compact stepper as the Notifications page.
+- The Settings > **Proxy & Network** page was redesigned to match: proxy
+  type, host & port, request timeout and the pacman `ParallelDownloads`
+  apply live in icon-badged cards with plain-language explanations, and the
+  SSL/parallel toggles are proper switches instead of bare checkboxes.
+- The Settings > **Maintenance** page was redesigned to match: each tidy-up
+  task (orphans, .pacnew files, corruption scans, cache purging and Arch
+  news) is a descriptive card with a consistent action button, and the
+  "keep versions per package" choice uses the same compact stepper as the
+  other pages.
+- The **partial-update warning** is smarter and safer:
+  - AUR packages no longer count toward it — they build from source
+    against the current system, so only official-repo selections trigger
+    the desync warning;
+  - the dialog gained a third button: **"Update All (n)"** is now the
+    recommended primary action (runs the full system upgrade), the risky
+    choice keeps the fully translated **"I understand — Update Selection"**
+    text but is now a **red danger** button, and Cancel stays ghost;
+  - every string reuses existing catalog entries, so the dialog still
+    renders in all ten bundled languages.
+- New **Repositories** settings page for managing pacman repositories without
+  hand-editing `/etc/pacman.conf`:
+  - lists every configured repo (system repos are read-only);
+  - **Quick-add Chaotic AUR** — signs the maintainer key, downloads the mirror
+    list over HTTPS, appends `[chaotic-aur]` and runs `pacman -Syy`;
+  - add any repo by name (optional `Include` / `Server`), enable/disable with a
+    toggle, and remove the ones NeoArch added;
+  - every write backs up `/etc/pacman.conf` first and restores it on failure;
+    hand-written sections are protected from deletion.
+
+---
+
+### Bug Fixes
+
+- Setting up **pipx** from About ▸ Diagnostics no longer "succeeds" while
+  installing nothing: the catalog pointed pacman at a literal `pipx` package
+  that doesn't exist on Arch (the real one is `python-pipx`). Setup now
+  installs `python-pipx`, the Install tooltips in Diagnostics/General/Updates
+  show the correct command, and a failed dependency install reports
+  "Setup could not complete" instead of the misleading "Setup finished".
+
 ## 3.3.1 — 2026-09-22
 
 ### New Features

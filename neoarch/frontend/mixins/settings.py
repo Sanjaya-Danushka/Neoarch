@@ -15,6 +15,7 @@ from neoarch.frontend.views.settings_security import SecuritySettingsWidget
 from neoarch.frontend.views.settings_logging import LoggingSettingsWidget
 from neoarch.frontend.views.settings_proxy import ProxySettingsWidget
 from neoarch.frontend.views.settings_maintenance import MaintenanceSettingsWidget
+from neoarch.frontend.views.settings_repos import RepositoriesSettingsWidget
 from neoarch.frontend.views.settings_appearance import AppearanceSettingsWidget
 from neoarch.frontend.tokens import Colors, Fonts, Radii
 from neoarch.frontend.styles import Styles
@@ -141,6 +142,12 @@ class _SettingsMixin:
         self.settings_nav_buttons["maintenance"] = btn_maintenance
         sidebar_layout.addWidget(btn_maintenance)
 
+        btn_repos = QPushButton(_("Repositories"))
+        btn_repos.setCheckable(True)
+        btn_repos.clicked.connect(lambda: self.switch_settings_category("repos"))
+        self.settings_nav_buttons["repos"] = btn_repos
+        sidebar_layout.addWidget(btn_repos)
+
         sidebar_layout.addStretch()
 
         ## Version badge with edition
@@ -209,6 +216,7 @@ class _SettingsMixin:
             "logging": LoggingSettingsWidget(self),
             "proxy": ProxySettingsWidget(self),
             "maintenance": MaintenanceSettingsWidget(self),
+            "repos": RepositoriesSettingsWidget(self),
         }
 
         for key, widget in self.settings_widgets.items():

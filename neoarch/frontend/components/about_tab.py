@@ -1093,11 +1093,16 @@ class _DepInstallWorker(QThread):
         try:
             self.line.emit(
                 f"$ neoarch setup \u2192 {', '.join(self._names)}")
-            self._app.install_dependencies(self._names)
+            ok = self._app.install_dependencies(self._names)
         except Exception as e:
             self.line.emit(f"\u2717 Setup failed: {e}")
         else:
-            self.line.emit("\u2713 Setup finished \u2014 re-checking")
+            if ok:
+                self.line.emit("\u2713 Setup finished \u2014 re-checking")
+            else:
+                self.line.emit(
+                    "\u2717 Setup could not complete \u2014 "
+                    "check the message above and the log")
         finally:
             try:
                 self.done.emit(list(self._names))

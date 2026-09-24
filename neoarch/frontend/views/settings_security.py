@@ -1,61 +1,225 @@
-import os
+"""Security settings page — education first.
+
+Explains what NeoArch can reach, what it runs, how it protects secrets,
+and the habits that keep an Arch system healthy. NeoArch is a *warning*
+oriented app: it flags risky actions but rarely blocks them, so this page
+spells out the "why" behind every guardrail as a set of Do's and Don'ts.
+"""
+
 import webbrowser
-from PyQt6.QtCore import Qt, QRectF
-from PyQt6.QtGui import QPixmap, QPainter
-from PyQt6.QtSvg import QSvgRenderer
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                             QLabel, QFrame)
 
-from neoarch.frontend.tokens import Colors, Fonts, Radii
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
+
+from neoarch.frontend.tokens import Colors, Fonts
 from neoarch.backend.services.i18n import _
-from neoarch.frontend.views._settings_kit import make_card, row, sep, btn
+from neoarch.frontend.views._settings_kit import (
+    make_card, row, sep, btn, actions_row, chip, advice)
 
-_BASE = os.path.join(os.path.dirname(__file__), "..", "..", "..")
-_LOGO_SVG = os.path.normpath(os.path.join(_BASE, "assets", "icons", "toolbar", "security.svg"))
-
-_ICON_SHIELD = (
-    '<path d="M12 2l7 3v6c0 4.97-3.13 8.94-7 10-3.87-1.06-7-5.03-7-10V5l7-3z"/>'
-    '<path d="m9 12 2 2 4-4"/>'
+# ── Inline stroke icons (24x24 viewBox, lucide-style) ──────────────
+_ICON_BOX = (
+    '<path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/>'
+    '<path d="M12 13v8"/>'
 )
-
-
-def _logo_pixmap(size=28):
-    try:
-        r = QSvgRenderer(_LOGO_SVG)
-        if not r.isValid():
-            raise RuntimeError
-        pm = QPixmap(size, size)
-        pm.fill(Qt.GlobalColor.transparent)
-        p = QPainter(pm)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        r.render(p, QRectF(0, 0, size, size))
-        p.end()
-        return pm
-    except Exception:
-        pm = QPixmap(size, size)
-        pm.fill(Qt.GlobalColor.transparent)
-        return pm
-
-_ICON_SHIELD = (
-    '<path d="M12 2l7 3v6c0 4.97-3.13 8.94-7 10-3.87-1.06-7-5.03-7-10V5l7-3z"/>'
-    '<path d="m9 12 2 2 4-4"/>'
+_ICON_UPDATE = (
+    '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>'
+    '<polyline points="17 6 23 6 23 12"/>'
 )
-_ICON_ARROW = (
-    '<circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 3.5-3.5 3.5 3.5"/>'
-    '<path d="M12 15V9"/>'
+_ICON_HABITS = (
+    '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/>'
+    '<path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>'
 )
 _ICON_KEY = (
     '<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 8.3-8.3"/>'
     '<path d="m15 8 3 3"/>'
 )
-_ICON_PACKAGE = (
-    '<path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/>'
-    '<path d="M12 13v8"/>'
-)
 
 _AMBER = Colors.ORANGE
 _GREEN = Colors.GREEN
-_LINK = "https://aur.archlinux.org"
+
+
+def _warned_row(title, desc):
+    """Row with an amber WARNED chip — the 'flagged but not blocked' look."""
+    return row(title, desc, subtitle_color=_AMBER,
+               control=chip(_("WARNED"), _AMBER))
+
+
+# ── Cards ───────────────────────────────────────────────────────────
+
+def _sources_card():
+    card, lay = make_card(
+        _("Sources & Community Packages"), _ICON_BOX)
+
+    lay.addWidget(row(
+        _("AUR — Arch User Repository"),
+        _("Community-maintained build recipes. Unlike the official repos "
+          "they are not curated or reviewed by Arch — anyone can publish "
+          "a recipe.")))
+    lay.addWidget(sep())
+    lay.addWidget(row(
+        _("Every AUR result is badged [aur]"),
+        _("The source column always shows where a package comes from, "
+          "so community packages are never mistaken for official ones.")))
+    lay.addWidget(sep())
+    lay.addWidget(row(
+        _("One-at-a-time builds"),
+        _("AUR updates build one package at a time; a single failure "
+          "never aborts the rest of the queue.")))
+    lay.addWidget(sep())
+    lay.addWidget(row(
+        _("AUR helper: auto"),
+        _("Resolved automatically to yay, paru, trizen or pikaur. "
+          "Change it under General settings.")))
+
+    return card
+
+
+def _updates_card():
+    card, lay = make_card(_("Updates & Review"), _ICON_UPDATE)
+
+    lay.addWidget(_warned_row(
+        _("Warned, not blocked"),
+        _("NeoArch never quietly blocks an action. Risky moves get a "
+          "warning and your explicit confirmation \u2014 you always hold "
+          "the final say.")))
+    lay.addWidget(sep())
+    lay.addWidget(row(
+        _("Full upgrades are the safe path"),
+        _("Arch is a rolling release: packages expect to move forward "
+          "together. Updating a selection can desync libraries from the "
+          "apps that use them."),
+        subtitle_color=Colors.GREEN))
+    lay.addWidget(sep())
+    lay.addWidget(row(
+        _("Review before installing"),
+        _("Package count and version changes are shown first; nothing "
+          "starts until you press confirm \u2014 never silently."),
+        subtitle_color=Colors.GREEN))
+    lay.addWidget(sep())
+    lay.addWidget(row(
+        _("Optional snapshots"),
+        _("Enable \u201cSnapshot before update\u201d in General settings "
+          "so a bad upgrade can be reverted in one click.")))
+
+    return card
+
+
+def _advice_card():
+    card, lay = make_card(
+        _("Quick Reference \u2014 Do's & Don'ts"), _ICON_HABITS,
+        icon_color=_AMBER)
+
+    lay.addWidget(advice(
+        "do",
+        _("Update everything together"),
+        _("A full system upgrade keeps libraries and applications in "
+          "lockstep \u2014 the Arch-supported way to stay current.")))
+    lay.addWidget(sep())
+    lay.addWidget(advice(
+        "do",
+        _("Read the PKGBUILD before installing from the AUR"),
+        _("NeoArch fetches and statically scans recipes first and pauses "
+          "on critical findings. Read the whole file anyway.")))
+    lay.addWidget(sep())
+    lay.addWidget(advice(
+        "do",
+        _("Keep IgnorePkg minimal"),
+        _("A pinned version quietly freezes the packages that depend on "
+          "it. If you must pin, review it regularly.")))
+    lay.addWidget(sep())
+    lay.addWidget(advice(
+        "do",
+        _("Housekeep: orphans, cache, Arch news"),
+        _("Drop orphaned packages, prune the cache, and read the "
+          "archlinux.org news before major upgrades.")))
+    lay.addWidget(sep())
+    lay.addWidget(advice(
+        "dont",
+        _("Partial upgrades"),
+        _("Mixing old and new packages desyncs libraries from the apps "
+          "that link them \u2014 the classic broken-Arch setup.")))
+    lay.addWidget(sep())
+    lay.addWidget(advice(
+        "dont",
+        _("Install AUR packages blindly"),
+        _("Anyone can publish a recipe. Skipping the review means "
+          "trusting a stranger's build script with your machine.")))
+    lay.addWidget(sep())
+    lay.addWidget(advice(
+        "dont",
+        _("Ignore the full-upgrade warning"),
+        _("NeoArch will let you proceed \u2014 but the warning exists "
+          "because this is how systems break.")))
+    lay.addWidget(sep())
+    lay.addWidget(advice(
+        "dont",
+        _("Pipe scripts into a shell"),
+        _("curl \u2026 | bash runs code sight-unseen. Prefer real "
+          "packages, or read what you are about to execute.")))
+
+    return card
+
+
+def _protection_card():
+    card, lay = make_card(
+        _("System Protection & Habits"), _ICON_KEY, icon_color=_GREEN)
+
+    lay.addWidget(row(
+        _("GUI sudo prompt (SUDO_ASKPASS)"),
+        _("Passwords go straight to the privilege prompt in your session "
+          "and are never written to disk."),
+        subtitle_color=Colors.GREEN))
+    lay.addWidget(sep())
+    lay.addWidget(row(
+        _("OAuth tokens expire"),
+        _("Cloud login caches tokens only until they expire \u2014 it "
+          "never stores your credentials forever.")))
+    lay.addWidget(sep())
+    lay.addWidget(row(
+        _("Config stays local"),
+        _("Settings live in ~/.config/neoarch \u2014 no telemetry, no "
+          "account, no cloud by default.")))
+    lay.addWidget(sep())
+    lay.addWidget(row(
+        _("AUR pre-install scan"),
+        _("PKGBUILDs and .install scriptlets are statically inspected "
+          "before every AUR install; critical findings demand explicit "
+          "acceptance."),
+        subtitle_color=Colors.GREEN))
+
+    return card
+
+
+def _link_card():
+    card, lay = make_card(_("AUR Resources"), _ICON_BOX)
+    lay.addWidget(row(
+        _("Before installing from the AUR, review the package.")))
+    btn_row = actions_row([
+        btn(_("Open aur.archlinux.org \u2197"),
+            on_click=lambda: webbrowser.open("https://aur.archlinux.org")),
+    ])
+    lay.addWidget(btn_row)
+    return card
+
+
+# ── Page ────────────────────────────────────────────────────────────
+
+def _page_title():
+    title = QLabel(_("Security"))
+    title.setStyleSheet(
+        f"font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD};"
+        f" color: {Colors.TEXT}; letter-spacing: -0.5px;")
+    return title
+
+
+def _page_subtitle():
+    subtitle = QLabel(
+        _("What NeoArch can reach, what it runs, how it protects secrets, "
+          "and the habits that keep an Arch system healthy"))
+    subtitle.setWordWrap(True)
+    subtitle.setStyleSheet(
+        f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
+        " border: none; background: transparent; margin-top: 0;")
+    return subtitle
 
 
 class SecuritySettingsWidget(QWidget):
@@ -67,215 +231,11 @@ class SecuritySettingsWidget(QWidget):
 
         self.setup_ui()
 
-    # ── Hero (amber warning banner) ─────────────────────────────────
-
-    def _hero(self):
-        hero = QFrame()
-        hero.setStyleSheet(
-            f"background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
-            f" stop:0 #1C1613, stop:0.55 #121013, stop:1 #101014);"
-            f" border: 1px solid rgba(255, 159, 28, 0.22);"
-            f" border-radius: {Radii.LG}px;")
-        hl = QHBoxLayout(hero)
-        hl.setContentsMargins(24, 20, 24, 20)
-        hl.setSpacing(18)
-
-        badge = QLabel()
-        badge.setFixedSize(54, 54)
-        badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        badge.setStyleSheet(
-            f"background-color: rgba(255, 159, 28, 0.12);"
-            f" border: 1px solid rgba(255, 159, 28, 0.35);"
-            f" border-radius: {Radii.LG}px;")
-        badge.setPixmap(_logo_pixmap(36))
-        hl.addWidget(badge, 0, Qt.AlignmentFlag.AlignVCenter)
-
-        title_col = QVBoxLayout()
-        title_col.setSpacing(2)
-        micro = QLabel(_("SAFETY OVERVIEW"))
-        micro.setStyleSheet(
-            f"font-size: {Fonts.XS}; font-weight: {Fonts.BOLD};"
-            f" letter-spacing: 2px; color: {_AMBER};"
-            " background: transparent; border: none;")
-        title_col.addWidget(micro)
-        name = QLabel(_("Security"))
-        name.setStyleSheet(
-            f"font-size: {Fonts.CARD_TITLE}; font-weight: {Fonts.SEMI};"
-            f" color: {Colors.TEXT}; background: transparent; border: none;")
-        title_col.addWidget(name)
-        hl.addLayout(title_col, 1)
-
-        cap = QLabel(_("WARNED · NOT BLOCKED"))
-        cap.setStyleSheet(
-            f"font-size: {Fonts.XS}; font-weight: {Fonts.BOLD};"
-            f" letter-spacing: 1.2px; color: {_AMBER};"
-            f" background-color: rgba(255, 159, 28, 0.10);"
-            f" padding: 5px 10px; border-radius: {Radii.FULL}px;")
-        hl.addWidget(cap, 0, Qt.AlignmentFlag.AlignTop)
-
-        return hero
-
-    # ── Status bar (horizontal chips) ───────────────────────────────
-
-    def _status_bar(self):
-        bar = QWidget()
-        bl = QHBoxLayout(bar)
-        bl.setContentsMargins(0, 0, 0, 0)
-        bl.setSpacing(12)
-
-        chips = [
-            ("AUR", _("Community recipes"), _AMBER),
-            ("Partial updates", _("Warned, not blocked"), _AMBER),
-            ("Sudo", _("Prompt only, never stored"), _GREEN),
-        ]
-        for value, sub, color in chips:
-            chip = QFrame()
-            chip.setStyleSheet(
-                f"QFrame {{ background-color: #17181D;"
-                f" border: 1px solid {Colors.BORDER};"
-                f" border-radius: {Radii.MD}px; }}")
-            cl = QHBoxLayout(chip)
-            cl.setContentsMargins(14, 12, 14, 12)
-            cl.setSpacing(10)
-            dot = QLabel()
-            dot.setFixedSize(8, 8)
-            dot.setStyleSheet(
-                f"background-color: {color}; border-radius: 4px;")
-            cl.addWidget(dot, 0, Qt.AlignmentFlag.AlignTop)
-            col = QVBoxLayout()
-            col.setSpacing(1)
-            v = QLabel(value)
-            v.setStyleSheet(
-                f"font-size: {Fonts.MD}; font-weight: {Fonts.SEMI};"
-                f" color: {Colors.TEXT}; background: transparent; border: none;")
-            col.addWidget(v)
-            s = QLabel(sub)
-            s.setStyleSheet(
-                f"font-size: {Fonts.XS}; color: {Colors.TEXT_3};"
-                " background: transparent; border: none;")
-            col.addWidget(s)
-            cl.addLayout(col, 1)
-            bl.addWidget(chip, 1)
-
-        return bar
-
-    # ── Sources & Community card ─────────────────────────────────────
-
-    def _sources_card(self):
-        card, lay = make_card(
-            _("Sources & Community Packages"), _ICON_PACKAGE)
-
-        aur_row = row(_("AUR — Arch User Repository"),
-                      _("Community-maintained recipes — not curated or reviewed by Arch."),
-                      subtitle_color=Colors.TEXT)
-        lay.addWidget(aur_row)
-        lay.addWidget(sep())
-        lay.addWidget(row(
-            _("Every result is badged [aur] \u2014 never confused with official.")))
-        lay.addWidget(sep())
-        lay.addWidget(row(
-            _("Updates build one at a time;"
-              " a failure never aborts the rest.")))
-        lay.addWidget(sep())
-        lay.addWidget(row(
-            _("Helper: auto \u2014 yay, paru, trizen, pikaur (General).")))
-
-        return card
-
-    # ── Updates card ─────────────────────────────────────────────────
-
-    def _updates_card(self):
-        card, lay = make_card(_("Updates & Review"), _ICON_ARROW)
-
-        partial_row = row(_("Partial upgrades"),
-                          _("Rolling release — packages expect to update together."))
-        lay.addWidget(partial_row)
-        lay.addWidget(sep())
-        lay.addWidget(row(
-            _("Updating a selection can desync libraries from their apps."),
-            subtitle_color=_AMBER))
-        lay.addWidget(sep())
-        lay.addWidget(row(
-            _('NeoArch warns \u201cfull system upgrade recommended\u201d,'
-              ' then lets you proceed.'),
-            subtitle_color=_AMBER))
-        lay.addWidget(sep())
-
-        review_row = row(_("Update review"),
-                         _("Package count and version changes are shown first."))
-        lay.addWidget(review_row)
-        lay.addWidget(sep())
-        lay.addWidget(row(
-            _("Nothing starts until you confirm \u2014 never silently."),
-            subtitle_color=Colors.GREEN))
-
-        return card
-
-    # ── System protection card ───────────────────────────────────────
-
-    def _protection_card(self):
-        card, lay = make_card(
-            _("System Protection & Habits"), _ICON_KEY, icon_color=_GREEN)
-
-        lay.addWidget(row(
-            _("GUI sudo prompt (SUDO_ASKPASS) \u2014 never stored."),
-            subtitle_color=Colors.GREEN))
-        lay.addWidget(sep())
-        lay.addWidget(row(
-            _("OAuth tokens cached with an expiry.")))
-        lay.addWidget(sep())
-        lay.addWidget(row(
-            _("Config in ~/.config/neoarch.")))
-        lay.addWidget(sep())
-        lay.addWidget(row(
-            _("Read PKGBUILDs before installing AUR packages.")))
-        lay.addWidget(sep())
-        lay.addWidget(row(
-            _("Prefer full upgrades \u2014 keep IgnorePkg minimal.")))
-        lay.addWidget(sep())
-        lay.addWidget(row(
-            _("Clean orphans, cache, and read Arch news.")))
-
-        return card
-
-    # ── Link card ────────────────────────────────────────────────────
-
-    def _link_card(self):
-        card, lay = make_card(_("AUR Resources"), _ICON_PACKAGE)
-        lay.addWidget(row(
-            _("Before installing from the AUR, review the PKGBUILD.")))
-        open_btn = btn(
-            _("Open aur.archlinux.org \u2197"),
-            on_click=lambda: webbrowser.open(_LINK))
-        btn_row = QWidget()
-        btn_row.setStyleSheet("background: transparent;")
-        btn_lay = QHBoxLayout(btn_row)
-        btn_lay.setContentsMargins(0, 6, 0, 0)
-        btn_lay.addWidget(open_btn)
-        btn_lay.addStretch()
-        lay.addWidget(btn_row)
-        return card
-
-    # ── Page ─────────────────────────────────────────────────────────
-
     def setup_ui(self):
-        title = QLabel(_("Security"))
-        title.setStyleSheet(
-            f"font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD};"
-            f" color: {Colors.TEXT}; letter-spacing: -0.5px;")
-        self.layout.addWidget(title)
-
-        subtitle = QLabel(
-            _("What NeoArch can reach, what it runs,"
-              " and what it asks before it acts"))
-        subtitle.setStyleSheet(
-            f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
-            " border: none; background: transparent; margin-top: 0;")
-        self.layout.addWidget(subtitle)
-
-        self.layout.addWidget(self._hero())
-        self.layout.addWidget(self._status_bar())
-        self.layout.addWidget(self._sources_card())
-        self.layout.addWidget(self._updates_card())
-        self.layout.addWidget(self._protection_card())
-        self.layout.addWidget(self._link_card())
+        self.layout.addWidget(_page_title())
+        self.layout.addWidget(_page_subtitle())
+        self.layout.addWidget(_sources_card())
+        self.layout.addWidget(_updates_card())
+        self.layout.addWidget(_advice_card())
+        self.layout.addWidget(_protection_card())
+        self.layout.addWidget(_link_card())

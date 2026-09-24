@@ -2366,3 +2366,803 @@ msgstr "अपडेट समाप्त होने की प्रती�
 
 msgid "Installed packages will appear here automatically once it completes."
 msgstr "समाप्त होते ही स्थापित पैकेज यहाँ स्वतः दिखाई देंगे।"
+
+
+msgid " days"
+msgstr " दिन"
+
+msgid " s"
+msgstr " सेकंड"
+
+msgid "%(n)d px"
+msgstr "%(n)d px"
+
+msgid "%(n)d%%"
+msgstr "%(n)d %%"
+
+msgid "A full system upgrade keeps libraries and applications in lockstep — the Arch-supported way to stay current."
+msgstr "पूर्ण सिस्टम अपग्रेड लाइब्रेरी और एप्लिकेशन को एक साथ अद्यतन रखता है — यही Arch का समर्थित तरीका है।"
+
+msgid "A pinned version quietly freezes the packages that depend on it. If you must pin, review it regularly."
+msgstr "पिन की गई संस्करण उस पर निर्भर पैकेजों को चुपचाप रोक देती है। यदि पिन करना आवश्यक हो, तो इसे नियमित रूप से जाँचें।"
+
+msgid "A stale lock file was found:\n\n{lock}\n\nNo package manager is running, so this is a leftover from a previous interrupted operation."
+msgstr "एक पुरानी लॉक फ़ाइल मिली:\n\n{lock}\n\nकोई पैकेज प्रबंधक नहीं चल रहा है, इसलिए यह पिछले बाधित कार्य का अवशेष है।"
+
+msgid "AUR Helper"
+msgstr "AUR सहायक"
+
+msgid "AUR RPC endpoint"
+msgstr "AUR RPC एंडपॉइंट"
+
+msgid "AUR Resources"
+msgstr "AUR संसाधन"
+
+msgid "AUR helper: auto"
+msgstr "AUR सहायक: स्वचालित"
+
+msgid "AUR pre-install scan"
+msgstr "AUR स्थापना-पूर्व स्कैन"
+
+msgid "AUR updates build one package at a time; a single failure never aborts the rest of the queue."
+msgstr "AUR अपडेट एक समय में एक ही पैकेज बनाते हैं; एक विफलता बाकी कतार को कभी रोकती नहीं है।"
+
+msgid "Add"
+msgstr "जोड़ें"
+
+msgid "Add Chaotic AUR"
+msgstr "Chaotic AUR जोड़ें"
+
+msgid "Add Repository"
+msgstr "रिपॉज़िटरी जोड़ें"
+
+msgid "Add a Repository"
+msgstr "रिपॉज़िटरी जोड़ें"
+
+msgid "Add a Repository…"
+msgstr "रिपॉज़िटरी जोड़ें…"
+
+msgid "Anyone can publish a recipe. Skipping the review means trusting a stranger's build script with your machine."
+msgstr "कोई भी रेसिपी प्रकाशित कर सकता है। समीक्षा छोड़ने का मतलब है अपनी मशीन किसी अजनबी के बिल्ड स्क्रिप्ट पर भरोसा करना।"
+
+msgid "Arch is a rolling release: packages expect to move forward together. Updating a selection can desync libraries from the apps that use them."
+msgstr "Arch एक रोलिंग रिलीज़ है: पैकेज साथ मिलकर आगे बढ़ने की अपेक्षा करते हैं। चुनाव को अपडेट करने से लाइब्रेरी उनका उपयोग करने वाले एप्स से असंगत हो सकती हैं।"
+
+msgid "Attach a DEBUG log when reporting bugs"
+msgstr "बग की रिपोर्ट करते समय DEBUG लॉग संलग्न करें"
+
+msgid "Autosave path"
+msgstr "ऑटोसेव पथ"
+
+msgid "BIOS/UEFI and device firmware via fwupd.\nThe linux-firmware package is a pacman update, not this source."
+msgstr "fwupd के माध्यम से BIOS/UEFI और डिवाइस फ़र्मवेयर।\nlinux-firmware पैकेज एक pacman अपडेट है, यह स्रोत नहीं।"
+
+msgid "Backs up your package list and config before installing."
+msgstr "स्थापना से पहले आपकी पैकेज सूची और कॉन्फ़िगरेशन का बैकअप लेता है।"
+
+msgid "Backup method"
+msgstr "बैकअप विधि"
+
+msgid "Before installing from the AUR, review the package."
+msgstr "AUR से स्थापित करने से पहले पैकेज की समीक्षा करें।"
+
+msgid "Check cached package archives for corruption before they cause an install to fail."
+msgstr "इंस्टॉल विफल करने से पहले कैश किए गए पैकेज संग्रह में भ्रष्टाचार की जाँच करता है।"
+
+msgid "Check for firmware updates"
+msgstr "फ़र्मवेयर अपडेट जाँचें"
+
+msgid "Check for pipx updates"
+msgstr "pipx अपडेट जाँचें"
+
+msgid "Checks certificates on every HTTPS request. Disable only if a proxy inspects your traffic — it does weaken security."
+msgstr "हर HTTPS अनुरोध पर प्रमाणपत्र जाँचता है। केवल तभी अक्षम करें जब प्रॉक्सी आपके ट्रैफ़िक की जाँच करे — इससे सुरक्षा कमज़ोर होती है।"
+
+msgid "Checks for available updates each time the app starts."
+msgstr "ऐप हर बार प्रारंभ होने पर उपलब्ध अपडेट जाँचता है।"
+
+msgid "Checks for new packages on the configured schedule."
+msgstr "कॉन्फ़िगर किए गए समय पर नए पैकेजों की जाँच करता है।"
+
+msgid "Clear selection"
+msgstr "चयन साफ़ करें"
+
+msgid "Cloud login caches tokens only until they expire — it never stores your credentials forever."
+msgstr "क्लाउड लॉगिन टोकन केवल समाप्ति तक कैश करता है — यह आपकी साख हमेशा के लिए कभी नहीं रखता।"
+
+msgid "Community-maintained build recipes. Unlike the official repos they are not curated or reviewed by Arch — anyone can publish a recipe."
+msgstr "समुदाय द्वारा बनाए गए बिल्ड रेसिपी। आधिकारिक रेपो के विपरीत इन्हें Arch द्वारा संचालित या समीक्षित नहीं किया जाता — कोई भी रेसिपी प्रकाशित कर सकता है।"
+
+msgid "Config stays local"
+msgstr "कॉन्फ़िग स्थानीय रहता है"
+
+msgid "Configured Repositories"
+msgstr "कॉन्फ़िगर किए गए रिपॉज़िटरी"
+
+msgid "Confirm Uninstall"
+msgstr "अनइंस्टॉल की पुष्टि करें"
+
+msgid "Connection"
+msgstr "कनेक्शन"
+
+msgid "Control how much NeoArch records, where it writes it, and when it rolls the log over"
+msgstr "नियंत्रित करें कि NeoArch कितना लॉग करता है, कहाँ लिखता है, और लॉग कब रोल ओवर होता है"
+
+msgid "DO"
+msgstr "करें"
+
+msgid "DON'T"
+msgstr "न करें"
+
+msgid "Data"
+msgstr "डेटा"
+
+msgid "Decorative teal rim on the translucent window frame."
+msgstr "पारदर्शी विंडो फ्रेम पर सजावटी टील किनारा।"
+
+msgid "Desktop notifications"
+msgstr "डेस्कटॉप सूचनाएं"
+
+msgid "Detects apps installed with pipx (Python scripts) and lists their updates on the Updates page."
+msgstr "pipx से स्थापित ऐप्स (पायथन स्क्रिप्ट) का पता लगाता है और अपडेट पृष्ठ पर उनके अपडेट सूचीबद्ध करता है।"
+
+msgid "Detects firmware updates via fwupd on the Updates page. Applying always requires your explicit confirmation."
+msgstr "अपडेट पृष्ठ पर fwupd के माध्यम से फ़र्मवेयर अपडेट का पता लगाता है। लागू करने के लिए हमेशा आपकी स्पष्ट पुष्टि आवश्यक होती है।"
+
+msgid "Disabled"
+msgstr "अक्षम"
+
+msgid "Done."
+msgstr "पूर्ण।"
+
+msgid "Drop orphaned packages, prune the cache, and read the archlinux.org news before major upgrades."
+msgstr "अनाथ पैकेज हटाएँ, कैश साफ़ करें, और बड़े अपग्रेड से पहले archlinux.org समाचार पढ़ें।"
+
+msgid "Echo to console"
+msgstr "कंसोल पर दिखाएँ"
+
+msgid "Enable “Snapshot before update” in General settings so a bad upgrade can be reverted in one click."
+msgstr "सामान्य सेटिंग्स में “अपडेट से पहले स्नैपशॉट” सक्षम करें ताकि खराब अपग्रेड एक क्लिक में वापस रोला जा सके।"
+
+msgid "Enabled"
+msgstr "सक्षम"
+
+msgid "Every AUR result is badged [aur]"
+msgstr "हर AUR परिणाम पर [aur] बैज लगा है"
+
+msgid "Export settings to file"
+msgstr "सेटिंग्स को फ़ाइल में निर्यात करें"
+
+msgid "Failed to read repositories."
+msgstr "रिपॉज़िटरी पढ़ने में विफल।"
+
+msgid "Fetch from several sources at the same time. Faster lookups, at the cost of more simultaneous connections."
+msgstr "एक साथ कई स्रोतों से लाएँ। तेज़ खोज, पर अधिक समवर्ती कनेक्शन की कीमत पर।"
+
+msgid "Fr"
+msgstr "शु"
+
+msgid "Full Wiki ↗"
+msgstr "पूर्ण विकि ↗"
+
+msgid "Full upgrades are the safe path"
+msgstr "पूर्ण अपग्रेड सुरक्षित मार्ग है"
+
+msgid "GUI sudo prompt (SUDO_ASKPASS)"
+msgstr "GUI sudo संकेत (SUDO_ASKPASS)"
+
+msgid "Good Habits"
+msgstr "अच्छी आदतें"
+
+msgid "Host & port"
+msgstr "होस्ट और पोर्ट"
+
+msgid "Housekeep: orphans, cache, Arch news"
+msgstr "सफ़ाई: अनाथ, कैश, Arch समाचार"
+
+msgid "How NeoArch reaches the internet — proxies, timeouts and pacman's download behaviour"
+msgstr "NeoArch इंटरनेट तक कैसे पहुँचता है — प्रॉक्सी, टाइमआउट और pacman की डाउनलोड विधि"
+
+msgid "How long NeoArch waits for a network reply before giving up. Raise it on slow links, lower it to fail fast."
+msgstr "हारने से पहले NeoArch नेटवर्क उत्तर के लिए कितनी देर प्रतीक्षा करता है। धीमे कनेक्शन पर बढ़ाएँ, तेज़ विफलता के लिए घटाएँ।"
+
+msgid "How many days between automatic update checks."
+msgstr "स्वचालित अपडेट जाँचों के बीच कितने दिन।"
+
+msgid "How many old versions to keep before purging. Keep it small — older archives are already installed."
+msgstr "शुद्ध करने से पहले कितने पुराने संस्करण रखें। इसे छोटा रखें — पुराने संग्रह पहले से स्थापित हैं।"
+
+msgid "How many packages pacman may download at once while updating. Applies to /etc/pacman.conf and needs root."
+msgstr "अपडेट करते समय pacman एक बार में कितने पैकेज डाउनलोड कर सकता है। /etc/pacman.conf पर लागू होता है और रूट की आवश्यकता है।"
+
+msgid "How much detail NeoArch writes. DEBUG records everything including network calls and is ideal for bug reports; ERROR writes only failures."
+msgstr "NeoArch कितना विवरण लिखता है। DEBUG नेटवर्क कॉल सहित सब कुछ दर्ज करता है और बग रिपोर्ट के लिए आदर्श है; ERROR केवल विफलताएँ लिखता है।"
+
+msgid "How much the desktop shows through the window body."
+msgstr "विंडो बॉडी से डेस्कटॉप कितना दिखता है।"
+
+msgid "Ignore the full-upgrade warning"
+msgstr "पूर्ण-अपग्रेड चेतावनी अनदेखा करें"
+
+msgid "Import settings from file"
+msgstr "सेटिंग्स फ़ाइल से आयात करें"
+
+msgid "Important announcements such as manual interventions are posted before big changes land. Worth a glance before major upgrades."
+msgstr "बड़े बदलावों से पहले मैनुअल हस्तक्षेप जैसी महत्वपूर्ण घोषणाएँ पोस्ट की जाती हैं। बड़े अपग्रेड से पहले एक नज़र डालने लायक़।"
+
+msgid "Include path under /etc/ (optional)"
+msgstr "/etc/ के अंतर्गत Include पथ (वैकल्पिक)"
+
+msgid "Install AUR packages blindly"
+msgstr "AUR पैकेज बिना देखे स्थापित करें"
+
+msgid "Install update-time hooks"
+msgstr "अपडेट-समय हुक स्थापित करें"
+
+msgid "Installs global npm packages to ~/.npm-global without sudo."
+msgstr "बिना sudo के वैश्विक npm पैकेज ~/.npm-global में स्थापित करता है।"
+
+msgid "Keep IgnorePkg minimal"
+msgstr "IgnorePkg कम से कम रखें"
+
+msgid "Keep versions per package"
+msgstr "प्रति पैकेज संस्करण रखें"
+
+msgid "Keep your system tidy: orphans, leftover configs, the download cache, and Arch news"
+msgstr "सिस्टम व्यवस्थित रखें: अनाथ, बचे हुए कॉन्फ़िग, डाउनलोड कैश और Arch समाचार"
+
+msgid "Language"
+msgstr "भाषा"
+
+msgid "Last snapshot: {date}"
+msgstr "अंतिम स्नैपशॉट: {date}"
+
+msgid "Last snapshot: —"
+msgstr "अंतिम स्नैपशॉट: —"
+
+msgid "Leave console echo on during daily use"
+msgstr "दैनिक उपयोग के दौरान कंसोल इको चालू रखें"
+
+msgid "Log file path"
+msgstr "लॉग फ़ाइल पथ"
+
+msgid "Log level"
+msgstr "लॉग स्तर"
+
+msgid "Manage .pacnew files"
+msgstr ".pacnew फ़ाइलें प्रबंधित करें"
+
+msgid "Maximum size"
+msgstr "अधिकतम आकार"
+
+msgid "Messages are already written to the log file. Console echo is a terminal-first tool and adds busy output to the window you launched NeoArch from."
+msgstr "संदेश लॉग फ़ाइल में पहले से लिखे जाते हैं। कंसोल इको टर्मिनल-प्रथम उपकरण है और जिस विंडो से NeoArch शुरू किया गया उसमें अतिरिक्त आउटपुट जोड़ता है।"
+
+msgid "Mirror messages to the terminal NeoArch was started from. Mostly useful when you run the app from a shell — the log file already records everything."
+msgstr "जिस टर्मिनल से NeoArch शुरू किया गया उसमें संदेश दिखाएँ। मुख्यतः तब उपयोगी जब आप ऐप शेल से चलाते हैं — लॉग फ़ाइल पहले से ही सब दर्ज करती है।"
+
+msgid "Mixing old and new packages desyncs libraries from the apps that link them — the classic broken-Arch setup."
+msgstr "पुराने और नए पैकेज मिलाने से लाइब्रेरी उन्हें लिंक करने वाले एप्स से असंगत हो जाती हैं — क्लासिक टूटा-Arch सेटअप।"
+
+msgid "Mo"
+msgstr "सो"
+
+msgid "Needs a BTRFS filesystem"
+msgstr "BTRFS फ़ाइलसिस्टम चाहिए"
+
+msgid "Needs a snapper config (sudo snapper create-config /)"
+msgstr "snapper कॉन्फ़िग चाहिए (sudo snapper create-config /)"
+
+msgid "NeoArch fetches and statically scans recipes first and pauses on critical findings. Read the whole file anyway."
+msgstr "NeoArch पहले रेसिपी लाकर स्थिर रूप से स्कैन करता है और गंभीर निष्कर्षों पर रुकता है। फिर भी पूरी फ़ाइल पढ़ें।"
+
+msgid "NeoArch never quietly blocks an action. Risky moves get a warning and your explicit confirmation — you always hold the final say."
+msgstr "NeoArch कभी किसी कार्रवाई को चुपचाप नहीं रोकता। जोखिम भरे कदमों पर चेतावनी और आपकी स्पष्ट पुष्टि मिलती है — अंतिम निर्णय हमेशा आपका।"
+
+msgid "NeoArch will let you proceed — but the warning exists because this is how systems break."
+msgstr "NeoArch आपको आगे बढ़ने देगा — लेकिन चेतावनी इसलिए है क्योंकि इसी तरह सिस्टम टूटते हैं।"
+
+msgid "Next run"
+msgstr "अगला रन"
+
+msgid "No cooldown"
+msgstr "कोई शीतलन अवधि नहीं"
+
+msgid "Nothing is routed through a proxy by default. Pick HTTP, HTTPS or SOCKS5 to send package, AUR and Flatpak requests through one."
+msgstr "डिफ़ॉल्ट रूप से कुछ भी प्रॉक्सी से नहीं जाता। पैकेज, AUR और Flatpak अनुरोध प्रॉक्सी से भेजने के लिए HTTP, HTTPS या SOCKS5 चुनें।"
+
+msgid "OAuth tokens expire"
+msgstr "OAuth टोकन समाप्त हो जाते हैं"
+
+msgid "Once the log grows past this size, NeoArch rolls it over so it never fills your drive."
+msgstr "लॉग इस आकार से बढ़ने पर NeoArch उसे रोल कर देता है ताकि वह आपकी डिस्क न भरे।"
+
+msgid "One-at-a-time builds"
+msgstr "एक-एक करके बनाएं"
+
+msgid "Optional snapshots"
+msgstr "वैकल्पिक स्नैपशॉट"
+
+msgid "PKGBUILDs and .install scriptlets are statically inspected before every AUR install; critical findings demand explicit acceptance."
+msgstr "हर AUR स्थापना से पहले PKGBUILD और .install स्क्रिप्टलेट स्थिर रूप से निरीक्षित होते हैं; गंभीर निष्कर्षों पर स्पष्ट स्वीकृति आवश्यक है।"
+
+msgid "Package Sources"
+msgstr "पैकेज स्रोत"
+
+msgid "Package count and version changes are shown first; nothing starts until you press confirm — never silently."
+msgstr "पैकेज संख्या और संस्करण परिवर्तन पहले दिखाए जाते हैं; पुष्टि दबाए बिना कुछ शुरू नहीं होता — कभी चुपचाप नहीं।"
+
+msgid "Packages installed as dependencies that nothing needs any more. Deleting them is safe, frees disk space and makes updates faster."
+msgstr "निर्भरता के रूप में स्थापित पैकेज जिनकी अब किसी को आवश्यकता नहीं। उन्हें हटाना सुरक्षित है, डिस्क स्थान मुक्त करता है और अपडेट तेज़ बनाता है।"
+
+msgid "Pacman Database Lock"
+msgstr "pacman डेटाबेस लॉक"
+
+msgid "Pacman ParallelDownloads"
+msgstr "pacman ParallelDownloads"
+
+msgid "Parallel network requests"
+msgstr "समानांतर नेटवर्क अनुरोध"
+
+msgid "Passwords go straight to the privilege prompt in your session and are never written to disk."
+msgstr "पासवर्ड सीधे आपके सत्र के विशेषाधिकार संकेत पर जाते हैं और कभी डिस्क पर नहीं लिखे जाते।"
+
+msgid "Pipe scripts into a shell"
+msgstr "स्क्रिप्ट को शेल में पाइप करें"
+
+msgid "Play a short alert sound together with each notification."
+msgstr "प्रत्येक सूचना के साथ एक छोटी चेतावनी ध्वनि बजाता है।"
+
+msgid "Proxy type"
+msgstr "प्रॉक्सी प्रकार"
+
+msgid "Quick Reference — Do's & Don'ts"
+msgstr "त्वरित संदर्भ — करें और न करें"
+
+msgid "Quick-add Chaotic AUR"
+msgstr "Chaotic AUR त्वरित जोड़ें"
+
+msgid "Quick-add Chaotic AUR (signs the maintainer key, fetches the mirror list, appends [chaotic-aur] and runs pacman -Syy), or add any repo by name."
+msgstr "Chaotic AUR त्वरित जोड़ें (रखवाले की कुंजी पर हस्ताक्षर करता है, मिरर सूची लाता है, [chaotic-aur] जोड़ता है और pacman -Syy चलाता है), या किसी भी रेपो को नाम से जोड़ें।"
+
+msgid "Re-check while open (min)"
+msgstr "खुला रहते हुए दोबारा जाँचें (मिनट)"
+
+msgid "Re-checks for updates in the background every X minutes while the app is running. Set to Off to disable."
+msgstr "ऐप चलते समय हर X मिनट में पृष्ठभूमि में अपडेट दोबारा जाँचता है। अक्षम करने के लिए Off सेट करें।"
+
+msgid "Read the PKGBUILD before installing from the AUR"
+msgstr "AUR से स्थापित करने से पहले PKGBUILD पढ़ें"
+
+msgid "Read the news before updating"
+msgstr "अपडेट से पहले समाचार पढ़ें"
+
+msgid "Reading /etc/pacman.conf…"
+msgstr "/etc/pacman.conf पढ़ रहा है…"
+
+msgid "Ready — snapshots available"
+msgstr "तैयार — स्नैपशॉट उपलब्ध"
+
+msgid "Remove '[{name}]' from /etc/pacman.conf?"
+msgstr "/etc/pacman.conf से '[{name}]' हटाएँ?"
+
+msgid "Remove Lock"
+msgstr "लॉक हटाएँ"
+
+msgid "Remove Repository"
+msgstr "रिपॉज़िटरी हटाएँ"
+
+msgid "Remove hooks"
+msgstr "हुक हटाएँ"
+
+msgid "Remove orphaned packages"
+msgstr "अनाथ पैकेज हटाएँ"
+
+msgid "Remove the stale lock and continue with \"{operation}\"?"
+msgstr "पुराना लॉक हटाकर \"{operation}\" के साथ जारी रखें?"
+
+msgid "Remove the stale lock and continue?"
+msgstr "पुराना लॉक हटाकर जारी रखें?"
+
+msgid "Repositories"
+msgstr "रिपॉज़िटरी"
+
+msgid "Repositories NeoArch added carry a marker and can be removed here; system and hand-written sections are protected."
+msgstr "NeoArch द्वारा जोड़े गए रिपॉज़िटरी पर चिह्न होता है और यहाँ हटाए जा सकते हैं; सिस्टम और हाथ से लिखे खंड संरक्षित हैं।"
+
+msgid "Repository name, e.g. archlinuxcn"
+msgstr "रिपॉज़िटरी नाम, जैसे archlinuxcn"
+
+msgid "Request timeout"
+msgstr "अनुरोध टाइमआउट"
+
+msgid "Requires the 'snapper' tool"
+msgstr "‘snapper’ उपकरण चाहिए"
+
+msgid "Requires the 'timeshift' tool"
+msgstr "‘timeshift’ उपकरण चाहिए"
+
+msgid "Resolved automatically to yay, paru, trizen or pikaur. Change it under General settings."
+msgstr "स्वचालित रूप से yay, paru, trizen या pikaur में हल होता है। सामान्य सेटिंग्स में बदलें।"
+
+msgid "Review before installing"
+msgstr "स्थापना से पहले समीक्षा करें"
+
+msgid "Rounded corners on the translucent window frame."
+msgstr "पारदर्शी विंडो फ्रेम पर गोल कोने।"
+
+msgid "Run at"
+msgstr "इस समय चलाएँ"
+
+msgid "Runs the update check automatically on a weekly schedule (applies while the app is running)."
+msgstr "अपडेट जाँच साप्ताहिक समय पर स्वचालित रूप से चलाता है (ऐप चलते समय लागू होता है)।"
+
+msgid "Sa"
+msgstr "श"
+
+msgid "Save the selected bundle automatically."
+msgstr "चयनित बंडल स्वचालित रूप से सहेजें।"
+
+msgid "Scan for corrupted archives"
+msgstr "भ्रष्ट संग्रह स्कैन करें"
+
+msgid "Seconds to wait before repeating the same notification."
+msgstr "समान सूचना दोहराने से पहले प्रतीक्षा के सेकंड।"
+
+msgid "Select a file to inspect its diff"
+msgstr "अंतर देखने के लिए फ़ाइल चुनें"
+
+msgid "Select all"
+msgstr "सभी चुनें"
+
+msgid "Select the days the scheduled check runs on."
+msgstr "निर्धारित जाँच जिस दिन चले वे दिन चुनें।"
+
+msgid "Server URL, e.g. https://mirror.example (optional)"
+msgstr "सर्वर URL, जैसे https://mirror.example (वैकल्पिक)"
+
+msgid "Set the level above to DEBUG, reproduce the problem, then attach the log file — it turns a vague report into a quick fix. Remember to switch back to INFO afterwards."
+msgstr "ऊपर के स्तर को DEBUG पर सेट करें, समस्या दोहराएँ, फिर लॉग फ़ाइल संलग्न करें — यह अस्पष्ट रिपोर्ट को त्वरित समाधान बनाता है। बाद में INFO पर वापस लाना याद रखें।"
+
+msgid "Settings live in ~/.config/neoarch — no telemetry, no account, no cloud by default."
+msgstr "सेटिंग्स ~/.config/neoarch में रहती हैं — डिफ़ॉल्ट रूप से कोई टेलीमेट्री, खाता, या क्लाउड नहीं।"
+
+msgid "Show a message banner inside the app when a task completes."
+msgstr "कार्य पूरा होने पर ऐप में संदेश बैनर दिखाता है।"
+
+msgid "Show a pop-up notification from the system tray when a task completes."
+msgstr "कार्य पूरा होने पर सिस्टम ट्रे से पॉप-अप सूचना दिखाता है।"
+
+msgid "Snapper"
+msgstr "Snapper"
+
+msgid "Snapper setup is incomplete"
+msgstr "Snapper सेटअप अधूरा है"
+
+msgid "Snapshots"
+msgstr "स्नैपशॉट"
+
+msgid "Sources & Community Packages"
+msgstr "स्रोत और सामुदायिक पैकेज"
+
+msgid "Su"
+msgstr "र"
+
+msgid "System Protection & Habits"
+msgstr "सिस्टम सुरक्षा और आदतें"
+
+msgid "Th"
+msgstr "गु"
+
+msgid "The proxy's address and the TCP port it listens on. Only applied when a proxy type other than \"none\" is chosen."
+msgstr "प्रॉक्सी का पता और वह TCP पोर्ट जिस पर वह सुनता है। केवल तब लागू होता है जब \"none\" के अलावा कोई प्रॉक्सी प्रकार चुना जाए।"
+
+msgid "The section is appended to /etc/pacman.conf under a NeoArch marker, so it can be removed again here later."
+msgstr "यह खंड NeoArch चिह्न के अंतर्गत /etc/pacman.conf में जुड़ता है, ताकि बाद में इसे यहाँ फिर हटाया जा सके।"
+
+msgid "The source column always shows where a package comes from, so community packages are never mistaken for official ones."
+msgstr "स्रोत स्तंभ हमेशा दिखाता है कि पैकेज कहाँ से आया है, ताकि सामुदायिक पैकेज कभी आधिकारिक न समझे जाएँ।"
+
+msgid "Themes"
+msgstr "थीम"
+
+msgid "This signs the Chaotic AUR maintainer key, downloads the mirror list over HTTPS, appends [chaotic-aur] to /etc/pacman.conf and runs 'pacman -Syy'. Continue?"
+msgstr "यह Chaotic AUR रखवाले की कुंजी पर हस्ताक्षर करता है, HTTPS पर मिरर सूची डाउनलोड करता है, /etc/pacman.conf में [chaotic-aur] जोड़ता है और ‘pacman -Syy’ चलाता है। जारी रखें?"
+
+msgid "Time of day the weekly check starts."
+msgstr "साप्ताहिक जाँच शुरू होने का दिन का समय।"
+
+msgid "Timeshift"
+msgstr "Timeshift"
+
+msgid "Tu"
+msgstr "मं"
+
+msgid "Uninstall the following package(s)?\n\n{summary}\n\nThis will remove them from your system and cannot be undone."
+msgstr "निम्नलिखित पैकेज अनइंस्टॉल करें?\n\n{summary}\n\nइससे वे आपके सिस्टम से हट जाएँगे और इसे पूर्ववत नहीं किया जा सकता।"
+
+msgid "Update everything together"
+msgstr "सब कुछ एक साथ अपडेट करें"
+
+msgid "Update interval (days)"
+msgstr "अपडेट अंतराल (दिन)"
+
+msgid "Updates & Review"
+msgstr "अपडेट और समीक्षा"
+
+msgid "Use npm user mode"
+msgstr "npm उपयोगकर्ता मोड उपयोग करें"
+
+msgid "View and manage pacman repositories like Chaotic AUR — no more hand-editing /etc/pacman.conf."
+msgstr "/etc/pacman.conf को हाथ से संपादित करने की ज़रूरत नहीं — Chaotic AUR जैसे pacman रिपॉज़िटरी देखें और प्रबंधित करें।"
+
+msgid "View changes ↗"
+msgstr "परिवर्तन देखें ↗"
+
+msgid "WARNED"
+msgstr "चेतावनी दी गई"
+
+msgid "We"
+msgstr "बु"
+
+msgid "Weekdays"
+msgstr "सप्ताह के दिन"
+
+msgid "What NeoArch can reach, what it runs, how it protects secrets, and the habits that keep an Arch system healthy"
+msgstr "NeoArch क्या पहुँच सकता है, क्या चलाता है, रहस्यों की रक्षा कैसे करता है, और वे आदतें जो Arch सिस्टम स्वस्थ रखती हैं"
+
+msgid "When a package installation or removal finishes."
+msgstr "जब पैकेज स्थापना या हटाना समाप्त हो।"
+
+msgid "When a package ships a new config, the old one is kept as a .pacnew. Review and merge them so your tweaks are never silently lost."
+msgstr "जब पैकेज नया कॉन्फ़िग लाता है, पुराना .pacnew के रूप में रखा जाता है। उनकी समीक्षा करें और मिलाएँ ताकि आपके बदलाव कभी चुपचाप न खोएँ।"
+
+msgid "When an operation fails or emits warnings."
+msgstr "जब कोई कार्य विफल हो या चेतावनी दे।"
+
+msgid "When new system and package updates are ready."
+msgstr "जब नए सिस्टम और पैकेज अपडेट उपलब्ध हों।"
+
+msgid "Where the rolling log lives. Defaults to ~/.config/neoarch/neoarch.log on your home directory."
+msgstr "रोलिंग लॉग कहाँ रहता है। डिफ़ॉल्ट रूप से आपके होम निर्देशिका में ~/.config/neoarch/neoarch.log।"
+
+msgid "Window transparency"
+msgstr "विंडो पारदर्शिता"
+
+msgid "Working…"
+msgstr "कार्य हो रहा है…"
+
+msgid "curl … | bash runs code sight-unseen. Prefer real packages, or read what you are about to execute."
+msgstr "curl … | bash बिना देखे कोड चलाता है। असली पैकेज पसंद करें, या जो निष्पादित करने जा रहे हैं उसे पढ़ें।"
+
+msgid "fwupd is not installed — install with: sudo pacman -S fwupd"
+msgstr "fwupd स्थापित नहीं है — स्थापित करें: sudo pacman -S fwupd"
+
+msgid "npm is not installed — install with: sudo pacman -S npm"
+msgstr "npm स्थापित नहीं है — स्थापित करें: sudo pacman -S npm"
+
+msgid "pipx is not installed — install with: sudo pacman -S python-pipx"
+msgstr "pipx स्थापित नहीं है — स्थापित करें: sudo pacman -S python-pipx"
+
+msgid "{tool} is not installed — install with: sudo pacman -S {pkg}"
+msgstr "{tool} स्थापित नहीं है — स्थापित करें: sudo pacman -S {pkg}"
+
+msgid "↗ Wiki"
+msgstr "↗ विकि"
+
+
+msgid " and synced"
+msgstr " और सिंक किया गया"
+
+msgid "'{name}' is a system repository and can't be toggled here."
+msgstr "'[{name}]' एक सिस्टम रिपॉज़िटरी है और इसे यहाँ टॉगल नहीं किया जा सकता।"
+
+msgid "'{name}' is a system repository."
+msgstr "'[{name}]' एक सिस्टम रिपॉज़िटरी है।"
+
+msgid "'{name}' isn't managed by NeoArch — edit /etc/pacman.conf manually."
+msgstr "'[{name}]' NeoArch द्वारा प्रबंधित नहीं है — /etc/pacman.conf को मैन्युअल रूप से संपादित करें।"
+
+msgid "(empty)"
+msgstr "(खाली)"
+
+msgid "Another snapshot operation is already running."
+msgstr "एक और स्नैपशॉट कार्य पहले से चल रहा है।"
+
+msgid "Chaotic AUR is already configured in /etc/pacman.conf."
+msgstr "Chaotic AUR पहले से /etc/pacman.conf में कॉन्फ़िगर किया गया है।"
+
+msgid "Confirm Restoration"
+msgstr "बहाली की पुष्टि करें"
+
+msgid "Couldn't download the Chaotic AUR mirror list."
+msgstr "Chaotic AUR मिरर सूची डाउनलोड नहीं की जा सकी।"
+
+msgid "Couldn't read {conf}."
+msgstr "{conf} पढ़ा नहीं जा सका।"
+
+msgid "Create a system snapshot before proceeding?\n\nThis will take some time."
+msgstr "आगे बढ़ने से पहले सिस्टम स्नैपशॉट बनाएँ?\n\nइसमें कुछ समय लगेगा।"
+
+msgid "Creating pre-update snapshot..."
+msgstr "अपडेट-पूर्व स्नैपशॉट बना रहा है…"
+
+msgid "Creating snapshot..."
+msgstr "स्नैपशॉट बना रहा है…"
+
+msgid "Deleting old snapshots..."
+msgstr "पुराने स्नैपशॉट हटा रहा है…"
+
+msgid "Error creating pre-update snapshot: {err}"
+msgstr "अपडेट-पूर्व स्नैपशॉट बनाने में त्रुटि: {err}"
+
+msgid "Error creating snapshot: {err}"
+msgstr "स्नैपशॉट बनाने में त्रुटि: {err}"
+
+msgid "Error deleting snapshots: {err}"
+msgstr "स्नैपशॉट हटाने में त्रुटि: {err}"
+
+msgid "Error installing pacman hooks: {err}"
+msgstr "pacman हुक स्थापित करने में त्रुटि: {err}"
+
+msgid "Error removing pacman hooks: {err}"
+msgstr "pacman हुक हटाने में त्रुटि: {err}"
+
+msgid "Error restoring snapshot: {err}"
+msgstr "स्नैपशॉट बहाल करने में त्रुटि: {err}"
+
+msgid "Failed to create pre-update snapshot: {err}"
+msgstr "अपडेट-पूर्व स्नैपशॉट बनाने में विफल: {err}"
+
+msgid "Failed to create snapshot: {err}"
+msgstr "स्नैपशॉट बनाने में विफल: {err}"
+
+msgid "Failed to delete snapshots: {err}"
+msgstr "स्नैपशॉट हटाने में विफल: {err}"
+
+msgid "Failed to fetch the Chaotic AUR maintainer key."
+msgstr "Chaotic AUR रखवाले की कुंजी प्राप्त करने में विफल।"
+
+msgid "Failed to install pacman hook: {path} - {err}"
+msgstr "pacman हुक स्थापित करने में विफल: {path} - {err}"
+
+msgid "Failed to list snapshots: {err}"
+msgstr "स्नैपशॉट सूचीबद्ध करने में विफल: {err}"
+
+msgid "Failed to locally sign the Chaotic AUR maintainer key."
+msgstr "Chaotic AUR रखवाले की कुंजी पर स्थानीय रूप से हस्ताक्षर करने में विफल।"
+
+msgid "Failed to remove pacman hooks: {err}"
+msgstr "pacman हुक हटाने में विफल: {err}"
+
+msgid "Failed to restore snapshot: {err}"
+msgstr "स्नैपशॉट बहाल करने में विफल: {err}"
+
+msgid "Failed to write {conf}; the original was restored."
+msgstr "{conf} लिखने में विफल; मूल फ़ाइल बहाल कर दी गई।"
+
+msgid "Firmware Update"
+msgstr "फ़र्मवेयर अपडेट"
+
+msgid "Firmware was updated. A reboot is required to finish installation."
+msgstr "फ़र्मवेयर अपडेट हो गया। स्थापना पूर्ण करने के लिए रिबूट आवश्यक है।"
+
+msgid "Give at least one Include path or Server URL."
+msgstr "कम से कम एक Include पथ या सर्वर URL दें।"
+
+msgid "Include paths can't contain line breaks."
+msgstr "Include पथ में लाइन ब्रेक नहीं हो सकते।"
+
+msgid "Include paths must live under /etc/."
+msgstr "Include पथ /etc/ के अंतर्गत होने चाहिए।"
+
+msgid "Installing update-time hooks..."
+msgstr "अपडेट-समय हुक स्थापित कर रहा है…"
+
+msgid "Invalid repository name (letters, numbers, '.', '-' and '_')."
+msgstr "अवैध रिपॉज़िटरी नाम (अक्षर, अंक, '.', '-' और '_')."
+
+msgid "Loading snapshots..."
+msgstr "स्नैपशॉट लोड कर रहा है…"
+
+msgid "NeoArch manual snapshot {ts}"
+msgstr "NeoArch मैन्युअल स्नैपशॉट {ts}"
+
+msgid "No Snapshots"
+msgstr "कोई स्नैपशॉट नहीं"
+
+msgid "No snapper configuration found."
+msgstr "कोई snapper कॉन्फ़िगरेशन नहीं मिला।"
+
+msgid "No snapshots available for restoration."
+msgstr "बहाली के लिए कोई स्नैपशॉट उपलब्ध नहीं।"
+
+msgid "Nothing to delete — 2 or fewer snapshots."
+msgstr "हटाने को कुछ नहीं — 2 या कम स्नैपशॉट।"
+
+msgid "Old snapshots deleted successfully"
+msgstr "पुराने स्नैपशॉट सफलतापूर्वक हटाए गए"
+
+msgid "Operation cancelled."
+msgstr "कार्य रद्द कर दिया गया।"
+
+msgid "Pacman hooks installed — every system update will now capture Snapper snapshots."
+msgstr "pacman हुक स्थापित — अब हर सिस्टम अपडेट Snapper स्नैपशॉट बनाएगा।"
+
+msgid "Pacman hooks removed."
+msgstr "pacman हुक हटा दिए गए।"
+
+msgid "Pre-update snapshot created: {comment}"
+msgstr "अपडेट-पूर्व स्नैपशॉट बनाया गया: {comment}"
+
+msgid "Removing update-time hooks..."
+msgstr "अपडेट-समय हुक हटा रहा है…"
+
+msgid "Repository '[{name}]' added{and_synced}."
+msgstr "रिपॉज़िटरी '[{name}]' जोड़ा गया{and_synced}।"
+
+msgid "Repository '[{name}]' already exists in /etc/pacman.conf."
+msgstr "रिपॉज़िटरी '[{name}]' पहले से /etc/pacman.conf में मौजूद है।"
+
+msgid "Repository '[{name}]' not found."
+msgstr "रिपॉज़िटरी '[{name}]' नहीं मिला।"
+
+msgid "Repository '[{name}]' removed."
+msgstr "रिपॉज़िटरी '[{name}]' हटाया गया।"
+
+msgid "Restoring snapshot..."
+msgstr "स्नैपशॉट बहाल कर रहा है…"
+
+msgid "Rollback initiated for snapshot #{num}. Reboot to complete."
+msgstr "स्नैपशॉट #{num} के लिए रोलबैक आरंभ किया गया। पूर्ण करने के लिए रिबूट करें।"
+
+msgid "Select Snapshot to Restore"
+msgstr "बहाल करने के लिए स्नैपशॉट चुनें"
+
+msgid "Select a snapshot to restore the system to:"
+msgstr "सिस्टम को बहाल करने के लिए एक स्नैपशॉट चुनें:"
+
+msgid "Server URLs must use http(s) and contain no line breaks."
+msgstr "सर्वर URL http(s) का उपयोग करें और कोई लाइन ब्रेक न रखें।"
+
+msgid "Snapper Not Available"
+msgstr "Snapper उपलब्ध नहीं"
+
+msgid "Snapper needs a BTRFS filesystem and a configuration."
+msgstr "Snapper को BTRFS फ़ाइलसिस्टम और एक कॉन्फ़िगरेशन चाहिए।"
+
+msgid "Snapper needs a BTRFS filesystem, the 'snapper' tool and a configuration. Create one with: sudo snapper create-config /"
+msgstr "Snapper को BTRFS फ़ाइलसिस्टम, 'snapper' उपकरण और एक कॉन्फ़िगरेशन चाहिए। बनाएँ: sudo snapper create-config /"
+
+msgid "Snapshot"
+msgstr "स्नैपशॉट"
+
+msgid "Snapshot created successfully: {comment}"
+msgstr "स्नैपशॉट सफलतापूर्वक बनाया गया: {comment}"
+
+msgid "Snapshot created successfully: {date}"
+msgstr "स्नैपशॉट सफलतापूर्वक बनाया गया: {date}"
+
+msgid "Snapshot creation timed out and no snapshot appeared in Timeshift's list.\n{err}"
+msgstr "स्नैपशॉट निर्माण का समय समाप्त और Timeshift की सूची में कोई स्नैपशॉट नहीं दिखा।\n{err}"
+
+msgid "Snapshot restoration initiated. System will reboot."
+msgstr "स्नैपशॉट बहाली आरंभ की गई। सिस्टम रिबूट होगा।"
+
+msgid "The snapshot did not appear in Timeshift's list.\nCommand output: {out}"
+msgstr "स्नैपशॉट Timeshift की सूची में नहीं दिखा।\nकमांड आउटपुट: {out}"
+
+msgid "This will delete old snapshots to free up disk space.\n\nKeep only the 2 most recent snapshots?\n\nThis action cannot be undone."
+msgstr "यह डिस्क स्थान मुक्त करने के लिए पुराने स्नैपशॉट हटाएगा।\n\nकेवल 2 सबसे नए स्नैपशॉट रखें?\n\nयह कार्रवाई पूर्ववत नहीं की जा सकती।"
+
+msgid "This will roll back the system to snapper snapshot #{num}.\n\nSnapper switches the default subvolume; a reboot is required.\n\nAre you sure you want to proceed?"
+msgstr "यह सिस्टम को snapper स्नैपशॉट #{num} पर वापस ले जाएगा।\n\nSnapper डिफ़ॉल्ट सबवॉल्यूम बदलता है; रिबूट आवश्यक है।\n\nक्या आप आगे बढ़ना चाहते हैं?"
+
+msgid "Timeshift is busy with another backup in progress (scheduled or manual). Try again after it finishes."
+msgstr "Timeshift किसी अन्य चल रहे बैकअप में व्यस्त है (निर्धारित या मैन्युअल)। पूरा होने के बाद पुनः प्रयास करें।"
+
+msgid "Timeshift list failed"
+msgstr "Timeshift सूची विफल"
+
+msgid "curl isn't installed; install 'curl' to fetch the mirror list."
+msgstr "curl स्थापित नहीं है; मिरर सूची प्राप्त करने के लिए 'curl' स्थापित करें।"

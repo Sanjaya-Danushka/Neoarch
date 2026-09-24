@@ -2366,3 +2366,803 @@ msgstr "උඩුගත කිරීම අවසන් වන තෙක් ර�
 
 msgid "Installed packages will appear here automatically once it completes."
 msgstr "අවසන් වූ පසු ස්ථාපිත පැකේජ මෙහි ස්වයංක්රීයව දිස්වනු ඇත."
+
+
+msgid " days"
+msgstr " දින"
+
+msgid " s"
+msgstr " s"
+
+msgid "%(n)d px"
+msgstr "%(n)d px"
+
+msgid "%(n)d%%"
+msgstr "%(n)d %%"
+
+msgid "A full system upgrade keeps libraries and applications in lockstep — the Arch-supported way to stay current."
+msgstr "සම්පූර්ණ පද්ධති උත්ශ්රේණියක් පුස්තකාල සහ යෙදුම් එකට තබයි — නවතම තත්ත්වයේ රැඳීමේ Arch-අනුමත ක්‍රමය මෙයයි."
+
+msgid "A pinned version quietly freezes the packages that depend on it. If you must pin, review it regularly."
+msgstr "පින් කළ අනුවාදයක් එය මත රඳා පවතින පැකේජ නිශ්ශබ්දව කැටි කරයි. පින් කිරීමට සිදු වුවහොත්, එය නිතිපතා සමාලෝචනය කරන්න."
+
+msgid "A stale lock file was found:\n\n{lock}\n\nNo package manager is running, so this is a leftover from a previous interrupted operation."
+msgstr "යල් පැන ගිය අගුළු ගොනුවක් හමු විය:\n\n{lock}\n\nකිසිදු පැකේජ කළමනාකරුවකු ධාවනය නොවන බැවින්, මෙය පෙර බාධා වූ මෙහෙයුමක ඉතිරි කොටසකි."
+
+msgid "AUR Helper"
+msgstr "AUR සහායකයා"
+
+msgid "AUR RPC endpoint"
+msgstr "AUR RPC අන්ත ලක්ෂ්‍යය"
+
+msgid "AUR Resources"
+msgstr "AUR සම්පත්"
+
+msgid "AUR helper: auto"
+msgstr "AUR සහායකයා: ස්වයං"
+
+msgid "AUR pre-install scan"
+msgstr "AUR ස්ථාපන-පූර්ව පරිලෝකනය"
+
+msgid "AUR updates build one package at a time; a single failure never aborts the rest of the queue."
+msgstr "AUR යාවත්කාලීන එක් අවස්ථාවකට එක් පැකේජයක් ගොඩනඟයි; තනි අසාර්ථකත්වයකින් පෝලිමේ ඉතිරි කොටස කිසි විටෙක අත් නොහරියි."
+
+msgid "Add"
+msgstr "එක් කරන්න"
+
+msgid "Add Chaotic AUR"
+msgstr "Chaotic AUR එක් කරන්න"
+
+msgid "Add Repository"
+msgstr "ගබඩාව එක් කරන්න"
+
+msgid "Add a Repository"
+msgstr "ගබඩාවක් එක් කරන්න"
+
+msgid "Add a Repository…"
+msgstr "ගබඩාවක් එක් කරන්න…"
+
+msgid "Anyone can publish a recipe. Skipping the review means trusting a stranger's build script with your machine."
+msgstr "ඕනෑම කෙනෙකුට වට්ටෝරුවක් ප්‍රකාශ කළ හැක. සමාලෝචනය මඟ හැරීම යනු ඔබේ යන්ත්‍රය ආගන්තුකයකුගේ ගොඩනැඟුම් ස්ක්‍රිප්ටයකට භාර දීමයි."
+
+msgid "Arch is a rolling release: packages expect to move forward together. Updating a selection can desync libraries from the apps that use them."
+msgstr "Arch යනු රෝල් කරන නිකුතුවකි: පැකේජ එකට ඉදිරියට යාමට බලාපොරොත්තු වේ. තේරීමක් යාවත්කාලීන කිරීමෙන් පුස්තකාල ඒවා භාවිතා කරන යෙදුම් සමඟ විසමමුහුර්ත විය හැක."
+
+msgid "Attach a DEBUG log when reporting bugs"
+msgstr "දෝෂ වාර්තා කිරීමේදී DEBUG ලඝු සටහන අමුණන්න"
+
+msgid "Autosave path"
+msgstr "ස්වයංසේවා මාර්ගය"
+
+msgid "BIOS/UEFI and device firmware via fwupd.\nThe linux-firmware package is a pacman update, not this source."
+msgstr "fwupd හරහා BIOS/UEFI සහ උපාංග ෆර්ම්වෙයාර්.\nlinux-firmware පැකේජය pacman යාවත්කාලීනයකි, මෙම මූලාශ්‍රය නොවේ."
+
+msgid "Backs up your package list and config before installing."
+msgstr "ස්ථාපනයට පෙර ඔබේ පැකේජ ලැයිස්තුව සහ වින්‍යාසය උපස්ථ කරයි."
+
+msgid "Backup method"
+msgstr "උපස්ථ ක්‍රමය"
+
+msgid "Before installing from the AUR, review the package."
+msgstr "AUR වෙතින් ස්ථාපනය කිරීමට පෙර, පැකේජය සමාලෝචනය කරන්න."
+
+msgid "Check cached package archives for corruption before they cause an install to fail."
+msgstr "ස්ථාපනයක් අසාර්ථක වීමට පෙර, හැඹිලිගත පැකේජ සංරක්ෂිතවල දූෂණය පරීක්ෂා කරයි."
+
+msgid "Check for firmware updates"
+msgstr "ෆර්ම්වෙයාර් යාවත්කාලීන සඳහා පරීක්ෂා කරන්න"
+
+msgid "Check for pipx updates"
+msgstr "pipx යාවත්කාලීන සඳහා පරීක්ෂා කරන්න"
+
+msgid "Checks certificates on every HTTPS request. Disable only if a proxy inspects your traffic — it does weaken security."
+msgstr "සෑම HTTPS ඉල්ලීමකදීම සහතික පරීක්ෂා කරයි. ප්‍රොක්සියක් ඔබේ ගමනාගමනය පරීක්ෂා කරන විට පමණක් අක්‍රීය කරන්න — එය ආරක්ෂාව දුර්වල කරයි."
+
+msgid "Checks for available updates each time the app starts."
+msgstr "යෙදුම ආරම්භ වන සෑම විටම පවතින යාවත්කාලීන සඳහා පරීක්ෂා කරයි."
+
+msgid "Checks for new packages on the configured schedule."
+msgstr "වින්‍යාස කළ කාලසටහනට අනුව නව පැකේජ සඳහා පරීක්ෂා කරයි."
+
+msgid "Clear selection"
+msgstr "තේරීම ඉවත් කරන්න"
+
+msgid "Cloud login caches tokens only until they expire — it never stores your credentials forever."
+msgstr "ක්ලවුඩ් පිවිසුම කාල ලිපි තෝකන කල් ඉකුත් වන තෙක් පමණක් හැඹිලි කරයි — එය කිසි විටෙක ඔබේ අක්තපත්‍ර ස්ථිරව ගබඩා නොකරයි."
+
+msgid "Community-maintained build recipes. Unlike the official repos they are not curated or reviewed by Arch — anyone can publish a recipe."
+msgstr "ප්‍රජාව විසින් පවත්වාගෙන යනු ලබන ගොඩනැඟුම් වට්ටෝරු. නිල ගබඩා මෙන් නොව, ඒවා Arch විසින් නිරීක්ෂණයට හෝ සමාලෝචනයට ලක් නොකෙරේ — ඕනෑම කෙනෙකුට වට්ටෝරුවක් ප්‍රකාශ කළ හැක."
+
+msgid "Config stays local"
+msgstr "වින්‍යාසය දේශීයව පවතී"
+
+msgid "Configured Repositories"
+msgstr "වින්‍යාස කළ ගබඩා"
+
+msgid "Confirm Uninstall"
+msgstr "අස්ථාපනය තහවුරු කරන්න"
+
+msgid "Connection"
+msgstr "සම්බන්ධතාව"
+
+msgid "Control how much NeoArch records, where it writes it, and when it rolls the log over"
+msgstr "NeoArch කෙතරම් වාර්තා කරන්නේද, ඒවා කොතැනට ලියන්නේද, සහ ලඝු සටහන කවදා පෙරළන්නේද පාලනය කරන්න"
+
+msgid "DO"
+msgstr "කළ යුතුයි"
+
+msgid "DON'T"
+msgstr "නොකළ යුතුයි"
+
+msgid "Data"
+msgstr "දත්ත"
+
+msgid "Decorative teal rim on the translucent window frame."
+msgstr "අර්ධ විනිවිද කවුළු රාමුවේ සැරසිලි ටීල් දාරය."
+
+msgid "Desktop notifications"
+msgstr "ඩෙස්ක්ටොප් දැනුම්දීම්"
+
+msgid "Detects apps installed with pipx (Python scripts) and lists their updates on the Updates page."
+msgstr "pipx සමඟ (Python ස්ක්‍රිප්ට්) ස්ථාපනය කළ යෙදුම් හඳුනාගෙන ඒවායේ යාවත්කාලීන යාවත්කාලීන පිටුවේ ලැයිස්තුගත කරයි."
+
+msgid "Detects firmware updates via fwupd on the Updates page. Applying always requires your explicit confirmation."
+msgstr "යාවත්කාලීන පිටුවේ fwupd හරහා ෆර්ම්වෙයාර් යාවත්කාලීන හඳුනා ගනී. යෙදීමට සැමවිටම ඔබේ පැහැදිලි තහවුරු කිරීම අවශ්‍ය වේ."
+
+msgid "Disabled"
+msgstr "අක්‍රීයයි"
+
+msgid "Done."
+msgstr "අවසන්."
+
+msgid "Drop orphaned packages, prune the cache, and read the archlinux.org news before major upgrades."
+msgstr "අනාථ පැකේජ ඉවත් කරන්න, හැඹිලිය පිරිසිදු කරන්න, සහ ප්‍රධාන උත්ශ්‍රේණිවලට පෙර archlinux.org පුවත් කියවන්න."
+
+msgid "Echo to console"
+msgstr "කොන්සෝලයට අනුනාදය"
+
+msgid "Enable “Snapshot before update” in General settings so a bad upgrade can be reverted in one click."
+msgstr "නරක උත්ශ්‍රේණියක් එක ක්ලික්කයකින් ආපසු හැරවිය හැකි වන පරිදි, සාමාන්‍ය සැකසුම්වල “යාවත්කාලීනයට පෙර ස්නැප්ෂොට්” සක්‍රීය කරන්න."
+
+msgid "Enabled"
+msgstr "සක්‍රීයයි"
+
+msgid "Every AUR result is badged [aur]"
+msgstr "සෑම AUR ප්‍රතිඵලයකටම [aur] ලාංඡනයක් ඇත"
+
+msgid "Export settings to file"
+msgstr "සැකසුම් ගොනුවට අපනයන කරන්න"
+
+msgid "Failed to read repositories."
+msgstr "ගබඩා කියවීමට අසමත් විය."
+
+msgid "Fetch from several sources at the same time. Faster lookups, at the cost of more simultaneous connections."
+msgstr "එකවර මූලාශ්‍ර කිහිපයකින් ලබා ගන්න. වේගවත් සෙවුම්, නමුත් තවත් එකවර සම්බන්ධතා මිලකට."
+
+msgid "Fr"
+msgstr "සිකු"
+
+msgid "Full Wiki ↗"
+msgstr "සම්පූර්ණ විකි ↗"
+
+msgid "Full upgrades are the safe path"
+msgstr "සම්පූර්ණ උත්ශ්‍රේණි ආරක්ෂිත මාර්ගයයි"
+
+msgid "GUI sudo prompt (SUDO_ASKPASS)"
+msgstr "GUI sudo විමසුම (SUDO_ASKPASS)"
+
+msgid "Good Habits"
+msgstr "හොඳ පුරුදු"
+
+msgid "Host & port"
+msgstr "ධාරකය සහ තොට"
+
+msgid "Housekeep: orphans, cache, Arch news"
+msgstr "පිරිසිදු කිරීම: අනාථ, හැඹිලිය, Arch පුවත්"
+
+msgid "How NeoArch reaches the internet — proxies, timeouts and pacman's download behaviour"
+msgstr "NeoArch අන්තර්ජාලයට ළඟා වන ආකාරය — ප්‍රොක්සි, කාල සීමා සහ pacman හි බාගැනීම් හැසිරීම"
+
+msgid "How long NeoArch waits for a network reply before giving up. Raise it on slow links, lower it to fail fast."
+msgstr "අත්හැරීමට පෙර NeoArch ජාල පිළිතුරක් සඳහා බලා සිටින කාලය. මන්දගාමී සබැඳිවල වැඩි කරන්න, ඉක්මනින් අසාර්ථක වීමට අඩු කරන්න."
+
+msgid "How many days between automatic update checks."
+msgstr "ස්වයංක්‍රීය යාවත්කාලීන පරීක්ෂා අතර දින කීයක්."
+
+msgid "How many old versions to keep before purging. Keep it small — older archives are already installed."
+msgstr "ඉවත් කිරීමට පෙර පැරණි අනුවාද කීයක් තබා ගැනීමට. කුඩාව තබා ගන්න — පැරණි සංරක්ෂිත දැනටමත් ස්ථාපනය කර ඇත."
+
+msgid "How many packages pacman may download at once while updating. Applies to /etc/pacman.conf and needs root."
+msgstr "යාවත්කාලීන කිරීමේදී pacman එකවර බාගත කළ හැකි පැකේජ කීයක්. /etc/pacman.conf සඳහා අදාළ වන අතර root අවශ්‍ය වේ."
+
+msgid "How much detail NeoArch writes. DEBUG records everything including network calls and is ideal for bug reports; ERROR writes only failures."
+msgstr "NeoArch ලියන විස්තර ප්‍රමාණය. DEBUG ජාල ඇමතුම් ඇතුළු සියල්ල වාර්තා කරන අතර දෝෂ වාර්තා සඳහා වඩාත් සුදුසු වේ; ERROR අසාර්ථක පමණක් ලියයි."
+
+msgid "How much the desktop shows through the window body."
+msgstr "කවුළු ශරීරය හරහා ඩෙස්ක්ටොප් එක කොපමණ පෙනේද."
+
+msgid "Ignore the full-upgrade warning"
+msgstr "සම්පූර්ණ-උත්ශ්‍රේණි අනතුරු ඇඟවීම නොසලකා හරින්න"
+
+msgid "Import settings from file"
+msgstr "ගොනුවකින් සැකසුම් ආනයනය කරන්න"
+
+msgid "Important announcements such as manual interventions are posted before big changes land. Worth a glance before major upgrades."
+msgstr "අතින් මැදිහත්වීම් වැනි වැදගත් දැන්වීම් විශාල වෙනස්කම් එන තෙක් පළ කෙරේ. ප්‍රධාන උත්ශ්‍රේණිවලට පෙර බැලීම වටී."
+
+msgid "Include path under /etc/ (optional)"
+msgstr "/etc/ යටතේ Include මාර්ගය (විකල්ප)"
+
+msgid "Install AUR packages blindly"
+msgstr "AUR පැකේජ නොබලා ස්ථාපනය කරන්න"
+
+msgid "Install update-time hooks"
+msgstr "යාවත්කාලීන-කාල කොකු ස්ථාපනය කරන්න"
+
+msgid "Installs global npm packages to ~/.npm-global without sudo."
+msgstr "sudo නොමැතිව ගෝලීය npm පැකේජ ~/.npm-global වෙත ස්ථාපනය කරයි."
+
+msgid "Keep IgnorePkg minimal"
+msgstr "IgnorePkg අවමව තබා ගන්න"
+
+msgid "Keep versions per package"
+msgstr "එක් පැකේජයකට අනුවාද තබා ගන්න"
+
+msgid "Keep your system tidy: orphans, leftover configs, the download cache, and Arch news"
+msgstr "ඔබේ පද්ධතිය පිළිවෙළට තබා ගන්න: අනාථ, ඉතිරි වින්‍යාස, බාගැනීම් හැඹිලිය සහ Arch පුවත්"
+
+msgid "Language"
+msgstr "භාෂාව"
+
+msgid "Last snapshot: {date}"
+msgstr "අවසන් ස්නැප්ෂොටය: {date}"
+
+msgid "Last snapshot: —"
+msgstr "අවසන් ස්නැප්ෂොටය: —"
+
+msgid "Leave console echo on during daily use"
+msgstr "දෛනික භාවිතයේදී කොන්සෝල අනුනාදය අක්‍රීය කර තබන්න"
+
+msgid "Log file path"
+msgstr "ලඝු ගොනු මාර්ගය"
+
+msgid "Log level"
+msgstr "ලඝු මට්ටම"
+
+msgid "Manage .pacnew files"
+msgstr ".pacnew ගොනු කළමනාකරණය"
+
+msgid "Maximum size"
+msgstr "උපරිම ප්‍රමාණය"
+
+msgid "Messages are already written to the log file. Console echo is a terminal-first tool and adds busy output to the window you launched NeoArch from."
+msgstr "පණිවිඩ දැනටමත් ලඝු ගොනුවට ලියා ඇත. කොන්සෝල අනුනාදය ටර්මිනල්-පළමු මෙවලමක් වන අතර ඔබ NeoArch ආරම්භ කළ කවුළුවට අතිරික්ත ප්‍රතිදානයක් එක් කරයි."
+
+msgid "Mirror messages to the terminal NeoArch was started from. Mostly useful when you run the app from a shell — the log file already records everything."
+msgstr "NeoArch ආරම්භ කළ ටර්මිනලයට පණිවිඩ පිළිබිඹු කරයි. බොහෝ විට ඔබ shell එකකින් යෙදුම ධාවනය කරන විට ප්‍රයෝජනවත් — ලඝු ගොනුව දැනටමත් සියල්ල වාර්තා කරයි."
+
+msgid "Mixing old and new packages desyncs libraries from the apps that link them — the classic broken-Arch setup."
+msgstr "පැරණි හා නව පැකේජ මිශ්‍ර කිරීම ඒවා සම්බන්ධ කරන යෙදුම් වලින් පුස්තකාල විසමමුහුර්ත කරයි — සම්භාව්‍ය බිඳුණු-Arch පිහිටුවීමයි."
+
+msgid "Mo"
+msgstr "සඳු"
+
+msgid "Needs a BTRFS filesystem"
+msgstr "BTRFS ගොනු පද්ධතියක් අවශ්‍යයි"
+
+msgid "Needs a snapper config (sudo snapper create-config /)"
+msgstr "snapper වින්‍යාසයක් අවශ්‍යයි (sudo snapper create-config /)"
+
+msgid "NeoArch fetches and statically scans recipes first and pauses on critical findings. Read the whole file anyway."
+msgstr "NeoArch පළමුව වට්ටෝරු ලබා ස්ථිතිකව පරිලෝකනය කර තීරණාත්මක සොයාගැනීම්වලදී නතර වේ. කෙසේ වෙතත් සම්පූර්ණ ගොනුව කියවන්න."
+
+msgid "NeoArch never quietly blocks an action. Risky moves get a warning and your explicit confirmation — you always hold the final say."
+msgstr "NeoArch ක්‍රියාවක් නිශ්ශබ්දව අවහිර නොකරයි. අවදානම් පියවරවලට අනතුරු ඇඟවීමක් සහ ඔබේ පැහැදිලි තහවුරු කිරීමක් ලැබේ — අවසන් තීරණය සැමවිටම ඔබටයි."
+
+msgid "NeoArch will let you proceed — but the warning exists because this is how systems break."
+msgstr "NeoArch ඔබට ඉදිරියට යාමට ඉඩ දෙනු ඇත — නමුත් අනතුරු ඇඟවීම පවතින්නේ පද්ධති බිඳෙන්නේ මෙසේ බැවිනි."
+
+msgid "Next run"
+msgstr "ඊළඟ ධාවනය"
+
+msgid "No cooldown"
+msgstr "සිසිලනයක් නැත"
+
+msgid "Nothing is routed through a proxy by default. Pick HTTP, HTTPS or SOCKS5 to send package, AUR and Flatpak requests through one."
+msgstr "පෙරනිමියෙන් කිසිවක් ප්‍රොක්සියක් හරහා නොයයි. පැකේජ, AUR සහ Flatpak ඉල්ලීම් ඉන් එකක් හරහා යැවීමට HTTP, HTTPS හෝ SOCKS5 තෝරන්න."
+
+msgid "OAuth tokens expire"
+msgstr "OAuth තෝකන කල් ඉකුත් වේ"
+
+msgid "Once the log grows past this size, NeoArch rolls it over so it never fills your drive."
+msgstr "ලඝු සටහන මෙම ප්‍රමාණයෙන් ඔබ්බට වැඩෙන විට, එය ඔබේ තැටිය කිසි විටෙක නොපුරවන පරිදි NeoArch එය පෙරළයි."
+
+msgid "One-at-a-time builds"
+msgstr "එකින් එක ගොඩනැඟීම්"
+
+msgid "Optional snapshots"
+msgstr "විකල්ප ස්නැප්ෂොට"
+
+msgid "PKGBUILDs and .install scriptlets are statically inspected before every AUR install; critical findings demand explicit acceptance."
+msgstr "සෑම AUR ස්ථාපනයකටම පෙර PKGBUILD සහ .install ස්ක්‍රිප්ට්ලට් ස්ථිතිකව පරීක්ෂා කෙරේ; තීරණාත්මක සොයාගැනීම් සඳහා පැහැදිලි පිළිගැනීමක් අවශ්‍ය වේ."
+
+msgid "Package Sources"
+msgstr "පැකේජ මූලාශ්‍ර"
+
+msgid "Package count and version changes are shown first; nothing starts until you press confirm — never silently."
+msgstr "පැකේජ ගණන සහ අනුවාද වෙනස්කම් පළමුව පෙන්වයි; තහවුරු කරන තෙක් කිසිවක් ආරම්භ නොවේ — කිසි විටෙක නිශ්ශබ්දව නොවේ."
+
+msgid "Packages installed as dependencies that nothing needs any more. Deleting them is safe, frees disk space and makes updates faster."
+msgstr "අවශ්‍යතා ලෙස ස්ථාපනය වූ නමුත් තවදුරටත් කිසිවකුට අවශ්‍ය නොවන පැකේජ. ඒවා මැකීම ආරක්ෂිතයි, තැටි ඉඩ නිදහස් කරන අතර යාවත්කාලීන වේගවත් කරයි."
+
+msgid "Pacman Database Lock"
+msgstr "pacman දත්ත සමුදා අගුල"
+
+msgid "Pacman ParallelDownloads"
+msgstr "pacman ParallelDownloads"
+
+msgid "Parallel network requests"
+msgstr "සමාන්තර ජාල ඉල්ලීම්"
+
+msgid "Passwords go straight to the privilege prompt in your session and are never written to disk."
+msgstr "මුරපද ඔබේ සැසියේ වරප්‍රසාද විමසුමට කෙලින්ම යන අතර කිසි විටෙක තැටියට ලියා නොගැනේ."
+
+msgid "Pipe scripts into a shell"
+msgstr "ස්ක්‍රිප්ට් shell එකකට යවන්න"
+
+msgid "Play a short alert sound together with each notification."
+msgstr "සෑම දැනුම්දීමක් සමඟම කෙටි අනතුරු ඇඟවීම් ශබ්දයක් වාදනය කරයි."
+
+msgid "Proxy type"
+msgstr "ප්‍රොක්සි වර්ගය"
+
+msgid "Quick Reference — Do's & Don'ts"
+msgstr "ක්ෂණික යොමුව — කළ යුතු හා නොකළ යුතු දේ"
+
+msgid "Quick-add Chaotic AUR"
+msgstr "Chaotic AUR ක්ෂණිකව එක් කරන්න"
+
+msgid "Quick-add Chaotic AUR (signs the maintainer key, fetches the mirror list, appends [chaotic-aur] and runs pacman -Syy), or add any repo by name."
+msgstr "Chaotic AUR ක්ෂණිකව එක් කරන්න (නඩත්තුකරු යතුරට අත්සන් කරයි, දර්පණ ලැයිස්තුව ගෙන එයි, [chaotic-aur] එක් කර pacman -Syy ධාවනය කරයි), හෝ ඕනෑම ගබඩාවක් නමින් එක් කරන්න."
+
+msgid "Re-check while open (min)"
+msgstr "විවෘතව තිබියදී නැවත පරීක්ෂා කරන්න (මිනි)"
+
+msgid "Re-checks for updates in the background every X minutes while the app is running. Set to Off to disable."
+msgstr "යෙදුම ධාවනය වන අතරතුර සෑම X මිනිත්තුවකටම පසුබිමේ යාවත්කාලීන නැවත පරීක්ෂා කරයි. අක්‍රීය කිරීමට Off ලෙස සකසන්න."
+
+msgid "Read the PKGBUILD before installing from the AUR"
+msgstr "AUR වෙතින් ස්ථාපනයට පෙර PKGBUILD කියවන්න"
+
+msgid "Read the news before updating"
+msgstr "යාවත්කාලීන කිරීමට පෙර පුවත් කියවන්න"
+
+msgid "Reading /etc/pacman.conf…"
+msgstr "/etc/pacman.conf කියවමින්…"
+
+msgid "Ready — snapshots available"
+msgstr "සූදානම් — ස්නැප්ෂොට තිබේ"
+
+msgid "Remove '[{name}]' from /etc/pacman.conf?"
+msgstr "/etc/pacman.conf වෙතින් '[{name}]' ඉවත් කරන්නද?"
+
+msgid "Remove Lock"
+msgstr "අගුල ඉවත් කරන්න"
+
+msgid "Remove Repository"
+msgstr "ගබඩාව ඉවත් කරන්න"
+
+msgid "Remove hooks"
+msgstr "කොකු ඉවත් කරන්න"
+
+msgid "Remove orphaned packages"
+msgstr "අනාථ පැකේජ ඉවත් කරන්න"
+
+msgid "Remove the stale lock and continue with \"{operation}\"?"
+msgstr "යල් පැන ගිය අගුල ඉවත් කර \"{operation}\" සමඟ ඉදිරියට යන්නද?"
+
+msgid "Remove the stale lock and continue?"
+msgstr "යල් පැන ගිය අගුල ඉවත් කර ඉදිරියට යන්නද?"
+
+msgid "Repositories"
+msgstr "ගබඩා"
+
+msgid "Repositories NeoArch added carry a marker and can be removed here; system and hand-written sections are protected."
+msgstr "NeoArch එක් කළ ගබඩා සලකුණක් දරන අතර මෙහි ඉවත් කළ හැක; පද්ධති සහ අතින් ලියන ලද කොටස් ආරක්ෂිතයි."
+
+msgid "Repository name, e.g. archlinuxcn"
+msgstr "ගබඩා නම, උදා. archlinuxcn"
+
+msgid "Request timeout"
+msgstr "ඉල්ලීම් කාල සීමාව"
+
+msgid "Requires the 'snapper' tool"
+msgstr "'snapper' මෙවලම අවශ්‍යයි"
+
+msgid "Requires the 'timeshift' tool"
+msgstr "'timeshift' මෙවලම අවශ්‍යයි"
+
+msgid "Resolved automatically to yay, paru, trizen or pikaur. Change it under General settings."
+msgstr "ස්වයංක්‍රීයව yay, paru, trizen හෝ pikaur ලෙස විසඳයි. සාමාන්‍ය සැකසුම් යටතේ එය වෙනස් කරන්න."
+
+msgid "Review before installing"
+msgstr "ස්ථාපනයට පෙර සමාලෝචනය"
+
+msgid "Rounded corners on the translucent window frame."
+msgstr "අර්ධ විනිවිද කවුළු රාමුවේ වටැති කොන්."
+
+msgid "Run at"
+msgstr "මෙම වේලාවට ධාවනය"
+
+msgid "Runs the update check automatically on a weekly schedule (applies while the app is running)."
+msgstr "සතිපතා කාලසටහනකට අනුව යාවත්කාලීන පරීක්ෂාව ස්වයංක්‍රීයව ධාවනය කරයි (යෙදුම ධාවනය වන අතරතුර අදාළ වේ)."
+
+msgid "Sa"
+msgstr "සෙන"
+
+msgid "Save the selected bundle automatically."
+msgstr "තෝරාගත් බණ්ඩලය ස්වයංක්‍රීයව සුරකින්න."
+
+msgid "Scan for corrupted archives"
+msgstr "දූෂිත සංරක්ෂිත සඳහා පරිලෝකනය"
+
+msgid "Seconds to wait before repeating the same notification."
+msgstr "එකම දැනුම්දීම නැවත කිරීමට පෙර බලා සිටින තත්පර."
+
+msgid "Select a file to inspect its diff"
+msgstr "එහි diff පරීක්ෂා කිරීමට ගොනුවක් තෝරන්න"
+
+msgid "Select all"
+msgstr "සියල්ල තෝරන්න"
+
+msgid "Select the days the scheduled check runs on."
+msgstr "කාලසටහන්ගත පරීක්ෂාව ධාවනය වන දින තෝරන්න."
+
+msgid "Server URL, e.g. https://mirror.example (optional)"
+msgstr "සේවාදායක URL, උදා. https://mirror.example (විකල්ප)"
+
+msgid "Set the level above to DEBUG, reproduce the problem, then attach the log file — it turns a vague report into a quick fix. Remember to switch back to INFO afterwards."
+msgstr "ඉහත මට්ටම DEBUG ලෙස සකසන්න, ගැටලුව නැවත සිදු කරන්න, ඉන්පසු ලඝු ගොනුව අමුණන්න — එය අපැහැදිලි වාර්තාවක් ඉක්මන් නිවැරදි කිරීමක් බවට පත් කරයි. පසුව INFO වෙත ආපසු මාරු කිරීමට මතක තබා ගන්න."
+
+msgid "Settings live in ~/.config/neoarch — no telemetry, no account, no cloud by default."
+msgstr "සැකසුම් ~/.config/neoarch හි පවතී — පෙරනිමියෙන් ටෙලිමෙට්‍රි, ගිණුම, හෝ ක්ලවුඩ් නැත."
+
+msgid "Show a message banner inside the app when a task completes."
+msgstr "කාර්යයක් අවසන් වූ විට යෙදුම තුළ පණිවිඩ බැනරයක් පෙන්වයි."
+
+msgid "Show a pop-up notification from the system tray when a task completes."
+msgstr "කාර්යයක් අවසන් වූ විට පද්ධති තැටියෙන් උත්පතන දැනුම්දීමක් පෙන්වයි."
+
+msgid "Snapper"
+msgstr "Snapper"
+
+msgid "Snapper setup is incomplete"
+msgstr "Snapper පිහිටුවීම අසම්පූර්ණයි"
+
+msgid "Snapshots"
+msgstr "ස්නැප්ෂොට"
+
+msgid "Sources & Community Packages"
+msgstr "මූලාශ්‍ර සහ ප්‍රජා පැකේජ"
+
+msgid "Su"
+msgstr "ඉරි"
+
+msgid "System Protection & Habits"
+msgstr "පද්ධති ආරක්ෂණය සහ පුරුදු"
+
+msgid "Th"
+msgstr "බ්‍රහ"
+
+msgid "The proxy's address and the TCP port it listens on. Only applied when a proxy type other than \"none\" is chosen."
+msgstr "ප්‍රොක්සියේ ලිපිනය සහ එය සවන් දෙන TCP තොට. \"none\" හැර වෙනත් ප්‍රොක්සි වර්ගයක් තෝරාගත් විට පමණක් යොදනු ලැබේ."
+
+msgid "The section is appended to /etc/pacman.conf under a NeoArch marker, so it can be removed again here later."
+msgstr "කොටස NeoArch සලකුණක් යටතේ /etc/pacman.conf වෙත එකතු කෙරේ, එබැවින් එය පසුව මෙහි නැවත ඉවත් කළ හැක."
+
+msgid "The source column always shows where a package comes from, so community packages are never mistaken for official ones."
+msgstr "මූලාශ්‍ර තීරුව සැමවිටම පැකේජය පැමිණියේ කොතැනින්ද යන්න පෙන්වයි, එබැවින් ප්‍රජා පැකේජ නිල ඒවා සමඟ කිසි විටෙක වරදවා නොගැනේ."
+
+msgid "Themes"
+msgstr "තේමා"
+
+msgid "This signs the Chaotic AUR maintainer key, downloads the mirror list over HTTPS, appends [chaotic-aur] to /etc/pacman.conf and runs 'pacman -Syy'. Continue?"
+msgstr "මෙය Chaotic AUR නඩත්තුකරු යතුරට අත්සන් කරයි, HTTPS හරහා දර්පණ ලැයිස්තුව බාගත කරයි, /etc/pacman.conf වෙත [chaotic-aur] එක් කර 'pacman -Syy' ධාවනය කරයි. ඉදිරියට යන්නද?"
+
+msgid "Time of day the weekly check starts."
+msgstr "සතිපතා පරීක්ෂාව ආරම්භ වන දවසේ වේලාව."
+
+msgid "Timeshift"
+msgstr "Timeshift"
+
+msgid "Tu"
+msgstr "අඟ"
+
+msgid "Uninstall the following package(s)?\n\n{summary}\n\nThis will remove them from your system and cannot be undone."
+msgstr "පහත පැකේජ අස්ථාපනය කරන්නද?\n\n{summary}\n\nමෙය ඒවා ඔබේ පද්ධතියෙන් ඉවත් කරන අතර ආපසු හැරවිය නොහැක."
+
+msgid "Update everything together"
+msgstr "සියල්ල එකට යාවත්කාලීන කරන්න"
+
+msgid "Update interval (days)"
+msgstr "යාවත්කාලීන පරතරය (දින)"
+
+msgid "Updates & Review"
+msgstr "යාවත්කාලීන සහ සමාලෝචනය"
+
+msgid "Use npm user mode"
+msgstr "npm පරිශීලක ප්‍රකාරය භාවිතා කරන්න"
+
+msgid "View and manage pacman repositories like Chaotic AUR — no more hand-editing /etc/pacman.conf."
+msgstr "/etc/pacman.conf අතින් සංස්කරණය කිරීම තවදුරටත් නැත — Chaotic AUR වැනි pacman ගබඩා බලන්න සහ කළමනාකරණය කරන්න."
+
+msgid "View changes ↗"
+msgstr "වෙනස්කම් බලන්න ↗"
+
+msgid "WARNED"
+msgstr "අනතුරු අඟවා ඇත"
+
+msgid "We"
+msgstr "බදා"
+
+msgid "Weekdays"
+msgstr "සතියේ දින"
+
+msgid "What NeoArch can reach, what it runs, how it protects secrets, and the habits that keep an Arch system healthy"
+msgstr "NeoArch ළඟා විය හැකි දේ, එය ධාවනය කරන දේ, රහස් ආරක්ෂා කරන ආකාරය සහ Arch පද්ධතියක් නිරෝගීව තබන පුරුදු"
+
+msgid "When a package installation or removal finishes."
+msgstr "පැකේජ ස්ථාපනයක් හෝ ඉවත් කිරීමක් අවසන් වූ විට."
+
+msgid "When a package ships a new config, the old one is kept as a .pacnew. Review and merge them so your tweaks are never silently lost."
+msgstr "පැකේජයක් නව වින්‍යාසයක් ගෙන එන විට, පැරණි එක .pacnew ලෙස තබා ගැනේ. ඒවා සමාලෝචනය කර ඒකාබද්ධ කරන්න, එවිට ඔබේ ගැලපීම් කිසි විටෙක නිශ්ශබ්දව නැති නොවේ."
+
+msgid "When an operation fails or emits warnings."
+msgstr "මෙහෙයුමක් අසාර්ථක වූ විට හෝ අනතුරු ඇඟවීම් නිකුත් කළ විට."
+
+msgid "When new system and package updates are ready."
+msgstr "නව පද්ධති සහ පැකේජ යාවත්කාලීන සූදානම් වූ විට."
+
+msgid "Where the rolling log lives. Defaults to ~/.config/neoarch/neoarch.log on your home directory."
+msgstr "රෝල් වන ලඝු සටහන පවතින තැන. පෙරනිමියෙන් ඔබේ නිවසේ නාමාවලියේ ~/.config/neoarch/neoarch.log."
+
+msgid "Window transparency"
+msgstr "කවුළු විනිවිදභාවය"
+
+msgid "Working…"
+msgstr "ක්‍රියා කරමින්…"
+
+msgid "curl … | bash runs code sight-unseen. Prefer real packages, or read what you are about to execute."
+msgstr "curl … | bash නොබැලූ කේතයක් ධාවනය කරයි. සැබෑ පැකේජ වඩාත් කැමති වන්න, නැතහොත් ක්‍රියාත්මක කිරීමට යන දේ කියවන්න."
+
+msgid "fwupd is not installed — install with: sudo pacman -S fwupd"
+msgstr "fwupd ස්ථාපනය කර නැත — ස්ථාපනය: sudo pacman -S fwupd"
+
+msgid "npm is not installed — install with: sudo pacman -S npm"
+msgstr "npm ස්ථාපනය කර නැත — ස්ථාපනය: sudo pacman -S npm"
+
+msgid "pipx is not installed — install with: sudo pacman -S python-pipx"
+msgstr "pipx ස්ථාපනය කර නැත — ස්ථාපනය: sudo pacman -S python-pipx"
+
+msgid "{tool} is not installed — install with: sudo pacman -S {pkg}"
+msgstr "{tool} ස්ථාපනය කර නැත — ස්ථාපනය: sudo pacman -S {pkg}"
+
+msgid "↗ Wiki"
+msgstr "↗ විකි"
+
+
+msgid " and synced"
+msgstr " සහ සමමුහුර්ත කළා"
+
+msgid "'{name}' is a system repository and can't be toggled here."
+msgstr "'[{name}]' පද්ධති ගබඩාවක් වන අතර එය මෙහි මාරු කළ නොහැක."
+
+msgid "'{name}' is a system repository."
+msgstr "'[{name}]' පද්ධති ගබඩාවකි."
+
+msgid "'{name}' isn't managed by NeoArch — edit /etc/pacman.conf manually."
+msgstr "'[{name}]' NeoArch විසින් කළමනාකරණය නොකෙරේ — /etc/pacman.conf අතින් සංස්කරණය කරන්න."
+
+msgid "(empty)"
+msgstr "(හිස්)"
+
+msgid "Another snapshot operation is already running."
+msgstr "තවත් ස්නැප්ෂොට් මෙහෙයුමක් දැනටමත් ක්‍රියාත්මක වේ."
+
+msgid "Chaotic AUR is already configured in /etc/pacman.conf."
+msgstr "Chaotic AUR දැනටමත් /etc/pacman.conf හි වින්‍යාස කර ඇත."
+
+msgid "Confirm Restoration"
+msgstr "ප්‍රතිස්ථාපනය තහවුරු කරන්න"
+
+msgid "Couldn't download the Chaotic AUR mirror list."
+msgstr "Chaotic AUR දර්පණ ලැයිස්තුව බාගත කළ නොහැකි විය."
+
+msgid "Couldn't read {conf}."
+msgstr "{conf} කියවිය නොහැකි විය."
+
+msgid "Create a system snapshot before proceeding?\n\nThis will take some time."
+msgstr "ඉදිරියට යාමට පෙර පද්ධති ස්නැප්ෂොටයක් සාදන්න?\n\nමෙයට ටික වේලාවක් ගත වේ."
+
+msgid "Creating pre-update snapshot..."
+msgstr "යාවත්කාලීන-පූර්ව ස්නැප්ෂොටය සාදමින්…"
+
+msgid "Creating snapshot..."
+msgstr "ස්නැප්ෂොටය සාදමින්…"
+
+msgid "Deleting old snapshots..."
+msgstr "පැරණි ස්නැප්ෂොට මකමින්…"
+
+msgid "Error creating pre-update snapshot: {err}"
+msgstr "යාවත්කාලීන-පූර්ව ස්නැප්ෂොටය සෑදීමේ දෝෂය: {err}"
+
+msgid "Error creating snapshot: {err}"
+msgstr "ස්නැප්ෂොටය සෑදීමේ දෝෂය: {err}"
+
+msgid "Error deleting snapshots: {err}"
+msgstr "ස්නැප්ෂොට මැකීමේ දෝෂය: {err}"
+
+msgid "Error installing pacman hooks: {err}"
+msgstr "pacman කොකු ස්ථාපනයේ දෝෂය: {err}"
+
+msgid "Error removing pacman hooks: {err}"
+msgstr "pacman කොකු ඉවත් කිරීමේ දෝෂය: {err}"
+
+msgid "Error restoring snapshot: {err}"
+msgstr "ස්නැප්ෂොටය ප්‍රතිස්ථාපනයේ දෝෂය: {err}"
+
+msgid "Failed to create pre-update snapshot: {err}"
+msgstr "යාවත්කාලීන-පූර්ව ස්නැප්ෂොටය සෑදීමට අසමත්: {err}"
+
+msgid "Failed to create snapshot: {err}"
+msgstr "ස්නැප්ෂොටය සෑදීමට අසමත්: {err}"
+
+msgid "Failed to delete snapshots: {err}"
+msgstr "ස්නැප්ෂොට මැකීමට අසමත්: {err}"
+
+msgid "Failed to fetch the Chaotic AUR maintainer key."
+msgstr "Chaotic AUR නඩත්තුකරු යතුර ලබා ගැනීමට අසමත් විය."
+
+msgid "Failed to install pacman hook: {path} - {err}"
+msgstr "pacman කොක්ක ස්ථාපනයට අසමත්: {path} - {err}"
+
+msgid "Failed to list snapshots: {err}"
+msgstr "ස්නැප්ෂොට ලැයිස්තුගත කිරීමට අසමත්: {err}"
+
+msgid "Failed to locally sign the Chaotic AUR maintainer key."
+msgstr "Chaotic AUR නඩත්තුකරු යතුරට දේශීයව අත්සන් කිරීමට අසමත් විය."
+
+msgid "Failed to remove pacman hooks: {err}"
+msgstr "pacman කොකු ඉවත් කිරීමට අසමත්: {err}"
+
+msgid "Failed to restore snapshot: {err}"
+msgstr "ස්නැප්ෂොටය ප්‍රතිස්ථාපනයට අසමත්: {err}"
+
+msgid "Failed to write {conf}; the original was restored."
+msgstr "{conf} ලිවීමට අසමත්; මුල් ගොනුව ප්‍රතිස්ථාපනය කරන ලදී."
+
+msgid "Firmware Update"
+msgstr "ෆර්ම්වෙයාර් යාවත්කාලීනය"
+
+msgid "Firmware was updated. A reboot is required to finish installation."
+msgstr "ෆර්ම්වෙයාර් යාවත්කාලීන කරන ලදී. ස්ථාපනය නිම කිරීමට නැවත ආරම්භයක් අවශ්‍යයි."
+
+msgid "Give at least one Include path or Server URL."
+msgstr "අවම වශයෙන් එක් Include මාර්ගයක් හෝ සේවාදායක URL ලබා දෙන්න."
+
+msgid "Include paths can't contain line breaks."
+msgstr "Include මාර්ගවල රේඛා බිඳීම් තිබිය නොහැක."
+
+msgid "Include paths must live under /etc/."
+msgstr "Include මාර්ග /etc/ යටතේ විය යුතුය."
+
+msgid "Installing update-time hooks..."
+msgstr "යාවත්කාලීන-කාල කොකු ස්ථාපනය කරමින්…"
+
+msgid "Invalid repository name (letters, numbers, '.', '-' and '_')."
+msgstr "වලංගු නොවන ගබඩා නමකි (අකුරු, ඉලක්කම්, '.', '-' සහ '_')."
+
+msgid "Loading snapshots..."
+msgstr "ස්නැප්ෂොට පූරණය කරමින්…"
+
+msgid "NeoArch manual snapshot {ts}"
+msgstr "NeoArch මැනුවල් ස්නැප්ෂොටය {ts}"
+
+msgid "No Snapshots"
+msgstr "ස්නැප්ෂොට නැත"
+
+msgid "No snapper configuration found."
+msgstr "snapper වින්‍යාසයක් හමු නොවීය."
+
+msgid "No snapshots available for restoration."
+msgstr "ප්‍රතිස්ථාපනය සඳහා ස්නැප්ෂොට නොමැත."
+
+msgid "Nothing to delete — 2 or fewer snapshots."
+msgstr "මැකීමට කිසිවක් නැත — ස්නැප්ෂොට 2ක් හෝ අඩුය."
+
+msgid "Old snapshots deleted successfully"
+msgstr "පැරණි ස්නැප්ෂොට සාර්ථකව මකා දමන ලදී"
+
+msgid "Operation cancelled."
+msgstr "මෙහෙයුම අවලංගු කරන ලදී."
+
+msgid "Pacman hooks installed — every system update will now capture Snapper snapshots."
+msgstr "pacman කොකු ස්ථාපනය කරන ලදී — දැන් සෑම පද්ධති යාවත්කාලීනයක්ම Snapper ස්නැප්ෂොට ග්‍රහණය කරයි."
+
+msgid "Pacman hooks removed."
+msgstr "pacman කොකු ඉවත් කරන ලදී."
+
+msgid "Pre-update snapshot created: {comment}"
+msgstr "යාවත්කාලීන-පූර්ව ස්නැප්ෂොටය සාදන ලදී: {comment}"
+
+msgid "Removing update-time hooks..."
+msgstr "යාවත්කාලීන-කාල කොකු ඉවත් කරමින්…"
+
+msgid "Repository '[{name}]' added{and_synced}."
+msgstr "ගබඩාව '[{name}]' එක් කරන ලදී{and_synced}."
+
+msgid "Repository '[{name}]' already exists in /etc/pacman.conf."
+msgstr "ගබඩාව '[{name}]' දැනටමත් /etc/pacman.conf හි ඇත."
+
+msgid "Repository '[{name}]' not found."
+msgstr "ගබඩාව '[{name}]' හමු නොවීය."
+
+msgid "Repository '[{name}]' removed."
+msgstr "ගබඩාව '[{name}]' ඉවත් කරන ලදී."
+
+msgid "Restoring snapshot..."
+msgstr "ස්නැප්ෂොටය ප්‍රතිස්ථාපනය කරමින්…"
+
+msgid "Rollback initiated for snapshot #{num}. Reboot to complete."
+msgstr "ස්නැප්ෂොටය #{num} සඳහා ප්‍රතිචලනය ආරම්භ කරන ලදී. නිම කිරීමට නැවත ආරම්භ කරන්න."
+
+msgid "Select Snapshot to Restore"
+msgstr "ප්‍රතිස්ථාපනයට ස්නැප්ෂොටයක් තෝරන්න"
+
+msgid "Select a snapshot to restore the system to:"
+msgstr "පද්ධතිය ප්‍රතිස්ථාපනය කිරීමට ස්නැප්ෂොටයක් තෝරන්න:"
+
+msgid "Server URLs must use http(s) and contain no line breaks."
+msgstr "සේවාදායක URL http(s) භාවිතා කළ යුතු අතර රේඛා බිඳීම් තිබිය නොහැක."
+
+msgid "Snapper Not Available"
+msgstr "Snapper ලබා ගත නොහැක"
+
+msgid "Snapper needs a BTRFS filesystem and a configuration."
+msgstr "Snapper සඳහා BTRFS ගොනු පද්ධතියක් සහ වින්‍යාසයක් අවශ්‍යයි."
+
+msgid "Snapper needs a BTRFS filesystem, the 'snapper' tool and a configuration. Create one with: sudo snapper create-config /"
+msgstr "Snapper සඳහා BTRFS ගොනු පද්ධතියක්, 'snapper' මෙවලම සහ වින්‍යාසයක් අවශ්‍යයි. එකක් සාදන්න: sudo snapper create-config /"
+
+msgid "Snapshot"
+msgstr "ස්නැප්ෂොටය"
+
+msgid "Snapshot created successfully: {comment}"
+msgstr "ස්නැප්ෂොටය සාර්ථකව සාදන ලදී: {comment}"
+
+msgid "Snapshot created successfully: {date}"
+msgstr "ස්නැප්ෂොටය සාර්ථකව සාදන ලදී: {date}"
+
+msgid "Snapshot creation timed out and no snapshot appeared in Timeshift's list.\n{err}"
+msgstr "ස්නැප්ෂොට සෑදීමට කල් ඉකුත් වූ අතර Timeshift හි ලැයිස්තුවේ කිසිදු ස්නැප්ෂොටයක් නොපෙනිණි.\n{err}"
+
+msgid "Snapshot restoration initiated. System will reboot."
+msgstr "ස්නැප්ෂොට ප්‍රතිස්ථාපනය ආරම්භ කරන ලදී. පද්ධතිය නැවත ආරම්භ වේ."
+
+msgid "The snapshot did not appear in Timeshift's list.\nCommand output: {out}"
+msgstr "ස්නැප්ෂොටය Timeshift හි ලැයිස්තුවේ නොපෙනිණි.\nවිධාන ප්‍රතිදානය: {out}"
+
+msgid "This will delete old snapshots to free up disk space.\n\nKeep only the 2 most recent snapshots?\n\nThis action cannot be undone."
+msgstr "මෙය තැටි ඉඩ නිදහස් කිරීමට පැරණි ස්නැප්ෂොට මකයි.\n\nනවතම ස්නැප්ෂොට 2ක් පමණක් තබා ගන්නද?\n\nමෙම ක්‍රියාව ප්‍රතික්ෂේප කළ නොහැක."
+
+msgid "This will roll back the system to snapper snapshot #{num}.\n\nSnapper switches the default subvolume; a reboot is required.\n\nAre you sure you want to proceed?"
+msgstr "මෙය පද්ධතිය snapper ස්නැප්ෂොටය #{num} වෙත ප්‍රතිචලනය කරයි.\n\nSnapper පෙරනිමි උපපරිමාව මාරු කරයි; නැවත ආරම්භයක් අවශ්‍යයි.\n\nඉදිරියට යාමට ඔබට විශ්වාසද?"
+
+msgid "Timeshift is busy with another backup in progress (scheduled or manual). Try again after it finishes."
+msgstr "Timeshift ක්‍රියාත්මක වන වෙනත් උපස්ථයක (කාලසටහන්ගත හෝ මැනුවල්) නියැලී ඇත. එය අවසන් වූ පසු නැවත උත්සාහ කරන්න."
+
+msgid "Timeshift list failed"
+msgstr "Timeshift ලැයිස්තුව අසාර්ථක විය"
+
+msgid "curl isn't installed; install 'curl' to fetch the mirror list."
+msgstr "curl ස්ථාපනය කර නැත; දර්පණ ලැයිස්තුව ලබා ගැනීමට 'curl' ස්ථාපනය කරන්න."

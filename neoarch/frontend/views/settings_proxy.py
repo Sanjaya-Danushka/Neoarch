@@ -1,192 +1,204 @@
-from typing import Any
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame,
-                             QLabel, QComboBox, QSpinBox, QLineEdit,
-                             QCheckBox, QPushButton)
+"""Proxy & Network settings page — descriptive, education-first.
 
-from neoarch.frontend.tokens import QSS, Colors, Fonts, Radii
+Explains what each connection option controls and *why* you would change
+it, built with the same card language as the Security, Notifications and
+Logging pages.
+"""
+
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QComboBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout,
+    QWidget)
+
+from neoarch.frontend.tokens import Colors, Fonts, QSS
 from neoarch.backend.services.i18n import _
+from neoarch.frontend.components.toggle_switch import ToggleSwitch
+from neoarch.frontend.views._settings_kit import make_card, row, sep, Stepper
+
+# ── Inline stroke icons (24x24 viewBox, lucide-style) ──────────────
+_ICON_GLOBE = (
+    '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/>'
+    '<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10'
+    ' 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'
+)
+_ICON_TIMER = (
+    '<line x1="10" x2="14" y1="2" y2="2"/>'
+    '<line x1="12" x2="15" y1="14" y2="11"/>'
+    '<circle cx="12" cy="14" r="8"/>'
+)
+_ICON_WRENCH = (
+    '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77'
+    'a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91'
+    'a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'
+)
+
+
+def _type_combo(app):
+    combo = QComboBox()
+    combo.setStyleSheet(QSS.COMBO)
+    combo.addItem(_("None (direct connection)"), "none")
+    combo.addItem("HTTP", "http")
+    combo.addItem("HTTPS", "https")
+    combo.addItem("SOCKS5", "socks5")
+    idx = combo.findData(app.settings.get("proxy_type", "none"))
+    if idx >= 0:
+        combo.setCurrentIndex(idx)
+    return combo
+
+
+def _host_port_control(app):
+    widget = QWidget()
+    widget.setStyleSheet("background: transparent;")
+    lay = QHBoxLayout(widget)
+    lay.setContentsMargins(0, 0, 0, 0)
+    lay.setSpacing(8)
+
+    host = QLineEdit(app.settings.get("proxy_host", ""))
+    host.setStyleSheet(QSS.LINEEDIT)
+    host.setPlaceholderText(_("e.g. 127.0.0.1 or proxy.example.com"))
+    host.textChanged.connect(lambda v: app.update_setting("proxy_host", v))
+    lay.addWidget(host, 1)
+
+    port = Stepper(1, 65535)
+    port.setValue(int(app.settings.get("proxy_port", 8080)))
+    port.valueChanged.connect(lambda v: app.update_setting("proxy_port", v))
+    lay.addWidget(port)
+    return widget, host, port
 
 
 class ProxySettingsWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.app: Any = parent
+        self.app = parent
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(24)
-
         self.setup_ui()
-
-    def _make_card(self, title_text):
-        card = QFrame()
-        card.setObjectName("settingsCard")
-        card.setStyleSheet(QSS.CARD)
-        card_layout = QVBoxLayout(card)
-        card_layout.setContentsMargins(20, 18, 20, 20)
-        card_layout.setSpacing(16)
-
-        title = QLabel(title_text)
-        title.setStyleSheet(f"font-size: {Fonts.CARD_TITLE}; font-weight: {Fonts.SEMI}; color: {Colors.TEXT}; border: none;")
-        card_layout.addWidget(title)
-
-        return card, card_layout
 
     def setup_ui(self):
         title = QLabel(_("Proxy & Network"))
-        title.setStyleSheet(f"font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD}; color: {Colors.TEXT}; letter-spacing: -0.5px;")
+        title.setStyleSheet(
+            f"font-size: {Fonts.PAGE_TITLE}; font-weight: {Fonts.BOLD};"
+            f" color: {Colors.TEXT}; letter-spacing: -0.5px;")
         self.layout.addWidget(title)
 
-        subtitle = QLabel(_("Configure network proxy settings and connection options"))
+        subtitle = QLabel(
+            _("How NeoArch reaches the internet — proxies, timeouts and "
+              "pacman's download behaviour"))
+        subtitle.setWordWrap(True)
         subtitle.setStyleSheet(
             f"font-size: {Fonts.BASE}; color: {Colors.TEXT_2};"
             " border: none; background: transparent; margin-top: 0;")
         self.layout.addWidget(subtitle)
 
-        # ── Proxy Card ──
-        proxy_card, proxy_layout = self._make_card(_("Proxy"))
+        # ── Connection ──
+        self._type_combo = _type_combo(self.app)
+        self._type_combo.currentIndexChanged.connect(self._on_type_changed)
+        self._host_port, self._host, self._port = _host_port_control(self.app)
 
-        type_row = QHBoxLayout()
-        type_row.setSpacing(12)
-        type_label = QLabel(_("Proxy type:"))
-        type_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
-        type_row.addWidget(type_label)
+        connection_card, connection = make_card(_("Connection"), _ICON_GLOBE)
+        connection.addWidget(row(
+            _("Proxy type"),
+            _("Nothing is routed through a proxy by default. Pick HTTP, "
+              "HTTPS or SOCKS5 to send package, AUR and Flatpak requests "
+              "through one."),
+            control=self._type_combo))
+        connection.addWidget(sep())
+        connection.addWidget(row(
+            _("Host & port"),
+            _("The proxy's address and the TCP port it listens on. Only "
+              "applied when a proxy type other than \"none\" is chosen."),
+            control=self._host_port))
+        self.layout.addWidget(connection_card)
 
-        self.type_combo = QComboBox()
-        self.type_combo.setStyleSheet(QSS.COMBO)
-        self.type_combo.addItem(_("None (direct connection)"), "none")
-        self.type_combo.addItem(_("HTTP"), "http")
-        self.type_combo.addItem(_("HTTPS"), "https")
-        self.type_combo.addItem(_("SOCKS5"), "socks5")
+        self._host_port.setEnabled(
+            self._type_combo.currentData() != "none")
 
-        current_type = self.app.settings.get('proxy_type', 'none')
-        idx = self.type_combo.findData(current_type)
-        if idx >= 0:
-            self.type_combo.setCurrentIndex(idx)
+        # ── Timeouts ──
+        self._timeout = Stepper(5, 300, step=5, suffix=" s")
+        self._timeout.setValue(int(self.app.settings.get("request_timeout", 30)))
+        self._timeout.valueChanged.connect(
+            lambda v: self.app.update_setting("request_timeout", v))
 
-        self.type_combo.currentIndexChanged.connect(self._on_type_changed)
-        type_row.addWidget(self.type_combo)
-        type_row.addStretch()
-        proxy_layout.addLayout(type_row)
-
-        host_row = QHBoxLayout()
-        host_row.setSpacing(12)
-        host_label = QLabel(_("Host:"))
-        host_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
-        host_row.addWidget(host_label)
-
-        self.host_edit = QLineEdit(self.app.settings.get('proxy_host', ''))
-        self.host_edit.setStyleSheet(QSS.LINEEDIT)
-        self.host_edit.setPlaceholderText(_("e.g. 127.0.0.1 or proxy.example.com"))
-        self.host_edit.textChanged.connect(lambda v: self.app.update_setting('proxy_host', v))
-        host_row.addWidget(self.host_edit, 1)
-        proxy_layout.addLayout(host_row)
-
-        port_row = QHBoxLayout()
-        port_row.setSpacing(12)
-        port_label = QLabel(_("Port:"))
-        port_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
-        port_row.addWidget(port_label)
-
-        self.port_spin = QSpinBox()
-        self.port_spin.setStyleSheet(QSS.SPINBOX)
-        self.port_spin.setRange(1, 65535)
-        self.port_spin.setValue(int(self.app.settings.get('proxy_port', 8080)))
-        self.port_spin.valueChanged.connect(lambda v: self.app.update_setting('proxy_port', v))
-        port_row.addWidget(self.port_spin)
-        port_row.addStretch()
-        proxy_layout.addLayout(port_row)
-
-        self._toggle_proxy_fields(current_type != 'none')
-
-        self.layout.addWidget(proxy_card)
-
-        # ── Timeouts Card ──
-        timeout_card, timeout_layout = self._make_card(_("Timeouts"))
-
-        req_row = QHBoxLayout()
-        req_row.setSpacing(12)
-        req_label = QLabel(_("Request timeout:"))
-        req_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
-        req_row.addWidget(req_label)
-
-        self.req_timeout_spin = QSpinBox()
-        self.req_timeout_spin.setStyleSheet(QSS.SPINBOX)
-        self.req_timeout_spin.setRange(5, 300)
-        self.req_timeout_spin.setSingleStep(5)
-        self.req_timeout_spin.setValue(int(self.app.settings.get('request_timeout', 30)))
-        self.req_timeout_spin.valueChanged.connect(lambda v: self.app.update_setting('request_timeout', v))
-        req_row.addWidget(self.req_timeout_spin)
-
-        req_unit = QLabel(_("seconds"))
-        req_unit.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
-        req_row.addWidget(req_unit)
-        req_row.addStretch()
-        timeout_layout.addLayout(req_row)
-
+        timeout_card, timeout = make_card(_("Timeouts"), _ICON_TIMER)
+        timeout.addWidget(row(
+            _("Request timeout"),
+            _("How long NeoArch waits for a network reply before giving "
+              "up. Raise it on slow links, lower it to fail fast."),
+            control=self._timeout))
         self.layout.addWidget(timeout_card)
 
-        # ── Misc Card ──
-        misc_card, misc_layout = self._make_card(_("Advanced"))
+        # ── Advanced ──
+        ssl_toggle = ToggleSwitch()
+        ssl_toggle.setChecked(bool(self.app.settings.get("verify_ssl", True)))
+        ssl_toggle.toggled.connect(
+            lambda v: self.app.update_setting("verify_ssl", v))
 
-        self.cb_verify_ssl = QCheckBox(_("Verify SSL certificates"))
-        self.cb_verify_ssl.setStyleSheet(QSS.CHECKBOX)
-        self.cb_verify_ssl.setChecked(bool(self.app.settings.get('verify_ssl', True)))
-        self.cb_verify_ssl.toggled.connect(lambda v: self.app.update_setting('verify_ssl', v))
-        misc_layout.addWidget(self.cb_verify_ssl)
+        parallel_toggle = ToggleSwitch()
+        parallel_toggle.setChecked(
+            bool(self.app.settings.get("parallel_network", True)))
+        parallel_toggle.toggled.connect(
+            lambda v: self.app.update_setting("parallel_network", v))
 
-        self.cb_parallel = QCheckBox(_("Allow parallel network requests"))
-        self.cb_parallel.setStyleSheet(QSS.CHECKBOX)
-        self.cb_parallel.setChecked(bool(self.app.settings.get('parallel_network', True)))
-        self.cb_parallel.toggled.connect(lambda v: self.app.update_setting('parallel_network', v))
-        misc_layout.addWidget(self.cb_parallel)
-
-        dl_row = QHBoxLayout()
-        dl_row.setSpacing(12)
-        dl_label = QLabel(_("pacman ParallelDownloads:"))
-        dl_label.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.BASE}; border: none;")
-        dl_row.addWidget(dl_label)
-
-        self.dl_spin = QSpinBox()
-        self.dl_spin.setStyleSheet(QSS.SPINBOX)
-        self.dl_spin.setRange(1, 32)
+        self._dl_stepper = Stepper(1, 32)
         try:
             from neoarch.backend.services.pacman_conf import get_parallel_downloads
             current = get_parallel_downloads()
         except Exception:
             current = None
-        self.dl_spin.setValue(current if current else 5)
-        dl_row.addWidget(self.dl_spin)
+        self._dl_stepper.setValue(current if current else 5)
 
         apply_btn = QPushButton(_("Apply"))
         apply_btn.setStyleSheet(QSS.BTN_OUTLINE)
+        apply_btn.setFixedHeight(34)
+        apply_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         apply_btn.clicked.connect(self._apply_parallel_downloads)
-        dl_row.addWidget(apply_btn)
 
-        dl_note = QLabel(_("Requires root; writes /etc/pacman.conf"))
-        dl_note.setStyleSheet(f"color: {Colors.TEXT_2}; font-size: {Fonts.SM}; border: none;")
-        dl_row.addWidget(dl_note)
-        dl_row.addStretch()
-        misc_layout.addLayout(dl_row)
+        dl_control = QWidget()
+        dl_control.setStyleSheet("background: transparent;")
+        dl_lay = QHBoxLayout(dl_control)
+        dl_lay.setContentsMargins(0, 0, 0, 0)
+        dl_lay.setSpacing(8)
+        dl_lay.addWidget(self._dl_stepper)
+        dl_lay.addWidget(apply_btn)
 
-        self.layout.addWidget(misc_card)
+        advanced_card, advanced = make_card(_("Advanced"), _ICON_WRENCH)
+        advanced.addWidget(row(
+            _("Verify SSL certificates"),
+            _("Checks certificates on every HTTPS request. Disable only "
+              "if a proxy inspects your traffic — it does weaken "
+              "security."),
+            control=ssl_toggle))
+        advanced.addWidget(sep())
+        advanced.addWidget(row(
+            _("Parallel network requests"),
+            _("Fetch from several sources at the same time. Faster "
+              "lookups, at the cost of more simultaneous connections."),
+            control=parallel_toggle))
+        advanced.addWidget(sep())
+        advanced.addWidget(row(
+            _("Pacman ParallelDownloads"),
+            _("How many packages pacman may download at once while "
+              "updating. Applies to /etc/pacman.conf and needs root."),
+            control=dl_control))
+        self.layout.addWidget(advanced_card)
 
     def _apply_parallel_downloads(self):
         from neoarch.backend.services.pacman_conf import set_parallel_downloads
-        count = self.dl_spin.value()
+        count = self._dl_stepper.value()
         try:
             ok_result = set_parallel_downloads(count)
         except Exception:
             ok_result = False
         if ok_result:
-            self.app.show_message.emit("ParallelDownloads", _("Set pacman ParallelDownloads={count}").format(count=count))
+            self.app.show_message.emit(
+                "ParallelDownloads",
+                _("Set pacman ParallelDownloads={count}").format(count=count))
         else:
-            self.app.show_message.emit("ParallelDownloads", _("Failed to apply (need root?)."))
+            self.app.show_message.emit(
+                "ParallelDownloads", _("Failed to apply (need root?)."))
 
-    def _on_type_changed(self, index):
-        ptype = self.type_combo.currentData()
-        self.app.update_setting('proxy_type', ptype)
-        self._toggle_proxy_fields(ptype != 'none')
-
-    def _toggle_proxy_fields(self, enabled):
-        self.host_edit.setEnabled(enabled)
-        self.port_spin.setEnabled(enabled)
+    def _on_type_changed(self, _index):
+        ptype = self._type_combo.currentData()
+        self.app.update_setting("proxy_type", ptype)
+        self._host_port.setEnabled(ptype != "none")
