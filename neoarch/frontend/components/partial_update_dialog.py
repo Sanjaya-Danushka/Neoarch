@@ -1,8 +1,12 @@
 """Partial-update warning dialog, matching the app's default prompt design.
 
-Shown when the user updates a *selection* on Arch-backed sources instead of
-everything. It never blocks anyone who knows what they are doing: it just
-makes silent partial upgrades visible and asks for explicit confirmation.
+Shown when the user updates a *selection* of official pacman packages
+instead of everything available. AUR packages are intentionally not part
+of the check: they build from source against the current system, so they
+don't create the library-desync risk a partial official-repo upgrade
+does. The dialog never blocks anyone who knows what they are doing — it
+makes silent partial upgrades visible, turns the risky choice red, and
+offers the recommended full upgrade in one click.
 """
 
 from PyQt6.QtCore import Qt
@@ -12,29 +16,39 @@ from PyQt6.QtWidgets import (
 
 from neoarch.frontend.tokens import Colors, Fonts
 from neoarch.backend.services.i18n import _
+from neoarch.frontend.styles import Styles
+
+
+def _canonical_name(pkg):
+    return (pkg.get("name") or pkg.get("id") or "").strip()
+
+
+def _selected_official(names):
+    """Official (pacman) package names from a packages-by-source map."""
+    selected = set()
+    for src, pkgs in names.items():
+        if (src or "").lower() != "pacman":
+            continue
+        selected.update(str(n).strip() for n in pkgs if n)
+    return selected
 
 
 def count_selected(total_updates, packages_by_source):
-    """Return (selected_count, available_count) for Arch-backed sources.
+    """Return (selected_count, available_count) for official pacman only.
 
-    Available = every update whose source is pacman/AUR in ``total_updates``.
-    Selecting these acks is meaningful even if ``total_updates`` holds extra
-    non-Arch rows (flatpak/npm), which a partial upgrade does not risk.
+    Available = every update whose source is the official repos in
+    ``total_updates``. AUR rows are excluded because they cannot cause the
+    partial-upgrade library desync; they only inflate the numbers.
     """
     available = {
-        (p.get("name") or p.get("id") or "").strip()
-        for p in total_updates
-        if (p.get("source") or "").upper() in ("PACMAN", "AUR")
+        _canonical_name(p) for p in total_updates
+        if (p.get("source") or "").upper() == "PACMAN"
     }
-    selected = set()
-    for src in ("pacman", "AUR"):
-        selected.update(
-            str(n).strip() for n in packages_by_source.get(src, []) if n)
-    return len(selected), len(available)
+    return len(_selected_official(packages_by_source)), len(available)
 
 
 def is_partial_update(total_updates, packages_by_source):
-    """True when an Arch selection is smaller than the full available set."""
+    """True when an official pacman selection is smaller than what's left."""
     selected, available = count_selected(total_updates, packages_by_source)
     if not selected or not available:
         return False
@@ -44,16 +58,24 @@ def is_partial_update(total_updates, packages_by_source):
 
 
 class PartialUpdateDialog(QDialog):
+    """Three-way partial-update prompt: cancel / update all / selection."""
     def __init__(self, total_updates, packages_by_source, parent=None):
         super().__init__(parent)
         self.setWindowTitle(_("Partial Update Warning"))
-        self.setMinimumWidth(540)
+        self.setMinimumWidth(560)
         self.setStyleSheet(
-            f"QDialog {{ background-color: rgba(22, 23, 26, 235); }}")
+            "QDialog { background-color: rgba(22, 23, 26, 235); }")
+        self.choice = None
         self._build(total_updates, packages_by_source)
 
+    def result_choice(self):
+        """One of "selection", "all", or None (cancelled)."""
+        return self.choice
+
     def _build(self, total_updates, packages_by_source):
-        selected, available = count_selected(total_updates, packages_by_source)
+        selected, available = count_selected(
+            total_updates, packages_by_source)
+        total_all = len(total_updates)
 
         v = QVBoxLayout(self)
         v.setSpacing(12)
@@ -67,8 +89,8 @@ class PartialUpdateDialog(QDialog):
         v.addWidget(heading)
 
         body = QLabel(
-            _("You picked {selected} of {available} available updates. "
-              "On Arch, packages are built against the latest libraries \u2014 "
+            _("You picked {selected} of {available} available updates. On "
+              "Arch, packages are built against the latest libraries \u2014 "
               "a partial upgrade can desync libraries from their apps and "
               "break your system.\n\n"
               "It\u2019s recommended to do a full system upgrade instead."
@@ -99,20 +121,33 @@ class PartialUpdateDialog(QDialog):
         cancel_btn.clicked.connect(self.reject)
         buttons.addWidget(cancel_btn)
 
-        self.confirm_btn = QPushButton(_("I understand \u2014 Update Selection"))
-        self.confirm_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.confirm_btn.setMinimumHeight(36)
-        self.confirm_btn.setDefault(True)
-        self.confirm_btn.setMinimumWidth(170)
-        self.confirm_btn.setStyleSheet(
-            f"QPushButton {{ background-color: {Colors.WHITE};"
-            f" color: {Colors.TEXT_ON_ACCENT};"
-            f" border: 1px solid rgba(255, 255, 255, 0.9);"
-            f" border-radius: 10px; padding: 8px 18px;"
-            f" font-size: {Fonts.BASE}; font-weight: 600; }}"
-            f"QPushButton:hover {{ background-color: {Colors.WHITE_HOVER}; }}"
-            f"QPushButton:pressed {{ background-color: {Colors.WHITE_PRESSED}; }}")
-        self.confirm_btn.clicked.connect(self.accept)
-        buttons.addWidget(self.confirm_btn)
+        # Uses the existing catalogs across all bundled languages.
+        self.selection_btn = QPushButton(
+            _("I understand \u2014 Update Selection"))
+        self.selection_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.selection_btn.setMinimumHeight(36)
+        self.selection_btn.setStyleSheet(Styles.btn_danger())
+
+        def _on_selection():
+            self.choice = "selection"
+            self.accept()
+        self.selection_btn.clicked.connect(_on_selection)
+        buttons.addWidget(self.selection_btn)
+
+        # Count-only suffix: "Update All (4)" needs no translation, so the
+        # button stays translated in every bundled language.
+        self.update_all_btn = QPushButton(
+            _("Update All") + " ({total})".format(total=total_all))
+        self.update_all_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.update_all_btn.setMinimumHeight(36)
+        self.update_all_btn.setDefault(True)
+        self.update_all_btn.setStyleSheet(Styles.btn_white(
+            padding="8px 18px", size=Fonts.BASE, radius=10))
+
+        def _on_all():
+            self.choice = "all"
+            self.accept()
+        self.update_all_btn.clicked.connect(_on_all)
+        buttons.addWidget(self.update_all_btn)
 
         v.addLayout(buttons)

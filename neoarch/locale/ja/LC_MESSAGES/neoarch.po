@@ -2366,3 +2366,803 @@ msgstr "アップデートの完了を待っています…"
 
 msgid "Installed packages will appear here automatically once it completes."
 msgstr "完了すると、インストール済みパッケージがここに自動的に表示されます。"
+
+
+msgid " days"
+msgstr " 日"
+
+msgid " s"
+msgstr " 秒"
+
+msgid "%(n)d px"
+msgstr "%(n)d px"
+
+msgid "%(n)d%%"
+msgstr "%(n)d %%"
+
+msgid "A full system upgrade keeps libraries and applications in lockstep — the Arch-supported way to stay current."
+msgstr "完全なシステム アップグレードはライブラリとアプリケーションを常に同期させます — 最新を保つための Arch 公式の方法です。"
+
+msgid "A pinned version quietly freezes the packages that depend on it. If you must pin, review it regularly."
+msgstr "固定バージョンは、それに依存するパッケージを静かに凍結します。どうしても固定するなら、定期的に見直しましょう。"
+
+msgid "A stale lock file was found:\n\n{lock}\n\nNo package manager is running, so this is a leftover from a previous interrupted operation."
+msgstr "古いロック ファイルが見つかりました:\n\n{lock}\n\nパッケージマネージャは実行中ではないため、これは以前に中断された操作の残骸です。"
+
+msgid "AUR Helper"
+msgstr "AURヘルパー"
+
+msgid "AUR RPC endpoint"
+msgstr "AUR RPC エンドポイント"
+
+msgid "AUR Resources"
+msgstr "AUR リソース"
+
+msgid "AUR helper: auto"
+msgstr "AURヘルパー: 自動"
+
+msgid "AUR pre-install scan"
+msgstr "AUR インストール前スキャン"
+
+msgid "AUR updates build one package at a time; a single failure never aborts the rest of the queue."
+msgstr "AUR アップデートは一度にひとつのパッケージをビルドします。1 つの失敗が残りのキューを中断することは決してありません。"
+
+msgid "Add"
+msgstr "追加"
+
+msgid "Add Chaotic AUR"
+msgstr "Chaotic AUR を追加"
+
+msgid "Add Repository"
+msgstr "リポジトリを追加"
+
+msgid "Add a Repository"
+msgstr "リポジトリを追加"
+
+msgid "Add a Repository…"
+msgstr "リポジトリを追加…"
+
+msgid "Anyone can publish a recipe. Skipping the review means trusting a stranger's build script with your machine."
+msgstr "誰でもレシピを公開できます。レビューをスキップすることは、自分のマシンを他人のビルドスクリプトに委ねることを意味します。"
+
+msgid "Arch is a rolling release: packages expect to move forward together. Updating a selection can desync libraries from the apps that use them."
+msgstr "Arch はローリングリリースです: パッケージは一緒に前進することが前提です。一部を選択して更新すると、それを使うアプリとライブラリの整合性が崩れることがあります。"
+
+msgid "Attach a DEBUG log when reporting bugs"
+msgstr "バグを報告するときは DEBUG ログを添付してください"
+
+msgid "Autosave path"
+msgstr "自動保存パス"
+
+msgid "BIOS/UEFI and device firmware via fwupd.\nThe linux-firmware package is a pacman update, not this source."
+msgstr "fwupd による BIOS/UEFI とデバイスのファームウェア。\nlinux-firmware パッケージは pacman のアップデートであり、このソースではありません。"
+
+msgid "Backs up your package list and config before installing."
+msgstr "インストール前にパッケージリストと設定をバックアップします。"
+
+msgid "Backup method"
+msgstr "バックアップ方法"
+
+msgid "Before installing from the AUR, review the package."
+msgstr "AUR からインストールする前に、パッケージをレビューしてください。"
+
+msgid "Check cached package archives for corruption before they cause an install to fail."
+msgstr "キャッシュされたパッケージのアーカイブを、インストール失敗の原因になる前に破損チェックします。"
+
+msgid "Check for firmware updates"
+msgstr "ファームウェアのアップデートを確認"
+
+msgid "Check for pipx updates"
+msgstr "pipx のアップデートを確認"
+
+msgid "Checks certificates on every HTTPS request. Disable only if a proxy inspects your traffic — it does weaken security."
+msgstr "すべての HTTPS リクエストで証明書を検証します。プロキシが通信を検査する場合にのみ無効にしてください — セキュリティは弱くなります。"
+
+msgid "Checks for available updates each time the app starts."
+msgstr "アプリを起動するたびに利用可能なアップデートを確認します。"
+
+msgid "Checks for new packages on the configured schedule."
+msgstr "設定されたスケジュールで新しいパッケージを確認します。"
+
+msgid "Clear selection"
+msgstr "選択をクリア"
+
+msgid "Cloud login caches tokens only until they expire — it never stores your credentials forever."
+msgstr "クラウドログインはトークンを期限までしかキャッシュしません — 認証情報を永久に保存することはありません。"
+
+msgid "Community-maintained build recipes. Unlike the official repos they are not curated or reviewed by Arch — anyone can publish a recipe."
+msgstr "コミュニティが管理するビルドレシピです。公式リポジトリと違い Arch による選別やレビューはありません — 誰でもレシピを公開できます。"
+
+msgid "Config stays local"
+msgstr "設定はローカルに留まる"
+
+msgid "Configured Repositories"
+msgstr "設定済みリポジトリ"
+
+msgid "Confirm Uninstall"
+msgstr "アンインストールの確認"
+
+msgid "Connection"
+msgstr "接続"
+
+msgid "Control how much NeoArch records, where it writes it, and when it rolls the log over"
+msgstr "NeoArch が記録する量、書き込み先、ログのロールオーバー時期を制御します"
+
+msgid "DO"
+msgstr "推奨事項"
+
+msgid "DON'T"
+msgstr "注意事項"
+
+msgid "Data"
+msgstr "データ"
+
+msgid "Decorative teal rim on the translucent window frame."
+msgstr "半透明のウィンドウ枠の装飾的なティールの縁取り。"
+
+msgid "Desktop notifications"
+msgstr "デスクトップ通知"
+
+msgid "Detects apps installed with pipx (Python scripts) and lists their updates on the Updates page."
+msgstr "pipx でインストールされたアプリ (Python スクリプト) を検出し、Updates ページにそのアップデートを表示します。"
+
+msgid "Detects firmware updates via fwupd on the Updates page. Applying always requires your explicit confirmation."
+msgstr "Updates ページで fwupd 経由のファームウェアアップデートを検出します。適用には常に明示的な確認が必要です。"
+
+msgid "Disabled"
+msgstr "無効"
+
+msgid "Done."
+msgstr "完了。"
+
+msgid "Drop orphaned packages, prune the cache, and read the archlinux.org news before major upgrades."
+msgstr "孤立したパッケージを削除し、キャッシュを整理し、大きなアップグレードの前に archlinux.org のニュースを読みましょう。"
+
+msgid "Echo to console"
+msgstr "コンソールにエコー"
+
+msgid "Enable “Snapshot before update” in General settings so a bad upgrade can be reverted in one click."
+msgstr "一般設定で「更新前スナップショット」を有効にすると、悪いアップグレードをワンクリックで元に戻せます。"
+
+msgid "Enabled"
+msgstr "有効"
+
+msgid "Every AUR result is badged [aur]"
+msgstr "すべての AUR 結果には [aur] バッジが付きます"
+
+msgid "Export settings to file"
+msgstr "設定をファイルにエクスポート"
+
+msgid "Failed to read repositories."
+msgstr "リポジトリを読み込めませんでした。"
+
+msgid "Fetch from several sources at the same time. Faster lookups, at the cost of more simultaneous connections."
+msgstr "複数のソースから同時に取得します。より高速な検索の代わりに、同時接続数が増えます。"
+
+msgid "Fr"
+msgstr "金"
+
+msgid "Full Wiki ↗"
+msgstr "完全な Wiki ↗"
+
+msgid "Full upgrades are the safe path"
+msgstr "完全アップグレードが安全な道"
+
+msgid "GUI sudo prompt (SUDO_ASKPASS)"
+msgstr "GUI sudo プロンプト (SUDO_ASKPASS)"
+
+msgid "Good Habits"
+msgstr "良い習慣"
+
+msgid "Host & port"
+msgstr "ホストとポート"
+
+msgid "Housekeep: orphans, cache, Arch news"
+msgstr "掃除: 孤立パッケージ、キャッシュ、Arch ニュース"
+
+msgid "How NeoArch reaches the internet — proxies, timeouts and pacman's download behaviour"
+msgstr "NeoArch がインターネットへ接続する方法 — プロキシ、タイムアウト、pacman のダウンロード動作"
+
+msgid "How long NeoArch waits for a network reply before giving up. Raise it on slow links, lower it to fail fast."
+msgstr "タイムアウトするまで NeoArch がネットワーク応答を待つ時間。遅い回線では上げ、素早く失敗させるには下げます。"
+
+msgid "How many days between automatic update checks."
+msgstr "自動アップデート確認の間隔 (日)。"
+
+msgid "How many old versions to keep before purging. Keep it small — older archives are already installed."
+msgstr "削除前に保持する古いバージョンの数。少なく — 古いアーカイブは既にインストール済みです。"
+
+msgid "How many packages pacman may download at once while updating. Applies to /etc/pacman.conf and needs root."
+msgstr "更新時に pacman が同時にダウンロードできるパッケージ数。/etc/pacman.conf に適用され、root が必要です。"
+
+msgid "How much detail NeoArch writes. DEBUG records everything including network calls and is ideal for bug reports; ERROR writes only failures."
+msgstr "NeoArch が書き込む詳細度。DEBUG はネットワーク呼び出しを含むすべてを記録し、バグ報告に最適です。ERROR は失敗のみを書き込みます。"
+
+msgid "How much the desktop shows through the window body."
+msgstr "ウィンドウ本体からデスクトップが透けて見える度合い。"
+
+msgid "Ignore the full-upgrade warning"
+msgstr "完全アップグレード警告を無視"
+
+msgid "Import settings from file"
+msgstr "ファイルから設定をインポート"
+
+msgid "Important announcements such as manual interventions are posted before big changes land. Worth a glance before major upgrades."
+msgstr "手動介入などの重要な告知は、大きな変更の前に投稿されます。大きなアップグレードの前に一読の価値があります。"
+
+msgid "Include path under /etc/ (optional)"
+msgstr "/etc/ 配下の Include パス (任意)"
+
+msgid "Install AUR packages blindly"
+msgstr "AUR パッケージを盲目的にインストール"
+
+msgid "Install update-time hooks"
+msgstr "更新時フックをインストール"
+
+msgid "Installs global npm packages to ~/.npm-global without sudo."
+msgstr "sudo なしでグローバル npm パッケージを ~/.npm-global にインストールします。"
+
+msgid "Keep IgnorePkg minimal"
+msgstr "IgnorePkg は最小限に"
+
+msgid "Keep versions per package"
+msgstr "パッケージごとに保持するバージョン"
+
+msgid "Keep your system tidy: orphans, leftover configs, the download cache, and Arch news"
+msgstr "システムを整理整頓: 孤立パッケージ、残った設定、ダウンロードキャッシュ、Arch ニュース"
+
+msgid "Language"
+msgstr "言語"
+
+msgid "Last snapshot: {date}"
+msgstr "最終スナップショット: {date}"
+
+msgid "Last snapshot: —"
+msgstr "最終スナップショット: —"
+
+msgid "Leave console echo on during daily use"
+msgstr "日常使用ではコンソールエコーをオフにする"
+
+msgid "Log file path"
+msgstr "ログファイルのパス"
+
+msgid "Log level"
+msgstr "ログレベル"
+
+msgid "Manage .pacnew files"
+msgstr ".pacnew ファイルを管理"
+
+msgid "Maximum size"
+msgstr "最大サイズ"
+
+msgid "Messages are already written to the log file. Console echo is a terminal-first tool and adds busy output to the window you launched NeoArch from."
+msgstr "メッセージは既にログファイルに書き込まれます。コンソールエコーは端末向けのツールで、NeoArch を起動したウィンドウに雑多な出力を追加します。"
+
+msgid "Mirror messages to the terminal NeoArch was started from. Mostly useful when you run the app from a shell — the log file already records everything."
+msgstr "NeoArch を起動した端末にメッセージを反映します。主にシェルからアプリを実行する場合に有用です — ログファイルは既にすべてを記録しています。"
+
+msgid "Mixing old and new packages desyncs libraries from the apps that link them — the classic broken-Arch setup."
+msgstr "新旧のパッケージを混ぜると、それらにリンクするアプリとライブラリの整合性が崩れます — 典型的な Arch 破損構成です。"
+
+msgid "Mo"
+msgstr "月"
+
+msgid "Needs a BTRFS filesystem"
+msgstr "BTRFS ファイルシステムが必要"
+
+msgid "Needs a snapper config (sudo snapper create-config /)"
+msgstr "snapper の設定が必要 (sudo snapper create-config /)"
+
+msgid "NeoArch fetches and statically scans recipes first and pauses on critical findings. Read the whole file anyway."
+msgstr "NeoArch はまずレシピを取得して静的スキャンし、重大な結果では一時停止します。とはいえ、ファイル全体を読みましょう。"
+
+msgid "NeoArch never quietly blocks an action. Risky moves get a warning and your explicit confirmation — you always hold the final say."
+msgstr "NeoArch は動作を黙ってブロックしません。危険な操作には警告と明示的な確認が必要です — 最終判断は常にあなたにあります。"
+
+msgid "NeoArch will let you proceed — but the warning exists because this is how systems break."
+msgstr "NeoArch は続行させてくれます — しかし警告があるのは、こうしてシステムが壊れるからです。"
+
+msgid "Next run"
+msgstr "次の実行"
+
+msgid "No cooldown"
+msgstr "クールダウンなし"
+
+msgid "Nothing is routed through a proxy by default. Pick HTTP, HTTPS or SOCKS5 to send package, AUR and Flatpak requests through one."
+msgstr "デフォルトでは何もプロキシを経由しません。HTTP、HTTPS、SOCKS5 を選ぶと、パッケージ、AUR、Flatpak のリクエストを経由させられます。"
+
+msgid "OAuth tokens expire"
+msgstr "OAuth トークンは期限切れになる"
+
+msgid "Once the log grows past this size, NeoArch rolls it over so it never fills your drive."
+msgstr "ログがこのサイズを超えると NeoArch はローテーションし、ドライブを埋めることはありません。"
+
+msgid "One-at-a-time builds"
+msgstr "一度にひとつずつビルド"
+
+msgid "Optional snapshots"
+msgstr "任意のスナップショット"
+
+msgid "PKGBUILDs and .install scriptlets are statically inspected before every AUR install; critical findings demand explicit acceptance."
+msgstr "PKGBUILD と .install スクリプトレットは AUR の各インストール前に静的検査され、重大な結果には明示的な同意が必要です。"
+
+msgid "Package Sources"
+msgstr "パッケージソース"
+
+msgid "Package count and version changes are shown first; nothing starts until you press confirm — never silently."
+msgstr "パッケージ数とバージョンの変更が最初に表示されます。確認を押すまで何も始まりません — 決して黙って実行されません。"
+
+msgid "Packages installed as dependencies that nothing needs any more. Deleting them is safe, frees disk space and makes updates faster."
+msgstr "依存関係としてインストールされたものの、もう誰も必要としないパッケージ。削除は安全で、ディスク領域を解放し、更新を高速化します。"
+
+msgid "Pacman Database Lock"
+msgstr "pacman データベース ロック"
+
+msgid "Pacman ParallelDownloads"
+msgstr "pacman 並列ダウンロード"
+
+msgid "Parallel network requests"
+msgstr "並列ネットワークリクエスト"
+
+msgid "Passwords go straight to the privilege prompt in your session and are never written to disk."
+msgstr "パスワードはセッション内の権限プロンプトに直接渡され、決してディスクには書き込まれません。"
+
+msgid "Pipe scripts into a shell"
+msgstr "スクリプトをシェルにパイプ"
+
+msgid "Play a short alert sound together with each notification."
+msgstr "各通知とともに短いアラート音を再生します。"
+
+msgid "Proxy type"
+msgstr "プロキシの種類"
+
+msgid "Quick Reference — Do's & Don'ts"
+msgstr "クイックリファレンス — 推奨事項と注意事項"
+
+msgid "Quick-add Chaotic AUR"
+msgstr "Chaotic AUR をクイック追加"
+
+msgid "Quick-add Chaotic AUR (signs the maintainer key, fetches the mirror list, appends [chaotic-aur] and runs pacman -Syy), or add any repo by name."
+msgstr "Chaotic AUR をクイック追加 (メンテナー鍵に署名、ミラーリスト取得、[chaotic-aur] を追加して pacman -Syy を実行)、または任意のリポジトリを名前で追加します。"
+
+msgid "Re-check while open (min)"
+msgstr "開いている間の再確認 (分)"
+
+msgid "Re-checks for updates in the background every X minutes while the app is running. Set to Off to disable."
+msgstr "アプリ実行中は X 分ごとにバックグラウンドでアップデートを再確認します。無効にするには Off に設定します。"
+
+msgid "Read the PKGBUILD before installing from the AUR"
+msgstr "AUR からインストールする前に PKGBUILD を読む"
+
+msgid "Read the news before updating"
+msgstr "更新前にニュースを読む"
+
+msgid "Reading /etc/pacman.conf…"
+msgstr "/etc/pacman.conf を読み込み中…"
+
+msgid "Ready — snapshots available"
+msgstr "準備完了 — スナップショット利用可能"
+
+msgid "Remove '[{name}]' from /etc/pacman.conf?"
+msgstr "/etc/pacman.conf から '[{name}]' を削除しますか?"
+
+msgid "Remove Lock"
+msgstr "ロックを削除"
+
+msgid "Remove Repository"
+msgstr "リポジトリを削除"
+
+msgid "Remove hooks"
+msgstr "フックを削除"
+
+msgid "Remove orphaned packages"
+msgstr "孤立したパッケージを削除"
+
+msgid "Remove the stale lock and continue with \"{operation}\"?"
+msgstr "古いロックを削除して \"{operation}\" を続行しますか?"
+
+msgid "Remove the stale lock and continue?"
+msgstr "古いロックを削除して続行しますか?"
+
+msgid "Repositories"
+msgstr "リポジトリ"
+
+msgid "Repositories NeoArch added carry a marker and can be removed here; system and hand-written sections are protected."
+msgstr "NeoArch が追加したリポジトリにはマーカーがあり、ここで削除できます。システムと手書きのセクションは保護されています。"
+
+msgid "Repository name, e.g. archlinuxcn"
+msgstr "リポジトリ名、例: archlinuxcn"
+
+msgid "Request timeout"
+msgstr "リクエストタイムアウト"
+
+msgid "Requires the 'snapper' tool"
+msgstr "'snapper' ツールが必要"
+
+msgid "Requires the 'timeshift' tool"
+msgstr "'timeshift' ツールが必要"
+
+msgid "Resolved automatically to yay, paru, trizen or pikaur. Change it under General settings."
+msgstr "自動的に yay、paru、trizen、pikaur に解決されます。一般設定で変更できます。"
+
+msgid "Review before installing"
+msgstr "インストール前にレビュー"
+
+msgid "Rounded corners on the translucent window frame."
+msgstr "半透明のウィンドウ枠の角丸。"
+
+msgid "Run at"
+msgstr "実行時刻"
+
+msgid "Runs the update check automatically on a weekly schedule (applies while the app is running)."
+msgstr "週次スケジュールで自動的に更新確認を実行します (アプリ実行中に適用)。"
+
+msgid "Sa"
+msgstr "土"
+
+msgid "Save the selected bundle automatically."
+msgstr "選択したバンドルを自動的に保存します。"
+
+msgid "Scan for corrupted archives"
+msgstr "破損したアーカイブをスキャン"
+
+msgid "Seconds to wait before repeating the same notification."
+msgstr "同じ通知を繰り返すまでに待つ秒数。"
+
+msgid "Select a file to inspect its diff"
+msgstr "差分を確認するファイルを選択"
+
+msgid "Select all"
+msgstr "すべて選択"
+
+msgid "Select the days the scheduled check runs on."
+msgstr "スケジュールされた確認を実行する曜日を選択します。"
+
+msgid "Server URL, e.g. https://mirror.example (optional)"
+msgstr "サーバー URL、例: https://mirror.example (任意)"
+
+msgid "Set the level above to DEBUG, reproduce the problem, then attach the log file — it turns a vague report into a quick fix. Remember to switch back to INFO afterwards."
+msgstr "上のレベルを DEBUG に設定して問題を再現し、ログファイルを添付してください — 曖昧な報告がすばやい修正になります。その後 INFO に戻すのを忘れずに。"
+
+msgid "Settings live in ~/.config/neoarch — no telemetry, no account, no cloud by default."
+msgstr "設定は ~/.config/neoarch にあります — デフォルトではテレメトリもアカウントもクラウドもありません。"
+
+msgid "Show a message banner inside the app when a task completes."
+msgstr "タスク完了時にアプリ内にメッセージバナーを表示します。"
+
+msgid "Show a pop-up notification from the system tray when a task completes."
+msgstr "タスク完了時にシステムトレイからポップアップ通知を表示します。"
+
+msgid "Snapper"
+msgstr "Snapper"
+
+msgid "Snapper setup is incomplete"
+msgstr "Snapper の設定が不完全です"
+
+msgid "Snapshots"
+msgstr "スナップショット"
+
+msgid "Sources & Community Packages"
+msgstr "ソースとコミュニティパッケージ"
+
+msgid "Su"
+msgstr "日"
+
+msgid "System Protection & Habits"
+msgstr "システム保護と習慣"
+
+msgid "Th"
+msgstr "木"
+
+msgid "The proxy's address and the TCP port it listens on. Only applied when a proxy type other than \"none\" is chosen."
+msgstr "プロキシのアドレスとそれが待ち受ける TCP ポート。\"none\" 以外のプロキシの種類が選ばれた場合のみ適用されます。"
+
+msgid "The section is appended to /etc/pacman.conf under a NeoArch marker, so it can be removed again here later."
+msgstr "セクションは NeoArch マーカーの下で /etc/pacman.conf に追記されるため、後でここから再度削除できます。"
+
+msgid "The source column always shows where a package comes from, so community packages are never mistaken for official ones."
+msgstr "ソース列は常にパッケージの出所を表示するため、コミュニティパッケージが公式と間違われることはありません。"
+
+msgid "Themes"
+msgstr "テーマ"
+
+msgid "This signs the Chaotic AUR maintainer key, downloads the mirror list over HTTPS, appends [chaotic-aur] to /etc/pacman.conf and runs 'pacman -Syy'. Continue?"
+msgstr "これにより Chaotic AUR メンテナー鍵への署名、HTTPS でのミラーリストのダウンロード、/etc/pacman.conf への [chaotic-aur] の追加、'pacman -Syy' の実行が行われます。続行しますか?"
+
+msgid "Time of day the weekly check starts."
+msgstr "週次確認を開始する時刻。"
+
+msgid "Timeshift"
+msgstr "Timeshift"
+
+msgid "Tu"
+msgstr "火"
+
+msgid "Uninstall the following package(s)?\n\n{summary}\n\nThis will remove them from your system and cannot be undone."
+msgstr "以下のパッケージをアンインストールしますか?\n\n{summary}\n\nこれらはシステムから削除され、元に戻すことはできません。"
+
+msgid "Update everything together"
+msgstr "すべてをまとめて更新"
+
+msgid "Update interval (days)"
+msgstr "更新間隔 (日)"
+
+msgid "Updates & Review"
+msgstr "更新とレビュー"
+
+msgid "Use npm user mode"
+msgstr "npm ユーザーモードを使用"
+
+msgid "View and manage pacman repositories like Chaotic AUR — no more hand-editing /etc/pacman.conf."
+msgstr "Chaotic AUR などの pacman リポジトリを表示・管理 — /etc/pacman.conf の手動編集はもう不要です。"
+
+msgid "View changes ↗"
+msgstr "変更を表示 ↗"
+
+msgid "WARNED"
+msgstr "警告済み"
+
+msgid "We"
+msgstr "水"
+
+msgid "Weekdays"
+msgstr "曜日"
+
+msgid "What NeoArch can reach, what it runs, how it protects secrets, and the habits that keep an Arch system healthy"
+msgstr "NeoArch が到達できるもの、実行するもの、秘密の保護方法、Arch システムを健全に保つ習慣"
+
+msgid "When a package installation or removal finishes."
+msgstr "パッケージのインストールまたは削除が終了したとき。"
+
+msgid "When a package ships a new config, the old one is kept as a .pacnew. Review and merge them so your tweaks are never silently lost."
+msgstr "パッケージが新しい設定を提供すると、古い設定は .pacnew として保持されます。レビューして統合し、調整が黙って失われないようにしましょう。"
+
+msgid "When an operation fails or emits warnings."
+msgstr "操作が失敗したとき、または警告を発したとき。"
+
+msgid "When new system and package updates are ready."
+msgstr "新しいシステムとパッケージのアップデートが利用可能なとき。"
+
+msgid "Where the rolling log lives. Defaults to ~/.config/neoarch/neoarch.log on your home directory."
+msgstr "ローテーションログの保存場所。デフォルトはホームディレクトリの ~/.config/neoarch/neoarch.log です。"
+
+msgid "Window transparency"
+msgstr "ウィンドウの透明度"
+
+msgid "Working…"
+msgstr "処理中…"
+
+msgid "curl … | bash runs code sight-unseen. Prefer real packages, or read what you are about to execute."
+msgstr "curl … | bash は内容を確認せずにコードを実行します。本物のパッケージを優先するか、実行しようとしている内容を読みましょう。"
+
+msgid "fwupd is not installed — install with: sudo pacman -S fwupd"
+msgstr "fwupd がインストールされていません — インストール: sudo pacman -S fwupd"
+
+msgid "npm is not installed — install with: sudo pacman -S npm"
+msgstr "npm がインストールされていません — インストール: sudo pacman -S npm"
+
+msgid "pipx is not installed — install with: sudo pacman -S python-pipx"
+msgstr "pipx がインストールされていません — インストール: sudo pacman -S python-pipx"
+
+msgid "{tool} is not installed — install with: sudo pacman -S {pkg}"
+msgstr "{tool} がインストールされていません — インストール: sudo pacman -S {pkg}"
+
+msgid "↗ Wiki"
+msgstr "↗ Wiki"
+
+
+msgid " and synced"
+msgstr " に同期済み"
+
+msgid "'{name}' is a system repository and can't be toggled here."
+msgstr "「[{name}]」はシステム リポジトリのため、ここでは切り替えられません。"
+
+msgid "'{name}' is a system repository."
+msgstr "「[{name}]」はシステム リポジトリです。"
+
+msgid "'{name}' isn't managed by NeoArch — edit /etc/pacman.conf manually."
+msgstr "「[{name}]」は NeoArch の管理対象ではありません — /etc/pacman.conf を手動で編集してください。"
+
+msgid "(empty)"
+msgstr "(空)"
+
+msgid "Another snapshot operation is already running."
+msgstr "別のスナップショット操作が既に実行中です。"
+
+msgid "Chaotic AUR is already configured in /etc/pacman.conf."
+msgstr "Chaotic AUR は既に /etc/pacman.conf に設定されています。"
+
+msgid "Confirm Restoration"
+msgstr "復元の確認"
+
+msgid "Couldn't download the Chaotic AUR mirror list."
+msgstr "Chaotic AUR のミラーリストをダウンロードできませんでした。"
+
+msgid "Couldn't read {conf}."
+msgstr "{conf} を読み込めませんでした。"
+
+msgid "Create a system snapshot before proceeding?\n\nThis will take some time."
+msgstr "続行する前にシステム スナップショットを作成しますか?\n\nこれには時間がかかります。"
+
+msgid "Creating pre-update snapshot..."
+msgstr "更新前スナップショットを作成中…"
+
+msgid "Creating snapshot..."
+msgstr "スナップショットを作成中…"
+
+msgid "Deleting old snapshots..."
+msgstr "古いスナップショットを削除中…"
+
+msgid "Error creating pre-update snapshot: {err}"
+msgstr "更新前スナップショットの作成エラー: {err}"
+
+msgid "Error creating snapshot: {err}"
+msgstr "スナップショットの作成エラー: {err}"
+
+msgid "Error deleting snapshots: {err}"
+msgstr "スナップショットの削除エラー: {err}"
+
+msgid "Error installing pacman hooks: {err}"
+msgstr "pacman フックのインストールエラー: {err}"
+
+msgid "Error removing pacman hooks: {err}"
+msgstr "pacman フックの削除エラー: {err}"
+
+msgid "Error restoring snapshot: {err}"
+msgstr "スナップショットの復元エラー: {err}"
+
+msgid "Failed to create pre-update snapshot: {err}"
+msgstr "更新前スナップショットの作成に失敗: {err}"
+
+msgid "Failed to create snapshot: {err}"
+msgstr "スナップショットの作成に失敗: {err}"
+
+msgid "Failed to delete snapshots: {err}"
+msgstr "スナップショットの削除に失敗: {err}"
+
+msgid "Failed to fetch the Chaotic AUR maintainer key."
+msgstr "Chaotic AUR メンテナー鍵の取得に失敗しました。"
+
+msgid "Failed to install pacman hook: {path} - {err}"
+msgstr "pacman フックのインストールに失敗: {path} - {err}"
+
+msgid "Failed to list snapshots: {err}"
+msgstr "スナップショットの一覧表示に失敗: {err}"
+
+msgid "Failed to locally sign the Chaotic AUR maintainer key."
+msgstr "Chaotic AUR メンテナー鍵のローカル署名に失敗しました。"
+
+msgid "Failed to remove pacman hooks: {err}"
+msgstr "pacman フックの削除に失敗: {err}"
+
+msgid "Failed to restore snapshot: {err}"
+msgstr "スナップショットの復元に失敗: {err}"
+
+msgid "Failed to write {conf}; the original was restored."
+msgstr "{conf} の書き込みに失敗しました。元のファイルを復元しました。"
+
+msgid "Firmware Update"
+msgstr "ファームウェア更新"
+
+msgid "Firmware was updated. A reboot is required to finish installation."
+msgstr "ファームウェアが更新されました。インストールを完了するには再起動が必要です。"
+
+msgid "Give at least one Include path or Server URL."
+msgstr "Include パスまたはサーバー URL を少なくとも 1 つ指定してください。"
+
+msgid "Include paths can't contain line breaks."
+msgstr "Include パスに改行は含められません。"
+
+msgid "Include paths must live under /etc/."
+msgstr "Include パスは /etc/ 配下にある必要があります。"
+
+msgid "Installing update-time hooks..."
+msgstr "更新時フックをインストール中…"
+
+msgid "Invalid repository name (letters, numbers, '.', '-' and '_')."
+msgstr "無効なリポジトリ名です (英数字、'.'、'-'、'_')."
+
+msgid "Loading snapshots..."
+msgstr "スナップショットを読み込み中…"
+
+msgid "NeoArch manual snapshot {ts}"
+msgstr "NeoArch 手動スナップショット {ts}"
+
+msgid "No Snapshots"
+msgstr "スナップショットがありません"
+
+msgid "No snapper configuration found."
+msgstr "snapper の設定が見つかりません。"
+
+msgid "No snapshots available for restoration."
+msgstr "復元に利用できるスナップショットがありません。"
+
+msgid "Nothing to delete — 2 or fewer snapshots."
+msgstr "削除するものはありません — スナップショットは 2 つ以下です。"
+
+msgid "Old snapshots deleted successfully"
+msgstr "古いスナップショットを削除しました"
+
+msgid "Operation cancelled."
+msgstr "操作がキャンセルされました。"
+
+msgid "Pacman hooks installed — every system update will now capture Snapper snapshots."
+msgstr "pacman フックをインストールしました — これからすべてのシステム更新で Snapper スナップショットが作成されます。"
+
+msgid "Pacman hooks removed."
+msgstr "pacman フックを削除しました。"
+
+msgid "Pre-update snapshot created: {comment}"
+msgstr "更新前スナップショットを作成しました: {comment}"
+
+msgid "Removing update-time hooks..."
+msgstr "更新時フックを削除中…"
+
+msgid "Repository '[{name}]' added{and_synced}."
+msgstr "リポジトリ「[{name}]」を追加しました{and_synced}。"
+
+msgid "Repository '[{name}]' already exists in /etc/pacman.conf."
+msgstr "リポジトリ「[{name}]」は /etc/pacman.conf に既に存在します。"
+
+msgid "Repository '[{name}]' not found."
+msgstr "リポジトリ「[{name}]」が見つかりません。"
+
+msgid "Repository '[{name}]' removed."
+msgstr "リポジトリ「[{name}]」を削除しました。"
+
+msgid "Restoring snapshot..."
+msgstr "スナップショットを復元中…"
+
+msgid "Rollback initiated for snapshot #{num}. Reboot to complete."
+msgstr "スナップショット #{num} のロールバックを開始しました。完了するには再起動してください。"
+
+msgid "Select Snapshot to Restore"
+msgstr "復元するスナップショットを選択"
+
+msgid "Select a snapshot to restore the system to:"
+msgstr "システムを復元するスナップショットを選択してください:"
+
+msgid "Server URLs must use http(s) and contain no line breaks."
+msgstr "サーバー URL は http(s) を使用し、改行を含めないでください。"
+
+msgid "Snapper Not Available"
+msgstr "Snapper が利用できません"
+
+msgid "Snapper needs a BTRFS filesystem and a configuration."
+msgstr "Snapper には BTRFS ファイルシステムと設定が必要です。"
+
+msgid "Snapper needs a BTRFS filesystem, the 'snapper' tool and a configuration. Create one with: sudo snapper create-config /"
+msgstr "Snapper には BTRFS ファイルシステム、'snapper' ツール、設定が必要です。作成方法: sudo snapper create-config /"
+
+msgid "Snapshot"
+msgstr "スナップショット"
+
+msgid "Snapshot created successfully: {comment}"
+msgstr "スナップショットを作成しました: {comment}"
+
+msgid "Snapshot created successfully: {date}"
+msgstr "スナップショットを作成しました: {date}"
+
+msgid "Snapshot creation timed out and no snapshot appeared in Timeshift's list.\n{err}"
+msgstr "スナップショットの作成がタイムアウトし、Timeshift の一覧にスナップショットが表示されませんでした。\n{err}"
+
+msgid "Snapshot restoration initiated. System will reboot."
+msgstr "スナップショットの復元を開始しました。システムが再起動します。"
+
+msgid "The snapshot did not appear in Timeshift's list.\nCommand output: {out}"
+msgstr "スナップショットが Timeshift の一覧に表示されませんでした。\nコマンド出力: {out}"
+
+msgid "This will delete old snapshots to free up disk space.\n\nKeep only the 2 most recent snapshots?\n\nThis action cannot be undone."
+msgstr "ディスク領域を解放するために古いスナップショットが削除されます。\n\n最新のスナップショットのみ 2 つ保持しますか?\n\nこの操作は取り消せません。"
+
+msgid "This will roll back the system to snapper snapshot #{num}.\n\nSnapper switches the default subvolume; a reboot is required.\n\nAre you sure you want to proceed?"
+msgstr "システムを snapper スナップショット #{num} にロールバックします。\n\nSnapper がデフォルト サブボリュームを切り替えるため、再起動が必要です。\n\n続行してもよろしいですか?"
+
+msgid "Timeshift is busy with another backup in progress (scheduled or manual). Try again after it finishes."
+msgstr "Timeshift は別のバックアップ処理中です (予定または手動)。完了後にもう一度お試しください。"
+
+msgid "Timeshift list failed"
+msgstr "Timeshift の一覧表示に失敗"
+
+msgid "curl isn't installed; install 'curl' to fetch the mirror list."
+msgstr "curl がインストールされていません。ミラーリストを取得するために 'curl' をインストールしてください。"

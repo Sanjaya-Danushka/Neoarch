@@ -40,7 +40,7 @@ def test_available_prefers_updates_all(qapp):
         ])
     out = _OperationsMixin._available_arch_updates(fake)
     names = {p["name"] for p in out}
-    assert names == {"a", "b"}
+    assert names == {"a"}
 
 
 def test_available_falls_back_to_table_rows(qapp):
@@ -58,7 +58,7 @@ def test_available_falls_back_to_table_rows(qapp):
         ])
     out = _OperationsMixin._available_arch_updates(fake)
     names = {p["name"] for p in out}
-    assert names == {"a", "b"}
+    assert names == {"a"}
 
 
 def test_available_none_when_nothing_loaded(qapp):

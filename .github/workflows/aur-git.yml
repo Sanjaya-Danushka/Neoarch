@@ -31,7 +31,7 @@ jobs:
         run: |
           BASE=$(grep -m1 'APP_VERSION = ' neoarch/resources/paths.py \
                    | sed -E 's/.*"([^"]+)".*/\1/')
-          if [[ -z "$BASE" ]]; then BASE="3.3.1"; fi
+          if [[ -z "$BASE" ]]; then BASE="3.3.2"; fi
           REV=$(git rev-list --count HEAD)
           HASH=$(git rev-parse --short=7 HEAD)
           VERSION="${BASE}.r${REV}.g${HASH}"

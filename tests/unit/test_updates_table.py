@@ -239,3 +239,80 @@ def test_enrich_restarts_after_disable(qapp, monkeypatch):
         time.sleep(0.05)
     assert calls == [1]
 
+
+def test_set_packages_stamps_repo_from_cached_map(qapp, monkeypatch):
+    monkeypatch.setattr("neoarch.frontend.components.updates_table.get_repo_map",
+                        lambda: {"pkg-0": "core", "pkg-2": "extra"})
+    table = _make_table()
+    assert table.model.package_at(0)["repo"] == "core"
+    assert table.model.package_at(2)["repo"] == "extra"
+    assert "repo" not in table.model.package_at(1)
+
+
+def test_stamp_repos_fills_pacman_rows(qapp):
+    table = _make_table()
+    table.model.stamp_repos({"pkg-0": "core", "pkg-1": "extra"})
+    assert table.model.package_at(0)["repo"] == "core"
+    assert table.model.package_at(1)["repo"] == "extra"
+    assert "repo" not in table.model.package_at(2)
+
+
+def test_stamp_repos_skips_non_pacman_and_existing_repo(qapp):
+    table = UpdatesTable(_FakeApp())
+    table.set_enrich(False)
+    table.set_packages([
+        {"name": "aaa-official", "id": "aaa-official", "version": "1.0",
+         "new_version": "1.0", "source": "pacman", "repo": "core"},
+        {"name": "zzz-aur", "id": "zzz-aur", "version": "1.0",
+         "new_version": "1.0", "source": "AUR"},
+    ])
+    table.model.stamp_repos({"aaa-official": "extra", "zzz-aur": "aur"})
+    assert table.model.package_at(0)["repo"] == "core"
+    assert "repo" not in table.model.package_at(1)
+
+
+def test_stamp_repos_does_nothing_for_unknown_names(qapp):
+    table = _make_table()
+    table.model.stamp_repos({"nothing-here": "extra"})
+    for i in range(table.row_count()):
+        assert "repo" not in table.model.package_at(i)
+
+
+def test_on_repos_ready_stamps_rows(qapp):
+    table = _make_table()
+    table._on_repos_ready({"pkg-1": "multilib"})
+    assert table.model.package_at(1)["repo"] == "multilib"
+
+
+def test_enrich_apply_section_captures_repository():
+    from neoarch.frontend.components.updates_table import _EnrichWorker
+    meta = {}
+    _EnrichWorker._apply_section(
+        meta,
+        {"Name": "7zip", "Repository": "extra", "Description": "file archiver",
+         "Download Size": "1.50 MiB"},
+    )
+    assert meta["7zip"]["repo"] == "extra"
+    assert meta["7zip"]["description"] == "file archiver"
+    assert meta["7zip"]["download_size"] == "1.50 MiB"
+
+
+def test_discover_mapping_keeps_repo():
+    from neoarch.frontend.mixins.views import _ViewsMixin
+
+    class _Stub:
+        def is_package_installed(self, pkg):
+            return False
+
+        def log(self, *args, **kwargs):
+            pass
+
+    out = _ViewsMixin._map_discover_pkg(
+        _Stub(),
+        {"name": "7zip", "id": "pacman-7zip", "version": "1.0",
+         "source": "pacman", "repo": "extra"},
+    )
+    assert out["source"] == "pacman"
+    assert out["repo"] == "extra"
+    assert out["name"] == "7zip"
+

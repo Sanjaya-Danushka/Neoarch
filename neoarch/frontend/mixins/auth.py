@@ -91,6 +91,7 @@ class _AuthMixin:
             Thread(target=self.install_dependencies, args=(missing_required,), daemon=True).start()
 
     def install_dependencies(self, missing):
+        """Attempt to install missing dependencies; returns whether all landed."""
         try:
             from neoarch.backend.session_auth import is_session_active
             self.log(f"Installing missing dependencies: {', '.join(missing)}")
@@ -123,8 +124,10 @@ class _AuthMixin:
             if remaining:
                 self.log(f"Could not install: {', '.join(remaining)} (not re-offered this session)")
                 self.show_message.emit(_("Environment"), _("Dependency setup incomplete. Still missing: {list}").format(list=", ".join(remaining)))
+                return False
             else:
                 self.show_message.emit(_("Environment"), _("Dependency setup completed"))
+                return True
         except DependencyAuthCancelled as e:
             self.log(f"Dependency setup cancelled: {e}")
             self.show_message.emit(
@@ -134,6 +137,7 @@ class _AuthMixin:
         except Exception as e:
             self.log(f"Setup failed: {str(e)}")
             self.show_message.emit(_("Environment"), _("Setup failed: {e}").format(e=str(e)))
+            return False
 
     def _run_sudo_install(self, packages):
         done = Event()

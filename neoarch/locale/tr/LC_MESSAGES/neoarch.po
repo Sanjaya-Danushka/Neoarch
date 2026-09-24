@@ -2366,3 +2366,803 @@ msgstr "Güncellemenin bitmesi bekleniyor…"
 
 msgid "Installed packages will appear here automatically once it completes."
 msgstr "Tamamlandığında yüklü paketler otomatik olarak burada görünecek."
+
+
+msgid " days"
+msgstr " gün"
+
+msgid " s"
+msgstr " saniye"
+
+msgid "%(n)d px"
+msgstr "%(n)d px"
+
+msgid "%(n)d%%"
+msgstr "%(n)d %%"
+
+msgid "A full system upgrade keeps libraries and applications in lockstep — the Arch-supported way to stay current."
+msgstr "Tam sistem yükseltmesi, kitaplıkları ve uygulamaları aynı hizada tutar — Arch'ın desteklediği güncel kalma yoludur."
+
+msgid "A pinned version quietly freezes the packages that depend on it. If you must pin, review it regularly."
+msgstr "Sabitlenmiş bir sürüm, ona bağımlı paketleri sessizce dondurur. Pinglemeniz gerekiyorsa, düzenli olarak gözden geçirin."
+
+msgid "A stale lock file was found:\n\n{lock}\n\nNo package manager is running, so this is a leftover from a previous interrupted operation."
+msgstr "Eski bir kilit dosyası bulundu:\n\n{lock}\n\nHiçbir paket yöneticisi çalışmıyor, bu yüzden bu, önceki kesintiye uğramış bir işlemin kalıntısıdır."
+
+msgid "AUR Helper"
+msgstr "AUR Yardımcısı"
+
+msgid "AUR RPC endpoint"
+msgstr "AUR RPC uç noktası"
+
+msgid "AUR Resources"
+msgstr "AUR Kaynakları"
+
+msgid "AUR helper: auto"
+msgstr "AUR yardımcısı: otomatik"
+
+msgid "AUR pre-install scan"
+msgstr "AUR kurulum öncesi tarama"
+
+msgid "AUR updates build one package at a time; a single failure never aborts the rest of the queue."
+msgstr "AUR güncellemeleri her seferinde bir paket oluşturur; tek bir hata asla kuyruğun geri kalanını durdurmaz."
+
+msgid "Add"
+msgstr "Ekle"
+
+msgid "Add Chaotic AUR"
+msgstr "Chaotic AUR ekle"
+
+msgid "Add Repository"
+msgstr "Depo ekle"
+
+msgid "Add a Repository"
+msgstr "Bir depo ekle"
+
+msgid "Add a Repository…"
+msgstr "Bir depo ekle…"
+
+msgid "Anyone can publish a recipe. Skipping the review means trusting a stranger's build script with your machine."
+msgstr "Herkes bir tarif yayınlayabilir. İncelemeyi atlamak, makinenizi bir yabancının derleme betiğine emanet etmek demektir."
+
+msgid "Arch is a rolling release: packages expect to move forward together. Updating a selection can desync libraries from the apps that use them."
+msgstr "Arch sürekli sürümlü bir dağıtımdır: paketler birlikte ilerlemeyi bekler. Bir seçimi güncellemek, kitaplıkları onları kullanan uygulamalarla eşzamanlılıktan çıkarabilir."
+
+msgid "Attach a DEBUG log when reporting bugs"
+msgstr "Hata bildirirken bir DEBUG günlüğü ekleyin"
+
+msgid "Autosave path"
+msgstr "Otomatik kayıt yolu"
+
+msgid "BIOS/UEFI and device firmware via fwupd.\nThe linux-firmware package is a pacman update, not this source."
+msgstr "fwupd aracılığıyla BIOS/UEFI ve cihaz bellenimi.\nlinux-firmware paketi bir pacman güncellemesidir, bu kaynak değil."
+
+msgid "Backs up your package list and config before installing."
+msgstr "Kurmadan önce paket listenizi ve yapılandırmanızı yedekler."
+
+msgid "Backup method"
+msgstr "Yedekleme yöntemi"
+
+msgid "Before installing from the AUR, review the package."
+msgstr "AUR'dan kurmadan önce paketi inceleyin."
+
+msgid "Check cached package archives for corruption before they cause an install to fail."
+msgstr "Bir kurulumun başarısız olmasına neden olmadan önce, önbelleğe alınmış paket arşivlerinde bozulma olup olmadığını kontrol eder."
+
+msgid "Check for firmware updates"
+msgstr "Bellenim güncellemelerini kontrol et"
+
+msgid "Check for pipx updates"
+msgstr "pipx güncellemelerini kontrol et"
+
+msgid "Checks certificates on every HTTPS request. Disable only if a proxy inspects your traffic — it does weaken security."
+msgstr "Her HTTPS isteğinde sertifikaları doğrular. Yalnızca bir proxy trafiğinizi denetliyorsa devre dışı bırakın — güvenliği zayıflatır."
+
+msgid "Checks for available updates each time the app starts."
+msgstr "Uygulama her başladığında mevcut güncellemeleri kontrol eder."
+
+msgid "Checks for new packages on the configured schedule."
+msgstr "Yapılandırılan zamanlamaya göre yeni paketleri kontrol eder."
+
+msgid "Clear selection"
+msgstr "Seçimi temizle"
+
+msgid "Cloud login caches tokens only until they expire — it never stores your credentials forever."
+msgstr "Bulut girişi jetonları yalnızca süreleri dolana kadar önbelleğe alır — kimlik bilgilerinizi asla kalıcı olarak saklamaz."
+
+msgid "Community-maintained build recipes. Unlike the official repos they are not curated or reviewed by Arch — anyone can publish a recipe."
+msgstr "Topluluk tarafından bakımı yapılan derleme tarifleri. Resmi depolardan farklı olarak Arch tarafından küratörlüğü veya incelemesi yapılmaz — herkes bir tarif yayınlayabilir."
+
+msgid "Config stays local"
+msgstr "Yapılandırma yerel kalır"
+
+msgid "Configured Repositories"
+msgstr "Yapılandırılmış Depolar"
+
+msgid "Confirm Uninstall"
+msgstr "Kaldırmayı onayla"
+
+msgid "Connection"
+msgstr "Bağlantı"
+
+msgid "Control how much NeoArch records, where it writes it, and when it rolls the log over"
+msgstr "NeoArch'ın ne kadar kayıt tuttuğunu, nereye yazdığını ve günlüğü ne zaman döndürdüğünü kontrol edin"
+
+msgid "DO"
+msgstr "YAPIN"
+
+msgid "DON'T"
+msgstr "YAPMAYIN"
+
+msgid "Data"
+msgstr "Veri"
+
+msgid "Decorative teal rim on the translucent window frame."
+msgstr "Yarı saydam pencere çerçevesinde dekoratif turkuaz kenarlık."
+
+msgid "Desktop notifications"
+msgstr "Masaüstü bildirimleri"
+
+msgid "Detects apps installed with pipx (Python scripts) and lists their updates on the Updates page."
+msgstr "pipx ile kurulan uygulamaları (Python betikleri) algılar ve güncellemelerini Güncellemeler sayfasında listeler."
+
+msgid "Detects firmware updates via fwupd on the Updates page. Applying always requires your explicit confirmation."
+msgstr "Güncellemeler sayfasında fwupd aracılığıyla bellenim güncellemelerini algılar. Uygulamak her zaman açık onayınızı gerektirir."
+
+msgid "Disabled"
+msgstr "Devre dışı"
+
+msgid "Done."
+msgstr "Tamamlandı."
+
+msgid "Drop orphaned packages, prune the cache, and read the archlinux.org news before major upgrades."
+msgstr "Öksüz paketleri kaldırın, önbelleği temizleyin ve büyük yükseltmelerden önce archlinux.org haberlerini okuyun."
+
+msgid "Echo to console"
+msgstr "Konsola yansıt"
+
+msgid "Enable “Snapshot before update” in General settings so a bad upgrade can be reverted in one click."
+msgstr "Kötü bir yükseltmenin tek tıkla geri alınabilmesi için Genel ayarlarda “Güncelleme öncesi örnek görüntü”yü etkinleştirin."
+
+msgid "Enabled"
+msgstr "Etkin"
+
+msgid "Every AUR result is badged [aur]"
+msgstr "Her AUR sonucu [aur] rozetlidir"
+
+msgid "Export settings to file"
+msgstr "Ayarları dosyaya dışa aktar"
+
+msgid "Failed to read repositories."
+msgstr "Depolar okunamadı."
+
+msgid "Fetch from several sources at the same time. Faster lookups, at the cost of more simultaneous connections."
+msgstr "Aynı anda birden fazla kaynaktan getirir. Daha hızlı aramalar, ancak daha fazla eşzamanlı bağlantı maliyetiyle."
+
+msgid "Fr"
+msgstr "Cum"
+
+msgid "Full Wiki ↗"
+msgstr "Tam Viki ↗"
+
+msgid "Full upgrades are the safe path"
+msgstr "Tam yükseltmeler güvenli yoldur"
+
+msgid "GUI sudo prompt (SUDO_ASKPASS)"
+msgstr "GUI sudo istemi (SUDO_ASKPASS)"
+
+msgid "Good Habits"
+msgstr "İyi Alışkanlıklar"
+
+msgid "Host & port"
+msgstr "Sunucu ve port"
+
+msgid "Housekeep: orphans, cache, Arch news"
+msgstr "Bakım: öksüzler, önbellek, Arch haberleri"
+
+msgid "How NeoArch reaches the internet — proxies, timeouts and pacman's download behaviour"
+msgstr "NeoArch'ın internete nasıl ulaştığı — proxy'ler, zaman aşımları ve pacman'ın indirme davranışı"
+
+msgid "How long NeoArch waits for a network reply before giving up. Raise it on slow links, lower it to fail fast."
+msgstr "NeoArch'ın vazgeçmeden önce bir ağ yanıtı bekleyeceği süre. Yavaş bağlantılarda artırın, hızlı başarısızlık için azaltın."
+
+msgid "How many days between automatic update checks."
+msgstr "Otomatik güncelleme kontrolleri arasında kaç gün."
+
+msgid "How many old versions to keep before purging. Keep it small — older archives are already installed."
+msgstr "Temizlemeden önce kaç eski sürüm tutulacak. Küçük tutun — eski arşivler zaten kuruludur."
+
+msgid "How many packages pacman may download at once while updating. Applies to /etc/pacman.conf and needs root."
+msgstr "Güncelleme sırasında pacman'ın aynı anda indirebileceği paket sayısı. /etc/pacman.conf için geçerlidir ve root gerektirir."
+
+msgid "How much detail NeoArch writes. DEBUG records everything including network calls and is ideal for bug reports; ERROR writes only failures."
+msgstr "NeoArch'ın ne kadar ayrıntı yazdığı. DEBUG, ağ çağrıları dahil her şeyi kaydeder ve hata raporları için idealdir; ERROR yalnızca hataları yazar."
+
+msgid "How much the desktop shows through the window body."
+msgstr "Masaüstünün pencere gövdesinden ne kadar göründüğü."
+
+msgid "Ignore the full-upgrade warning"
+msgstr "Tam yükseltme uyarısını yoksay"
+
+msgid "Import settings from file"
+msgstr "Ayarları dosyadan içe aktar"
+
+msgid "Important announcements such as manual interventions are posted before big changes land. Worth a glance before major upgrades."
+msgstr "Manuel müdahaleler gibi önemli duyurular, büyük değişiklikler gelmeden önce yayınlanır. Büyük yükseltmelerden önce bir göz atmaya değer."
+
+msgid "Include path under /etc/ (optional)"
+msgstr "/etc/ altında include yolu (isteğe bağlı)"
+
+msgid "Install AUR packages blindly"
+msgstr "AUR paketlerini körlemesine kur"
+
+msgid "Install update-time hooks"
+msgstr "Güncelleme-kanca'larını kur"
+
+msgid "Installs global npm packages to ~/.npm-global without sudo."
+msgstr "Global npm paketlerini sudo olmadan ~/.npm-global dizinine kurar."
+
+msgid "Keep IgnorePkg minimal"
+msgstr "IgnorePkg'ı en az düzeyde tutun"
+
+msgid "Keep versions per package"
+msgstr "Paket başına korunan sürüm"
+
+msgid "Keep your system tidy: orphans, leftover configs, the download cache, and Arch news"
+msgstr "Sisteminizi derli toplu tutun: öksüzler, artık yapılandırmalar, indirme önbelleği ve Arch haberleri"
+
+msgid "Language"
+msgstr "Dil"
+
+msgid "Last snapshot: {date}"
+msgstr "Son örnek görüntü: {date}"
+
+msgid "Last snapshot: —"
+msgstr "Son örnek görüntü: —"
+
+msgid "Leave console echo on during daily use"
+msgstr "Günlük kullanımda konsol yansımasını kapalı bırakın"
+
+msgid "Log file path"
+msgstr "Günlük dosyası yolu"
+
+msgid "Log level"
+msgstr "Günlük düzeyi"
+
+msgid "Manage .pacnew files"
+msgstr ".pacnew dosyalarını yönet"
+
+msgid "Maximum size"
+msgstr "Maksimum boyut"
+
+msgid "Messages are already written to the log file. Console echo is a terminal-first tool and adds busy output to the window you launched NeoArch from."
+msgstr "Mesajlar zaten günlük dosyasına yazılır. Konsol yansıması terminal öncelikli bir araçtır ve NeoArch'ı başlattığınız pencereye yoğun çıktı ekler."
+
+msgid "Mirror messages to the terminal NeoArch was started from. Mostly useful when you run the app from a shell — the log file already records everything."
+msgstr "NeoArch'ın başlatıldığı terminale mesajları yansıtır. Çoğunlukla uygulamayı bir kabuktan çalıştırdığınızda yararlıdır — günlük dosyası zaten her şeyi kaydeder."
+
+msgid "Mixing old and new packages desyncs libraries from the apps that link them — the classic broken-Arch setup."
+msgstr "Eski ve yeni paketleri karıştırmak, kitaplıkları onları bağlayan uygulamalardan koparır — klasik bozuk-Arc düzeni."
+
+msgid "Mo"
+msgstr "Pzt"
+
+msgid "Needs a BTRFS filesystem"
+msgstr "BTRFS dosya sistemi gerekir"
+
+msgid "Needs a snapper config (sudo snapper create-config /)"
+msgstr "Bir snapper yapılandırması gerekir (sudo snapper create-config /)"
+
+msgid "NeoArch fetches and statically scans recipes first and pauses on critical findings. Read the whole file anyway."
+msgstr "NeoArch önce tarifleri indirip statik olarak tarar ve kritik bulgularda duraklar. Yine de dosyanın tamamını okuyun."
+
+msgid "NeoArch never quietly blocks an action. Risky moves get a warning and your explicit confirmation — you always hold the final say."
+msgstr "NeoArch hiçbir eylemi sessizce engellemez. Riskli hamleler bir uyarı ve sizin açık onayınızı alır — son söz her zaman sizindir."
+
+msgid "NeoArch will let you proceed — but the warning exists because this is how systems break."
+msgstr "NeoArch devam etmenize izin verir — ancak uyarı vardır çünkü sistemler böyle bozulur."
+
+msgid "Next run"
+msgstr "Sonraki çalıştırma"
+
+msgid "No cooldown"
+msgstr "Bekleme yok"
+
+msgid "Nothing is routed through a proxy by default. Pick HTTP, HTTPS or SOCKS5 to send package, AUR and Flatpak requests through one."
+msgstr "Varsayılan olarak hiçbir şey bir proxy üzerinden yönlendirilmez. Paket, AUR ve Flatpak isteklerini bir proxy üzerinden göndermek için HTTP, HTTPS veya SOCKS5 seçin."
+
+msgid "OAuth tokens expire"
+msgstr "OAuth jetonları süresi dolar"
+
+msgid "Once the log grows past this size, NeoArch rolls it over so it never fills your drive."
+msgstr "Günlük bu boyutu aştığında, NeoArch sürücünüzü asla doldurmaması için günlüğü döndürür."
+
+msgid "One-at-a-time builds"
+msgstr "Tek tek derlemeler"
+
+msgid "Optional snapshots"
+msgstr "İsteğe bağlı örnek görüntüler"
+
+msgid "PKGBUILDs and .install scriptlets are statically inspected before every AUR install; critical findings demand explicit acceptance."
+msgstr "Her AUR kurulumundan önce PKGBUILD'ler ve .install betikçikleri statik olarak incelenir; kritik bulgular açık kabul ister."
+
+msgid "Package Sources"
+msgstr "Paket Kaynakları"
+
+msgid "Package count and version changes are shown first; nothing starts until you press confirm — never silently."
+msgstr "Paket sayısı ve sürüm değişiklikleri önce gösterilir; onaya basana kadar hiçbir şey başlamaz — asla sessizce."
+
+msgid "Packages installed as dependencies that nothing needs any more. Deleting them is safe, frees disk space and makes updates faster."
+msgstr "Bağımlılık olarak kurulan ve artık kimsenin ihtiyaç duymadığı paketler. Bunları silmek güvenlidir, disk alanı açar ve güncellemeleri hızlandırır."
+
+msgid "Pacman Database Lock"
+msgstr "pacman Veritabanı Kilidi"
+
+msgid "Pacman ParallelDownloads"
+msgstr "pacman ParallelDownloads"
+
+msgid "Parallel network requests"
+msgstr "Paralel ağ istekleri"
+
+msgid "Passwords go straight to the privilege prompt in your session and are never written to disk."
+msgstr "Parolalar doğrudan oturumunuzdaki ayrıcalık istemine gider ve asla diske yazılmaz."
+
+msgid "Pipe scripts into a shell"
+msgstr "Betikleri bir kabuğa yönlendir"
+
+msgid "Play a short alert sound together with each notification."
+msgstr "Her bildirimle birlikte kısa bir uyarı sesi çalar."
+
+msgid "Proxy type"
+msgstr "Proxy türü"
+
+msgid "Quick Reference — Do's & Don'ts"
+msgstr "Hızlı Başvuru — Yapın & Yapmayın"
+
+msgid "Quick-add Chaotic AUR"
+msgstr "Chaotic AUR'u hızlı ekle"
+
+msgid "Quick-add Chaotic AUR (signs the maintainer key, fetches the mirror list, appends [chaotic-aur] and runs pacman -Syy), or add any repo by name."
+msgstr "Chaotic AUR'u hızlı ekle (bakımcı anahtarını imzalar, ayna listesini getirir, [chaotic-aur] ekler ve pacman -Syy çalıştırır) veya herhangi bir depoyu adıyla ekleyin."
+
+msgid "Re-check while open (min)"
+msgstr "Açıkken yeniden kontrol (dk)"
+
+msgid "Re-checks for updates in the background every X minutes while the app is running. Set to Off to disable."
+msgstr "Uygulama çalışırken arka planda her X dakikada bir güncellemeleri yeniden kontrol eder. Devre dışı bırakmak için Off yapın."
+
+msgid "Read the PKGBUILD before installing from the AUR"
+msgstr "AUR'dan kurmadan önce PKGBUILD'i okuyun"
+
+msgid "Read the news before updating"
+msgstr "Güncellemeden önce haberleri okuyun"
+
+msgid "Reading /etc/pacman.conf…"
+msgstr "/etc/pacman.conf okunuyor…"
+
+msgid "Ready — snapshots available"
+msgstr "Hazır — örnek görüntüler mevcut"
+
+msgid "Remove '[{name}]' from /etc/pacman.conf?"
+msgstr "'[{name}]' öğesi /etc/pacman.conf dosyasından kaldırılsın mı?"
+
+msgid "Remove Lock"
+msgstr "Kilidi kaldır"
+
+msgid "Remove Repository"
+msgstr "Depoyu kaldır"
+
+msgid "Remove hooks"
+msgstr "Kancaları kaldır"
+
+msgid "Remove orphaned packages"
+msgstr "Öksüz paketleri kaldır"
+
+msgid "Remove the stale lock and continue with \"{operation}\"?"
+msgstr "Eski kilidi kaldırıp \"{operation}\" ile devam edilsin mi?"
+
+msgid "Remove the stale lock and continue?"
+msgstr "Eski kilit kaldırılıp devam edilsin mi?"
+
+msgid "Repositories"
+msgstr "Depolar"
+
+msgid "Repositories NeoArch added carry a marker and can be removed here; system and hand-written sections are protected."
+msgstr "NeoArch'ın eklediği depolar bir işaret taşır ve buradan kaldırılabilir; sistem ve elle yazılmış bölümler korunur."
+
+msgid "Repository name, e.g. archlinuxcn"
+msgstr "Depo adı, ör. archlinuxcn"
+
+msgid "Request timeout"
+msgstr "İstek zaman aşımı"
+
+msgid "Requires the 'snapper' tool"
+msgstr "'snapper' aracı gerekir"
+
+msgid "Requires the 'timeshift' tool"
+msgstr "'timeshift' aracı gerekir"
+
+msgid "Resolved automatically to yay, paru, trizen or pikaur. Change it under General settings."
+msgstr "Otomatik olarak yay, paru, trizen veya pikaur olarak çözümlenir. Genel ayarlar altında değiştirin."
+
+msgid "Review before installing"
+msgstr "Kurmadan önce incele"
+
+msgid "Rounded corners on the translucent window frame."
+msgstr "Yarı saydam pencere çerçevesinde yuvarlatılmış köşeler."
+
+msgid "Run at"
+msgstr "Şu zamanda çalıştır"
+
+msgid "Runs the update check automatically on a weekly schedule (applies while the app is running)."
+msgstr "Güncelleme kontrolünü haftalık bir zamanlamayla otomatik çalıştırır (uygulama çalışırken geçerlidir)."
+
+msgid "Sa"
+msgstr "Cmt"
+
+msgid "Save the selected bundle automatically."
+msgstr "Seçilen paketi otomatik kaydeder."
+
+msgid "Scan for corrupted archives"
+msgstr "Bozuk arşivleri tara"
+
+msgid "Seconds to wait before repeating the same notification."
+msgstr "Aynı bildirimi tekrarlamadan önce beklenecek saniyeler."
+
+msgid "Select a file to inspect its diff"
+msgstr "Farkını incelemek için bir dosya seçin"
+
+msgid "Select all"
+msgstr "Tümünü seç"
+
+msgid "Select the days the scheduled check runs on."
+msgstr "Zamanlanan kontrolün çalışacağı günleri seçin."
+
+msgid "Server URL, e.g. https://mirror.example (optional)"
+msgstr "Sunucu URL'si, ör. https://mirror.example (isteğe bağlı)"
+
+msgid "Set the level above to DEBUG, reproduce the problem, then attach the log file — it turns a vague report into a quick fix. Remember to switch back to INFO afterwards."
+msgstr "Yukarıdaki düzeyi DEBUG yapın, sorunu yeniden üretin ve günlük dosyasını ekleyin — bu, belirsiz bir raporu hızlı bir düzeltmeye dönüştürür. Sonra tekrar INFO'ya geçmeyi unutmayın."
+
+msgid "Settings live in ~/.config/neoarch — no telemetry, no account, no cloud by default."
+msgstr "Ayarlar ~/.config/neoarch içinde yaşar — varsayılan olarak telemetri, hesap veya bulut yok."
+
+msgid "Show a message banner inside the app when a task completes."
+msgstr "Bir görev tamamlandığında uygulamanın içinde bir mesaj şeridi gösterir."
+
+msgid "Show a pop-up notification from the system tray when a task completes."
+msgstr "Bir görev tamamlandığında sistem tepsisinden açılır bildirim gösterir."
+
+msgid "Snapper"
+msgstr "Snapper"
+
+msgid "Snapper setup is incomplete"
+msgstr "Snapper kurulumu eksik"
+
+msgid "Snapshots"
+msgstr "Örnek görüntüler"
+
+msgid "Sources & Community Packages"
+msgstr "Kaynaklar ve Topluluk Paketleri"
+
+msgid "Su"
+msgstr "Paz"
+
+msgid "System Protection & Habits"
+msgstr "Sistem Koruması ve Alışkanlıklar"
+
+msgid "Th"
+msgstr "Per"
+
+msgid "The proxy's address and the TCP port it listens on. Only applied when a proxy type other than \"none\" is chosen."
+msgstr "Proxy'nin adresi ve dinlediği TCP portu. Yalnızca \"none\" dışında bir proxy türü seçildiğinde uygulanır."
+
+msgid "The section is appended to /etc/pacman.conf under a NeoArch marker, so it can be removed again here later."
+msgstr "Bölüm, NeoArch işareti altında /etc/pacman.conf dosyasına eklenir, böylece daha sonra buradan yeniden kaldırılabilir."
+
+msgid "The source column always shows where a package comes from, so community packages are never mistaken for official ones."
+msgstr "Kaynak sütunu her zaman bir paketin nereden geldiğini gösterir, böylece topluluk paketleri asla resmi olanlarla karıştırılmaz."
+
+msgid "Themes"
+msgstr "Temalar"
+
+msgid "This signs the Chaotic AUR maintainer key, downloads the mirror list over HTTPS, appends [chaotic-aur] to /etc/pacman.conf and runs 'pacman -Syy'. Continue?"
+msgstr "Bu, Chaotic AUR bakımcı anahtarını imzalar, ayna listesini HTTPS üzerinden indirir, /etc/pacman.conf dosyasına [chaotic-aur] ekler ve 'pacman -Syy' çalıştırır. Devam edilsin mi?"
+
+msgid "Time of day the weekly check starts."
+msgstr "Haftalık kontrolün başladığı günün saati."
+
+msgid "Timeshift"
+msgstr "Timeshift"
+
+msgid "Tu"
+msgstr "Sal"
+
+msgid "Uninstall the following package(s)?\n\n{summary}\n\nThis will remove them from your system and cannot be undone."
+msgstr "Aşağıdaki paket(ler) kaldırılsın mı?\n\n{summary}\n\nBu, onları sisteminizden kaldırır ve geri alınamaz."
+
+msgid "Update everything together"
+msgstr "Her şeyi birlikte güncelle"
+
+msgid "Update interval (days)"
+msgstr "Güncelleme aralığı (gün)"
+
+msgid "Updates & Review"
+msgstr "Güncellemeler ve İnceleme"
+
+msgid "Use npm user mode"
+msgstr "npm kullanıcı modunu kullan"
+
+msgid "View and manage pacman repositories like Chaotic AUR — no more hand-editing /etc/pacman.conf."
+msgstr "/etc/pacman.conf dosyasını elle düzenlemeye son — Chaotic AUR gibi pacman depolarını görün ve yönetin."
+
+msgid "View changes ↗"
+msgstr "Değişiklikleri görüntüle ↗"
+
+msgid "WARNED"
+msgstr "UYARILDI"
+
+msgid "We"
+msgstr "Çar"
+
+msgid "Weekdays"
+msgstr "Hafta içi günler"
+
+msgid "What NeoArch can reach, what it runs, how it protects secrets, and the habits that keep an Arch system healthy"
+msgstr "NeoArch'ın erişebildikleri, çalıştırdıkları, sırları nasıl koruduğu ve bir Arch sistemini sağlıklı tutan alışkanlıklar"
+
+msgid "When a package installation or removal finishes."
+msgstr "Bir paket kurulumu veya kaldırma işlemi bittiğinde."
+
+msgid "When a package ships a new config, the old one is kept as a .pacnew. Review and merge them so your tweaks are never silently lost."
+msgstr "Bir paket yeni bir yapılandırma getirdiğinde, eskisi .pacnew olarak saklanır. Bunları inceleyip birleştirin, böylece ayarlarınız asla sessizce kaybolmaz."
+
+msgid "When an operation fails or emits warnings."
+msgstr "Bir işlem başarısız olduğunda veya uyarı verdiğinde."
+
+msgid "When new system and package updates are ready."
+msgstr "Yeni sistem ve paket güncellemeleri hazır olduğunda."
+
+msgid "Where the rolling log lives. Defaults to ~/.config/neoarch/neoarch.log on your home directory."
+msgstr "Sürekli dönen günlüğün yaşadığı yer. Varsayılan olarak ana dizininizdeki ~/.config/neoarch/neoarch.log."
+
+msgid "Window transparency"
+msgstr "Pencere saydamlığı"
+
+msgid "Working…"
+msgstr "Çalışıyor…"
+
+msgid "curl … | bash runs code sight-unseen. Prefer real packages, or read what you are about to execute."
+msgstr "curl … | bash görmediğiniz bir kodu çalıştırır. Gerçek paketleri tercih edin veya çalıştırmak üzere olduğunuz şeyi okuyun."
+
+msgid "fwupd is not installed — install with: sudo pacman -S fwupd"
+msgstr "fwupd kurulu değil — kurun: sudo pacman -S fwupd"
+
+msgid "npm is not installed — install with: sudo pacman -S npm"
+msgstr "npm kurulu değil — kurun: sudo pacman -S npm"
+
+msgid "pipx is not installed — install with: sudo pacman -S python-pipx"
+msgstr "pipx kurulu değil — kurun: sudo pacman -S python-pipx"
+
+msgid "{tool} is not installed — install with: sudo pacman -S {pkg}"
+msgstr "{tool} kurulu değil — kurun: sudo pacman -S {pkg}"
+
+msgid "↗ Wiki"
+msgstr "↗ Viki"
+
+
+msgid " and synced"
+msgstr " ve senkronize edildi"
+
+msgid "'{name}' is a system repository and can't be toggled here."
+msgstr "'[{name}]' bir sistem deposudur ve burada değiştirilemez."
+
+msgid "'{name}' is a system repository."
+msgstr "'[{name}]' bir sistem deposudur."
+
+msgid "'{name}' isn't managed by NeoArch — edit /etc/pacman.conf manually."
+msgstr "'[{name}]' NeoArch tarafından yönetilmiyor — /etc/pacman.conf dosyasını elle düzenleyin."
+
+msgid "(empty)"
+msgstr "(boş)"
+
+msgid "Another snapshot operation is already running."
+msgstr "Başka bir örnek görüntü işlemi zaten çalışıyor."
+
+msgid "Chaotic AUR is already configured in /etc/pacman.conf."
+msgstr "Chaotic AUR zaten /etc/pacman.conf içinde yapılandırılmış."
+
+msgid "Confirm Restoration"
+msgstr "Geri yüklemeyi onayla"
+
+msgid "Couldn't download the Chaotic AUR mirror list."
+msgstr "Chaotic AUR ayna listesi indirilemedi."
+
+msgid "Couldn't read {conf}."
+msgstr "{conf} okunamadı."
+
+msgid "Create a system snapshot before proceeding?\n\nThis will take some time."
+msgstr "Devam etmeden önce bir sistem örnek görüntüsü oluşturulsun mu?\n\nBu biraz zaman alacaktır."
+
+msgid "Creating pre-update snapshot..."
+msgstr "Güncelleme öncesi örnek görüntü oluşturuluyor…"
+
+msgid "Creating snapshot..."
+msgstr "Örnek görüntü oluşturuluyor…"
+
+msgid "Deleting old snapshots..."
+msgstr "Eski örnek görüntüler siliniyor…"
+
+msgid "Error creating pre-update snapshot: {err}"
+msgstr "Güncelleme öncesi örnek görüntü oluşturma hatası: {err}"
+
+msgid "Error creating snapshot: {err}"
+msgstr "Örnek görüntü oluşturma hatası: {err}"
+
+msgid "Error deleting snapshots: {err}"
+msgstr "Örnek görüntü silme hatası: {err}"
+
+msgid "Error installing pacman hooks: {err}"
+msgstr "pacman kancaları kurma hatası: {err}"
+
+msgid "Error removing pacman hooks: {err}"
+msgstr "pacman kancaları kaldırma hatası: {err}"
+
+msgid "Error restoring snapshot: {err}"
+msgstr "Örnek görüntü geri yükleme hatası: {err}"
+
+msgid "Failed to create pre-update snapshot: {err}"
+msgstr "Güncelleme öncesi örnek görüntü oluşturulamadı: {err}"
+
+msgid "Failed to create snapshot: {err}"
+msgstr "Örnek görüntü oluşturulamadı: {err}"
+
+msgid "Failed to delete snapshots: {err}"
+msgstr "Örnek görüntüler silinemedi: {err}"
+
+msgid "Failed to fetch the Chaotic AUR maintainer key."
+msgstr "Chaotic AUR bakımcı anahtarı alınamadı."
+
+msgid "Failed to install pacman hook: {path} - {err}"
+msgstr "pacman kancası kurulamadı: {path} - {err}"
+
+msgid "Failed to list snapshots: {err}"
+msgstr "Örnek görüntüler listelenemedi: {err}"
+
+msgid "Failed to locally sign the Chaotic AUR maintainer key."
+msgstr "Chaotic AUR bakımcı anahtarı yerel olarak imzalanamadı."
+
+msgid "Failed to remove pacman hooks: {err}"
+msgstr "pacman kancaları kaldırılamadı: {err}"
+
+msgid "Failed to restore snapshot: {err}"
+msgstr "Örnek görüntü geri yüklenemedi: {err}"
+
+msgid "Failed to write {conf}; the original was restored."
+msgstr "{conf} yazılamadı; orijinal geri yüklendi."
+
+msgid "Firmware Update"
+msgstr "Bellenim güncellemesi"
+
+msgid "Firmware was updated. A reboot is required to finish installation."
+msgstr "Bellenim güncellendi. Kurulumu tamamlamak için yeniden başlatma gerekiyor."
+
+msgid "Give at least one Include path or Server URL."
+msgstr "En az bir Include yolu veya Sunucu URL'si verin."
+
+msgid "Include paths can't contain line breaks."
+msgstr "Include yolları satır sonu içeremez."
+
+msgid "Include paths must live under /etc/."
+msgstr "Include yolları /etc/ altında olmalıdır."
+
+msgid "Installing update-time hooks..."
+msgstr "Güncelleme kancaları kuruluyor…"
+
+msgid "Invalid repository name (letters, numbers, '.', '-' and '_')."
+msgstr "Geçersiz depo adı (harfler, sayılar, '.', '-' ve '_')."
+
+msgid "Loading snapshots..."
+msgstr "Örnek görüntüler yükleniyor…"
+
+msgid "NeoArch manual snapshot {ts}"
+msgstr "NeoArch manuel örnek görüntüsü {ts}"
+
+msgid "No Snapshots"
+msgstr "Örnek görüntü yok"
+
+msgid "No snapper configuration found."
+msgstr "snapper yapılandırması bulunamadı."
+
+msgid "No snapshots available for restoration."
+msgstr "Geri yükleme için örnek görüntü yok."
+
+msgid "Nothing to delete — 2 or fewer snapshots."
+msgstr "Silinecek bir şey yok — 2 veya daha az örnek görüntü."
+
+msgid "Old snapshots deleted successfully"
+msgstr "Eski örnek görüntüler başarıyla silindi"
+
+msgid "Operation cancelled."
+msgstr "İşlem iptal edildi."
+
+msgid "Pacman hooks installed — every system update will now capture Snapper snapshots."
+msgstr "pacman kancaları kuruldu — artık her sistem güncellemesi Snapper örnek görüntüleri yakalayacak."
+
+msgid "Pacman hooks removed."
+msgstr "pacman kancaları kaldırıldı."
+
+msgid "Pre-update snapshot created: {comment}"
+msgstr "Güncelleme öncesi örnek görüntü oluşturuldu: {comment}"
+
+msgid "Removing update-time hooks..."
+msgstr "Güncelleme kancaları kaldırılıyor…"
+
+msgid "Repository '[{name}]' added{and_synced}."
+msgstr "'[{name}]' deposu eklendi{and_synced}."
+
+msgid "Repository '[{name}]' already exists in /etc/pacman.conf."
+msgstr "'[{name}]' deposu zaten /etc/pacman.conf içinde var."
+
+msgid "Repository '[{name}]' not found."
+msgstr "'[{name}]' deposu bulunamadı."
+
+msgid "Repository '[{name}]' removed."
+msgstr "'[{name}]' deposu kaldırıldı."
+
+msgid "Restoring snapshot..."
+msgstr "Örnek görüntü geri yükleniyor…"
+
+msgid "Rollback initiated for snapshot #{num}. Reboot to complete."
+msgstr "#{num} örnek görüntüsü için geri alma başlatıldı. Tamamlamak için yeniden başlatın."
+
+msgid "Select Snapshot to Restore"
+msgstr "Geri yüklenecek örnek görüntüyü seçin"
+
+msgid "Select a snapshot to restore the system to:"
+msgstr "Sistemin geri yükleneceği bir örnek görüntü seçin:"
+
+msgid "Server URLs must use http(s) and contain no line breaks."
+msgstr "Sunucu URL'leri http(s) kullanmalı ve satır sonu içermemelidir."
+
+msgid "Snapper Not Available"
+msgstr "Snapper kullanılamıyor"
+
+msgid "Snapper needs a BTRFS filesystem and a configuration."
+msgstr "Snapper bir BTRFS dosya sistemi ve bir yapılandırma gerektirir."
+
+msgid "Snapper needs a BTRFS filesystem, the 'snapper' tool and a configuration. Create one with: sudo snapper create-config /"
+msgstr "Snapper bir BTRFS dosya sistemi, 'snapper' aracı ve bir yapılandırma gerektirir. Bir tane oluşturun: sudo snapper create-config /"
+
+msgid "Snapshot"
+msgstr "Örnek görüntü"
+
+msgid "Snapshot created successfully: {comment}"
+msgstr "Örnek görüntü başarıyla oluşturuldu: {comment}"
+
+msgid "Snapshot created successfully: {date}"
+msgstr "Örnek görüntü başarıyla oluşturuldu: {date}"
+
+msgid "Snapshot creation timed out and no snapshot appeared in Timeshift's list.\n{err}"
+msgstr "Örnek görüntü oluşturmanın süresi doldu ve Timeshift listesinde hiçbir örnek görüntü görünmedi.\n{err}"
+
+msgid "Snapshot restoration initiated. System will reboot."
+msgstr "Örnek görüntü geri yükleme başlatıldı. Sistem yeniden başlatılacak."
+
+msgid "The snapshot did not appear in Timeshift's list.\nCommand output: {out}"
+msgstr "Örnek görüntü Timeshift listesinde görünmedi.\nKomut çıktısı: {out}"
+
+msgid "This will delete old snapshots to free up disk space.\n\nKeep only the 2 most recent snapshots?\n\nThis action cannot be undone."
+msgstr "Bu, disk alanı boşaltmak için eski örnek görüntüleri silecek.\n\nYalnızca en son 2 örnek görüntü korunsun mu?\n\nBu işlem geri alınamaz."
+
+msgid "This will roll back the system to snapper snapshot #{num}.\n\nSnapper switches the default subvolume; a reboot is required.\n\nAre you sure you want to proceed?"
+msgstr "Bu, sistemi snapper örnek görüntüsü #{num} durumuna geri alacak.\n\nSnapper varsayılan alt birimi değiştirir; yeniden başlatma gerekir.\n\nDevam etmek istediğinize emin misiniz?"
+
+msgid "Timeshift is busy with another backup in progress (scheduled or manual). Try again after it finishes."
+msgstr "Timeshift başka bir devam eden yedeklemeyle (planlı veya manuel) meşgul. Bittikten sonra tekrar deneyin."
+
+msgid "Timeshift list failed"
+msgstr "Timeshift listesi başarısız"
+
+msgid "curl isn't installed; install 'curl' to fetch the mirror list."
+msgstr "curl kurulu değil; ayna listesini getirmek için 'curl' kurun."

@@ -76,7 +76,7 @@ def test_disabled_toggles_keep_values(qapp, monkeypatch):
 def test_refresh_source_states_reenables_after_install(qapp, monkeypatch):
     widget = _build(monkeypatch, cmd_exists=False)
     assert not widget.sw_pipx.isEnabled()
-    assert "sudo pacman -S pipx" in widget.sw_pipx.toolTip()
+    assert "sudo pacman -S python-pipx" in widget.sw_pipx.toolTip()
 
     monkeypatch.setattr(
         "neoarch.frontend.views.settings_general.sys_utils.cmd_exists",

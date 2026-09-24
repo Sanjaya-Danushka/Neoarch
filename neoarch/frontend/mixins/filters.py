@@ -983,7 +983,7 @@ class _FiltersMixin:
             ("Flatpak", "flatpak", "flatpak"),
             ("npm", "npm", "npm"),
             ("Firmware", "fwupdmgr", "fwupd"),
-            ("pipx", "pipx", "pipx"),
+            ("pipx", "pipx", "python-pipx"),
         ):
             item = self.source_card.sources.get(source_name)
             if item is None:

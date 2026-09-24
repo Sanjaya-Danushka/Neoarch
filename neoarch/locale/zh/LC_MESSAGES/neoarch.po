@@ -2366,3 +2366,803 @@ msgstr "正在等待更新完成…"
 
 msgid "Installed packages will appear here automatically once it completes."
 msgstr "完成后，已安装的软件包将自动显示在这里。"
+
+
+msgid " days"
+msgstr " 天"
+
+msgid " s"
+msgstr " 秒"
+
+msgid "%(n)d px"
+msgstr "%(n)d px"
+
+msgid "%(n)d%%"
+msgstr "%(n)d %%"
+
+msgid "A full system upgrade keeps libraries and applications in lockstep — the Arch-supported way to stay current."
+msgstr "完整的系统升级让库和应用程序保持同步——这是 Arch 支持的最新方式。"
+
+msgid "A pinned version quietly freezes the packages that depend on it. If you must pin, review it regularly."
+msgstr "固定的版本会悄悄冻结依赖它的软件包。如果必须固定，请定期复查。"
+
+msgid "A stale lock file was found:\n\n{lock}\n\nNo package manager is running, so this is a leftover from a previous interrupted operation."
+msgstr "发现过期的锁定文件：\n\n{lock}\n\n没有正在运行的软件包管理器，因此这是之前被中断操作的残留物。"
+
+msgid "AUR Helper"
+msgstr "AUR 助手"
+
+msgid "AUR RPC endpoint"
+msgstr "AUR RPC 端点"
+
+msgid "AUR Resources"
+msgstr "AUR 资源"
+
+msgid "AUR helper: auto"
+msgstr "AUR 助手：自动"
+
+msgid "AUR pre-install scan"
+msgstr "AUR 安装前扫描"
+
+msgid "AUR updates build one package at a time; a single failure never aborts the rest of the queue."
+msgstr "AUR 更新一次构建一个软件包；单个失败绝不会中断队列的其余部分。"
+
+msgid "Add"
+msgstr "添加"
+
+msgid "Add Chaotic AUR"
+msgstr "添加 Chaotic AUR"
+
+msgid "Add Repository"
+msgstr "添加软件源"
+
+msgid "Add a Repository"
+msgstr "添加软件源"
+
+msgid "Add a Repository…"
+msgstr "添加软件源…"
+
+msgid "Anyone can publish a recipe. Skipping the review means trusting a stranger's build script with your machine."
+msgstr "任何人都可以发布构建脚本。跳过审查意味着把你的机器托付给陌生人的构建脚本。"
+
+msgid "Arch is a rolling release: packages expect to move forward together. Updating a selection can desync libraries from the apps that use them."
+msgstr "Arch 是滚动发行版：软件包需要共同前进。更新部分软件包可能会使库与使用它们的应用解除同步。"
+
+msgid "Attach a DEBUG log when reporting bugs"
+msgstr "报告错误时请附上 DEBUG 日志"
+
+msgid "Autosave path"
+msgstr "自动保存路径"
+
+msgid "BIOS/UEFI and device firmware via fwupd.\nThe linux-firmware package is a pacman update, not this source."
+msgstr "通过 fwupd 更新 BIOS/UEFI 和设备固件。\nlinux-firmware 软件包是 pacman 更新，并非此来源。"
+
+msgid "Backs up your package list and config before installing."
+msgstr "安装前备份您的软件包列表和配置。"
+
+msgid "Backup method"
+msgstr "备份方法"
+
+msgid "Before installing from the AUR, review the package."
+msgstr "从 AUR 安装前，请审查软件包。"
+
+msgid "Check cached package archives for corruption before they cause an install to fail."
+msgstr "在缓存中的软件包存档导致安装失败之前，检查其是否损坏。"
+
+msgid "Check for firmware updates"
+msgstr "检查固件更新"
+
+msgid "Check for pipx updates"
+msgstr "检查 pipx 更新"
+
+msgid "Checks certificates on every HTTPS request. Disable only if a proxy inspects your traffic — it does weaken security."
+msgstr "在每个 HTTPS 请求中验证证书。仅当代理检查您的流量时才可禁用——这会削弱安全性。"
+
+msgid "Checks for available updates each time the app starts."
+msgstr "每次应用启动时检查可用的更新。"
+
+msgid "Checks for new packages on the configured schedule."
+msgstr "按配置的时间表检查新软件包。"
+
+msgid "Clear selection"
+msgstr "清除选择"
+
+msgid "Cloud login caches tokens only until they expire — it never stores your credentials forever."
+msgstr "云登录仅在令牌到期前缓存——它绝不会永久存储您的凭据。"
+
+msgid "Community-maintained build recipes. Unlike the official repos they are not curated or reviewed by Arch — anyone can publish a recipe."
+msgstr "社区维护的构建脚本。与官方软件源不同，它们未经 Arch 审核或审查——任何人都可以发布。"
+
+msgid "Config stays local"
+msgstr "配置保存在本地"
+
+msgid "Configured Repositories"
+msgstr "已配置的软件源"
+
+msgid "Confirm Uninstall"
+msgstr "确认卸载"
+
+msgid "Connection"
+msgstr "连接"
+
+msgid "Control how much NeoArch records, where it writes it, and when it rolls the log over"
+msgstr "控制 NeoArch 记录多少内容、写入位置以及日志轮转的时间"
+
+msgid "DO"
+msgstr "应该做"
+
+msgid "DON'T"
+msgstr "不要做"
+
+msgid "Data"
+msgstr "数据"
+
+msgid "Decorative teal rim on the translucent window frame."
+msgstr "半透明窗口边框上的装饰性青色边缘。"
+
+msgid "Desktop notifications"
+msgstr "桌面通知"
+
+msgid "Detects apps installed with pipx (Python scripts) and lists their updates on the Updates page."
+msgstr "检测通过 pipx 安装的应用（Python 脚本），并在“更新”页面列出它们的更新。"
+
+msgid "Detects firmware updates via fwupd on the Updates page. Applying always requires your explicit confirmation."
+msgstr "在“更新”页面通过 fwupd 检测固件更新。应用更新始终需要您的明确确认。"
+
+msgid "Disabled"
+msgstr "已禁用"
+
+msgid "Done."
+msgstr "完成。"
+
+msgid "Drop orphaned packages, prune the cache, and read the archlinux.org news before major upgrades."
+msgstr "删除孤立软件包、清理缓存，并在重大升级前阅读 archlinux.org 新闻。"
+
+msgid "Echo to console"
+msgstr "回显到控制台"
+
+msgid "Enable “Snapshot before update” in General settings so a bad upgrade can be reverted in one click."
+msgstr "在常规设置中启用“更新前快照”，这样糟糕的升级可以一键还原。"
+
+msgid "Enabled"
+msgstr "已启用"
+
+msgid "Every AUR result is badged [aur]"
+msgstr "每个 AUR 结果都带有 [aur] 徽标"
+
+msgid "Export settings to file"
+msgstr "将设置导出到文件"
+
+msgid "Failed to read repositories."
+msgstr "无法读取软件源。"
+
+msgid "Fetch from several sources at the same time. Faster lookups, at the cost of more simultaneous connections."
+msgstr "同时从多个来源获取。查找更快，但需要更多的并发连接。"
+
+msgid "Fr"
+msgstr "周五"
+
+msgid "Full Wiki ↗"
+msgstr "完整 Wiki ↗"
+
+msgid "Full upgrades are the safe path"
+msgstr "完整升级是安全之路"
+
+msgid "GUI sudo prompt (SUDO_ASKPASS)"
+msgstr "图形化 sudo 提示（SUDO_ASKPASS）"
+
+msgid "Good Habits"
+msgstr "良好习惯"
+
+msgid "Host & port"
+msgstr "主机和端口"
+
+msgid "Housekeep: orphans, cache, Arch news"
+msgstr "维护：孤立包、缓存、Arch 新闻"
+
+msgid "How NeoArch reaches the internet — proxies, timeouts and pacman's download behaviour"
+msgstr "NeoArch 如何访问互联网——代理、超时及 pacman 的下载行为"
+
+msgid "How long NeoArch waits for a network reply before giving up. Raise it on slow links, lower it to fail fast."
+msgstr "NeoArch 放弃前等待网络响应的时长。慢速连接上调高，需要快速失败时调低。"
+
+msgid "How many days between automatic update checks."
+msgstr "自动更新检查之间间隔多少天。"
+
+msgid "How many old versions to keep before purging. Keep it small — older archives are already installed."
+msgstr "清除前保留多少个旧版本。保持较小——旧存档已安装。"
+
+msgid "How many packages pacman may download at once while updating. Applies to /etc/pacman.conf and needs root."
+msgstr "更新时 pacman 一次可以下载多少个软件包。适用于 /etc/pacman.conf 且需要 root。"
+
+msgid "How much detail NeoArch writes. DEBUG records everything including network calls and is ideal for bug reports; ERROR writes only failures."
+msgstr "NeoArch 写入多少详细信息。DEBUG 记录包括网络调用在内的所有内容，非常适合错误报告；ERROR 只写入失败。"
+
+msgid "How much the desktop shows through the window body."
+msgstr "窗口主体中桌面透出多少。"
+
+msgid "Ignore the full-upgrade warning"
+msgstr "忽略完整升级警告"
+
+msgid "Import settings from file"
+msgstr "从文件导入设置"
+
+msgid "Important announcements such as manual interventions are posted before big changes land. Worth a glance before major upgrades."
+msgstr "重大变更生效前会发布诸如手动干预等重要公告。在重大升级前值得一看。"
+
+msgid "Include path under /etc/ (optional)"
+msgstr "/etc/ 下的 Include 路径（可选）"
+
+msgid "Install AUR packages blindly"
+msgstr "盲目安装 AUR 软件包"
+
+msgid "Install update-time hooks"
+msgstr "安装更新时钩子"
+
+msgid "Installs global npm packages to ~/.npm-global without sudo."
+msgstr "无需 sudo 即可将全局 npm 软件包安装到 ~/.npm-global。"
+
+msgid "Keep IgnorePkg minimal"
+msgstr "保持 IgnorePkg 最小化"
+
+msgid "Keep versions per package"
+msgstr "每个软件包保留的版本"
+
+msgid "Keep your system tidy: orphans, leftover configs, the download cache, and Arch news"
+msgstr "保持系统整洁：孤立包、残留配置、下载缓存和 Arch 新闻"
+
+msgid "Language"
+msgstr "语言"
+
+msgid "Last snapshot: {date}"
+msgstr "上次快照：{date}"
+
+msgid "Last snapshot: —"
+msgstr "上次快照：—"
+
+msgid "Leave console echo on during daily use"
+msgstr "日常使用中将控制台回显关闭"
+
+msgid "Log file path"
+msgstr "日志文件路径"
+
+msgid "Log level"
+msgstr "日志级别"
+
+msgid "Manage .pacnew files"
+msgstr "管理 .pacnew 文件"
+
+msgid "Maximum size"
+msgstr "最大大小"
+
+msgid "Messages are already written to the log file. Console echo is a terminal-first tool and adds busy output to the window you launched NeoArch from."
+msgstr "消息已经写入日志文件。控制台回显是面向终端的工具，会向您启动 NeoArch 的窗口添加杂乱的输出。"
+
+msgid "Mirror messages to the terminal NeoArch was started from. Mostly useful when you run the app from a shell — the log file already records everything."
+msgstr "将消息镜像到启动 NeoArch 的终端。主要在您从 shell 运行应用时有用——日志文件已经记录了一切。"
+
+msgid "Mixing old and new packages desyncs libraries from the apps that link them — the classic broken-Arch setup."
+msgstr "混合新旧软件包会使库与链接它们的应用解除同步——经典的 Arch 损坏配置。"
+
+msgid "Mo"
+msgstr "周一"
+
+msgid "Needs a BTRFS filesystem"
+msgstr "需要 BTRFS 文件系统"
+
+msgid "Needs a snapper config (sudo snapper create-config /)"
+msgstr "需要 snapper 配置（sudo snapper create-config /）"
+
+msgid "NeoArch fetches and statically scans recipes first and pauses on critical findings. Read the whole file anyway."
+msgstr "NeoArch 首先获取并静态扫描构建脚本，遇到关键发现时会暂停。无论如何请读取整个文件。"
+
+msgid "NeoArch never quietly blocks an action. Risky moves get a warning and your explicit confirmation — you always hold the final say."
+msgstr "NeoArch 从不会悄悄阻止操作。有风险的操作会得到警告和您的明确确认——最终决定权始终在您手中。"
+
+msgid "NeoArch will let you proceed — but the warning exists because this is how systems break."
+msgstr "NeoArch 会让您继续——但警告存在是因为系统就是这样崩溃的。"
+
+msgid "Next run"
+msgstr "下次运行"
+
+msgid "No cooldown"
+msgstr "无冷却时间"
+
+msgid "Nothing is routed through a proxy by default. Pick HTTP, HTTPS or SOCKS5 to send package, AUR and Flatpak requests through one."
+msgstr "默认情况下没有请求通过代理。选择 HTTP、HTTPS 或 SOCKS5 以将软件包、AUR 和 Flatpak 请求通过代理发送。"
+
+msgid "OAuth tokens expire"
+msgstr "OAuth 令牌会过期"
+
+msgid "Once the log grows past this size, NeoArch rolls it over so it never fills your drive."
+msgstr "当日志超过此大小，NeoArch 会进行轮转，这样它永远不会填满您的磁盘。"
+
+msgid "One-at-a-time builds"
+msgstr "逐个构建"
+
+msgid "Optional snapshots"
+msgstr "可选快照"
+
+msgid "PKGBUILDs and .install scriptlets are statically inspected before every AUR install; critical findings demand explicit acceptance."
+msgstr "每次 AUR 安装前都会对 PKGBUILD 和 .install 脚本进行静态检查；关键发现需要明确接受。"
+
+msgid "Package Sources"
+msgstr "软件包来源"
+
+msgid "Package count and version changes are shown first; nothing starts until you press confirm — never silently."
+msgstr "首先显示软件包数量和版本变更；在您按确认之前不会启动任何操作——绝不会悄悄进行。"
+
+msgid "Packages installed as dependencies that nothing needs any more. Deleting them is safe, frees disk space and makes updates faster."
+msgstr "作为依赖安装但已无人需要的软件包。删除它们安全、释放磁盘空间并加快更新。"
+
+msgid "Pacman Database Lock"
+msgstr "pacman 数据库锁"
+
+msgid "Pacman ParallelDownloads"
+msgstr "pacman 并行下载"
+
+msgid "Parallel network requests"
+msgstr "并行网络请求"
+
+msgid "Passwords go straight to the privilege prompt in your session and are never written to disk."
+msgstr "密码直接进入您会话中的权限提示，绝不会写入磁盘。"
+
+msgid "Pipe scripts into a shell"
+msgstr "将脚本通过管道送入 shell"
+
+msgid "Play a short alert sound together with each notification."
+msgstr "每条通知都附带播放短促的提示音。"
+
+msgid "Proxy type"
+msgstr "代理类型"
+
+msgid "Quick Reference — Do's & Don'ts"
+msgstr "快速参考——应该做与不要做"
+
+msgid "Quick-add Chaotic AUR"
+msgstr "快速添加 Chaotic AUR"
+
+msgid "Quick-add Chaotic AUR (signs the maintainer key, fetches the mirror list, appends [chaotic-aur] and runs pacman -Syy), or add any repo by name."
+msgstr "快速添加 Chaotic AUR（签署维护者密钥、获取镜像列表、追加 [chaotic-aur] 并运行 pacman -Syy），或按名称添加任何软件源。"
+
+msgid "Re-check while open (min)"
+msgstr "打开时重新检查（分钟）"
+
+msgid "Re-checks for updates in the background every X minutes while the app is running. Set to Off to disable."
+msgstr "应用运行期间每 X 分钟在后台重新检查更新。设置为 Off 以禁用。"
+
+msgid "Read the PKGBUILD before installing from the AUR"
+msgstr "从 AUR 安装前阅读 PKGBUILD"
+
+msgid "Read the news before updating"
+msgstr "更新前阅读新闻"
+
+msgid "Reading /etc/pacman.conf…"
+msgstr "正在读取 /etc/pacman.conf…"
+
+msgid "Ready — snapshots available"
+msgstr "就绪——快照可用"
+
+msgid "Remove '[{name}]' from /etc/pacman.conf?"
+msgstr "从 /etc/pacman.conf 中移除 '[{name}]'？"
+
+msgid "Remove Lock"
+msgstr "移除锁"
+
+msgid "Remove Repository"
+msgstr "移除软件源"
+
+msgid "Remove hooks"
+msgstr "移除钩子"
+
+msgid "Remove orphaned packages"
+msgstr "删除孤立软件包"
+
+msgid "Remove the stale lock and continue with \"{operation}\"?"
+msgstr "移除过期锁并继续执行 \"{operation}\"？"
+
+msgid "Remove the stale lock and continue?"
+msgstr "移除过期锁并继续？"
+
+msgid "Repositories"
+msgstr "软件源"
+
+msgid "Repositories NeoArch added carry a marker and can be removed here; system and hand-written sections are protected."
+msgstr "NeoArch 添加的软件源带有标记，可在此移除；系统和手写部分受保护。"
+
+msgid "Repository name, e.g. archlinuxcn"
+msgstr "软件源名称，例如 archlinuxcn"
+
+msgid "Request timeout"
+msgstr "请求超时"
+
+msgid "Requires the 'snapper' tool"
+msgstr "需要 'snapper' 工具"
+
+msgid "Requires the 'timeshift' tool"
+msgstr "需要 'timeshift' 工具"
+
+msgid "Resolved automatically to yay, paru, trizen or pikaur. Change it under General settings."
+msgstr "自动解析为 yay、paru、trizen 或 pikaur。可在常规设置中更改。"
+
+msgid "Review before installing"
+msgstr "安装前审查"
+
+msgid "Rounded corners on the translucent window frame."
+msgstr "半透明窗口边框的圆角。"
+
+msgid "Run at"
+msgstr "运行时间"
+
+msgid "Runs the update check automatically on a weekly schedule (applies while the app is running)."
+msgstr "按每周时间表自动运行更新检查（应用运行期间生效）。"
+
+msgid "Sa"
+msgstr "周六"
+
+msgid "Save the selected bundle automatically."
+msgstr "自动保存选定的捆绑包。"
+
+msgid "Scan for corrupted archives"
+msgstr "扫描损坏的存档"
+
+msgid "Seconds to wait before repeating the same notification."
+msgstr "重复相同通知前等待的秒数。"
+
+msgid "Select a file to inspect its diff"
+msgstr "选择文件以检查其差异"
+
+msgid "Select all"
+msgstr "全选"
+
+msgid "Select the days the scheduled check runs on."
+msgstr "选择计划检查运行的日期。"
+
+msgid "Server URL, e.g. https://mirror.example (optional)"
+msgstr "服务器 URL，例如 https://mirror.example（可选）"
+
+msgid "Set the level above to DEBUG, reproduce the problem, then attach the log file — it turns a vague report into a quick fix. Remember to switch back to INFO afterwards."
+msgstr "将上述级别设置为 DEBUG，重现问题，然后附上日志文件——它能把模糊的报告变成快速的修复。之后记得切换回 INFO。"
+
+msgid "Settings live in ~/.config/neoarch — no telemetry, no account, no cloud by default."
+msgstr "设置保存在 ~/.config/neoarch——默认无遥测、无账号、无云。"
+
+msgid "Show a message banner inside the app when a task completes."
+msgstr "任务完成时在应用内显示消息横幅。"
+
+msgid "Show a pop-up notification from the system tray when a task completes."
+msgstr "任务完成时从系统托盘显示弹出通知。"
+
+msgid "Snapper"
+msgstr "Snapper"
+
+msgid "Snapper setup is incomplete"
+msgstr "Snapper 配置不完整"
+
+msgid "Snapshots"
+msgstr "快照"
+
+msgid "Sources & Community Packages"
+msgstr "来源与社区软件包"
+
+msgid "Su"
+msgstr "周日"
+
+msgid "System Protection & Habits"
+msgstr "系统保护与习惯"
+
+msgid "Th"
+msgstr "周四"
+
+msgid "The proxy's address and the TCP port it listens on. Only applied when a proxy type other than \"none\" is chosen."
+msgstr "代理的地址及其监听的 TCP 端口。仅在选择 \"none\" 以外的代理类型时应用。"
+
+msgid "The section is appended to /etc/pacman.conf under a NeoArch marker, so it can be removed again here later."
+msgstr "该部分在 NeoArch 标记下追加到 /etc/pacman.conf，因此以后可在此再次移除。"
+
+msgid "The source column always shows where a package comes from, so community packages are never mistaken for official ones."
+msgstr "来源列始终显示软件包的来源，因此社区软件包绝不会被误认为官方软件包。"
+
+msgid "Themes"
+msgstr "主题"
+
+msgid "This signs the Chaotic AUR maintainer key, downloads the mirror list over HTTPS, appends [chaotic-aur] to /etc/pacman.conf and runs 'pacman -Syy'. Continue?"
+msgstr "这将签署 Chaotic AUR 维护者密钥、通过 HTTPS 下载镜像列表、向 /etc/pacman.conf 追加 [chaotic-aur] 并运行 'pacman -Syy'。继续？"
+
+msgid "Time of day the weekly check starts."
+msgstr "每周检查开始的时间点。"
+
+msgid "Timeshift"
+msgstr "Timeshift"
+
+msgid "Tu"
+msgstr "周二"
+
+msgid "Uninstall the following package(s)?\n\n{summary}\n\nThis will remove them from your system and cannot be undone."
+msgstr "卸载以下软件包？\n\n{summary}\n\n这会将它们从系统中移除，且无法撤销。"
+
+msgid "Update everything together"
+msgstr "一起更新所有内容"
+
+msgid "Update interval (days)"
+msgstr "更新间隔（天）"
+
+msgid "Updates & Review"
+msgstr "更新与审查"
+
+msgid "Use npm user mode"
+msgstr "使用 npm 用户模式"
+
+msgid "View and manage pacman repositories like Chaotic AUR — no more hand-editing /etc/pacman.conf."
+msgstr "查看和管理 Chaotic AUR 等 pacman 软件源——不再需要手动编辑 /etc/pacman.conf。"
+
+msgid "View changes ↗"
+msgstr "查看更改 ↗"
+
+msgid "WARNED"
+msgstr "已警告"
+
+msgid "We"
+msgstr "周三"
+
+msgid "Weekdays"
+msgstr "工作日"
+
+msgid "What NeoArch can reach, what it runs, how it protects secrets, and the habits that keep an Arch system healthy"
+msgstr "NeoArch 能访问什么、运行什么、如何保护机密，以及让 Arch 系统保持健康的习惯"
+
+msgid "When a package installation or removal finishes."
+msgstr "当软件包安装或移除完成时。"
+
+msgid "When a package ships a new config, the old one is kept as a .pacnew. Review and merge them so your tweaks are never silently lost."
+msgstr "当软件包附带新配置时，旧配置保留为 .pacnew。请审查并合并它们，这样您的修改绝不会悄悄丢失。"
+
+msgid "When an operation fails or emits warnings."
+msgstr "当操作失败或发出警告时。"
+
+msgid "When new system and package updates are ready."
+msgstr "当新的系统和软件包更新就绪时。"
+
+msgid "Where the rolling log lives. Defaults to ~/.config/neoarch/neoarch.log on your home directory."
+msgstr "滚动日志的存放位置。默认为您主目录下的 ~/.config/neoarch/neoarch.log。"
+
+msgid "Window transparency"
+msgstr "窗口透明度"
+
+msgid "Working…"
+msgstr "处理中…"
+
+msgid "curl … | bash runs code sight-unseen. Prefer real packages, or read what you are about to execute."
+msgstr "curl … | bash 会在未见内容的情况下运行代码。请优先使用真正的软件包，或阅读您将要执行的内容。"
+
+msgid "fwupd is not installed — install with: sudo pacman -S fwupd"
+msgstr "fwupd 未安装——安装命令：sudo pacman -S fwupd"
+
+msgid "npm is not installed — install with: sudo pacman -S npm"
+msgstr "npm 未安装——安装命令：sudo pacman -S npm"
+
+msgid "pipx is not installed — install with: sudo pacman -S python-pipx"
+msgstr "pipx 未安装——安装命令：sudo pacman -S python-pipx"
+
+msgid "{tool} is not installed — install with: sudo pacman -S {pkg}"
+msgstr "{tool} 未安装——安装命令：sudo pacman -S {pkg}"
+
+msgid "↗ Wiki"
+msgstr "↗ Wiki"
+
+
+msgid " and synced"
+msgstr " 且已同步"
+
+msgid "'{name}' is a system repository and can't be toggled here."
+msgstr "'[{name}]' 是系统软件源，无法在此切换。"
+
+msgid "'{name}' is a system repository."
+msgstr "'[{name}]' 是系统软件源。"
+
+msgid "'{name}' isn't managed by NeoArch — edit /etc/pacman.conf manually."
+msgstr "'[{name}]' 不受 NeoArch 管理——请手动编辑 /etc/pacman.conf。"
+
+msgid "(empty)"
+msgstr "(空)"
+
+msgid "Another snapshot operation is already running."
+msgstr "另一个快照操作已在运行。"
+
+msgid "Chaotic AUR is already configured in /etc/pacman.conf."
+msgstr "Chaotic AUR 已配置在 /etc/pacman.conf 中。"
+
+msgid "Confirm Restoration"
+msgstr "确认还原"
+
+msgid "Couldn't download the Chaotic AUR mirror list."
+msgstr "无法下载 Chaotic AUR 镜像列表。"
+
+msgid "Couldn't read {conf}."
+msgstr "无法读取 {conf}。"
+
+msgid "Create a system snapshot before proceeding?\n\nThis will take some time."
+msgstr "继续前先创建系统快照？\n\n这将需要一些时间。"
+
+msgid "Creating pre-update snapshot..."
+msgstr "正在创建更新前快照…"
+
+msgid "Creating snapshot..."
+msgstr "正在创建快照…"
+
+msgid "Deleting old snapshots..."
+msgstr "正在删除旧快照…"
+
+msgid "Error creating pre-update snapshot: {err}"
+msgstr "创建更新前快照出错：{err}"
+
+msgid "Error creating snapshot: {err}"
+msgstr "创建快照出错：{err}"
+
+msgid "Error deleting snapshots: {err}"
+msgstr "删除快照出错：{err}"
+
+msgid "Error installing pacman hooks: {err}"
+msgstr "安装 pacman 钩子出错：{err}"
+
+msgid "Error removing pacman hooks: {err}"
+msgstr "移除 pacman 钩子出错：{err}"
+
+msgid "Error restoring snapshot: {err}"
+msgstr "还原快照出错：{err}"
+
+msgid "Failed to create pre-update snapshot: {err}"
+msgstr "创建更新前快照失败：{err}"
+
+msgid "Failed to create snapshot: {err}"
+msgstr "创建快照失败：{err}"
+
+msgid "Failed to delete snapshots: {err}"
+msgstr "删除快照失败：{err}"
+
+msgid "Failed to fetch the Chaotic AUR maintainer key."
+msgstr "获取 Chaotic AUR 维护者密钥失败。"
+
+msgid "Failed to install pacman hook: {path} - {err}"
+msgstr "安装 pacman 钩子失败：{path} - {err}"
+
+msgid "Failed to list snapshots: {err}"
+msgstr "列出快照失败：{err}"
+
+msgid "Failed to locally sign the Chaotic AUR maintainer key."
+msgstr "本地签署 Chaotic AUR 维护者密钥失败。"
+
+msgid "Failed to remove pacman hooks: {err}"
+msgstr "移除 pacman 钩子失败：{err}"
+
+msgid "Failed to restore snapshot: {err}"
+msgstr "还原快照失败：{err}"
+
+msgid "Failed to write {conf}; the original was restored."
+msgstr "写入 {conf} 失败；已还原原始文件。"
+
+msgid "Firmware Update"
+msgstr "固件更新"
+
+msgid "Firmware was updated. A reboot is required to finish installation."
+msgstr "固件已更新。需重启才能完成安装。"
+
+msgid "Give at least one Include path or Server URL."
+msgstr "请至少提供一条 Include 路径或服务器 URL。"
+
+msgid "Include paths can't contain line breaks."
+msgstr "Include 路径不能包含换行。"
+
+msgid "Include paths must live under /etc/."
+msgstr "Include 路径必须位于 /etc/ 之下。"
+
+msgid "Installing update-time hooks..."
+msgstr "正在安装更新时钩子…"
+
+msgid "Invalid repository name (letters, numbers, '.', '-' and '_')."
+msgstr "无效的软件源名称（字母、数字、'.'、'-' 和 '_'）。"
+
+msgid "Loading snapshots..."
+msgstr "正在加载快照…"
+
+msgid "NeoArch manual snapshot {ts}"
+msgstr "NeoArch 手动快照 {ts}"
+
+msgid "No Snapshots"
+msgstr "没有快照"
+
+msgid "No snapper configuration found."
+msgstr "未找到 snapper 配置。"
+
+msgid "No snapshots available for restoration."
+msgstr "没有可用于还原的快照。"
+
+msgid "Nothing to delete — 2 or fewer snapshots."
+msgstr "无可删除——不足或刚好 2 个快照。"
+
+msgid "Old snapshots deleted successfully"
+msgstr "旧快照已成功删除"
+
+msgid "Operation cancelled."
+msgstr "操作已取消。"
+
+msgid "Pacman hooks installed — every system update will now capture Snapper snapshots."
+msgstr "pacman 钩子已安装——现在每次系统更新都会捕获 Snapper 快照。"
+
+msgid "Pacman hooks removed."
+msgstr "pacman 钩子已移除。"
+
+msgid "Pre-update snapshot created: {comment}"
+msgstr "更新前快照已创建：{comment}"
+
+msgid "Removing update-time hooks..."
+msgstr "正在移除更新时钩子…"
+
+msgid "Repository '[{name}]' added{and_synced}."
+msgstr "软件源 '[{name}]' 已添加{and_synced}。"
+
+msgid "Repository '[{name}]' already exists in /etc/pacman.conf."
+msgstr "软件源 '[{name}]' 已存在于 /etc/pacman.conf 中。"
+
+msgid "Repository '[{name}]' not found."
+msgstr "未找到软件源 '[{name}]'。"
+
+msgid "Repository '[{name}]' removed."
+msgstr "软件源 '[{name}]' 已移除。"
+
+msgid "Restoring snapshot..."
+msgstr "正在还原快照…"
+
+msgid "Rollback initiated for snapshot #{num}. Reboot to complete."
+msgstr "已为快照 #{num} 启动回滚。重启以完成。"
+
+msgid "Select Snapshot to Restore"
+msgstr "选择要还原的快照"
+
+msgid "Select a snapshot to restore the system to:"
+msgstr "选择要将系统还原到的快照："
+
+msgid "Server URLs must use http(s) and contain no line breaks."
+msgstr "服务器 URL 必须使用 http(s) 且不能包含换行。"
+
+msgid "Snapper Not Available"
+msgstr "Snapper 不可用"
+
+msgid "Snapper needs a BTRFS filesystem and a configuration."
+msgstr "Snapper 需要 BTRFS 文件系统和配置。"
+
+msgid "Snapper needs a BTRFS filesystem, the 'snapper' tool and a configuration. Create one with: sudo snapper create-config /"
+msgstr "Snapper 需要 BTRFS 文件系统、'snapper' 工具和配置。创建方法：sudo snapper create-config /"
+
+msgid "Snapshot"
+msgstr "快照"
+
+msgid "Snapshot created successfully: {comment}"
+msgstr "快照创建成功：{comment}"
+
+msgid "Snapshot created successfully: {date}"
+msgstr "快照创建成功：{date}"
+
+msgid "Snapshot creation timed out and no snapshot appeared in Timeshift's list.\n{err}"
+msgstr "快照创建超时，Timeshift 列表中未出现任何快照。\n{err}"
+
+msgid "Snapshot restoration initiated. System will reboot."
+msgstr "快照还原已启动。系统将重启。"
+
+msgid "The snapshot did not appear in Timeshift's list.\nCommand output: {out}"
+msgstr "快照未出现在 Timeshift 的列表中。\n命令输出：{out}"
+
+msgid "This will delete old snapshots to free up disk space.\n\nKeep only the 2 most recent snapshots?\n\nThis action cannot be undone."
+msgstr "这将删除旧快照以释放磁盘空间。\n\n只保留最近的 2 个快照？\n\n此操作无法撤销。"
+
+msgid "This will roll back the system to snapper snapshot #{num}.\n\nSnapper switches the default subvolume; a reboot is required.\n\nAre you sure you want to proceed?"
+msgstr "这将把系统回滚到 snapper 快照 #{num}。\n\nSnapper 会切换默认子卷；需要重启。\n\n确定要继续吗？"
+
+msgid "Timeshift is busy with another backup in progress (scheduled or manual). Try again after it finishes."
+msgstr "Timeshift 正忙于另一个进行中的备份（计划或手动）。完成后请重试。"
+
+msgid "Timeshift list failed"
+msgstr "Timeshift 列表失败"
+
+msgid "curl isn't installed; install 'curl' to fetch the mirror list."
+msgstr "curl 未安装；请安装 'curl' 以获取镜像列表。"

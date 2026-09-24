@@ -1022,6 +1022,30 @@ class _ViewsMixin:
         """)
         layout.addWidget(refresh_btn)
 
+        security_btn = QPushButton()
+        security_btn.setFixedSize(36, 36)
+        security_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        security_icon = os.path.join(_BASE_DIR, "assets", "icons", "toolbar", "shield.svg")
+        security_btn.setIcon(self.get_svg_icon(security_icon, 18))
+        security_btn.setToolTip(_("Security"))
+        security_btn.clicked.connect(self.open_security_settings)
+        security_btn.setStyleSheet("""
+            QPushButton {
+                background-color: rgba(28, 30, 36, 0.75);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 18px;
+            }
+            QPushButton:hover {
+                background-color: rgba(34, 36, 42, 0.85);
+                border: 1px solid rgba(0, 214, 213, 0.45);
+            }
+            QPushButton:pressed {
+                background-color: rgba(0, 214, 213, 0.18);
+                border: 1px solid rgba(0, 214, 213, 0.60);
+            }
+        """)
+        layout.addWidget(security_btn)
+
         return header
 
     def show_community_hub(self):
@@ -3236,6 +3260,7 @@ class _ViewsMixin:
             'version': pkg.get('version') or '',
             'new_version': pkg.get('version') or '',
             'source': pkg.get('source') or 'pacman',
+            'repo': pkg.get('repo') or '',
             'description': pkg.get('description') or '',
             'download_size': pkg.get('download_size') or '',
             'installed_date': 0,

@@ -2366,3 +2366,803 @@ msgstr "Warten auf das Ende des Updates…"
 
 msgid "Installed packages will appear here automatically once it completes."
 msgstr "Installierte Pakete erscheinen hier automatisch, sobald das Update abgeschlossen ist."
+
+
+msgid " days"
+msgstr " Tage"
+
+msgid " s"
+msgstr " s"
+
+msgid "%(n)d px"
+msgstr "%(n)d px"
+
+msgid "%(n)d%%"
+msgstr "%(n)d %%"
+
+msgid "A full system upgrade keeps libraries and applications in lockstep — the Arch-supported way to stay current."
+msgstr "Ein vollständiges System-Upgrade hält Bibliotheken und Anwendungen synchron — das ist der von Arch unterstützte Weg, aktuell zu bleiben."
+
+msgid "A pinned version quietly freezes the packages that depend on it. If you must pin, review it regularly."
+msgstr "Eine festgepinnte Version friert still alle Pakete ein, die davon abhängen. Falls Sie pinnen müssen, prüfen Sie es regelmäßig."
+
+msgid "A stale lock file was found:\n\n{lock}\n\nNo package manager is running, so this is a leftover from a previous interrupted operation."
+msgstr "Eine veraltete Sperrdatei wurde gefunden:\n\n{lock}\n\nEs läuft kein Paketmanager, dies ist also ein Überbleibsel eines vorherigen unterbrochenen Vorgangs."
+
+msgid "AUR Helper"
+msgstr "AUR-Helfer"
+
+msgid "AUR RPC endpoint"
+msgstr "AUR-RPC-Endpunkt"
+
+msgid "AUR Resources"
+msgstr "AUR-Ressourcen"
+
+msgid "AUR helper: auto"
+msgstr "AUR-Helfer: auto"
+
+msgid "AUR pre-install scan"
+msgstr "AUR-Scan vor der Installation"
+
+msgid "AUR updates build one package at a time; a single failure never aborts the rest of the queue."
+msgstr "AUR-Updates bauen jeweils ein Paket nach dem anderen; ein einzelner Fehler bricht nie den Rest der Warteschlange ab."
+
+msgid "Add"
+msgstr "Hinzufügen"
+
+msgid "Add Chaotic AUR"
+msgstr "Chaotic AUR hinzufügen"
+
+msgid "Add Repository"
+msgstr "Repository hinzufügen"
+
+msgid "Add a Repository"
+msgstr "Ein Repository hinzufügen"
+
+msgid "Add a Repository…"
+msgstr "Ein Repository hinzufügen…"
+
+msgid "Anyone can publish a recipe. Skipping the review means trusting a stranger's build script with your machine."
+msgstr "Jeder kann ein Rezept veröffentlichen. Die Prüfung zu überspringen heißt, dem Build-Skript eines Fremden Ihre Maschine anzuvertrauen."
+
+msgid "Arch is a rolling release: packages expect to move forward together. Updating a selection can desync libraries from the apps that use them."
+msgstr "Arch ist ein fortlaufendes Release: Pakete erwarten, gemeinsam weiterzuziehen. Eine Teilaktualisierung kann Bibliotheken von den Apps entkoppeln, die sie verwenden."
+
+msgid "Attach a DEBUG log when reporting bugs"
+msgstr "Ein DEBUG-Log beim Melden von Fehlern anhängen"
+
+msgid "Autosave path"
+msgstr "Autosave-Pfad"
+
+msgid "BIOS/UEFI and device firmware via fwupd.\nThe linux-firmware package is a pacman update, not this source."
+msgstr "BIOS/UEFI- und Geräte-Firmware über fwupd.\nDas Paket linux-firmware ist ein pacman-Update, nicht diese Quelle."
+
+msgid "Backs up your package list and config before installing."
+msgstr "Sichert Ihre Paketliste und Konfiguration vor der Installation."
+
+msgid "Backup method"
+msgstr "Sicherungsmethode"
+
+msgid "Before installing from the AUR, review the package."
+msgstr "Bevor Sie aus dem AUR installieren, prüfen Sie das Paket."
+
+msgid "Check cached package archives for corruption before they cause an install to fail."
+msgstr "Prüft zwischengespeicherte Paketarchive auf Korruption, bevor sie eine Installation scheitern lassen."
+
+msgid "Check for firmware updates"
+msgstr "Auf Firmware-Updates prüfen"
+
+msgid "Check for pipx updates"
+msgstr "Auf pipx-Updates prüfen"
+
+msgid "Checks certificates on every HTTPS request. Disable only if a proxy inspects your traffic — it does weaken security."
+msgstr "Prüft Zertifikate bei jeder HTTPS-Anfrage. Deaktivieren Sie dies nur, wenn ein Proxy Ihren Datenverkehr prüft — es schwächt die Sicherheit."
+
+msgid "Checks for available updates each time the app starts."
+msgstr "Prüft bei jedem App-Start auf verfügbare Updates."
+
+msgid "Checks for new packages on the configured schedule."
+msgstr "Prüft nach dem konfigurierten Zeitplan auf neue Pakete."
+
+msgid "Clear selection"
+msgstr "Auswahl leeren"
+
+msgid "Cloud login caches tokens only until they expire — it never stores your credentials forever."
+msgstr "Cloud-Logins speichern Token nur bis zum Ablauf — sie hinterlegen Ihre Anmeldedaten nie dauerhaft."
+
+msgid "Community-maintained build recipes. Unlike the official repos they are not curated or reviewed by Arch — anyone can publish a recipe."
+msgstr "Von der Community gepflegte Build-Rezepte. Anders als in den offiziellen Repos werden sie von Arch nicht kuratiert oder geprüft — jeder kann ein Rezept veröffentlichen."
+
+msgid "Config stays local"
+msgstr "Konfiguration bleibt lokal"
+
+msgid "Configured Repositories"
+msgstr "Konfigurierte Repositories"
+
+msgid "Confirm Uninstall"
+msgstr "Deinstallation bestätigen"
+
+msgid "Connection"
+msgstr "Verbindung"
+
+msgid "Control how much NeoArch records, where it writes it, and when it rolls the log over"
+msgstr "Steuern, wie viel NeoArch aufzeichnet, wohin es schreibt und wann das Log umgebrochen wird"
+
+msgid "DO"
+msgstr "DO"
+
+msgid "DON'T"
+msgstr "DON'T"
+
+msgid "Data"
+msgstr "Daten"
+
+msgid "Decorative teal rim on the translucent window frame."
+msgstr "Dekorative türkise Umrandung des durchscheinenden Fensterrahmens."
+
+msgid "Desktop notifications"
+msgstr "Desktop-Benachrichtigungen"
+
+msgid "Detects apps installed with pipx (Python scripts) and lists their updates on the Updates page."
+msgstr "Erkennt mit pipx installierte Apps (Python-Skripte) und listet ihre Updates auf der Seite Updates."
+
+msgid "Detects firmware updates via fwupd on the Updates page. Applying always requires your explicit confirmation."
+msgstr "Erkennt Firmware-Updates über fwupd auf der Seite Updates. Das Anwenden erfordert immer Ihre ausdrückliche Bestätigung."
+
+msgid "Disabled"
+msgstr "Deaktiviert"
+
+msgid "Done."
+msgstr "Fertig."
+
+msgid "Drop orphaned packages, prune the cache, and read the archlinux.org news before major upgrades."
+msgstr "Entfernen Sie verwaiste Pakete, bereinigen Sie den Cache und lesen Sie vor größeren Upgrades die Nachrichten auf archlinux.org."
+
+msgid "Echo to console"
+msgstr "An Konsole ausgeben"
+
+msgid "Enable “Snapshot before update” in General settings so a bad upgrade can be reverted in one click."
+msgstr "Aktivieren Sie „Snapshot vor Update“ in den Allgemeinen Einstellungen, damit ein schlechtes Upgrade per Klick rückgängig gemacht werden kann."
+
+msgid "Enabled"
+msgstr "Aktiviert"
+
+msgid "Every AUR result is badged [aur]"
+msgstr "Jedes AUR-Ergebnis ist mit [aur] gekennzeichnet"
+
+msgid "Export settings to file"
+msgstr "Einstellungen in Datei exportieren"
+
+msgid "Failed to read repositories."
+msgstr "Repositories konnten nicht gelesen werden."
+
+msgid "Fetch from several sources at the same time. Faster lookups, at the cost of more simultaneous connections."
+msgstr "Gleichzeitig aus mehreren Quellen abrufen. Schnellere Suchen, auf Kosten weiterer gleichzeitiger Verbindungen."
+
+msgid "Fr"
+msgstr "Fr"
+
+msgid "Full Wiki ↗"
+msgstr "Vollständiges Wiki ↗"
+
+msgid "Full upgrades are the safe path"
+msgstr "Vollständige Upgrades sind der sichere Weg"
+
+msgid "GUI sudo prompt (SUDO_ASKPASS)"
+msgstr "GUI-Sudo-Abfrage (SUDO_ASKPASS)"
+
+msgid "Good Habits"
+msgstr "Gute Gewohnheiten"
+
+msgid "Host & port"
+msgstr "Host und Port"
+
+msgid "Housekeep: orphans, cache, Arch news"
+msgstr "Aufräumen: Waisen, Cache, Arch-Nachrichten"
+
+msgid "How NeoArch reaches the internet — proxies, timeouts and pacman's download behaviour"
+msgstr "Wie NeoArch das Internet erreicht — Proxys, Zeitüberschreitungen und das Download-Verhalten von pacman"
+
+msgid "How long NeoArch waits for a network reply before giving up. Raise it on slow links, lower it to fail fast."
+msgstr "Wie lange NeoArch auf eine Netzantwort wartet, bevor es aufgibt. Erhöhen Sie den Wert bei langsamen Verbindungen, senken Sie ihn, um schnell zu scheitern."
+
+msgid "How many days between automatic update checks."
+msgstr "Wie viele Tage zwischen automatischen Update-Prüfungen liegen."
+
+msgid "How many old versions to keep before purging. Keep it small — older archives are already installed."
+msgstr "Wie viele alte Versionen vor dem Bereinigen behalten werden. Halten Sie den Wert klein — ältere Archive sind bereits installiert."
+
+msgid "How many packages pacman may download at once while updating. Applies to /etc/pacman.conf and needs root."
+msgstr "Wie viele Pakete pacman beim Update gleichzeitig herunterladen darf. Gilt für /etc/pacman.conf und benötigt Root-Rechte."
+
+msgid "How much detail NeoArch writes. DEBUG records everything including network calls and is ideal for bug reports; ERROR writes only failures."
+msgstr "Wie detailliert NeoArch protokolliert. DEBUG zeichnet alles auf, auch Netzwerkaufrufe, und ist ideal für Fehlerberichte; ERROR protokolliert nur Fehler."
+
+msgid "How much the desktop shows through the window body."
+msgstr "Wie stark der Desktop durch den Fensterkörper scheint."
+
+msgid "Ignore the full-upgrade warning"
+msgstr "Die Voll-Update-Warnung ignorieren"
+
+msgid "Import settings from file"
+msgstr "Einstellungen aus Datei importieren"
+
+msgid "Important announcements such as manual interventions are posted before big changes land. Worth a glance before major upgrades."
+msgstr "Wichtige Ankündigungen wie manuelle Eingriffe werden veröffentlicht, bevor große Änderungen erscheinen. Vor größeren Upgrades einen Blick wert."
+
+msgid "Include path under /etc/ (optional)"
+msgstr "Include-Pfad unter /etc/ (optional)"
+
+msgid "Install AUR packages blindly"
+msgstr "AUR-Pakete blind installieren"
+
+msgid "Install update-time hooks"
+msgstr "Update-Hooks installieren"
+
+msgid "Installs global npm packages to ~/.npm-global without sudo."
+msgstr "Installiert globale npm-Pakete ohne sudo nach ~/.npm-global."
+
+msgid "Keep IgnorePkg minimal"
+msgstr "IgnorePkg minimal halten"
+
+msgid "Keep versions per package"
+msgstr "Versionen pro Paket behalten"
+
+msgid "Keep your system tidy: orphans, leftover configs, the download cache, and Arch news"
+msgstr "Halten Sie Ihr System aufgeräumt: Waisen, übrige Konfigurationen, den Download-Cache und Arch-Nachrichten"
+
+msgid "Language"
+msgstr "Sprache"
+
+msgid "Last snapshot: {date}"
+msgstr "Letzter Snapshot: {date}"
+
+msgid "Last snapshot: —"
+msgstr "Letzter Snapshot: —"
+
+msgid "Leave console echo on during daily use"
+msgstr "Die Konsolen-Ausgabe im Alltag eingeschaltet lassen"
+
+msgid "Log file path"
+msgstr "Pfad zur Logdatei"
+
+msgid "Log level"
+msgstr "Log-Detailgrad"
+
+msgid "Manage .pacnew files"
+msgstr ".pacnew-Dateien verwalten"
+
+msgid "Maximum size"
+msgstr "Maximale Größe"
+
+msgid "Messages are already written to the log file. Console echo is a terminal-first tool and adds busy output to the window you launched NeoArch from."
+msgstr "Meldungen werden bereits in die Logdatei geschrieben. Die Konsolen-Ausgabe ist ein Werkzeug für das Terminal und fügt viel Ausgabe in dem Fenster hinzu, aus dem Sie NeoArch gestartet haben."
+
+msgid "Mirror messages to the terminal NeoArch was started from. Mostly useful when you run the app from a shell — the log file already records everything."
+msgstr "Spiegelt Meldungen in das Terminal, aus dem NeoArch gestartet wurde. Hauptsächlich nützlich, wenn Sie die App aus einer Shell starten — die Logdatei zeichnet bereits alles auf."
+
+msgid "Mixing old and new packages desyncs libraries from the apps that link them — the classic broken-Arch setup."
+msgstr "Das Mischen alter und neuer Pakete entkoppelt Bibliotheken von den Apps, die sie verlinken — der klassische kaputte-Arch-Aufbau."
+
+msgid "Mo"
+msgstr "Mo"
+
+msgid "Needs a BTRFS filesystem"
+msgstr "Benötigt ein BTRFS-Dateisystem"
+
+msgid "Needs a snapper config (sudo snapper create-config /)"
+msgstr "Benötigt eine snapper-Konfiguration (sudo snapper create-config /)"
+
+msgid "NeoArch fetches and statically scans recipes first and pauses on critical findings. Read the whole file anyway."
+msgstr "NeoArch lädt Rezepte herunter und prüft sie statisch, und hält bei kritischen Befunden inne. Lesen Sie die Datei trotzdem ganz."
+
+msgid "NeoArch never quietly blocks an action. Risky moves get a warning and your explicit confirmation — you always hold the final say."
+msgstr "NeoArch blockiert nie still eine Aktion. Riskante Schritte bekommen eine Warnung und Ihre ausdrückliche Bestätigung — das letzte Wort haben Sie."
+
+msgid "NeoArch will let you proceed — but the warning exists because this is how systems break."
+msgstr "NeoArch lässt Sie fortfahren — aber die Warnung existiert, weil so Systeme kaputtgehen."
+
+msgid "Next run"
+msgstr "Nächster Lauf"
+
+msgid "No cooldown"
+msgstr "Keine Sperrzeit"
+
+msgid "Nothing is routed through a proxy by default. Pick HTTP, HTTPS or SOCKS5 to send package, AUR and Flatpak requests through one."
+msgstr "Standardmäßig fließt nichts durch einen Proxy. Wählen Sie HTTP, HTTPS oder SOCKS5, um Paket-, AUR- und Flatpak-Anfragen durch einen zu senden."
+
+msgid "OAuth tokens expire"
+msgstr "OAuth-Token laufen ab"
+
+msgid "Once the log grows past this size, NeoArch rolls it over so it never fills your drive."
+msgstr "Sobald das Log diese Größe überschreitet, bricht NeoArch es um, damit es Ihre Festplatte nie füllt."
+
+msgid "One-at-a-time builds"
+msgstr "Builds einzeln nacheinander"
+
+msgid "Optional snapshots"
+msgstr "Optionale Snapshots"
+
+msgid "PKGBUILDs and .install scriptlets are statically inspected before every AUR install; critical findings demand explicit acceptance."
+msgstr "PKGBUILDs und .install-Skripte werden vor jeder AUR-Installation statisch geprüft; kritische Befunde verlangen ausdrückliche Zustimmung."
+
+msgid "Package Sources"
+msgstr "Paketquellen"
+
+msgid "Package count and version changes are shown first; nothing starts until you press confirm — never silently."
+msgstr "Paketanzahl und Versionsänderungen werden zuerst angezeigt; nichts startet, bis Sie bestätigen — nie still."
+
+msgid "Packages installed as dependencies that nothing needs any more. Deleting them is safe, frees disk space and makes updates faster."
+msgstr "Pakete, die als Abhängigkeiten installiert wurden und niemand mehr braucht. Sie zu löschen ist sicher, spart Speicher und macht Updates schneller."
+
+msgid "Pacman Database Lock"
+msgstr "Pacman-Datenbanksperre"
+
+msgid "Pacman ParallelDownloads"
+msgstr "Pacman ParallelDownloads"
+
+msgid "Parallel network requests"
+msgstr "Parallele Netzwerkanfragen"
+
+msgid "Passwords go straight to the privilege prompt in your session and are never written to disk."
+msgstr "Passwörter gehen direkt zur Berechtigungsabfrage in Ihrer Sitzung und werden nie auf die Festplatte geschrieben."
+
+msgid "Pipe scripts into a shell"
+msgstr "Skripte in eine Shell pipen"
+
+msgid "Play a short alert sound together with each notification."
+msgstr "Spielt zu jeder Benachrichtigung einen kurzen Signalton ab."
+
+msgid "Proxy type"
+msgstr "Proxy-Typ"
+
+msgid "Quick Reference — Do's & Don'ts"
+msgstr "Kurzanleitung — Was Sie tun & lassen sollten"
+
+msgid "Quick-add Chaotic AUR"
+msgstr "Chaotic AUR schnell hinzufügen"
+
+msgid "Quick-add Chaotic AUR (signs the maintainer key, fetches the mirror list, appends [chaotic-aur] and runs pacman -Syy), or add any repo by name."
+msgstr "Chaotic AUR schnell hinzufügen (signiert den Schlüssel des Betreuers, lädt die Spiegel-Liste, fügt [chaotic-aur] hinzu und führt pacman -Syy aus) oder ein beliebiges Repository beim Namen hinzufügen."
+
+msgid "Re-check while open (min)"
+msgstr "Nachprüfen bei geöffneter App (Min.)"
+
+msgid "Re-checks for updates in the background every X minutes while the app is running. Set to Off to disable."
+msgstr "Prüft während des laufenden Betriebs alle X Minuten im Hintergrund auf Updates. Auf Aus setzen, um es zu deaktivieren."
+
+msgid "Read the PKGBUILD before installing from the AUR"
+msgstr "Das PKGBUILD lesen, bevor Sie aus dem AUR installieren"
+
+msgid "Read the news before updating"
+msgstr "Die Nachrichten vor dem Update lesen"
+
+msgid "Reading /etc/pacman.conf…"
+msgstr "Lese /etc/pacman.conf…"
+
+msgid "Ready — snapshots available"
+msgstr "Bereit — Snapshots verfügbar"
+
+msgid "Remove '[{name}]' from /etc/pacman.conf?"
+msgstr "„[{name}]“ aus der /etc/pacman.conf entfernen?"
+
+msgid "Remove Lock"
+msgstr "Sperre entfernen"
+
+msgid "Remove Repository"
+msgstr "Repository entfernen"
+
+msgid "Remove hooks"
+msgstr "Hooks entfernen"
+
+msgid "Remove orphaned packages"
+msgstr "Verwaiste Pakete entfernen"
+
+msgid "Remove the stale lock and continue with \"{operation}\"?"
+msgstr "Die veraltete Sperre entfernen und mit „{operation}“ fortfahren?"
+
+msgid "Remove the stale lock and continue?"
+msgstr "Die veraltete Sperre entfernen und fortfahren?"
+
+msgid "Repositories"
+msgstr "Repositories"
+
+msgid "Repositories NeoArch added carry a marker and can be removed here; system and hand-written sections are protected."
+msgstr "Von NeoArch hinzugefügte Repositories tragen eine Markierung und können hier entfernt werden; System- und handgeschriebene Abschnitte sind geschützt."
+
+msgid "Repository name, e.g. archlinuxcn"
+msgstr "Repository-Name, z. B. archlinuxcn"
+
+msgid "Request timeout"
+msgstr "Anfrage-Zeitlimit"
+
+msgid "Requires the 'snapper' tool"
+msgstr "Benötigt das Werkzeug „snapper“"
+
+msgid "Requires the 'timeshift' tool"
+msgstr "Benötigt das Werkzeug „timeshift“"
+
+msgid "Resolved automatically to yay, paru, trizen or pikaur. Change it under General settings."
+msgstr "Wird automatisch zu yay, paru, trizen oder pikaur aufgelöst. Ändern Sie es unter Allgemeine Einstellungen."
+
+msgid "Review before installing"
+msgstr "Vor der Installation prüfen"
+
+msgid "Rounded corners on the translucent window frame."
+msgstr "Abgerundete Ecken am durchscheinenden Fensterrahmen."
+
+msgid "Run at"
+msgstr "Laufzeit"
+
+msgid "Runs the update check automatically on a weekly schedule (applies while the app is running)."
+msgstr "Führt die Update-Prüfung automatisch nach einem wöchentlichen Zeitplan aus (gilt, solange die App läuft)."
+
+msgid "Sa"
+msgstr "Sa"
+
+msgid "Save the selected bundle automatically."
+msgstr "Das ausgewählte Bundle automatisch speichern."
+
+msgid "Scan for corrupted archives"
+msgstr "Auf beschädigte Archive prüfen"
+
+msgid "Seconds to wait before repeating the same notification."
+msgstr "Sekunden, die vor der Wiederholung derselben Benachrichtigung vergehen."
+
+msgid "Select a file to inspect its diff"
+msgstr "Wählen Sie eine Datei aus, um ihren Diff zu prüfen"
+
+msgid "Select all"
+msgstr "Alle auswählen"
+
+msgid "Select the days the scheduled check runs on."
+msgstr "Wählen Sie die Tage, an denen die geplante Prüfung läuft."
+
+msgid "Server URL, e.g. https://mirror.example (optional)"
+msgstr "Server-URL, z. B. https://mirror.example (optional)"
+
+msgid "Set the level above to DEBUG, reproduce the problem, then attach the log file — it turns a vague report into a quick fix. Remember to switch back to INFO afterwards."
+msgstr "Stellen Sie den Grad oben auf DEBUG, reproduzieren Sie das Problem und hängen Sie dann die Logdatei an — so wird aus einem vagen Bericht schnell eine Lösung. Denken Sie danach daran, zurück auf INFO zu wechseln."
+
+msgid "Settings live in ~/.config/neoarch — no telemetry, no account, no cloud by default."
+msgstr "Einstellungen liegen in ~/.config/neoarch — standardmäßig keine Telemetrie, kein Konto, keine Cloud."
+
+msgid "Show a message banner inside the app when a task completes."
+msgstr "Zeigt ein Nachrichten-Banner in der App, wenn eine Aufgabe abgeschlossen ist."
+
+msgid "Show a pop-up notification from the system tray when a task completes."
+msgstr "Zeigt eine Pop-up-Benachrichtigung aus der Systemablage, wenn eine Aufgabe abgeschlossen ist."
+
+msgid "Snapper"
+msgstr "Snapper"
+
+msgid "Snapper setup is incomplete"
+msgstr "Snapper-Einrichtung ist unvollständig"
+
+msgid "Snapshots"
+msgstr "Snapshots"
+
+msgid "Sources & Community Packages"
+msgstr "Quellen und Community-Pakete"
+
+msgid "Su"
+msgstr "So"
+
+msgid "System Protection & Habits"
+msgstr "Systemsicherheit und Gewohnheiten"
+
+msgid "Th"
+msgstr "Do"
+
+msgid "The proxy's address and the TCP port it listens on. Only applied when a proxy type other than \"none\" is chosen."
+msgstr "Die Adresse des Proxys und der TCP-Port, auf dem er lauscht. Wird nur angewandt, wenn ein anderer Proxy-Typ als „none“ gewählt ist."
+
+msgid "The section is appended to /etc/pacman.conf under a NeoArch marker, so it can be removed again here later."
+msgstr "Der Abschnitt wird hinter einer NeoArch-Markierung an die /etc/pacman.conf angehängt, sodass er hier später wieder entfernt werden kann."
+
+msgid "The source column always shows where a package comes from, so community packages are never mistaken for official ones."
+msgstr "Die Quellspalte zeigt immer, woher ein Paket stammt, sodass Community-Pakete nie mit offiziellen verwechselt werden."
+
+msgid "Themes"
+msgstr "Designs"
+
+msgid "This signs the Chaotic AUR maintainer key, downloads the mirror list over HTTPS, appends [chaotic-aur] to /etc/pacman.conf and runs 'pacman -Syy'. Continue?"
+msgstr "Dies signiert den Schlüssel des Chaotic-AUR-Betreuers, lädt die Spiegel-Liste über HTTPS herunter, fügt [chaotic-aur] zur /etc/pacman.conf hinzu und führt „pacman -Syy“ aus. Fortfahren?"
+
+msgid "Time of day the weekly check starts."
+msgstr "Uhrzeit, zu der die wöchentliche Prüfung beginnt."
+
+msgid "Timeshift"
+msgstr "Timeshift"
+
+msgid "Tu"
+msgstr "Di"
+
+msgid "Uninstall the following package(s)?\n\n{summary}\n\nThis will remove them from your system and cannot be undone."
+msgstr "Die folgenden Pakete deinstallieren?\n\n{summary}\n\nDies entfernt sie von Ihrem System und kann nicht rückgängig gemacht werden."
+
+msgid "Update everything together"
+msgstr "Alles gemeinsam aktualisieren"
+
+msgid "Update interval (days)"
+msgstr "Update-Intervall (Tage)"
+
+msgid "Updates & Review"
+msgstr "Updates und Prüfung"
+
+msgid "Use npm user mode"
+msgstr "npm-Benutzermodus verwenden"
+
+msgid "View and manage pacman repositories like Chaotic AUR — no more hand-editing /etc/pacman.conf."
+msgstr "Pacman-Repositories wie Chaotic AUR ansehen und verwalten — kein manuelles Bearbeiten der /etc/pacman.conf mehr."
+
+msgid "View changes ↗"
+msgstr "Änderungen ansehen ↗"
+
+msgid "WARNED"
+msgstr "GEWARNT"
+
+msgid "We"
+msgstr "Mi"
+
+msgid "Weekdays"
+msgstr "Wochentage"
+
+msgid "What NeoArch can reach, what it runs, how it protects secrets, and the habits that keep an Arch system healthy"
+msgstr "Was NeoArch erreichen kann, was es ausführt, wie es Geheimnisse schützt und die Gewohnheiten, die ein Arch-System gesund halten"
+
+msgid "When a package installation or removal finishes."
+msgstr "Wenn eine Paketinstallation oder -entfernung abgeschlossen ist."
+
+msgid "When a package ships a new config, the old one is kept as a .pacnew. Review and merge them so your tweaks are never silently lost."
+msgstr "Wenn ein Paket eine neue Konfiguration mitbringt, bleibt die alte als .pacnew erhalten. Prüfen und übernehmen Sie sie, damit Ihre Anpassungen nie still verloren gehen."
+
+msgid "When an operation fails or emits warnings."
+msgstr "Wenn ein Vorgang fehlschlägt oder Warnungen ausgibt."
+
+msgid "When new system and package updates are ready."
+msgstr "Wenn neue System- und Paketupdates bereitstehen."
+
+msgid "Where the rolling log lives. Defaults to ~/.config/neoarch/neoarch.log on your home directory."
+msgstr "Wo das fortlaufende Log liegt. Standard ist ~/.config/neoarch/neoarch.log in Ihrem Home-Verzeichnis."
+
+msgid "Window transparency"
+msgstr "Fenster-Transparenz"
+
+msgid "Working…"
+msgstr "Arbeite…"
+
+msgid "curl … | bash runs code sight-unseen. Prefer real packages, or read what you are about to execute."
+msgstr "curl … | bash führt Code aus, den Sie nicht sehen. Bevorzugen Sie echte Pakete oder lesen Sie, was Sie ausführen wollen."
+
+msgid "fwupd is not installed — install with: sudo pacman -S fwupd"
+msgstr "fwupd ist nicht installiert — installieren mit: sudo pacman -S fwupd"
+
+msgid "npm is not installed — install with: sudo pacman -S npm"
+msgstr "npm ist nicht installiert — installieren mit: sudo pacman -S npm"
+
+msgid "pipx is not installed — install with: sudo pacman -S python-pipx"
+msgstr "pipx ist nicht installiert — installieren mit: sudo pacman -S python-pipx"
+
+msgid "{tool} is not installed — install with: sudo pacman -S {pkg}"
+msgstr "{tool} ist nicht installiert — installieren mit: sudo pacman -S {pkg}"
+
+msgid "↗ Wiki"
+msgstr "↗ Wiki"
+
+
+msgid " and synced"
+msgstr " und synchronisiert"
+
+msgid "'{name}' is a system repository and can't be toggled here."
+msgstr "„[{name}]“ ist ein System-Repository und kann hier nicht umgeschaltet werden."
+
+msgid "'{name}' is a system repository."
+msgstr "„[{name}]“ ist ein System-Repository."
+
+msgid "'{name}' isn't managed by NeoArch — edit /etc/pacman.conf manually."
+msgstr "„[{name}]“ wird nicht von NeoArch verwaltet — bearbeiten Sie /etc/pacman.conf manuell."
+
+msgid "(empty)"
+msgstr "(leer)"
+
+msgid "Another snapshot operation is already running."
+msgstr "Eine andere Snapshot-Operation läuft bereits."
+
+msgid "Chaotic AUR is already configured in /etc/pacman.conf."
+msgstr "Chaotic AUR ist bereits in /etc/pacman.conf konfiguriert."
+
+msgid "Confirm Restoration"
+msgstr "Wiederherstellung bestätigen"
+
+msgid "Couldn't download the Chaotic AUR mirror list."
+msgstr "Die Chaotic-AUR-Spiegel-Liste konnte nicht heruntergeladen werden."
+
+msgid "Couldn't read {conf}."
+msgstr "{conf} konnte nicht gelesen werden."
+
+msgid "Create a system snapshot before proceeding?\n\nThis will take some time."
+msgstr "Vor dem Fortfahren einen Systemsnapshot erstellen?\n\nDies wird einige Zeit in Anspruch nehmen."
+
+msgid "Creating pre-update snapshot..."
+msgstr "Snapshot vor dem Update wird erstellt…"
+
+msgid "Creating snapshot..."
+msgstr "Snapshot wird erstellt…"
+
+msgid "Deleting old snapshots..."
+msgstr "Alte Snapshots werden gelöscht…"
+
+msgid "Error creating pre-update snapshot: {err}"
+msgstr "Fehler beim Erstellen des Snapshots vor dem Update: {err}"
+
+msgid "Error creating snapshot: {err}"
+msgstr "Fehler beim Erstellen des Snapshots: {err}"
+
+msgid "Error deleting snapshots: {err}"
+msgstr "Fehler beim Löschen der Snapshots: {err}"
+
+msgid "Error installing pacman hooks: {err}"
+msgstr "Fehler beim Installieren der pacman-Hooks: {err}"
+
+msgid "Error removing pacman hooks: {err}"
+msgstr "Fehler beim Entfernen der pacman-Hooks: {err}"
+
+msgid "Error restoring snapshot: {err}"
+msgstr "Fehler bei der Wiederherstellung des Snapshots: {err}"
+
+msgid "Failed to create pre-update snapshot: {err}"
+msgstr "Snapshot vor dem Update konnte nicht erstellt werden: {err}"
+
+msgid "Failed to create snapshot: {err}"
+msgstr "Snapshot konnte nicht erstellt werden: {err}"
+
+msgid "Failed to delete snapshots: {err}"
+msgstr "Snapshots konnten nicht gelöscht werden: {err}"
+
+msgid "Failed to fetch the Chaotic AUR maintainer key."
+msgstr "Der Chaotic-AUR-Betreuerschlüssel konnte nicht abgerufen werden."
+
+msgid "Failed to install pacman hook: {path} - {err}"
+msgstr "pacman-Hook konnte nicht installiert werden: {path} - {err}"
+
+msgid "Failed to list snapshots: {err}"
+msgstr "Snapshots konnten nicht aufgelistet werden: {err}"
+
+msgid "Failed to locally sign the Chaotic AUR maintainer key."
+msgstr "Der Chaotic-AUR-Betreuerschlüssel konnte nicht lokal signiert werden."
+
+msgid "Failed to remove pacman hooks: {err}"
+msgstr "pacman-Hooks konnten nicht entfernt werden: {err}"
+
+msgid "Failed to restore snapshot: {err}"
+msgstr "Snapshot konnte nicht wiederhergestellt werden: {err}"
+
+msgid "Failed to write {conf}; the original was restored."
+msgstr "{conf} konnte nicht geschrieben werden; die Originaldatei wurde wiederhergestellt."
+
+msgid "Firmware Update"
+msgstr "Firmware-Update"
+
+msgid "Firmware was updated. A reboot is required to finish installation."
+msgstr "Die Firmware wurde aktualisiert. Zum Abschluss der Installation ist ein Neustart erforderlich."
+
+msgid "Give at least one Include path or Server URL."
+msgstr "Geben Sie mindestens einen Include-Pfad oder eine Server-URL an."
+
+msgid "Include paths can't contain line breaks."
+msgstr "Include-Pfade dürfen keine Zeilenumbrüche enthalten."
+
+msgid "Include paths must live under /etc/."
+msgstr "Include-Pfade müssen unter /etc/ liegen."
+
+msgid "Installing update-time hooks..."
+msgstr "Update-Hooks werden installiert…"
+
+msgid "Invalid repository name (letters, numbers, '.', '-' and '_')."
+msgstr "Ungültiger Repository-Name (Buchstaben, Ziffern, '.', '-' und '_')."
+
+msgid "Loading snapshots..."
+msgstr "Snapshots werden geladen…"
+
+msgid "NeoArch manual snapshot {ts}"
+msgstr "NeoArch manueller Snapshot {ts}"
+
+msgid "No Snapshots"
+msgstr "Keine Snapshots"
+
+msgid "No snapper configuration found."
+msgstr "Keine snapper-Konfiguration gefunden."
+
+msgid "No snapshots available for restoration."
+msgstr "Keine Snapshots für die Wiederherstellung verfügbar."
+
+msgid "Nothing to delete — 2 or fewer snapshots."
+msgstr "Nichts zu löschen — 2 oder weniger Snapshots."
+
+msgid "Old snapshots deleted successfully"
+msgstr "Alte Snapshots erfolgreich gelöscht"
+
+msgid "Operation cancelled."
+msgstr "Vorgang abgebrochen."
+
+msgid "Pacman hooks installed — every system update will now capture Snapper snapshots."
+msgstr "pacman-Hooks installiert — jedes System-Update erstellt nun Snapper-Snapshots."
+
+msgid "Pacman hooks removed."
+msgstr "pacman-Hooks entfernt."
+
+msgid "Pre-update snapshot created: {comment}"
+msgstr "Snapshot vor dem Update erstellt: {comment}"
+
+msgid "Removing update-time hooks..."
+msgstr "Update-Hooks werden entfernt…"
+
+msgid "Repository '[{name}]' added{and_synced}."
+msgstr "Repository „[{name}]“ hinzugefügt{and_synced}."
+
+msgid "Repository '[{name}]' already exists in /etc/pacman.conf."
+msgstr "Repository „[{name}]“ existiert bereits in /etc/pacman.conf."
+
+msgid "Repository '[{name}]' not found."
+msgstr "Repository „[{name}]“ nicht gefunden."
+
+msgid "Repository '[{name}]' removed."
+msgstr "Repository „[{name}]“ entfernt."
+
+msgid "Restoring snapshot..."
+msgstr "Snapshot wird wiederhergestellt…"
+
+msgid "Rollback initiated for snapshot #{num}. Reboot to complete."
+msgstr "Rollback für Snapshot #{num} eingeleitet. Zum Abschluss neu starten."
+
+msgid "Select Snapshot to Restore"
+msgstr "Wiederherzustellenden Snapshot auswählen"
+
+msgid "Select a snapshot to restore the system to:"
+msgstr "Wählen Sie einen Snapshot, auf den das System zurückgesetzt werden soll:"
+
+msgid "Server URLs must use http(s) and contain no line breaks."
+msgstr "Server-URLs müssen http(s) verwenden und dürfen keine Zeilenumbrüche enthalten."
+
+msgid "Snapper Not Available"
+msgstr "Snapper nicht verfügbar"
+
+msgid "Snapper needs a BTRFS filesystem and a configuration."
+msgstr "Snapper benötigt ein BTRFS-Dateisystem und eine Konfiguration."
+
+msgid "Snapper needs a BTRFS filesystem, the 'snapper' tool and a configuration. Create one with: sudo snapper create-config /"
+msgstr "Snapper benötigt ein BTRFS-Dateisystem, das Werkzeug „snapper“ und eine Konfiguration. Eine erstellen mit: sudo snapper create-config /"
+
+msgid "Snapshot"
+msgstr "Snapshot"
+
+msgid "Snapshot created successfully: {comment}"
+msgstr "Snapshot erfolgreich erstellt: {comment}"
+
+msgid "Snapshot created successfully: {date}"
+msgstr "Snapshot erfolgreich erstellt: {date}"
+
+msgid "Snapshot creation timed out and no snapshot appeared in Timeshift's list.\n{err}"
+msgstr "Die Snapshot-Erstellung lief in einen Zeitüberschreitungsfehler und in der Timeshift-Liste erschien kein Snapshot.\n{err}"
+
+msgid "Snapshot restoration initiated. System will reboot."
+msgstr "Wiederherstellung des Snapshots eingeleitet. Das System wird neu gestartet."
+
+msgid "The snapshot did not appear in Timeshift's list.\nCommand output: {out}"
+msgstr "Der Snapshot erschien nicht in der Timeshift-Liste.\nBefehlsausgabe: {out}"
+
+msgid "This will delete old snapshots to free up disk space.\n\nKeep only the 2 most recent snapshots?\n\nThis action cannot be undone."
+msgstr "Dies löscht alte Snapshots, um Speicherplatz freizugeben.\n\nNur die 2 neuesten Snapshots behalten?\n\nDiese Aktion kann nicht rückgängig gemacht werden."
+
+msgid "This will roll back the system to snapper snapshot #{num}.\n\nSnapper switches the default subvolume; a reboot is required.\n\nAre you sure you want to proceed?"
+msgstr "Dies setzt das System auf snapper-Snapshot #{num} zurück.\n\nSnapper wechselt das Standard-Subvolume; ein Neustart ist erforderlich.\n\nWirklich fortfahren?"
+
+msgid "Timeshift is busy with another backup in progress (scheduled or manual). Try again after it finishes."
+msgstr "Timeshift ist mit einem anderen laufenden Backup beschäftigt (geplant oder manuell). Versuchen Sie es erneut, sobald es fertig ist."
+
+msgid "Timeshift list failed"
+msgstr "Timeshift-Liste fehlgeschlagen"
+
+msgid "curl isn't installed; install 'curl' to fetch the mirror list."
+msgstr "curl ist nicht installiert; installieren Sie „curl“, um die Spiegel-Liste abzurufen."

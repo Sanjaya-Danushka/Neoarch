@@ -177,11 +177,19 @@ def test_catalog_failure_falls_back_to_all_missing(monkeypatch):
 
 
 def test_pipx_and_fwupd_are_optional_in_catalog():
-    from neoarch.backend.sys_utils import get_dependency_catalog
+    from neoarch.backend.sys_utils import (get_dependency_catalog,
+                                           resolve_pkg_names)
     catalog = {d["name"]: d for d in get_dependency_catalog()}
     assert catalog["pipx"]["required"] is False
     assert catalog["fwupdmgr"]["required"] is False
     assert catalog["npm"]["required"] is False
+
+
+def test_pipx_resolves_to_real_pacman_package():
+    # `pacman -Ss pipx` ships python-pipx; installing a literal `pipx`
+    # target-not-found fails silently while still claiming "Setup finished".
+    from neoarch.backend.sys_utils import resolve_pkg_names
+    assert resolve_pkg_names(["pipx"]) == ["python-pipx"]
 
 
 def test_alert_nav_button_dot_states(qapp):

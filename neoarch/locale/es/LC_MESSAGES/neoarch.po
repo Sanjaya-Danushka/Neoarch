@@ -2835,3 +2835,403 @@ msgstr "Timeshift está ocupado con otra copia de seguridad en curso (programada
 
 msgid "Timeshift list failed"
 msgstr "El listado de Timeshift falló"
+
+
+msgid " and synced"
+msgstr " y sincronizado"
+
+msgid "'{name}' is a system repository and can't be toggled here."
+msgstr "«[{name}]» es un repositorio de sistema y no se puede activar aquí."
+
+msgid "'{name}' is a system repository."
+msgstr "«[{name}]» es un repositorio de sistema."
+
+msgid "'{name}' isn't managed by NeoArch — edit /etc/pacman.conf manually."
+msgstr "«[{name}]» no está gestionado por NeoArch — edite /etc/pacman.conf manualmente."
+
+msgid "A full system upgrade keeps libraries and applications in lockstep — the Arch-supported way to stay current."
+msgstr "Una actualización completa del sistema mantiene bibliotecas y aplicaciones en sincronía — la forma respaldada por Arch de estar al día."
+
+msgid "A pinned version quietly freezes the packages that depend on it. If you must pin, review it regularly."
+msgstr "Una versión fijada congela silenciosamente los paquetes que dependen de ella. Si debe fijar, revísela con regularidad."
+
+msgid "AUR helper: auto"
+msgstr "Asistente AUR: auto"
+
+msgid "AUR pre-install scan"
+msgstr "Análisis previo a la instalación AUR"
+
+msgid "AUR updates build one package at a time; a single failure never aborts the rest of the queue."
+msgstr "Las actualizaciones AUR compilan un paquete a la vez; un solo fallo nunca interrumpe el resto de la cola."
+
+msgid "Add"
+msgstr "Añadir"
+
+msgid "Add Chaotic AUR"
+msgstr "Añadir Chaotic AUR"
+
+msgid "Add Repository"
+msgstr "Añadir repositorio"
+
+msgid "Add a Repository"
+msgstr "Añadir un repositorio"
+
+msgid "Add a Repository…"
+msgstr "Añadir un repositorio…"
+
+msgid "Anyone can publish a recipe. Skipping the review means trusting a stranger's build script with your machine."
+msgstr "Cualquiera puede publicar una receta. Omitir la revisión significa confiar su máquina al script de compilación de un desconocido."
+
+msgid "Arch is a rolling release: packages expect to move forward together. Updating a selection can desync libraries from the apps that use them."
+msgstr "Arch es un lanzamiento continuo: los paquetes esperan avanzar juntos. Actualizar una selección puede desincronizar bibliotecas de las aplicaciones que las usan."
+
+msgid "Attach a DEBUG log when reporting bugs"
+msgstr "Adjunte un registro DEBUG al informar errores"
+
+msgid "Before installing from the AUR, review the package."
+msgstr "Antes de instalar desde AUR, revise el paquete."
+
+msgid "Chaotic AUR is already configured in /etc/pacman.conf."
+msgstr "Chaotic AUR ya está configurado en /etc/pacman.conf."
+
+msgid "Check cached package archives for corruption before they cause an install to fail."
+msgstr "Comprueba si los archivos de paquetes en caché están corruptos antes de que provocan un fallo de instalación."
+
+msgid "Checks certificates on every HTTPS request. Disable only if a proxy inspects your traffic — it does weaken security."
+msgstr "Verifica certificados en cada solicitud HTTPS. Desactívelo solo si un proxy inspecciona su tráfico — debilita la seguridad."
+
+msgid "Cloud login caches tokens only until they expire — it never stores your credentials forever."
+msgstr "El inicio de sesión en la nube almacena tokens solo hasta que expiran — nunca guarda sus credenciales para siempre."
+
+msgid "Community-maintained build recipes. Unlike the official repos they are not curated or reviewed by Arch — anyone can publish a recipe."
+msgstr "Recetas de compilación mantenidas por la comunidad. A diferencia de los repos oficiales, no están curadas ni revisadas por Arch — cualquiera puede publicar una receta."
+
+msgid "Config stays local"
+msgstr "La configuración permanece local"
+
+msgid "Configured Repositories"
+msgstr "Repositorios configurados"
+
+msgid "Connection"
+msgstr "Conexión"
+
+msgid "Control how much NeoArch records, where it writes it, and when it rolls the log over"
+msgstr "Controle cuánto registra NeoArch, dónde lo escribe y cuándo rota el registro"
+
+msgid "Couldn't download the Chaotic AUR mirror list."
+msgstr "No se pudo descargar la lista de mirrors de Chaotic AUR."
+
+msgid "Couldn't read {conf}."
+msgstr "No se pudo leer {conf}."
+
+msgid "DO"
+msgstr "HACER"
+
+msgid "DON'T"
+msgstr "NO HACER"
+
+msgid "Disabled"
+msgstr "Desactivado"
+
+msgid "Done."
+msgstr "Listo."
+
+msgid "Drop orphaned packages, prune the cache, and read the archlinux.org news before major upgrades."
+msgstr "Elimine paquetes huérfanos, limpie la caché y lea las noticias de archlinux.org antes de grandes actualizaciones."
+
+msgid "Echo to console"
+msgstr "Eco en consola"
+
+msgid "Enable “Snapshot before update” in General settings so a bad upgrade can be reverted in one click."
+msgstr "Active «Instantánea antes de actualizar» en la configuración general para deshacer una mala actualización con un clic."
+
+msgid "Enabled"
+msgstr "Activado"
+
+msgid "Every AUR result is badged [aur]"
+msgstr "Cada resultado AUR lleva la insignia [aur]"
+
+msgid "Failed to fetch the Chaotic AUR maintainer key."
+msgstr "No se pudo obtener la clave del mantenedor de Chaotic AUR."
+
+msgid "Failed to locally sign the Chaotic AUR maintainer key."
+msgstr "No se pudo firmar localmente la clave del mantenedor de Chaotic AUR."
+
+msgid "Failed to read repositories."
+msgstr "No se pudieron leer los repositorios."
+
+msgid "Failed to write {conf}; the original was restored."
+msgstr "No se pudo escribir {conf}; se restauró el original."
+
+msgid "Fetch from several sources at the same time. Faster lookups, at the cost of more simultaneous connections."
+msgstr "Obtiene de varias fuentes a la vez. Búsquedas más rápidas, a costa de más conexiones simultáneas."
+
+msgid "Firmware Update"
+msgstr "Actualización de firmware"
+
+msgid "Firmware was updated. A reboot is required to finish installation."
+msgstr "El firmware se actualizó. Se requiere reiniciar para completar la instalación."
+
+msgid "Full upgrades are the safe path"
+msgstr "Las actualizaciones completas son el camino seguro"
+
+msgid "GUI sudo prompt (SUDO_ASKPASS)"
+msgstr "Solicitud sudo gráfica (SUDO_ASKPASS)"
+
+msgid "Give at least one Include path or Server URL."
+msgstr "Proporcione al menos una ruta Include o una URL de servidor."
+
+msgid "Good Habits"
+msgstr "Buenos hábitos"
+
+msgid "Host & port"
+msgstr "Host y puerto"
+
+msgid "Housekeep: orphans, cache, Arch news"
+msgstr "Mantenimiento: huérfanos, caché, noticias de Arch"
+
+msgid "How NeoArch reaches the internet — proxies, timeouts and pacman's download behaviour"
+msgstr "Cómo llega NeoArch a internet — proxies, tiempos de espera y comportamiento de descarga de pacman"
+
+msgid "How long NeoArch waits for a network reply before giving up. Raise it on slow links, lower it to fail fast."
+msgstr "Cuánto espera NeoArch una respuesta de red antes de rendirse. Auméntelo en enlaces lentos, redúzcalo para fallar rápido."
+
+msgid "How many old versions to keep before purging. Keep it small — older archives are already installed."
+msgstr "Cuántas versiones antiguas conservar antes de purgar. Manténgalo pequeño — los archivos antiguos ya están instalados."
+
+msgid "How many packages pacman may download at once while updating. Applies to /etc/pacman.conf and needs root."
+msgstr "Cuántos paquetes puede descargar pacman a la vez al actualizar. Se aplica a /etc/pacman.conf y requiere root."
+
+msgid "How much detail NeoArch writes. DEBUG records everything including network calls and is ideal for bug reports; ERROR writes only failures."
+msgstr "Cuánto detalle registra NeoArch. DEBUG graba todo, incluso llamadas de red, ideal para informes de errores; ERROR graba solo fallos."
+
+msgid "Ignore the full-upgrade warning"
+msgstr "Ignorar la advertencia de actualización completa"
+
+msgid "Important announcements such as manual interventions are posted before big changes land. Worth a glance before major upgrades."
+msgstr "Los anuncios importantes, como las intervenciones manuales, se publican antes de grandes cambios. Vale la pena una mirada antes de grandes actualizaciones."
+
+msgid "Include path under /etc/ (optional)"
+msgstr "Ruta Include bajo /etc/ (opcional)"
+
+msgid "Include paths can't contain line breaks."
+msgstr "Las rutas Include no pueden contener saltos de línea."
+
+msgid "Include paths must live under /etc/."
+msgstr "Las rutas Include deben estar bajo /etc/."
+
+msgid "Install AUR packages blindly"
+msgstr "Instalar paquetes AUR a ciegas"
+
+msgid "Invalid repository name (letters, numbers, '.', '-' and '_')."
+msgstr "Nombre de repositorio no válido (letras, números, '.', '-' y '_')."
+
+msgid "Keep IgnorePkg minimal"
+msgstr "Mantenga IgnorePkg mínimo"
+
+msgid "Keep versions per package"
+msgstr "Conservar versiones por paquete"
+
+msgid "Keep your system tidy: orphans, leftover configs, the download cache, and Arch news"
+msgstr "Mantenga su sistema ordenado: huérfanos, configs sobrantes, caché de descarga y noticias de Arch"
+
+msgid "Leave console echo on during daily use"
+msgstr "Deje el eco de consola desactivado en el uso diario"
+
+msgid "Log file path"
+msgstr "Ruta del archivo de registro"
+
+msgid "Log level"
+msgstr "Nivel de registro"
+
+msgid "Manage .pacnew files"
+msgstr "Gestionar archivos .pacnew"
+
+msgid "Maximum size"
+msgstr "Tamaño máximo"
+
+msgid "Messages are already written to the log file. Console echo is a terminal-first tool and adds busy output to the window you launched NeoArch from."
+msgstr "Los mensajes ya se escriben en el archivo de registro. El eco de consola es una herramienta para terminales y añade salida extra a la ventana desde la que inició NeoArch."
+
+msgid "Mirror messages to the terminal NeoArch was started from. Mostly useful when you run the app from a shell — the log file already records everything."
+msgstr "Refleja mensajes en la terminal desde la que se inició NeoArch. Útil sobre todo cuando ejecuta la app desde un shell — el archivo de registro ya graba todo."
+
+msgid "Mixing old and new packages desyncs libraries from the apps that link them — the classic broken-Arch setup."
+msgstr "Mezclar paquetes antiguos y nuevos desincroniza bibliotecas de las aplicaciones que las vinculan — el clásico Arch roto."
+
+msgid "NeoArch fetches and statically scans recipes first and pauses on critical findings. Read the whole file anyway."
+msgstr "NeoArch descarga y analiza estáticamente las recetas primero y se detiene en hallazgos críticos. Lea igualmente todo el archivo."
+
+msgid "NeoArch never quietly blocks an action. Risky moves get a warning and your explicit confirmation — you always hold the final say."
+msgstr "NeoArch nunca bloquea una acción en silencio. Los pasos arriesgados reciben una advertencia y su confirmación explícita — usted siempre tiene la última palabra."
+
+msgid "NeoArch will let you proceed — but the warning exists because this is how systems break."
+msgstr "NeoArch le dejará continuar — pero la advertencia existe porque así se rompen los sistemas."
+
+msgid "Nothing is routed through a proxy by default. Pick HTTP, HTTPS or SOCKS5 to send package, AUR and Flatpak requests through one."
+msgstr "Nada pasa por un proxy por defecto. Elija HTTP, HTTPS o SOCKS5 para enviar solicitudes de paquetes, AUR y Flatpak a través de uno."
+
+msgid "OAuth tokens expire"
+msgstr "Los tokens OAuth expiran"
+
+msgid "Once the log grows past this size, NeoArch rolls it over so it never fills your drive."
+msgstr "Cuando el registro supera este tamaño, NeoArch lo rota para que nunca llene su disco."
+
+msgid "One-at-a-time builds"
+msgstr "Compilaciones de una en una"
+
+msgid "Optional snapshots"
+msgstr "Instantáneas opcionales"
+
+msgid "PKGBUILDs and .install scriptlets are statically inspected before every AUR install; critical findings demand explicit acceptance."
+msgstr "Los PKGBUILD y scriptlets .install se inspeccionan estáticamente antes de cada instalación AUR; los hallazgos críticos exigen aceptación explícita."
+
+msgid "Package count and version changes are shown first; nothing starts until you press confirm — never silently."
+msgstr "El número de paquetes y los cambios de versión se muestran primero; nada arranca hasta que confirma — nunca en silencio."
+
+msgid "Packages installed as dependencies that nothing needs any more. Deleting them is safe, frees disk space and makes updates faster."
+msgstr "Paquetes instalados como dependencias que ya nada necesita. Eliminarlos es seguro, libera espacio y acelera las actualizaciones."
+
+msgid "Pacman ParallelDownloads"
+msgstr "Pacman ParallelDownloads"
+
+msgid "Parallel network requests"
+msgstr "Solicitudes de red paralelas"
+
+msgid "Passwords go straight to the privilege prompt in your session and are never written to disk."
+msgstr "Las contraseñas van directas a la solicitud de privilegios de su sesión y nunca se escriben en disco."
+
+msgid "Pipe scripts into a shell"
+msgstr "Enviar scripts a un shell"
+
+msgid "Proxy type"
+msgstr "Tipo de proxy"
+
+msgid "Quick Reference — Do's & Don'ts"
+msgstr "Referencia rápida — qué hacer y qué evitar"
+
+msgid "Quick-add Chaotic AUR"
+msgstr "Añadir Chaotic AUR rápido"
+
+msgid "Quick-add Chaotic AUR (signs the maintainer key, fetches the mirror list, appends [chaotic-aur] and runs pacman -Syy), or add any repo by name."
+msgstr "Añadir Chaotic AUR rápido (firma la clave del mantenedor, obtiene la lista de mirrors, añade [chaotic-aur] y ejecuta pacman -Syy), o añada cualquier repo por nombre."
+
+msgid "Read the PKGBUILD before installing from the AUR"
+msgstr "Lea el PKGBUILD antes de instalar desde AUR"
+
+msgid "Read the news before updating"
+msgstr "Lea las noticias antes de actualizar"
+
+msgid "Reading /etc/pacman.conf…"
+msgstr "Leyendo /etc/pacman.conf…"
+
+msgid "Remove '[{name}]' from /etc/pacman.conf?"
+msgstr "¿Eliminar «[{name}]» de /etc/pacman.conf?"
+
+msgid "Remove Repository"
+msgstr "Eliminar repositorio"
+
+msgid "Remove orphaned packages"
+msgstr "Eliminar paquetes huérfanos"
+
+msgid "Repositories"
+msgstr "Repositorios"
+
+msgid "Repositories NeoArch added carry a marker and can be removed here; system and hand-written sections are protected."
+msgstr "Los repos añadidos por NeoArch llevan un marcador y pueden eliminarse aquí; las secciones de sistema y escritas a mano están protegidas."
+
+msgid "Repository '[{name}]' added{and_synced}."
+msgstr "Repositorio «[{name}]» añadido{and_synced}."
+
+msgid "Repository '[{name}]' already exists in /etc/pacman.conf."
+msgstr "El repositorio «[{name}]» ya existe en /etc/pacman.conf."
+
+msgid "Repository '[{name}]' not found."
+msgstr "Repositorio «[{name}]» no encontrado."
+
+msgid "Repository '[{name}]' removed."
+msgstr "Repositorio «[{name}]» eliminado."
+
+msgid "Repository name, e.g. archlinuxcn"
+msgstr "Nombre del repositorio, p. ej. archlinuxcn"
+
+msgid "Request timeout"
+msgstr "Tiempo de espera de solicitud"
+
+msgid "Resolved automatically to yay, paru, trizen or pikaur. Change it under General settings."
+msgstr "Se resuelve automáticamente a yay, paru, trizen o pikaur. Cámbielo en la configuración general."
+
+msgid "Review before installing"
+msgstr "Revisar antes de instalar"
+
+msgid "Scan for corrupted archives"
+msgstr "Buscar archivos corruptos"
+
+msgid "Server URL, e.g. https://mirror.example (optional)"
+msgstr "URL del servidor, p. ej. https://mirror.example (opcional)"
+
+msgid "Server URLs must use http(s) and contain no line breaks."
+msgstr "Las URL de servidor deben usar http(s) y no contener saltos de línea."
+
+msgid "Set the level above to DEBUG, reproduce the problem, then attach the log file — it turns a vague report into a quick fix. Remember to switch back to INFO afterwards."
+msgstr "Ponga el nivel de arriba en DEBUG, reproduzca el problema y adjunte el archivo de registro — convierte un informe vago en una solución rápida. Recuerde volver a INFO después."
+
+msgid "Settings live in ~/.config/neoarch — no telemetry, no account, no cloud by default."
+msgstr "La configuración vive en ~/.config/neoarch — sin telemetría, sin cuenta, sin nube por defecto."
+
+msgid "Snapshot creation timed out and no snapshot appeared in Timeshift's list.\n{err}"
+msgstr "La creación de la instantánea agotó el tiempo y no apareció ninguna en la lista de Timeshift.\n{err}"
+
+msgid "The proxy's address and the TCP port it listens on. Only applied when a proxy type other than \"none\" is chosen."
+msgstr "La dirección del proxy y el puerto TCP en el que escucha. Solo se aplica cuando se elige un tipo de proxy distinto de «none»."
+
+msgid "The section is appended to /etc/pacman.conf under a NeoArch marker, so it can be removed again here later."
+msgstr "La sección se añade a /etc/pacman.conf bajo un marcador de NeoArch, para poder eliminarla aquí más tarde."
+
+msgid "The source column always shows where a package comes from, so community packages are never mistaken for official ones."
+msgstr "La columna de origen siempre muestra de dónde viene un paquete, para que los de la comunidad nunca se confundan con los oficiales."
+
+msgid "This signs the Chaotic AUR maintainer key, downloads the mirror list over HTTPS, appends [chaotic-aur] to /etc/pacman.conf and runs 'pacman -Syy'. Continue?"
+msgstr "Esto firma la clave del mantenedor de Chaotic AUR, descarga la lista de mirrors por HTTPS, añade [chaotic-aur] a /etc/pacman.conf y ejecuta 'pacman -Syy'. ¿Continuar?"
+
+msgid "Update everything together"
+msgstr "Actualizar todo junto"
+
+msgid "View and manage pacman repositories like Chaotic AUR — no more hand-editing /etc/pacman.conf."
+msgstr "Vea y gestione repos de pacman como Chaotic AUR — no más edición manual de /etc/pacman.conf."
+
+msgid "View changes ↗"
+msgstr "Ver cambios ↗"
+
+msgid "WARNED"
+msgstr "ADVERTIDO"
+
+msgid "What NeoArch can reach, what it runs, how it protects secrets, and the habits that keep an Arch system healthy"
+msgstr "Qué puede alcanzar NeoArch, qué ejecuta, cómo protege secretos y los hábitos que mantienen sano un sistema Arch"
+
+msgid "When a package ships a new config, the old one is kept as a .pacnew. Review and merge them so your tweaks are never silently lost."
+msgstr "Cuando un paquete trae una config nueva, la antigua se conserva como .pacnew. Revise y fusiónelas para que sus ajustes nunca se pierdan en silencio."
+
+msgid "Where the rolling log lives. Defaults to ~/.config/neoarch/neoarch.log on your home directory."
+msgstr "Dónde vive el registro continuo. Por defecto en ~/.config/neoarch/neoarch.log en su directorio personal."
+
+msgid "Working…"
+msgstr "Trabajando…"
+
+msgid "curl isn't installed; install 'curl' to fetch the mirror list."
+msgstr "curl no está instalado; instale 'curl' para obtener la lista de mirrors."
+
+msgid "curl … | bash runs code sight-unseen. Prefer real packages, or read what you are about to execute."
+msgstr "curl … | bash ejecuta código sin verlo. Prefiera paquetes reales, o lea lo que está a punto de ejecutar."
+
+msgid "fwupd is not installed — install with: sudo pacman -S fwupd"
+msgstr "fwupd no está instalado — instale con: sudo pacman -S fwupd"
+
+msgid "npm is not installed — install with: sudo pacman -S npm"
+msgstr "npm no está instalado — instale con: sudo pacman -S npm"
+
+msgid "pipx is not installed — install with: sudo pacman -S python-pipx"
+msgstr "pipx no está instalado — instale con: sudo pacman -S python-pipx"
+
+msgid "{tool} is not installed — install with: sudo pacman -S {pkg}"
+msgstr "{tool} no está instalado — instale con: sudo pacman -S {pkg}"
