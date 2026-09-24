@@ -152,6 +152,28 @@ def test_chaotic_button_runs_preset(qapp, monkeypatch):
     w.deleteLater()
 
 
+def test_chaotic_button_surfaces_manjaro_warning(qapp, monkeypatch):
+    from neoarch.backend.services import repo_manager
+
+    w = RepositoriesSettingsWidget()
+    monkeypatch.setattr(w, "_auth", lambda: True)
+    seen = {}
+    monkeypatch.setattr("neoarch.frontend.components.dark_dialogs.dark_confirm",
+                        lambda parent, title, message, danger=False: seen.update(
+                            {"message": message, "danger": danger}) or True)
+    monkeypatch.setattr(repo_manager, "chaotic_preflight",
+                        lambda: "Chaotic AUR warning for stable branch")
+    monkeypatch.setattr(repo_manager, "add_chaotic_aur",
+                        lambda sync=True: (True, "chaotic ok"))
+
+    w._chaotic_btn.click()
+
+    assert _pump(qapp, lambda: w._status.text() == "chaotic ok")
+    assert "Chaotic AUR warning for stable branch" in seen.get("message", "")
+    assert seen.get("danger") is True
+    w.deleteLater()
+
+
 def test_op_failure_pins_error_and_reloads(qapp, monkeypatch):
     from neoarch.backend.services import repo_manager
 
