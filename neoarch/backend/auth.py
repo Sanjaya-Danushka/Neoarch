@@ -6,7 +6,6 @@ session, silent afterwards.
 """
 
 import os
-import shutil
 from typing import Tuple
 
 from neoarch.backend import session_auth

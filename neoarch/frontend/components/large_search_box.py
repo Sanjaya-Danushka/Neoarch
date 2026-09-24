@@ -219,20 +219,20 @@ class LargeSearchBox(QWidget):
         card = QFrame()
         card.setObjectName("dashCard")
         card.setFixedHeight(140)
-        card.setStyleSheet(f"""
-            QFrame#dashCard {{
+        card.setStyleSheet("""
+            QFrame#dashCard {
                 background-color: rgba(28, 30, 36, 0.85);
                 border-top: 1px solid rgba(255, 255, 255, 0.06);
                 border-left: 1px solid rgba(255, 255, 255, 0.06);
                 border-right: 1px solid rgba(0, 0, 0, 0.25);
                 border-bottom: 2px solid rgba(0, 0, 0, 0.35);
                 border-radius: 18px;
-            }}
-            QFrame#dashCard:hover {{
+            }
+            QFrame#dashCard:hover {
                 background-color: rgba(34, 36, 42, 0.85);
                 border-top: 1px solid rgba(255, 255, 255, 0.09);
                 border-left: 1px solid rgba(255, 255, 255, 0.09);
-            }}
+            }
         """)
         self._neumorphic_shadow(card)
 

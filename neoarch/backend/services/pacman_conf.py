@@ -6,7 +6,6 @@ count (`ParallelDownloads`). The file is edited line-wise, preserving
 comments, ordering, and unrelated directives.
 """
 
-import os
 import re
 import subprocess
 from typing import List, Optional

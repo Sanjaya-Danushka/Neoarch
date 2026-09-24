@@ -96,7 +96,6 @@ def install_packages(app, packages_by_source: dict):
             app.installation_progress.emit(status, can_cancel)
 
         total_packages = sum(len(pkgs) for pkgs in packages_by_source.values())
-        total_sources = len(packages_by_source)
         completed_packages = 0
         completed_sources = 0
         force_sudo = bool(getattr(app, 'force_sudo_install', False))

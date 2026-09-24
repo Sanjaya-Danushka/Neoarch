@@ -64,7 +64,6 @@ def main() -> int:
         return 0
 
     import time
-    from pathlib import Path
 
     # Single-flight: if another askpass process is already showing the
     # dialog (parallel sudo commands), wait for it to establish the cache

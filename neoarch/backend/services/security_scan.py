@@ -281,7 +281,6 @@ def scan_text(text: str, context: str = "", base_dir: str = "",
         list: Findings, each {severity, rule, detail, context, matched, line}.
     """
     findings: List[Dict] = []
-    deobf = _strip_deobfuscation(text)
 
     for line_no, raw_line in enumerate(text.splitlines(), start=1):
         line = raw_line.strip()

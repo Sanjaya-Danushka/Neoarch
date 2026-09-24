@@ -7,7 +7,7 @@ appropriate titles, messages, and action buttons.
 
 import re
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List
 
 
 __all__ = ["OperationResult", "classify_error", "classify_aur_output"]

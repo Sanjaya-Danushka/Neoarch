@@ -59,7 +59,6 @@ from neoarch.resources.paths import APP_NAME, APP_VERSION
 from neoarch.backend.services import search as search_service
 from neoarch.backend import sys_utils
 from neoarch.backend.config_utils import (
-    get_ignore_file_path,
     load_ignored_updates,
     save_ignored_updates,
 )
@@ -502,7 +501,7 @@ def cmd_install(args) -> None:
         target = "aur" if args.aur else ("flatpak" if args.flatpak else "npm")
 
     if target == "pacman":
-        print(f"[neoarch] resolving where each package comes from...", file=sys.stderr)
+        print("[neoarch] resolving where each package comes from...", file=sys.stderr)
         _plot_install(packages)
         if not no_confirm and not _confirm(f"Install {', '.join(packages)}?"):
             print("Aborted.", file=sys.stderr)

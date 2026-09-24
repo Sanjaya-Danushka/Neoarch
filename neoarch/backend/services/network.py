@@ -78,7 +78,6 @@ def proxy_url(cfg=None):
     cfg = cfg or _read_network_settings()
     if cfg["type"] == "none" or not cfg["host"]:
         return None
-    scheme = cfg["type"] if cfg["type"] in ("http", "https", "socks5") else "http"
     # urllib natively supports http proxies; https/socks5 URLs require a
     # handler that most environments lack, so route them via http CONNECT.
     netloc = f"{cfg['host']}:{cfg['port']}"

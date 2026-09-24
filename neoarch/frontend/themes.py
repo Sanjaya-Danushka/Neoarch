@@ -9,8 +9,6 @@ __all__ = ["THEMES", "ThemeManager"]
 
 import json
 import os
-from dataclasses import dataclass, field
-from typing import Callable
 
 from PyQt6.QtCore import QObject, pyqtSignal
 

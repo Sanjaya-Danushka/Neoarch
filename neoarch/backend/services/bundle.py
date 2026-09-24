@@ -10,8 +10,6 @@ from PyQt6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 
 from neoarch.backend.package.installer import install_packages
 from neoarch.backend.services.i18n import _
-from neoarch.backend.services.i18n import _
-from neoarch.backend.services.i18n import _
 
 __all__ = [
     "add_selected_to_bundle", "refresh_bundles_table", "export_bundle",
@@ -27,12 +25,7 @@ def _auto_save(app):
     if not key:
         return
     try:
-        from neoarch.backend.services.bundle_storage import save_bundle, list_bundles
-        name = "My Bundle"
-        for b in list_bundles():
-            if b["key"] == key:
-                name = b["name"]
-                break
+        from neoarch.backend.services.bundle_storage import save_bundle
         save_bundle(key, app.bundle_items)
     except Exception:
         pass

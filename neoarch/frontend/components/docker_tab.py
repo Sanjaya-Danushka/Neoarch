@@ -368,9 +368,6 @@ class DockerTab(QWidget):
             if w:
                 w.setParent(None)
 
-        has_any = bool(
-            self._containers or self._images or self._volumes or self._networks)
-
         if self._active_tab == "containers":
             self._render_containers()
         elif self._active_tab == "images":

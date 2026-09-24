@@ -7,8 +7,7 @@ import os
 from typing import Any
 
 from PyQt6.QtWidgets import QMainWindow, QSizePolicy, QWidget
-from PyQt6.QtCore import Qt, QTimer, QEvent, QPoint, QRect, pyqtSignal
-from PyQt6.QtGui import QCursor
+from PyQt6.QtCore import Qt, QTimer, QEvent, QPoint, pyqtSignal
 
 from neoarch.backend.services import network_latency
 from neoarch.resources.paths import PROJECT_ROOT

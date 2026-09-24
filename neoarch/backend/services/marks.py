@@ -9,7 +9,6 @@ own ignored-updates tracking file). Editing requires root and uses the
 app's standard elevation helpers.
 """
 
-import os
 import re
 import subprocess
 from typing import List, Optional

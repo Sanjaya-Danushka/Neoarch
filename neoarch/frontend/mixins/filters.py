@@ -367,19 +367,19 @@ class _BundlesSourcePanel(QWidget):
         add_icon_path = os.path.join(_BASE_DIR, "assets", "icons", "ui", "createBundle.svg")
         add_btn.setIcon(self._get_panel_icon(add_icon_path, 20))
         add_btn.setIconSize(QSize(18, 18))
-        add_btn.setStyleSheet(f"""
-            QPushButton {{
+        add_btn.setStyleSheet("""
+            QPushButton {
                 background: transparent;
                 border: none;
                 padding: 0;
-            }}
-            QPushButton:hover {{
+            }
+            QPushButton:hover {
                 background: rgba(168, 85, 247, 0.15);
                 border-radius: 5px;
-            }}
-            QPushButton:pressed {{
+            }
+            QPushButton:pressed {
                 background: rgba(168, 85, 247, 0.25);
-            }}
+            }
         """)
         add_btn.clicked.connect(self._on_create_bundle)
         hdr_row.addWidget(add_btn)
@@ -815,11 +815,11 @@ class _FiltersMixin:
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         scroll.setStyleSheet(Styles.scrollbar(width=6, color="rgba(255,255,255,0.10)",
-                                      hover="rgba(255,255,255,0.18)") + f"""
-            QScrollArea > QWidget > QWidget {{ background: transparent; }}
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
+                                      hover="rgba(255,255,255,0.18)") + """
+            QScrollArea > QWidget > QWidget { background: transparent; }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
                 background: transparent;
-            }}
+            }
         """)
 
         container = QWidget()
@@ -859,8 +859,6 @@ class _FiltersMixin:
             self.update_updates_sources()
         elif view_id == "installed":
             pass
-        else:
-            filter_options = []
 
         # Update visibility
         if view_id == "installed":

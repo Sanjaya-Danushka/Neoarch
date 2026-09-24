@@ -274,7 +274,7 @@ def update_packages(app, packages_by_source: dict, upgrade_all: bool = False):
                             pass
                     env_sys = os.environ.copy()
 
-                    user_pkgs, sys_pkgs, unknown_pkgs = [], [], []
+                    user_pkgs, sys_pkgs = [], []
                     for name in pkgs:
                         placed = False
                         try:

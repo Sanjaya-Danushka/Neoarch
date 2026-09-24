@@ -1701,7 +1701,7 @@ class SourceCard(QWidget):
                 layout_order.append((i, "widget", item.widget()))
             elif item.spacerItem() is not None:
                 layout_order.append((i, "spacer", None))
-        for idx, _, _ in layout_order:
+        for idx, _kind, _w in layout_order:
             layout.setStretch(idx, 0)
         visible = [w for _, kind, w in layout_order if kind == "widget" and w.isVisible()]
         if len(visible) < 2:
@@ -1738,7 +1738,6 @@ class SourceCard(QWidget):
 
     def update_toggle_all_button(self):
         checked_count = sum(1 for item in self.sources.values() if item.is_checked())
-        total_count = len(self.sources)
         all_on = checked_count > 0
         self.select_all_btn.setStyleSheet(self._toggle_all_style(all_on))
 

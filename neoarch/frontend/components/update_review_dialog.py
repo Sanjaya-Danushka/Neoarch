@@ -56,7 +56,7 @@ class UpdateReviewDialog(QDialog):
         self.resize(640, 420)
         self.setMinimumWidth(560)
         self.setStyleSheet(
-            f"QDialog {{ background-color: rgba(22, 23, 26, 235); }}")
+            "QDialog { background-color: rgba(22, 23, 26, 235); }")
         self._build(packages or [])
 
     def _build(self, packages):
