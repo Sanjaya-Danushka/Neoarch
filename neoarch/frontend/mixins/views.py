@@ -2568,17 +2568,15 @@ class _ViewsMixin:
         return packages_service.load_updates(self)
 
     def load_installed_packages(self):
-        res = packages_service.load_installed_packages(self)
+        packages_service.load_installed_packages(self)
         # Self-heal: if any race (e.g. a startup/auto refresh that rewrote the
         # shared loading_context) drops this load, never leave the Installed
         # page stranded on an empty skeleton. Re-query once the load had time
         # to land but still has not.
         try:
-            from PyQt6.QtCore import QTimer
             QTimer.singleShot(12000, self._recover_stuck_installed_load)
         except Exception:
             pass
-        return res
 
     def _recover_stuck_installed_load(self):
         """Re-issue the Installed query if its initial load never landed."""
@@ -2828,7 +2826,7 @@ class _ViewsMixin:
             ntitle, ntext = labels.get(op, (_("Operation"), _("Operation complete.")))
             self._notify(ntitle, ntext, level="success", event="install")
             # Keep spinner visible briefly to show success, then hide
-            QTimer.singleShot(1000, lambda: self.finish_installation_progress())
+            QTimer.singleShot(1000, self.finish_installation_progress)
         elif status == "failed":
             self._installing = False
             installed = getattr(self, '_installed_packages', None) or {}
@@ -2848,14 +2846,14 @@ class _ViewsMixin:
             else:
                 self._notify(_("Installation failed"), _("See console output for details."), level="error", event="errors")
             self._last_install_result = None
-            QTimer.singleShot(2000, lambda: self.finish_installation_progress())
+            QTimer.singleShot(2000, self.finish_installation_progress)
         elif status == "cancelled":
             self._installing = False
             self.loading_widget.set_message(_("Installation cancelled"))
             self.cancel_install_btn.setVisible(False)
             self._notify(_("Installation cancelled"), _("The operation was cancelled."), level="warning", event="errors")
             # Keep spinner visible briefly to show cancellation, then hide
-            QTimer.singleShot(1000, lambda: self.finish_installation_progress())
+            QTimer.singleShot(1000, self.finish_installation_progress)
 
     def on_progress_update(self, message, percent):
         try:
@@ -3669,7 +3667,7 @@ class _ViewsMixin:
         def task():
             ok_result = downgrade.install_version(name, path=selected["path"])
             if ok_result:
-                self.ui_call.emit(lambda: self.refresh_packages())
+                self.ui_call.emit(self.refresh_packages)
                 self.ui_call.emit(lambda: self.show_message.emit(
                     "Downgrade", f"Downgraded '{name}' to {selected['version']}-{selected['release']}."))
             else:
@@ -3799,7 +3797,7 @@ class _ViewsMixin:
     def _apply_installed_detail(self, name, info):
         try:
             card = self.package_detail_card
-            current = card._pkg_data or {}
+            current = card.pkg_data or {}
             if current.get('name') != name:
                 return
             card.set_extra_info(info)

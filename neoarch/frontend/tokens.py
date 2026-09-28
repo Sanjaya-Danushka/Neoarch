@@ -3,7 +3,7 @@
 Single source of truth for ALL colors, fonts, spacing, and radius values.
 Every component should import from here instead of defining its own tokens.
 
-Supports dynamic theme switching — call QSS._regenerate() after updating
+Supports dynamic theme switching — call QSS.regenerate() after updating
 Colors/Fonts/Radii to rebuild all QSS blocks.
 
 Usage:
@@ -336,21 +336,21 @@ def _build_qss():
 
 
 class _QSS:
-    """Dynamic QSS blocks — call _regenerate() after changing tokens."""
+    """Dynamic QSS blocks — call regenerate() after changing tokens."""
 
-    def _regenerate(self):
+    def regenerate(self):
         for k, v in _build_qss().items():
             setattr(self, k, v)
 
     def __getattr__(self, name):
         if name.startswith("_"):
             raise AttributeError(name)
-        self._regenerate()
+        self.regenerate()
         return object.__getattribute__(self, name)
 
 
 QSS = _QSS()
-QSS._regenerate()
+QSS.regenerate()
 
 
 # ── Main window stylesheet (rebuilt on theme change) ───────────────
