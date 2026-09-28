@@ -292,7 +292,7 @@ class ThemeManager(QObject):
         tokens.SourceColors.update(theme["source_colors"])
 
         # Regenerate QSS blocks
-        tokens.QSS._regenerate()
+        tokens.QSS.regenerate()
 
         # Rebuild DARK_STYLESHEET
         tokens.rebuild_stylesheet()

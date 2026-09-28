@@ -151,6 +151,10 @@ class PackageDetailCard(QFrame):
     def close_card(self):
         self.clear()
 
+    @property
+    def pkg_data(self):
+        return self._pkg_data
+
     def _build(self):
         self.setStyleSheet(f"""
             QFrame#packageDetailCard {{
