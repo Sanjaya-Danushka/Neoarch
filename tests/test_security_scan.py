@@ -304,3 +304,209 @@ def test_immutable_commit_patch_not_flagged():
     pkgbuild = "source=('https://github.com/x/y/commit/abc123.patch')\n"
     f = scan_pkgbuild(pkgbuild)
     assert "mutable patch source" not in find_rules(f)
+
+
+# ── malicious npm package names (Pattern 1) ────────────────────────────────
+
+def test_malicious_npm_package_install_detected():
+    from neoarch.backend.services.security_scan import MALICIOUS_NPM_PACKAGES
+    f = scan_text(f"npm install {MALICIOUS_NPM_PACKAGES[0]}\n")
+    assert "malicious package install" in find_rules(f)
+    assert any(x["severity"] == "warning" for x in f)
+
+
+def test_malicious_npm_bun_add_detected():
+    f = scan_text("bun add js-digest\n")
+    assert "malicious package install" in find_rules(f)
+
+
+def test_malicious_npm_quote_split_still_detected():
+    # j''s'-"d""i""g""e""s""t" defeats grep but not the de-obfuscated scan.
+    f = scan_text("npm install 'j''s'-'digest'\n")
+    assert "malicious package install" in find_rules(f)
+
+
+def test_benign_npm_install_not_malicious():
+    f = scan_text("npm install lodash\n")
+    assert "malicious package install" not in find_rules(f)
+
+
+# ── base64 decode piped to a shell (Pattern 2) ─────────────────────────────
+
+def test_base64_decode_into_shell_detected():
+    f = scan_text("echo YmFzaA== | base64 -d | sh\n")
+    assert "base64 decode into shell" in find_rules(f)
+
+
+def test_base64_decode_into_shell_wrapped_detected():
+    f = scan_text("echo YmFzaA== | base64 --decode | sudo bash\n")
+    assert "base64 decode into shell" in find_rules(f)
+
+
+def test_base64_decode_to_file_not_flagged():
+    # Decode redirected to a file (the legitimate sign-verify idiom) is fine.
+    f = scan_text("base64 -d secret.b64 > secret.pem\n")
+    assert "base64 decode into shell" not in find_rules(f)
+
+
+def test_base64_decode_into_openssl_not_flagged():
+    f = scan_text("base64 -d secret.b64 | openssl dgst -sha256\n")
+    assert "base64 decode into shell" not in find_rules(f)
+
+
+def test_base64_decode_comment_ignored():
+    f = scan_text("# note: base64 -d | sh to try the payload\n")
+    assert "base64 decode into shell" not in find_rules(f)
+
+
+# ── rev/tr pipe-to-shell obfuscation (Pattern 7) ───────────────────────────
+
+def test_rev_pipe_to_shell_detected():
+    f = scan_text("echo \\\"!graeB\\\" | rev | sh\n")
+    assert "rev/tr pipe-to-shell obfuscation" in find_rules(f)
+
+
+def test_tr_pipe_without_shell_not_flagged():
+    f = scan_text("cat list.txt | tr 'a-z' 'A-Z' > out\n")
+    assert "rev/tr pipe-to-shell obfuscation" not in find_rules(f)
+
+
+# ── command-anchored elevation with run-as exemption (Pattern 14) ──────────
+
+def test_sudo_deescalate_runas_exempted():
+    f = scan_text("sudo -u www-data whoami\n")
+    assert "privilege elevation" not in find_rules(f)
+
+
+def test_sudo_runas_with_flags_exempted():
+    f = scan_text("sudo -E -H --preserve-env=PATH -u www-data whoami\n")
+    assert "privilege elevation" not in find_rules(f)
+
+
+def test_sudo_runas_root_is_the_escape():
+    f = scan_text("sudo -u root whoami\n")
+    assert "privilege elevation" in find_rules(f)
+
+
+def test_sudo_runas_user_0_is_the_escape():
+    f = scan_text("sudo -u 0 whoami\n")
+    assert "privilege elevation" in find_rules(f)
+
+
+def test_sudo_depends_package_not_flagged():
+    # `depends=('sudo')` is a dependency, not an elevation command.
+    f = scan_pkgbuild("pkgname=x\ndepends=('sudo')\n")
+    assert "privilege elevation" not in find_rules(f)
+
+
+def test_elevation_in_comment_ignored():
+    f = scan_text("# sudo pacman -U --noconfirm ./*.pkg.tar.zst\n")
+    assert "privilege elevation" not in find_rules(f)
+
+
+def test_elevation_in_heredoc_body_ignored():
+    pkgbuild = (
+        "pkgname=x\n"
+        "build() {\n"
+        "  cat <<EOF\n"
+        "  sudo rm -rf /\n"
+        "  EOF\n"
+        "}\n"
+    )
+    f = scan_pkgbuild(pkgbuild)
+    assert "privilege elevation" not in find_rules(f)
+
+
+def test_build_function_sudo_detected():
+    pkgbuild = (
+        "pkgname=x\n"
+        "build() {\n"
+        "  ./configure\n"
+        "  sudo make install\n"
+        "}\n"
+    )
+    f = scan_pkgbuild(pkgbuild)
+    assert any(x["rule"] == "privilege elevation" for x in f)
+    assert any(x["context"].startswith("build") for x in f)
+
+
+def test_sudo_in_double_quoted_string_not_flagged():
+    f = scan_text('echo "sudo rm -rf /" is a note\n')
+    assert "privilege elevation" not in find_rules(f)
+
+
+# ── privileged account creation in scriptlets (Pattern 17) ─────────────────
+
+def test_scriptlet_wheel_membership_detected():
+    f = scan_install_scriptlet("usermod -aG wheel evil\n", "post_install")
+    assert "privileged account creation" in find_rules(f)
+
+
+def test_scriptlet_sudoers_nopasswd_detected():
+    f = scan_install_scriptlet(
+        "echo 'evil ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers\n", "post_install")
+    assert "privileged account creation" in find_rules(f)
+
+
+def test_scriptlet_hardcoded_password_detected():
+    f = scan_install_scriptlet("echo 'root:toor' | chpasswd\n", "post_install")
+    assert "privileged account creation" in find_rules(f)
+
+
+def test_scriptlet_hardcoded_password_sudo_wrapped_detected():
+    f = scan_install_scriptlet("echo 'root:toor' | sudo chpasswd\n", "post_install")
+    assert "privileged account creation" in find_rules(f)
+
+
+def test_scriptlet_gpasswd_wheel_detected():
+    f = scan_install_scriptlet("gpasswd -a evil wheel\n", "post_install")
+    assert "privileged account creation" in find_rules(f)
+
+
+def test_pkgbuild_wheel_not_scriptlet_not_flagged():
+    # package() runs under fakeroot and can't touch wheel/sudoers; the
+    # privilege-elevation check that would be needed for it is separate.
+    pkgbuild = "pkgname=x\npackage() {\n  gpasswd -a x wheel\n}\n"
+    f = scan_pkgbuild(pkgbuild)
+    assert "privileged account creation" not in find_rules(f)
+
+
+# ── host-scoped URL homograph (Pattern 16) ─────────────────────────────────
+
+def test_cyrillic_source_host_detected():
+    pkgbuild = "pkgname=x\nsource=('https://a\u0430.com/evil.tar.gz')\n"
+    f = scan_pkgbuild(pkgbuild)
+    assert "Unicode homograph spoofing" in find_rules(f)
+
+
+def test_nonascii_source_path_not_flagged():
+    # A Cyrillic path/file name is legit; only the host authority is checked.
+    pkgbuild = "pkgname=x\nsource=('https://example.com/\u041f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0430.tar.gz')\n"
+    f = scan_pkgbuild(pkgbuild)
+    assert "Unicode homograph spoofing" not in find_rules(f)
+
+
+def test_nonascii_url_path_not_flagged():
+    pkgbuild = "pkgname=x\nurl=https://example.com/\u041f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0430\n"
+    f = scan_pkgbuild(pkgbuild)
+    assert "Unicode homograph spoofing" not in find_rules(f)
+
+
+# ── undocumented ELF in the package's own git tree (Pattern 8) ─────────────
+
+def test_untracked_elf_not_flagged(tmp_path):
+    # No git repo at all = treated as untracked: err toward not flagging.
+    elf = tmp_path / "evil_bin"
+    elf.write_bytes(b"\x7fELF\x02\x01\x01\x00" + b"\x00" * 32)
+    f = scan_pkgbuild("pkgname=x\nsource=('x.tar.gz')\n", base_dir=str(tmp_path))
+    assert "undocumented ELF binary" not in find_rules(f)
+
+
+def test_git_tracked_elf_detected(tmp_path):
+    import subprocess
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    elf = tmp_path / "evil_bin"
+    elf.write_bytes(b"\x7fELF\x02\x01\x01\x00" + b"\x00" * 32)
+    subprocess.run(["git", "-C", str(tmp_path), "add", "evil_bin"], check=True)
+    f = scan_pkgbuild("pkgname=x\nsource=('x.tar.gz')\n", base_dir=str(tmp_path))
+    assert "undocumented ELF binary" in find_rules(f)

@@ -42,7 +42,7 @@ class WhatIsNewDialog(QDialog):
         self.setMinimumWidth(620)
         self.setMaximumWidth(820)
         self.setStyleSheet(
-            f"QDialog {{ background-color: rgba(22, 23, 26, 240); }}")
+            "QDialog { background-color: rgba(22, 23, 26, 240); }")
         self._build()
 
     # ── UI ────────────────────────────────────────────────────────────

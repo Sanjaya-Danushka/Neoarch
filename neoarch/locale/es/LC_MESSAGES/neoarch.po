@@ -3235,3 +3235,9 @@ msgstr "pipx no está instalado — instale con: sudo pacman -S python-pipx"
 
 msgid "{tool} is not installed — install with: sudo pacman -S {pkg}"
 msgstr "{tool} no está instalado — instale con: sudo pacman -S {pkg}"
+
+msgid "stable"
+msgstr "estable"
+
+msgid "Chaotic AUR is built against Arch's newest (unstable) libraries. Manjaro is on the '{branch}' branch, which lags behind Arch and can break on mixed package sets. Switch to 'unstable' first (recommended only for experienced users)."
+msgstr "Chaotic AUR se compila contra las bibliotecas más nuevas (inestables) de Arch. Manjaro está en la rama '{branch}', que va por detrás de Arch y puede romperse con conjuntos de paquetes mixtos. Cambie primero a 'unstable' (recomendado solo para usuarios experimentados)."

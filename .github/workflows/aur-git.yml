@@ -31,7 +31,7 @@ jobs:
         run: |
           BASE=$(grep -m1 'APP_VERSION = ' neoarch/resources/paths.py \
                    | sed -E 's/.*"([^"]+)".*/\1/')
-          if [[ -z "$BASE" ]]; then BASE="3.3.2"; fi
+          if [[ -z "$BASE" ]]; then BASE="3.3.3"; fi
           REV=$(git rev-list --count HEAD)
           HASH=$(git rev-parse --short=7 HEAD)
           VERSION="${BASE}.r${REV}.g${HASH}"
@@ -48,11 +48,12 @@ jobs:
           printf '\tdepends = python-pyqt6\n' >> packaging/.SRCINFO
           printf '\tdepends = python-requests\n' >> packaging/.SRCINFO
           printf '\tdepends = python-keyring\n' >> packaging/.SRCINFO
+          printf '\tdepends = python-defusedxml\n' >> packaging/.SRCINFO
           printf '\tdepends = qt6-svg\n' >> packaging/.SRCINFO
           printf '\tdepends = git\n' >> packaging/.SRCINFO
-          printf '\tdepends = flatpak\n' >> packaging/.SRCINFO
-          printf '\tdepends = nodejs\n' >> packaging/.SRCINFO
-          printf '\tdepends = npm\n' >> packaging/.SRCINFO
+          printf '\toptdepends = flatpak: Flatpak installs and updates\n' >> packaging/.SRCINFO
+          printf '\toptdepends = nodejs: Discover page (npm)\n' >> packaging/.SRCINFO
+          printf '\toptdepends = npm: Discover page (npm)\n' >> packaging/.SRCINFO
           printf '\tmakedepends = git\n' >> packaging/.SRCINFO
           printf '\tprovides = neoarch\n' >> packaging/.SRCINFO
           printf '\tconflicts = neoarch\n' >> packaging/.SRCINFO

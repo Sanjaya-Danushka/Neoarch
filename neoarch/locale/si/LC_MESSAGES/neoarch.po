@@ -3166,3 +3166,9 @@ msgstr "Timeshift ලැයිස්තුව අසාර්ථක විය"
 
 msgid "curl isn't installed; install 'curl' to fetch the mirror list."
 msgstr "curl ස්ථාපනය කර නැත; දර්පණ ලැයිස්තුව ලබා ගැනීමට 'curl' ස්ථාපනය කරන්න."
+
+msgid "stable"
+msgstr "ස්ථායී"
+
+msgid "Chaotic AUR is built against Arch's newest (unstable) libraries. Manjaro is on the '{branch}' branch, which lags behind Arch and can break on mixed package sets. Switch to 'unstable' first (recommended only for experienced users)."
+msgstr "Chaotic AUR නිර්මාණය කර ඇත්තේ Arch හි නවතම (අස්ථායී) පුස්තකාලවලට එරෙහිවය. Manjaro '{branch}' ශාඛාවේ ඇත, එය Arch ට වඩා පසුගාමී වන අතර මිශ්ර පැකේජ සමූහවලදී කැඩී යා හැක. පළමුව 'unstable' වෙත මාරු වන්න (පළපුරුදු පරිශීලකයින්ට පමණක් නිර්දේශ කෙරේ)."

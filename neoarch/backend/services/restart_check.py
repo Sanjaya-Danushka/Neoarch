@@ -7,7 +7,6 @@ Used by the update flow to prompt the user.
 """
 
 import os
-import re
 import subprocess
 import time
 from typing import Dict, List, Optional

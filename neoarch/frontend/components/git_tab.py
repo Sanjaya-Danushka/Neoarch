@@ -655,10 +655,10 @@ class GitTab(QWidget):
     def _build_empty_state(self):
         self._empty_frame = QFrame(self._content_widget)
         self._empty_frame.setObjectName("gitEmptyState")
-        self._empty_frame.setStyleSheet(f"""
-            QFrame#gitEmptyState {{
+        self._empty_frame.setStyleSheet("""
+            QFrame#gitEmptyState {
                 background: transparent; border: none;
-            }}
+            }
         """)
         el = QVBoxLayout(self._empty_frame)
         el.setContentsMargins(0, 60, 0, 0)

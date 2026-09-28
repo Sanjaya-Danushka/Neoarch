@@ -3,7 +3,6 @@ from PyQt6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QFrame, QLabel, QPushButton, QWidget,
     QScrollArea,
 )
-import os
 
 from neoarch.backend.services import settings as settings_service
 from neoarch.backend.services.i18n import _
@@ -264,8 +263,6 @@ class _SettingsMixin:
         try:
             from neoarch.backend.services import logging_service
             s = self.settings
-            default_log = os.path.join(os.path.expanduser('~'), '.config',
-                                       'neoarch', 'neoarch.log')
             logging_service.reconfigure(
                 level=s.get('log_level', 'INFO'),
                 console=s.get('log_to_console', False),

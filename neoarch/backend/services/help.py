@@ -4,10 +4,9 @@ Provides comprehensive help documentation with tabbed interface
 and an about dialog with application info.
 """
 
-import os
 import platform
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QDialog, QVBoxLayout, QLabel, QPushButton,
     QTabWidget, QTextBrowser, QTextEdit, QWidget,
 )
 from PyQt6.QtCore import Qt

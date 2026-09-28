@@ -10,7 +10,6 @@ import subprocess
 
 from PyQt6.QtCore import Qt, QRectF
 from PyQt6.QtGui import QColor, QPixmap, QPainter, QIcon, QImage
-from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 from PyQt6.QtSvg import QSvgRenderer
 
 from neoarch.resources.paths import PROJECT_ROOT

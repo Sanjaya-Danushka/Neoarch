@@ -301,11 +301,19 @@ class RepositoriesSettingsWidget(QWidget):
 
     def _add_chaotic(self):
         from neoarch.frontend.components.dark_dialogs import dark_confirm
-        if not dark_confirm(
-                self, _("Add Chaotic AUR"),
-                _("This signs the Chaotic AUR maintainer key, downloads the"
-                  " mirror list over HTTPS, appends [chaotic-aur] to"
-                  " /etc/pacman.conf and runs 'pacman -Syy'. Continue?")):
+        from neoarch.backend.services import repo_manager
+
+        warning = ""
+        try:
+            warning = repo_manager.chaotic_preflight()
+        except Exception:
+            warning = ""
+        message = warning + "\n\n" if warning else ""
+        message += _("This signs the Chaotic AUR maintainer key, downloads the"
+                     " mirror list over HTTPS, appends [chaotic-aur] to"
+                     " /etc/pacman.conf and runs 'pacman -Syy'. Continue?")
+        if not dark_confirm(self, _("Add Chaotic AUR"), message,
+                            danger=bool(warning)):
             return
         self._run_op("add_chaotic_aur")
 

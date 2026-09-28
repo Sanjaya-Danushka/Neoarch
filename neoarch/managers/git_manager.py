@@ -344,7 +344,7 @@ class GitManager(QObject):
                 try:
                     r = subprocess.run(
                         [shutil.which("git") or "git", "-C", repo_path, "rev-list", "--count",
-                         f"HEAD..@{{u}}"],
+                         "HEAD..@{u}"],
                         capture_output=True, text=True, timeout=5, check=False)
                     info["behind"] = int(r.stdout.strip()) if r.returncode == 0 else 0
                 except Exception:

@@ -621,9 +621,9 @@ class AppImageTab(QWidget):
 
         def task():
             try:
-                ok, msg = fn()
+                _, msg = fn()
             except Exception as e:
-                ok, msg = False, f"{e}"
+                _, msg = False, f"{e}"
             try:
                 self.main_app.show_message.emit(title, msg)
             except Exception:
@@ -683,7 +683,6 @@ class AppImageTab(QWidget):
 
     def _cycle_sort(self):
         modes = ["name_asc", "name_desc", "newest", "source"]
-        labels = [_("Name A-Z"), _("Name Z-A"), _("Newest"), _("Source")]
         idx = modes.index(self._sort_mode) if self._sort_mode in modes else 0
         idx = (idx + 1) % len(modes)
         self._sort_mode = modes[idx]

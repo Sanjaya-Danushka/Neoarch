@@ -7,7 +7,6 @@ can be installed directly.
 
 import subprocess
 import json
-import os
 from typing import List, Dict
 
 from neoarch.resources.paths import APP_VERSION

@@ -756,7 +756,7 @@ class _OperationsMixin:
             self.log_signal.emit("Install cancelled: authentication required.")
             return
         self.log_signal.emit(f"Selected packages: {', '.join([f'{pkg} ({source})' for source, pkgs in to_install.items() for pkg in pkgs])}")
-        self.log_signal.emit(f"Proceeding with installation...")
+        self.log_signal.emit("Proceeding with installation...")
         self._pending_install_packages = to_install
         install_service.install_packages(self, to_install)
 

@@ -9,7 +9,6 @@ Snapshots are only meaningful on BTRFS; snapper_supported() returns
 False otherwise so callers can present a sensible message.
 """
 
-import os
 import shutil
 import subprocess
 from pathlib import Path

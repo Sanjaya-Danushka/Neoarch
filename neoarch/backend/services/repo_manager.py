@@ -23,6 +23,9 @@ from neoarch.backend.services.i18n import _
 
 PACMAN_CONF = "/etc/pacman.conf"
 
+_OS_RELEASE_PATH = "/etc/os-release"
+_PACMAN_MIRRORS_CONF = "/etc/pacman-mirrors.conf"
+
 # Repos every Arch install gets on the base file; toggling these off can
 # strand dependencies, so the GUI keeps a read-only "System" label on them.
 SYSTEM_REPOS = {"core", "extra", "multilib", "testing"}
@@ -370,9 +373,71 @@ def add_chaotic_aur(sync=True):
     return add_repo("chaotic-aur", include=_CHAOTIC_INCLUDE, sync=sync)
 
 
+# ── distro-aware preflight (root-free) ───────────────────────────────
+
+
+def read_os_release(path=None):
+    """Parse a systemd-style os-release file into {KEY: value} ({} if missing)."""
+    if path is None:
+        path = _OS_RELEASE_PATH
+    data = {}
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                data[key.strip()] = value.strip().strip('"').strip("'")
+    except OSError:
+        pass
+    return data
+
+
+def _manjaro_branch():
+    """Return Manjaro's configured branch (stable/testing/unstable) or ''."""
+    try:
+        with open(_PACMAN_MIRRORS_CONF, "r", encoding="utf-8",
+                  errors="replace") as f:
+            for line in f:
+                low = line.strip().lower()
+                if low.startswith("branch") and "=" in low:
+                    return low.split("=", 1)[1].strip() or ""
+    except OSError:
+        pass
+    return ""
+
+
+def chaotic_preflight():
+    """Return a warning message when Chaotic AUR is risky here, else ''.
+
+    Chaotic AUR is built against Arch's rolling (effectively unstable)
+    libraries. Manjaro pins packages to a stable/testing branch that lags
+    behind Arch, so mixing Chaotic AUR into it can break dependencies.
+    We only warn — never block, never auto-switch the branch. Arch and its
+    Arch-rolling derivatives (EndeavourOS, CachyOS, ...) and Manjaro
+    already on 'unstable' need no warning.
+    """
+    release = read_os_release()
+    ids = " ".join((
+        release.get("ID", ""), release.get("ID_LIKE", "")
+    )).lower()
+    if "manjaro" not in ids:
+        return ""
+    branch = _manjaro_branch()
+    if branch == "unstable":
+        return ""
+    return _("Chaotic AUR is built against Arch's newest (unstable) libraries."
+             " Manjaro is on the '{branch}' branch, which lags behind Arch and"
+             " can break on mixed package sets. Switch to 'unstable' first"
+             " (recommended only for experienced users).").format(
+                 branch=branch or _("stable"))
+
+
 __all__ = [
     "PACMAN_CONF", "SYSTEM_REPOS",
     "parse_pacman_conf", "list_repos",
     "build_block", "apply_add", "apply_remove", "apply_enable",
     "add_repo", "remove_repo", "set_repo_enabled", "add_chaotic_aur",
+    "read_os_release", "chaotic_preflight",
 ]

@@ -10,6 +10,59 @@ dialog shows after an update.
 
 ---
 
+## 3.3.3 — 2026-09-28
+
+### New Features
+
+- **Chaotic AUR guard on Manjaro stable**: Quick-add Chaotic AUR in
+  Settings ▸ Repositories now reads your OS release first and, when Manjaro's
+  stable branch is detected, explains up front that Chaotic AUR targets
+  Arch/Artix, not Manjaro. The warning is informative — you can always
+  continue — but the mismatch is stated plainly before anything writes to
+  `/etc/pacman.conf`, so a dead mirrorlist or a collision with Manjaro's own
+  repos isn't a surprise a day later.
+
+---
+
+### Improvements
+
+- **Packaging now matches the app**: `flatpak`, `nodejs` and `npm` moved from
+  `depends=` to `optdepends=` in the AUR PKGBUILDs. The in-app dependency
+  catalog always treated them as optional (they degrade gracefully), but the
+  packages forcibly installed them — so `yay/paru -S neoarch` no longer drags
+  Node.js onto a system that doesn't use the Discover page. Core runtime deps
+  (`python-pyqt6`, `python-requests`, `python-keyring`, `python-defusedxml`,
+  `qt6-svg`, `git`) are unchanged, and `python-defusedxml` + `git`, which the
+  app actually requires, were added to the stable package's `depends=` too.
+- **The pre-install security scanner now covers the ArchCanary v0.1.37 rule
+  set**:
+  - **known-malicious npm packages** (`atomic-lockfile`, `js-digest`,
+    `lockfile-js`, `nextfile-js`) are flagged when a PKGBUILD runs
+    `npm install` / `bun add` on them — quote-split names like
+    `'j''s'-'digest'` are still caught;
+  - `base64 -d` only warns when its output is **piped into a shell** — the
+    legitimate decode-to-file signature check and `base64 -d | openssl dgst`
+    no longer false-positive;
+  - `| rev` / `| tr` pipe-to-shell obfuscation is detected;
+  - sudo/doas/pkexec are only flagged **at a command position** (a
+    `depends=('sudo')` dependency no longer counts), a non-root
+    `-u user` / `--user user` de-escalation (the legit
+    `sudo -u "$service_user"` helper idiom) is exempt, `-u root` / `-u 0`
+    re-flags, and `build()`/`package()` bodies are now scanned instead of
+    being cut off;
+  - a `.install` scriptlet that **creates or escalates a privileged account**
+    — wheel-group membership, sudoers `NOPASSWD`, or a hardcoded password
+    piped into `chpasswd`/`passwd` — is flagged (the x11-qemu-validation
+    backdoor pattern);
+  - **URL homograph checks look at the host only**, so `url=`/`source=`
+    entries with a non-ASCII *path* (e.g. `/wiki/Программа`) stay unflagged
+    while a Cyrillic-lookalike *host* still warns;
+  - an undocumented **ELF binary committed to the package's own git tree** is
+    flagged (untracked/build artifacts and git-less caches are not).
+  - Comment lines no longer trigger risky-tool or dynamic-construction
+    warnings — `# sudo pacman -U` notes and `# base64 -d | sh` asides were
+    the scanner's best-known false positives.
+
 ## 3.3.2 — 2026-09-24
 
 ### New Features

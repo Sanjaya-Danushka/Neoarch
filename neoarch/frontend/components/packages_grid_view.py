@@ -13,8 +13,6 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QRectF, QPointF, QSize, pyqtSignal
 from neoarch.backend.services.i18n import _
-from neoarch.backend.services.i18n import _
-from neoarch.backend.services.i18n import _
 from PyQt6.QtGui import (
     QColor, QFont, QFontMetrics, QPainter, QPainterPath, QPen,
     QLinearGradient, QRadialGradient, QPixmap,
@@ -260,7 +258,6 @@ class _Chip(QWidget):
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        r = QRectF(self.rect())
         chip = QRectF(0, (self.height() - 22) / 2, self.width(), 22)
         path = QPainterPath()
         path.addRoundedRect(chip, 11, 11)
@@ -566,7 +563,7 @@ class PackagesGridView(QScrollArea):
 
     def _relayout(self):
         for i in reversed(range(self._grid.count())):
-            item = self._grid.takeAt(i)
+            self._grid.takeAt(i)
         n = len(self._cards)
         if not n:
             self._sync_empty()

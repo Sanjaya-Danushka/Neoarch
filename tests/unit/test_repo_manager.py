@@ -172,3 +172,68 @@ def test_add_repo_rejects_bad_input_without_writing():
 def test_add_repo_refuses_system_name():
     ok, msg = repo_manager.add_repo("Core", servers=["https://x"])
     assert ok is False and "system repository" in msg
+
+
+# ── distro-aware Chaotic AUR preflight ───────────────────────────────
+
+
+def _os_release(data):
+    return "\n".join(f"{k}={v}" for k, v in data.items()) + "\n"
+
+
+def test_read_os_release_parses(tmp_path):
+    f = tmp_path / "os-release"
+    f.write_text(_os_release({"ID": "manjaro", "ID_LIKE": "arch"}),
+                 encoding="utf-8")
+    data = repo_manager.read_os_release(str(f))
+    assert data["ID"] == "manjaro"
+    assert data["ID_LIKE"] == "arch"
+
+
+def test_read_os_release_missing_is_empty():
+    assert repo_manager.read_os_release("/nonexistent/os-release") == {}
+
+
+def test_read_os_release_handles_quotes_and_comments(tmp_path):
+    f = tmp_path / "os-release"
+    f.write_text('PRETTY_NAME="Manjaro Linux"\n# comment line\nID=manjaro\n',
+                 encoding="utf-8")
+    data = repo_manager.read_os_release(str(f))
+    assert data["PRETTY_NAME"] == "Manjaro Linux"
+    assert data["ID"] == "manjaro"
+
+
+def test_chaotic_preflight_empty_on_arch(tmp_path, monkeypatch):
+    f = tmp_path / "os-release"
+    f.write_text(_os_release({"ID": "arch"}), encoding="utf-8")
+    monkeypatch.setattr(repo_manager, "_OS_RELEASE_PATH", str(f))
+    assert repo_manager.chaotic_preflight() == ""
+
+
+def test_chaotic_preflight_empty_on_arch_derivative(tmp_path, monkeypatch):
+    f = tmp_path / "os-release"
+    f.write_text(_os_release({"ID": "endeavouros", "ID_LIKE": "arch"}),
+                 encoding="utf-8")
+    monkeypatch.setattr(repo_manager, "_OS_RELEASE_PATH", str(f))
+    assert repo_manager.chaotic_preflight() == ""
+
+
+def test_chaotic_preflight_warns_on_manjaro_stable(tmp_path, monkeypatch):
+    f = tmp_path / "os-release"
+    f.write_text(_os_release({"ID": "manjaro"}), encoding="utf-8")
+    mirrors = tmp_path / "pacman-mirrors.conf"
+    mirrors.write_text("Branch = stable\n", encoding="utf-8")
+    monkeypatch.setattr(repo_manager, "_OS_RELEASE_PATH", str(f))
+    monkeypatch.setattr(repo_manager, "_PACMAN_MIRRORS_CONF", str(mirrors))
+    msg = repo_manager.chaotic_preflight()
+    assert msg and "stable" in msg and "unstable" in msg
+
+
+def test_chaotic_preflight_empty_on_manjaro_unstable(tmp_path, monkeypatch):
+    f = tmp_path / "os-release"
+    f.write_text(_os_release({"ID": "manjaro"}), encoding="utf-8")
+    mirrors = tmp_path / "pacman-mirrors.conf"
+    mirrors.write_text("Branch = unstable\n", encoding="utf-8")
+    monkeypatch.setattr(repo_manager, "_OS_RELEASE_PATH", str(f))
+    monkeypatch.setattr(repo_manager, "_PACMAN_MIRRORS_CONF", str(mirrors))
+    assert repo_manager.chaotic_preflight() == ""
