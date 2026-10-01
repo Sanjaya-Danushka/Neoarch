@@ -3394,7 +3394,7 @@ class _ViewsMixin:
         """Open the detail card for a Plugins list row.
 
         Plugin rows must not inherit the Updates detail (which advertises an
-        'Update Package' action): available plugins get Install, installed
+        'Update' action): available plugins get Install, installed
         ones get Uninstall, exactly like the grid cards.
         """
         try:

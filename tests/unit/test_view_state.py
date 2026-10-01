@@ -517,7 +517,7 @@ def _plugins_row_click(stub, pkg):
 
 def test_plugin_list_detail_shows_install_not_update(qapp):
     """Clicking an available plugin row must open the detail card with the
-    Install action — never the Updates page's 'Update Package' button."""
+    Install action — never the Updates page's 'Update' button."""
     from neoarch.frontend.components.package_detail_card import PackageDetailCard
     stub = _Stub()
     stub.current_view = "plugins"

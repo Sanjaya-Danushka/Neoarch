@@ -2073,8 +2073,6 @@ msgstr "Actualizar todo"
 
 msgid "Update All, refresh databases, clean cache"
 msgstr "Actualizar todo, refrescar bases de datos, limpiar caché"
-
-msgid "Update Package"
 msgstr "Actualizar paquete"
 
 msgid "Update Review"
@@ -3259,6 +3257,3 @@ msgstr "Actualizar seleccionadas ({count})"
 
 msgid "Clear Selection"
 msgstr "Limpiar selección"
-
-msgid "Rebuild & Update"
-msgstr "Reconstruir y actualizar"

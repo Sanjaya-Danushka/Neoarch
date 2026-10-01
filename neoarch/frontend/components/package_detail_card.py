@@ -345,7 +345,7 @@ class PackageDetailCard(QFrame):
         self.install_btn.clicked.connect(self.install_requested.emit)
         self.action_layout.addWidget(self.install_btn)
 
-        self.update_btn = QPushButton(_("Update Package"))
+        self.update_btn = QPushButton(_("Update"))
         self.update_btn.setMinimumHeight(40)
         self.update_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.update_btn.setStyleSheet(
@@ -590,10 +590,10 @@ class PackageDetailCard(QFrame):
             self.install_btn.setVisible(False)
             self.update_btn.setVisible(True)
 
-        # An AUR "update" rebuilds from the PKGBUILD — say so, so the button
-        # does not read like a binary upgrade from the official repos.
-        self.update_btn.setText(
-            _("Rebuild & Update") if is_aur else _("Update Package"))
+        # One label for every source: an AUR "update" rebuilds from the
+        # PKGBUILD, but the button reads the same everywhere and the AUR
+        # actions above it already show what the rebuild reads.
+        self.update_btn.setText(_("Update"))
 
         self.setVisible(True)
 

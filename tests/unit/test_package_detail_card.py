@@ -35,19 +35,19 @@ def test_aur_actions_visible_only_for_aur(qapp):
     assert card.aur_actions.isVisible() is False
 
 
-def test_aur_update_button_says_rebuild(qapp):
+def test_update_button_reads_update_for_every_source(qapp):
     card = PackageDetailCard()
     card.show()
 
     card.show_package({"name": "yay", "version": "12.4.1", "source": "AUR",
                        "installed": True, "has_update": True,
                        "description": "AUR helper", "_view": ""})
-    assert card.update_btn.text() == "Rebuild & Update"
+    assert card.update_btn.text() == "Update"
 
     card.show_package({"name": "bash", "version": "5.2", "source": "pacman",
                        "installed": True, "has_update": True,
                        "description": "GNU shell", "_view": ""})
-    assert card.update_btn.text() == "Update Package"
+    assert card.update_btn.text() == "Update"
 
 
 @pytest.mark.parametrize("view", ["updates", "installed", "discover"])
@@ -62,7 +62,7 @@ def test_installed_aur_package_always_offers_the_rebuild(qapp, view):
 
     assert card.aur_actions.isVisible() is True
     assert card.update_btn.isVisible() is True
-    assert card.update_btn.text() == "Rebuild & Update"
+    assert card.update_btn.text() == "Update"
     assert card.install_btn.isVisible() is False
 
 

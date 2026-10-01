@@ -2025,8 +2025,6 @@ msgstr "全部更新"
 
 msgid "Update All, refresh databases, clean cache"
 msgstr "全部更新、刷新数据库、清理缓存"
-
-msgid "Update Package"
 msgstr "更新软件包"
 
 msgid "Update Review"

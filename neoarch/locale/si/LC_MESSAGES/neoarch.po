@@ -2025,8 +2025,6 @@ msgstr "සියල්ල යාවත්කාලීන කරන්න"
 
 msgid "Update All, refresh databases, clean cache"
 msgstr "සියල්ල යාවත්කාලීන, දත්තගබඩා නැවුම්, හැඹිලිය පිරිසිදු"
-
-msgid "Update Package"
 msgstr "පැකේජය යාවත්කාලීන කරන්න"
 
 msgid "Update Review"

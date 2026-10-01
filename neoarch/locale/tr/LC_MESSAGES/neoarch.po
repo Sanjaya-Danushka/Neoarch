@@ -2025,8 +2025,6 @@ msgstr "Tümünü Güncelle"
 
 msgid "Update All, refresh databases, clean cache"
 msgstr "Tümünü güncelle, veritabanlarını yenile, önbelleği temizle"
-
-msgid "Update Package"
 msgstr "Paketi Güncelle"
 
 msgid "Update Review"
