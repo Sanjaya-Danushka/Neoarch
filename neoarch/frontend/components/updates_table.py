@@ -788,6 +788,7 @@ class UpdatesTable(QTableView):
     """Main redesigned updates widget."""
 
     row_selected = pyqtSignal(object)
+    rows_multi_selected = pyqtSignal(object)
     row_cleared = pyqtSignal()
     menu_action = pyqtSignal(str, object)
     checks_changed = pyqtSignal(int, int)
@@ -1086,12 +1087,30 @@ class UpdatesTable(QTableView):
         self._header_sync()
         self.checks_changed.emit(checked, total)
 
+    def selected_packages(self):
+        """Package dicts for the selected rows, in visible row order."""
+        rows = sorted({i.row() for i in self.selectionModel().selectedRows()})
+        pkgs = []
+        for row in rows:
+            pkg = self.model.package_at(row)
+            if pkg:
+                pkgs.append(pkg)
+        return pkgs
+
+    def clear_row_selection(self):
+        """Drop the row selection (fires row_cleared through the model)."""
+        self.clearSelection()
+
     def _on_selection_changed(self, selected, deselected):
-        rows = {i.row() for i in self.selectionModel().selectedRows()}
+        rows = sorted({i.row() for i in self.selectionModel().selectedRows()})
         if len(rows) == 1:
-            pkg = self.model.package_at(next(iter(rows)))
+            pkg = self.model.package_at(rows[0])
             if pkg:
                 self.row_selected.emit(pkg)
+        elif rows:
+            # A multi-row selection is a real selection, not "no selection":
+            # the side panel summarises it instead of closing.
+            self.rows_multi_selected.emit(self.selected_packages())
         else:
             self.row_cleared.emit()
 

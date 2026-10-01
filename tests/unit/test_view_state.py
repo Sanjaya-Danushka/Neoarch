@@ -858,3 +858,90 @@ def test_plugins_list_installed_row_selects_enables_clear_only(qapp):
 
     assert table.model.is_installed_selected(rows[bb_row]) is False
     assert stub._plugins_clear_btn.enabled is False
+
+
+def _card_mixin(table, view="updates"):
+    from neoarch.frontend.components.package_detail_card import PackageDetailCard
+
+    obj = _ViewsMixin.__new__(_ViewsMixin)
+    obj.updates_table = table
+    obj.package_detail_card = PackageDetailCard()
+    obj.package_detail_card.show()
+    obj.current_view = view
+    obj.log = lambda *a, **k: None
+    return obj
+
+
+def _size_table():
+    table = UpdatesTable(_FakeApp())
+    table.set_enrich(False)
+    table.set_packages([
+        {"name": "bash", "id": "bash", "version": "1.0", "new_version": "2.0",
+         "source": "pacman", "download_size": "1.00 MiB"},
+        {"name": "curl", "id": "curl", "version": "1.0", "new_version": "2.0",
+         "source": "pacman", "download_size": "512.00 KiB"},
+        {"name": "yay", "id": "yay", "version": "1.0", "new_version": "2.0",
+         "source": "AUR", "download_size": "nonsense"},
+    ])
+    return table
+
+
+def test_multi_row_selection_shows_summary_card_on_updates(qapp):
+    table = _size_table()
+    mixin = _card_mixin(table)
+
+    mixin._show_multi_selection_for_updates([
+        {"name": "bash", "source": "pacman", "download_size": "1.00 MiB"},
+        {"name": "yay", "source": "AUR", "download_size": "512.00 KiB"},
+    ], )
+
+    card = mixin.package_detail_card
+    assert card._multi_mode is True
+    assert card.name_label.text() == "2 packages selected"
+    assert card.selection_update_btn.text() == "Update Selected (2)"
+
+
+def test_multi_row_selection_ignored_off_updates_page(qapp):
+    table = _size_table()
+    mixin = _card_mixin(table, view="installed")
+
+    mixin._show_multi_selection_for_updates([{"name": "bash", "source": "pacman"}])
+
+    assert mixin.package_detail_card._multi_mode is False
+    assert mixin.package_detail_card.name_label.text() == ""
+    assert mixin.package_detail_card.isVisible() is False
+
+
+def test_clear_selection_handler_drops_table_rows(qapp):
+    table = _size_table()
+    mixin = _card_mixin(table)
+    _select_rows(table, 0, 1)
+    assert [p["id"] for p in table.selected_packages()] == ["bash", "curl"]
+
+    mixin._clear_updates_row_selection()
+
+    assert table.selected_packages() == []
+    assert mixin.package_detail_card.isVisible() is False
+
+
+def test_sum_download_size_sums_and_tolerates_garbage(qapp):
+    mixin = _card_mixin(_size_table())
+
+    total = mixin._sum_download_size([
+        {"download_size": "1.00 MiB"},
+        {"download_size": "512.00 KiB"},
+        {"download_size": "not a size"},
+        {},
+    ])
+
+    assert total == 1024 * 1024 + 512 * 1024
+    assert mixin._sum_download_size(None) == 0
+
+
+def _select_rows(table, *rows):
+    from PyQt6.QtCore import QItemSelectionModel
+
+    flags = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+    for row in rows:
+        table.selectionModel().select(table.model.index(row, 0), flags)
+        QApplication.instance().processEvents()

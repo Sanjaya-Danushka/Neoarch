@@ -3,7 +3,7 @@
 import time
 
 import pytest
-from PyQt6.QtCore import QPointF, Qt
+from PyQt6.QtCore import QItemSelectionModel, QPointF, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QApplication
 
@@ -318,4 +318,70 @@ def test_discover_mapping_keeps_repo():
     assert out["source"] == "pacman"
     assert out["repo"] == "extra"
     assert out["name"] == "7zip"
+
+
+def _select_rows(table, *rows):
+    flags = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+    for row in rows:
+        table.selectionModel().select(table.model.index(row, 0), flags)
+        QApplication.instance().processEvents()
+
+
+def _record_events(table):
+    events = []
+    table.row_selected.connect(lambda p: events.append(("one", p["id"])))
+    table.rows_multi_selected.connect(
+        lambda ps: events.append(("many", [p["id"] for p in ps])))
+    table.row_cleared.connect(lambda: events.append(("none",)))
+    return events
+
+
+def test_multi_row_selection_emits_summary_not_clear(qapp):
+    table = _make_table()
+    events = _record_events(table)
+
+    _select_rows(table, 0)
+    assert events[-1] == ("one", "pkg-0")
+
+    _select_rows(table, 2)
+    assert events[-1] == ("many", ["pkg-0", "pkg-2"])
+    assert ("none",) not in events
+
+
+def test_shrinking_to_one_row_returns_to_detail_card(qapp):
+    table = _make_table()
+    events = _record_events(table)
+
+    _select_rows(table, 1, 3)
+    assert events[-1] == ("many", ["pkg-1", "pkg-3"])
+
+    table.selectionModel().select(
+        table.model.index(3, 0),
+        QItemSelectionModel.SelectionFlag.Deselect | QItemSelectionModel.SelectionFlag.Rows)
+    qapp.processEvents()
+    assert events[-1] == ("one", "pkg-1")
+
+
+def test_clearing_rows_emits_clear(qapp):
+    table = _make_table()
+    events = _record_events(table)
+
+    _select_rows(table, 0, 1)
+    table.clear_row_selection()
+    qapp.processEvents()
+
+    assert events[-1] == ("none",)
+    assert table.selected_packages() == []
+
+
+def test_selected_packages_follow_rows_not_checkboxes(qapp):
+    table = _make_table()
+    table.model.setData(table.model.index(0, 0), Qt.CheckState.Checked,
+                        Qt.ItemDataRole.CheckStateRole)
+
+    _select_rows(table, 1, 2)
+
+    assert [p["id"] for p in table.selected_packages()] == ["pkg-1", "pkg-2"]
+    # The checkbox selection is untouched by row selection and vice versa.
+    assert table.model._checked == {("pkg-0", "pacman")}
 

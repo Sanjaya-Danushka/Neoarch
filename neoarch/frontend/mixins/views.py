@@ -1367,6 +1367,7 @@ class _ViewsMixin:
         self.updates_table.setVisible(False)
         self.updates_table.row_selected.connect(self._on_updates_table_row_selected)
         self.updates_table.row_cleared.connect(lambda: self.package_detail_card.clear())
+        self.updates_table.rows_multi_selected.connect(self._show_multi_selection_for_updates)
         self.updates_table.menu_action.connect(self._on_updates_table_menu)
         self.updates_table.checks_changed.connect(self._on_table_checks_changed)
         table_area_layout.addWidget(self.updates_table, 1)
@@ -1397,6 +1398,10 @@ class _ViewsMixin:
         self.package_detail_card.launch_requested.connect(self.launch_from_detail)
         self.package_detail_card.check_updates_btn.clicked.connect(self._check_updates_for_detail)
         self.package_detail_card.updates_check_completed.connect(self._on_update_check_result)
+        self.package_detail_card.selection_update_requested.connect(
+            self.update_selected_from_selection)
+        self.package_detail_card.selection_clear_requested.connect(
+            self._clear_updates_row_selection)
         packages_content_layout.addWidget(self.package_detail_card, 0, Qt.AlignmentFlag.AlignRight)
 
         self.packages_panel_layout.addWidget(self.packages_content_area, 1)
@@ -3447,6 +3452,43 @@ class _ViewsMixin:
         except Exception:
             self.package_detail_card.clear()
 
+    def _sum_download_size(self, pkgs):
+        """Total download size of a package list; 0 when sizes are unknown."""
+        total = 0
+        try:
+            for pkg in pkgs or []:
+                total += _parse_size(pkg.get('download_size') or '')
+        except Exception:
+            return 0
+        return total
+
+    def _show_multi_selection_for_updates(self, pkgs):
+        """Open the right-side panel for a multi-row selection on Updates.
+
+        A set of packages has no single detail to show, so the card switches
+        to a summary with a per-source breakdown and one action for the whole
+        selection. The table is shared with Installed/Discover/Plugins, which
+        keep their single-row behaviour: a multi-row selection there closes
+        the card instead of summarising it.
+        """
+        try:
+            if self.current_view != "updates":
+                self.package_detail_card.clear()
+                return
+            self.package_detail_card.show_selection(
+                pkgs, download_size=self._sum_download_size(pkgs))
+        except Exception:
+            self.package_detail_card.clear()
+
+    def _clear_updates_row_selection(self):
+        try:
+            self.updates_table.clear_row_selection()
+        except Exception:
+            pass
+        # Clear explicitly too: the card is hidden even when the table had no
+        # row selection left to clear (its clear() is idempotent).
+        self.package_detail_card.clear()
+
     def _show_detail_for_grid(self, pkg):
         """Open the right-side detail card for a grid card, like the table."""
         try:
@@ -4055,13 +4097,11 @@ class _ViewsMixin:
             btn_u.setEnabled(checked > 0)
 
     def _checked_download_size(self):
-        total = 0
         try:
-            for pkg in self.updates_table.checked_packages():
-                total += _parse_size(pkg.get('download_size') or '')
+            return self._sum_download_size(self.updates_table.checked_packages())
         except Exception as e:
             self.log(f"Error computing download size: {e}")
-        return total
+            return 0
 
     def display_message(self, title, text):
         """Public method to show a message in the console"""

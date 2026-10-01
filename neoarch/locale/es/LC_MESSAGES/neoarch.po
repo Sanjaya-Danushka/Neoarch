@@ -3241,3 +3241,24 @@ msgstr "estable"
 
 msgid "Chaotic AUR is built against Arch's newest (unstable) libraries. Manjaro is on the '{branch}' branch, which lags behind Arch and can break on mixed package sets. Switch to 'unstable' first (recommended only for experienced users)."
 msgstr "Chaotic AUR se compila contra las bibliotecas más nuevas (inestables) de Arch. Manjaro está en la rama '{branch}', que va por detrás de Arch y puede romperse con conjuntos de paquetes mixtos. Cambie primero a 'unstable' (recomendado solo para usuarios experimentados)."
+
+msgid "Selection"
+msgstr "Selección"
+
+msgid "{count} package{s} selected"
+msgstr "{count} paquete{s} seleccionado{s}"
+
+msgid "Rows selected — actions apply to all of them"
+msgstr "Filas seleccionadas: las acciones se aplican a todas"
+
+msgid "{size} to download"
+msgstr "{size} para descargar"
+
+msgid "Update Selected ({count})"
+msgstr "Actualizar seleccionadas ({count})"
+
+msgid "Clear Selection"
+msgstr "Limpiar selección"
+
+msgid "Rebuild & Update"
+msgstr "Reconstruir y actualizar"
