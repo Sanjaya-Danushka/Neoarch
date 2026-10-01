@@ -510,14 +510,26 @@ def test_sync_plugins_table_populates_list_view(qapp):
 
 
 def _plugins_row_click(stub, pkg):
-    """Drive the shared-table row-selected dispatch exactly as a click does."""
+    """Drive the shared-table row-selected dispatch exactly as a click does.
+
+    A left click marks the row before row_selected arrives, and the panel
+    follows the marks, so the helper marks the row the same way first.
+    """
     stub.current_view = "plugins"
+    table = stub.updates_table
+    table.set_packages([pkg])
+    if pkg.get("_installed"):
+        table.model.toggle_installed_selection(pkg)
+    else:
+        table.model.setData(
+            table.model.index(0, 0), Qt.CheckState.Checked,
+            Qt.ItemDataRole.CheckStateRole)
     stub._on_updates_table_row_selected(pkg)
 
 
 def test_plugin_list_detail_shows_install_not_update(qapp):
     """Clicking an available plugin row must open the detail card with the
-    Install action — never the Updates page's 'Update Package' button."""
+    Install action — never the Updates page's 'Update' button."""
     from neoarch.frontend.components.package_detail_card import PackageDetailCard
     stub = _Stub()
     stub.current_view = "plugins"
@@ -858,3 +870,400 @@ def test_plugins_list_installed_row_selects_enables_clear_only(qapp):
 
     assert table.model.is_installed_selected(rows[bb_row]) is False
     assert stub._plugins_clear_btn.enabled is False
+
+def _panel_mixin(view="updates", packages=None, view_mode="table"):
+    """Mixin host whose panel state is driven by the table's checkboxes."""
+    from neoarch.frontend.components.package_detail_card import PackageDetailCard
+
+    obj = _ViewsMixin.__new__(_ViewsMixin)
+    table = UpdatesTable(_FakeApp())
+    table.set_enrich(False)
+    table.set_packages(packages if packages is not None else [
+        {"name": "bash", "id": "bash", "version": "1.0", "new_version": "2.0",
+         "source": "pacman", "download_size": "1.00 MiB"},
+        {"name": "curl", "id": "curl", "version": "1.0", "new_version": "2.0",
+         "source": "pacman", "download_size": "512.00 KiB"},
+        {"name": "yay", "id": "yay", "version": "1.0", "new_version": "2.0",
+         "source": "AUR", "download_size": "nonsense"},
+    ])
+    obj.updates_table = table
+    obj.package_detail_card = PackageDetailCard()
+    obj.package_detail_card.show()
+    obj.current_view = view
+    obj._view_mode = view_mode
+    obj.log = lambda *a, **k: None
+    obj.get_checked_packages_for_view = lambda: table.checked_packages()
+    obj._sum_download_size = lambda pkgs: _ViewsMixin._sum_download_size(obj, pkgs)
+    obj._show_detail_for_updates = lambda pkg: _ViewsMixin._show_detail_for_updates(obj, pkg)
+    return obj
+
+
+def _check_row(mixin, row, checked=True):
+    mixin.updates_table.model.setData(
+        mixin.updates_table.model.index(row, 0),
+        Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked,
+        Qt.ItemDataRole.CheckStateRole)
+    mixin._on_table_checks_changed(
+        len(mixin.updates_table.model.checked_packages()),
+        mixin.updates_table.row_count())
+
+
+def _mark_row(mixin, row, marked=True):
+    """Mark a row the way a click does.
+
+    Installed rows have no batch column, so they carry a selection-only check;
+    everything else uses the real checkbox.
+    """
+    table = mixin.updates_table
+    model = table.model
+    pkg = model.package_at(row)
+    if pkg.get("_installed"):
+        already = model.is_installed_selected(pkg)
+        if already != bool(marked):
+            model.toggle_installed_selection(pkg)
+    else:
+        model.setData(
+            model.index(row, 0),
+            Qt.CheckState.Checked if marked else Qt.CheckState.Unchecked,
+            Qt.ItemDataRole.CheckStateRole)
+    mixin._on_table_checks_changed(
+        len(model.checked_packages()) + model.selected_installed_count(),
+        table.row_count())
+
+
+class _FakeGrid:
+    """Stand-in for PackagesGridView's marked-package accessors."""
+
+    def __init__(self, packages):
+        self._pkgs = list(packages)
+
+    def get_checked_packages(self):
+        return [p for p in self._pkgs if p.get("_marked")]
+
+    def set_all_checked(self, state):
+        for pkg in self._pkgs:
+            pkg["_marked"] = bool(state)
+
+
+def test_one_checked_row_shows_that_detail_card(qapp):
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    card = mixin.package_detail_card
+    assert card._multi_mode is False
+    assert card.name_label.text() == "bash"
+    assert card.update_btn.isVisible() is True
+
+
+def test_two_checked_rows_show_the_summary_card(qapp):
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    _check_row(mixin, 2)
+    card = mixin.package_detail_card
+
+    assert card._multi_mode is True
+    assert card.name_label.text() == "2 packages selected"
+    assert card.selection_update_btn.text() == "Update Selected (2)"
+    assert "1 AUR" in card.selection_sources_label.text()
+    assert "1 pacman" in card.selection_sources_label.text()
+    # Only the parseable size counts; a nonsense size is skipped, not fatal.
+    assert card.selection_size_label.text() == "1.0 MiB to download"
+
+
+def test_unchecking_back_to_one_row_restores_the_detail_card(qapp):
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+    assert mixin.package_detail_card._multi_mode is True
+
+    _check_row(mixin, 1, checked=False)
+    card = mixin.package_detail_card
+    assert card._multi_mode is False
+    assert card.name_label.text() == "bash"
+    assert card.selection_section.isVisible() is False
+    assert card.details_section.isVisible() is True
+
+
+def test_unchecking_everything_closes_the_panel(qapp):
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+    _check_row(mixin, 0, checked=False)
+    _check_row(mixin, 1, checked=False)
+    assert mixin.updates_table.model.checked_packages() == []
+    assert mixin.package_detail_card.isVisible() is False
+
+
+def test_row_highlight_alone_does_not_close_a_multi_check_panel(qapp):
+    # Clicking past the last row clears the row highlight; the checked
+    # selection - which the panel summarises - must survive it.
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+    assert mixin.package_detail_card._multi_mode is True
+
+    mixin.updates_table.clearSelection()
+    QApplication.instance().processEvents()
+
+    assert mixin.updates_table.selected_packages() == []
+    assert mixin.package_detail_card._multi_mode is True
+    assert mixin.package_detail_card.name_label.text() == "2 packages selected"
+
+
+def test_clicking_a_checked_row_shows_summary_not_that_row(qapp):
+    # The second click emits both checks_changed and row_selected; the row must
+    # not overwrite the summary with its own single-package card.
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+    mixin._on_updates_table_row_selected(
+        mixin.updates_table.model.package_at(1))
+    assert mixin.package_detail_card._multi_mode is True
+    assert mixin.package_detail_card.name_label.text() == "2 packages selected"
+
+
+def _installed_panel_mixin(view="installed", packages=None):
+    return _panel_mixin(view=view, packages=packages if packages is not None else [
+        {"name": "bash", "id": "bash", "version": "1.0", "source": "pacman",
+         "_installed": True, "description": "Shell"},
+        {"name": "curl", "id": "curl", "version": "1.0", "source": "pacman",
+         "_installed": True, "description": "Transfer"},
+        {"name": "yay", "id": "yay", "version": "1.0", "source": "AUR",
+         "_installed": True, "description": "Helper"},
+    ])
+
+
+def test_installed_page_summary_follows_selection_only_marks(qapp):
+    # Installed rows have no batch column: the click toggles a selection-only
+    # check, and that mark must drive the panel just like a real checkbox does.
+    mixin = _installed_panel_mixin()
+    _mark_row(mixin, 0)
+    _mark_row(mixin, 2)
+
+    card = mixin.package_detail_card
+    assert card._multi_mode is True
+    assert card.name_label.text() == "2 packages selected"
+    # Neither row has a pending update, so the summary offers the removal it
+    # can actually perform instead of a no-op update.
+    assert card.selection_update_btn.text() == "Uninstall Selected (2)"
+    assert "1 AUR" in card.selection_sources_label.text()
+
+
+def test_installed_summary_offers_both_when_an_update_is_pending(qapp):
+    # A marked Installed row with a newer version is updatable, so the summary
+    # keeps Update and adds Uninstall alongside it.
+    mixin = _panel_mixin(view="installed", packages=[
+        {"name": "bash", "id": "bash", "version": "1.0", "new_version": "2.0",
+         "source": "pacman", "_installed": True},
+        {"name": "curl", "id": "curl", "version": "1.0", "source": "pacman",
+         "_installed": True},
+    ])
+    _mark_row(mixin, 0)
+    _mark_row(mixin, 1)
+
+    card = mixin.package_detail_card
+    assert card.selection_update_btn.text() == "Update Selected (2)"
+    assert card.selection_uninstall_btn.text() == "Uninstall Selected (2)"
+    assert card.selection_uninstall_btn.isVisible() is True
+
+
+def test_updates_summary_offers_uninstall_alongside_the_update(qapp):
+    mixin = _panel_mixin(view="updates")
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+
+    card = mixin.package_detail_card
+    assert card.selection_update_btn.text() == "Update Selected (2)"
+    assert card.selection_uninstall_btn.isVisible() is True
+
+
+def test_discover_summary_has_no_uninstall(qapp):
+    # Discover rows may not be installed, so nothing there can be removed.
+    mixin = _panel_mixin(view="discover")
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+
+    assert mixin.package_detail_card.selection_uninstall_btn.isVisible() is False
+
+
+def test_panel_uninstall_button_passes_the_marked_packages(qapp):
+    # Installed marks live in a selection-only check, so the panel has to hand
+    # uninstall_selected its own list instead of letting it re-read checkboxes.
+    mixin = _installed_panel_mixin()
+    _mark_row(mixin, 0)
+    _mark_row(mixin, 2)
+    seen = {}
+    mixin.uninstall_selected = lambda pkgs=None: seen.update(pkgs=pkgs)
+
+    mixin._run_panel_uninstall_action()
+
+    assert sorted(p["name"] for p in seen["pkgs"]) == ["bash", "yay"]
+
+
+def test_panel_update_button_updates_when_something_is_updatable(qapp):
+    mixin = _installed_panel_mixin(packages=[
+        {"name": "bash", "id": "bash", "version": "1.0", "new_version": "2.0",
+         "source": "pacman", "_installed": True},
+        {"name": "curl", "id": "curl", "version": "1.0", "source": "pacman",
+         "_installed": True},
+    ])
+    _mark_row(mixin, 0)
+    _mark_row(mixin, 1)
+    called = []
+    mixin.update_selected = lambda: called.append("update")
+    mixin.uninstall_selected = lambda pkgs=None: called.append("uninstall")
+
+    mixin._run_panel_primary_action()
+
+    assert called == ["update"]
+
+
+def test_installed_single_mark_shows_that_package(qapp):
+    mixin = _installed_panel_mixin()
+    _mark_row(mixin, 1)
+
+    card = mixin.package_detail_card
+    assert card._multi_mode is False
+    assert card.name_label.text() == "curl"
+    assert card.update_btn.isVisible() is True
+
+
+def test_unmarking_back_to_one_row_restores_the_detail_card(qapp):
+    mixin = _installed_panel_mixin()
+    _mark_row(mixin, 0)
+    _mark_row(mixin, 1)
+    _mark_row(mixin, 1, marked=False)
+
+    assert mixin.package_detail_card._multi_mode is False
+    assert mixin.package_detail_card.name_label.text() == "bash"
+
+
+def test_installed_unmarking_everything_closes_the_panel(qapp):
+    mixin = _installed_panel_mixin()
+    _mark_row(mixin, 0)
+    _mark_row(mixin, 1)
+    _mark_row(mixin, 0, marked=False)
+    _mark_row(mixin, 1, marked=False)
+
+    assert mixin.updates_table.model.selected_installed_count() == 0
+    assert mixin.package_detail_card.isVisible() is False
+
+
+def test_discover_page_summary_offers_install(qapp):
+    mixin = _panel_mixin(view="discover")
+    _check_row(mixin, 0)
+    _check_row(mixin, 2)
+
+    card = mixin.package_detail_card
+    assert card._multi_mode is True
+    # Discover installs what is ticked, it does not update it.
+    assert card.selection_update_btn.text() == "Install Selected (2)"
+    assert card.version_label.text() == "Checked to install — actions apply to all of them"
+
+
+def test_discover_single_mark_shows_install_detail(qapp):
+    mixin = _panel_mixin(view="discover")
+    _check_row(mixin, 1)
+
+    card = mixin.package_detail_card
+    assert card._multi_mode is False
+    assert card.name_label.text() == "curl"
+    assert card.install_btn.isVisible() is True
+    assert card.update_btn.isVisible() is False
+
+
+def test_plugins_page_summary_offers_install(qapp):
+    mixin = _panel_mixin(view="plugins")
+    _check_row(mixin, 1)
+    _check_row(mixin, 2)
+
+    card = mixin.package_detail_card
+    assert card._multi_mode is True
+    assert card.selection_update_btn.text() == "Install Selected (2)"
+
+
+def test_row_highlight_clear_keeps_the_installed_summary(qapp):
+    mixin = _installed_panel_mixin()
+    _mark_row(mixin, 0)
+    _mark_row(mixin, 1)
+
+    mixin.updates_table.clearSelection()
+    mixin._on_updates_table_row_cleared()
+
+    assert mixin.updates_table.selected_packages() == []
+    assert mixin.package_detail_card._multi_mode is True
+    assert mixin.package_detail_card.name_label.text() == "2 packages selected"
+
+
+def test_grid_marks_drive_the_panel(qapp):
+    packages = [
+        {"name": "bash", "id": "bash", "version": "1.0", "source": "pacman",
+         "_marked": True},
+        {"name": "curl", "id": "curl", "version": "1.0", "source": "pacman",
+         "_marked": True},
+        {"name": "yay", "id": "yay", "version": "1.0", "source": "AUR"},
+    ]
+    mixin = _panel_mixin(view="updates", view_mode="grid")
+    mixin.packages_grid = _FakeGrid(packages)
+
+    mixin._sync_panel_for_checks()
+
+    assert mixin.package_detail_card._multi_mode is True
+    assert mixin.package_detail_card.name_label.text() == "2 packages selected"
+
+
+def test_clear_selection_uses_the_grid_when_the_grid_is_shown(qapp):
+    packages = [
+        {"name": "bash", "id": "bash", "version": "1.0", "source": "pacman",
+         "_marked": True},
+        {"name": "curl", "id": "curl", "version": "1.0", "source": "pacman",
+         "_marked": True},
+    ]
+    mixin = _panel_mixin(view="updates", view_mode="grid")
+    mixin.packages_grid = _FakeGrid(packages)
+    mixin._sync_panel_for_checks()
+    assert mixin.package_detail_card._multi_mode is True
+
+    mixin._clear_panel_selection()
+
+    assert mixin.packages_grid.get_checked_packages() == []
+    assert mixin.package_detail_card.isVisible() is False
+
+
+def test_panel_action_follows_the_page(qapp):
+    mixin = _panel_mixin(view="updates")
+    called = []
+    mixin.update_selected = lambda: called.append("update")
+    mixin.install_selected = lambda: called.append("install")
+    mixin._on_plugins_install_selected = lambda: called.append("plugins")
+
+    mixin.current_view = "updates"
+    mixin._run_panel_primary_action()
+    mixin.current_view = "installed"
+    mixin._run_panel_primary_action()
+    mixin.current_view = "discover"
+    mixin._run_panel_primary_action()
+    mixin.current_view = "plugins"
+    mixin._run_panel_primary_action()
+
+    assert called == ["update", "update", "install", "plugins"]
+
+
+def test_panel_action_failure_does_not_propagate(qapp):
+    mixin = _panel_mixin(view="updates")
+
+    def boom():
+        raise RuntimeError("no session")
+
+    mixin.update_selected = boom
+    mixin._run_panel_primary_action()
+
+
+def test_clear_selection_button_unchecks_everything(qapp):
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+
+    mixin._clear_panel_selection()
+
+    assert mixin.updates_table.model.checked_packages() == []
+    assert mixin.package_detail_card.isVisible() is False

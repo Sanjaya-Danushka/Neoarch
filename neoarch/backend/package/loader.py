@@ -384,16 +384,20 @@ def _parse_pipx_list(stdout):
         main = meta.get('main_package') if isinstance(meta, dict) else None
         if isinstance(main, dict):
             version = (main.get('package_version') or main.get('version') or '').strip()
+            pinned = bool(main.get('pinned'))
         elif isinstance(meta, dict):
             version = (meta.get('package_version') or '').strip()
+            pinned = False
         else:
             version = ''
+            pinned = False
         packages.append({
             'name': name,
             'version': version,
             'new_version': '',
             'id': name,
             'source': 'pipx',
+            'pinned': pinned,
         })
     return packages
 
@@ -435,13 +439,96 @@ def _parse_pipx_outdated(stdout):
     return outdated
 
 
+_PIPX_OUTDATED_SUPPORTED = None
+
+
+def _parse_pipx_dry_run(stdout):
+    """Parse ``pip install --upgrade --dry-run`` output into ``name -> version``.
+
+    pip prints every package that *would* change on one line::
+
+        Would install black-24.3.0 coverage-7.4.1
+
+    Each space-separated token is ``name-version`` and distribution names may
+    contain hyphens, so the version is whatever follows the last hyphen.
+    Tokens without a name (bare versions) are ignored.
+    """
+    outdated = {}
+    text = (stdout or '').strip()
+    if not text:
+        return outdated
+    tokens = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line.lower().startswith('would install'):
+            continue
+        tokens.extend(line[len('Would install'):].strip().split())
+    for tok in tokens:
+        name, _, ver = tok.rpartition('-')
+        if not name or not ver or name[:1].isdigit():
+            continue
+        outdated[name.lower().replace('_', '-')] = ver
+    return outdated
+
+
+def _pipx_outdated_supported():
+    """True when the installed pipx still ships ``pipx list --outdated``.
+
+    Newer pipx releases dropped the flag (``pipx list --outdated`` then exits
+    with an "unrecognized arguments" error), so availability is probed once
+    per session and cached.
+    """
+    global _PIPX_OUTDATED_SUPPORTED
+    if _PIPX_OUTDATED_SUPPORTED is None:
+        probe = _run_cmd(["pipx", "list", "--outdated"], timeout=60,
+                         env=sys_utils.c_locale_env())
+        _PIPX_OUTDATED_SUPPORTED = bool(probe) and probe.returncode == 0
+    return _PIPX_OUTDATED_SUPPORTED
+
+
+def _check_one_pipx_dry_run(name):
+    """Probe one pipx app for a newer version with a read-only dry run."""
+    try:
+        r = _run_cmd(
+            ["pipx", "runpip", name, "pip", "install", "--upgrade", "--dry-run", name],
+            timeout=120,
+            env=sys_utils.c_locale_env())
+    except Exception:
+        return {}
+    if not r:
+        return {}
+    outdated = _parse_pipx_dry_run(r.stdout)
+    key = name.lower().replace('_', '-')
+    if key in outdated:
+        return {name: outdated[key]}
+    return {}
+
+
 def _pipx_install_state():
-    """Return installed pipx apps plus the ``name -> new version`` outdated map."""
+    """Return installed pipx apps plus the ``name -> new version`` outdated map.
+
+    pipx 1.15.0+ removed ``pipx list --outdated``, so when that flag is
+    unsupported each upgradeable app is probed with a read-only
+    ``pip install --upgrade --dry-run`` inside its own venv instead. Pinned
+    apps are skipped in both paths — pipx refuses to upgrade them.
+    """
     installed = _run_cmd(["pipx", "list", "--json"], timeout=90)
     packages = _parse_pipx_list(installed.stdout if installed else None)
-    outdated = _run_cmd(["pipx", "list", "--outdated"], timeout=180,
-                        env=sys_utils.c_locale_env())
-    latest = _parse_pipx_outdated(outdated.stdout if outdated else None)
+    if not packages:
+        return [], {}
+    if _pipx_outdated_supported():
+        outdated = _run_cmd(["pipx", "list", "--outdated"], timeout=180,
+                            env=sys_utils.c_locale_env())
+        return packages, _parse_pipx_outdated(outdated.stdout if outdated else None)
+    upgradeable = [p for p in packages if not p.get('pinned')]
+    latest = {}
+    if upgradeable:
+        with ThreadPoolExecutor(max_workers=min(8, len(upgradeable))) as ex:
+            futures = {ex.submit(_check_one_pipx_dry_run, p['id']): p for p in upgradeable}
+            for fut in as_completed(futures):
+                found = fut.result()
+                if found:
+                    latest.update(found)
     return packages, latest
 
 

@@ -313,6 +313,10 @@ class PackageCard(QFrame):
 
     CARD_W = 268
     CARD_H = 148
+    # Subclasses that rebuild the checkbox (the plugins card) keep this True:
+    # an installed plugin is still selectable, because there the mark feeds
+    # the batch count rather than a batch install.
+    selectable = True
 
     def __init__(self, pkg: dict, row: int, app=None, parent=None):
         super().__init__(parent)
@@ -345,6 +349,12 @@ class PackageCard(QFrame):
         top.addWidget(self.name_label, 1)
 
         self.checkbox = _CheckBox()
+        # A search result that is already installed has nothing to install, so
+        # it offers no checkbox: ticking it would only inflate the count that
+        # Install Selected acts on.
+        self.selectable = not (self.pkg.get("installed")
+                               or self.pkg.get("_installed"))
+        self.checkbox.setEnabled(self.selectable)
         self.checkbox.toggled.connect(self._on_check)
         top.addWidget(self.checkbox, alignment=Qt.AlignmentFlag.AlignTop)
 
@@ -445,17 +455,20 @@ class PackageCard(QFrame):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.checkbox.toggle()
+            if self.selectable:
+                self.checkbox.toggle()
             self.clicked.emit(self.row, self.pkg)
             event.accept()
             return
         super().mouseReleaseEvent(event)
 
     def set_checked(self, checked: bool):
-        self.checkbox.setChecked(checked)
+        # Select-all must not tick a card that cannot be selected.
+        if self.selectable:
+            self.checkbox.setChecked(checked)
 
     def is_checked(self) -> bool:
-        return self.checkbox.isChecked()
+        return self.selectable and self.checkbox.isChecked()
 
 
 class PackagesGridView(QScrollArea):

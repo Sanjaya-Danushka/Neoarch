@@ -357,6 +357,16 @@ class UpdatesModel(QAbstractTableModel):
     def checked_packages(self):
         return [p for p in self._pkgs if self._pkg_key(p) in self._checked]
 
+    def panel_packages(self):
+        """Packages the user has marked, in row order.
+
+        Includes the selection-only check the Installed and Plugins rows use
+        (they have no batch column), so the detail panel can follow marks on
+        every page instead of only where a real checkbox exists.
+        """
+        return [p for p in self._pkgs
+                if self._pkg_key(p) in self._checked or self._pkg_key(p) in self._selection]
+
     def is_all_checked(self):
         return bool(self._pkgs) and len(self._checked) >= len(self._pkgs)
 
@@ -788,6 +798,7 @@ class UpdatesTable(QTableView):
     """Main redesigned updates widget."""
 
     row_selected = pyqtSignal(object)
+    rows_multi_selected = pyqtSignal(object)
     row_cleared = pyqtSignal()
     menu_action = pyqtSignal(str, object)
     checks_changed = pyqtSignal(int, int)
@@ -894,6 +905,9 @@ class UpdatesTable(QTableView):
 
     def checked_packages(self):
         return self.model.checked_packages()
+
+    def panel_packages(self):
+        return self.model.panel_packages()
 
     def set_all_checked(self, state):
         self.model.set_all_checked(state)
@@ -1086,12 +1100,26 @@ class UpdatesTable(QTableView):
         self._header_sync()
         self.checks_changed.emit(checked, total)
 
+    def selected_packages(self):
+        """Package dicts for the highlighted rows, in visible row order."""
+        rows = sorted({i.row() for i in self.selectionModel().selectedRows()})
+        pkgs = []
+        for row in rows:
+            pkg = self.model.package_at(row)
+            if pkg:
+                pkgs.append(pkg)
+        return pkgs
+
     def _on_selection_changed(self, selected, deselected):
-        rows = {i.row() for i in self.selectionModel().selectedRows()}
+        rows = sorted({i.row() for i in self.selectionModel().selectedRows()})
         if len(rows) == 1:
-            pkg = self.model.package_at(next(iter(rows)))
+            pkg = self.model.package_at(rows[0])
             if pkg:
                 self.row_selected.emit(pkg)
+        elif rows:
+            # A multi-row highlight is a real state: the side panel follows the
+            # checked selection, which a left click builds up instead.
+            self.rows_multi_selected.emit(self.selected_packages())
         else:
             self.row_cleared.emit()
 
@@ -1196,6 +1224,18 @@ class UpdatesTable(QTableView):
             return
         idx = self.model.index(row, 0)
         if pkg.get("_installed"):
+            if self._discover_mode:
+                # A search hit that is already installed has nothing to
+                # install, so it is not selectable at all. Installed and
+                # Plugins mark these rows because there the row *is* the
+                # package you act on; here it would only inflate the count.
+                # The click still opens the detail card.
+                sel_model = self.selectionModel()
+                sel_model.select(idx,
+                                 sel_model.SelectionFlag.ClearAndSelect
+                                 | sel_model.SelectionFlag.Rows)
+                self.setCurrentIndex(idx)
+                return
             # Installed rows have no batch-install checkbox, but the Plugins
             # list mirrors the grid cards: toggling one still marks it as
             # selected so the toolbar's Clear reacts, while Install Selected

@@ -1,6 +1,8 @@
 """Tests for neoarch.backend.package.loader – pure functions and mocked checkers."""
 import json
 
+import pytest
+
 from tests.conftest import FakeCompletedProcess
 from neoarch.backend.package.loader import (
     _parse_qu_output,
@@ -17,9 +19,17 @@ from neoarch.backend.package.loader import (
     _check_fwupd_updates,
     _parse_pipx_list,
     _parse_pipx_outdated,
+    _parse_pipx_dry_run,
+    _pipx_outdated_supported,
     _check_pipx_updates,
     _check_pipx_installed,
 )
+
+
+@pytest.fixture(autouse=True)
+def _reset_pipx_outdated_cache(monkeypatch):
+    """The --outdated support probe is cached on the module; reset per test."""
+    monkeypatch.setattr("neoarch.backend.package.loader._PIPX_OUTDATED_SUPPORTED", None)
 
 
 # ---------------------------------------------------------------------------
@@ -636,3 +646,102 @@ def test_pipx_installed_marks_updates(monkeypatch):
     assert by_name["black"]["new_version"] == "24.3.0"
     assert by_name["ruff"]["has_update"] is False
     assert by_name["verbose"]["has_update"] is False
+
+
+def test_parse_pipx_list_surfaces_pinned_flag():
+    payload = {"venvs": {
+        "black": {"metadata": {"main_package": {"package": "black",
+                                                "package_version": "1.0",
+                                                "pinned": True}}},
+        "ruff": {"metadata": {"main_package": {"package": "ruff",
+                                               "package_version": "2.0"}}},
+    }}
+    result = _parse_pipx_list(json.dumps(payload))
+    by_name = {p["name"]: p for p in result}
+    assert by_name["black"]["pinned"] is True
+    assert by_name["ruff"]["pinned"] is False
+
+
+def test_parse_pipx_dry_run():
+    assert _parse_pipx_dry_run(
+        "Would install black-24.3.0 coverage-7.4.1\n") == {
+            "black": "24.3.0", "coverage": "7.4.1"}
+    assert _parse_pipx_dry_run(
+        "Would install python-dateutil-2.9.0.post0\n") == {
+            "python-dateutil": "2.9.0.post0"}
+    assert _parse_pipx_dry_run("Requirement already satisfied: black in ... (24.1.0)") == {}
+    assert _parse_pipx_dry_run("Would install 24.3.0\n") == {}
+    assert _parse_pipx_dry_run(None) == {}
+    assert _parse_pipx_dry_run("") == {}
+
+
+def test_pipx_outdated_probe_falls_back_when_flag_removed(monkeypatch):
+    calls = []
+
+    def fake(cmd, **kw):
+        assert cmd == ["pipx", "list", "--outdated"]
+        calls.append(1)
+        return FakeCompletedProcess(returncode=2, stdout="",
+                                    stderr="pipx: error: unrecognized arguments: --outdated")
+
+    monkeypatch.setattr("neoarch.backend.package.loader._run_cmd", fake)
+    assert _pipx_outdated_supported() is False
+    # result is cached: the failing probe runs once per session
+    assert _pipx_outdated_supported() is False
+    assert len(calls) == 1
+
+
+def test_pipx_outdated_probe_supports_flag(monkeypatch):
+    monkeypatch.setattr("neoarch.backend.package.loader._run_cmd",
+                        lambda cmd, **kw: FakeCompletedProcess(
+                            returncode=0, stdout="nothing outdated\n"))
+    assert _pipx_outdated_supported() is True
+
+
+def test_pipx_updates_fallback_dry_run(monkeypatch):
+    def fake_run_cmd(cmd, timeout=90, env=None):
+        if cmd[:2] == ["pipx", "runpip"]:
+            return FakeCompletedProcess(stdout="Would install black-24.3.0\n")
+        return FakeCompletedProcess(stdout=json.dumps(_PIPX_LIST_JSON))
+
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.pipx_source_enabled",
+                        lambda: True)
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.cmd_exists",
+                        lambda name: name == "pipx")
+    monkeypatch.setattr("neoarch.backend.package.loader._pipx_outdated_supported",
+                        lambda: False)
+    monkeypatch.setattr("neoarch.backend.package.loader._run_cmd", fake_run_cmd)
+
+    result = _check_pipx_updates()
+    assert len(result) == 1
+    assert result[0]["name"] == "black"
+    assert result[0]["id"] == "black"
+    assert result[0]["new_version"] == "24.3.0"
+    assert result[0]["source"] == "pipx"
+
+
+def test_pipx_fallback_skips_pinned(monkeypatch):
+    payload = {"venvs": {
+        "black": {"metadata": {"main_package": {"package": "black",
+                                                "package_version": "24.1.0",
+                                                "pinned": True}}},
+        "ruff": {"metadata": {"main_package": {"package": "ruff",
+                                               "package_version": "0.3.0"}}},
+    }}
+
+    def fake_run_cmd(cmd, timeout=90, env=None):
+        if cmd[:2] == ["pipx", "runpip"]:
+            return FakeCompletedProcess(stdout=f"Would install {cmd[-1]}-9.9.9\n")
+        return FakeCompletedProcess(stdout=json.dumps(payload))
+
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.pipx_source_enabled",
+                        lambda: True)
+    monkeypatch.setattr("neoarch.backend.package.loader.sys_utils.cmd_exists",
+                        lambda name: name == "pipx")
+    monkeypatch.setattr("neoarch.backend.package.loader._pipx_outdated_supported",
+                        lambda: False)
+    monkeypatch.setattr("neoarch.backend.package.loader._run_cmd", fake_run_cmd)
+
+    result = _check_pipx_updates()
+    assert [p["id"] for p in result] == ["ruff"]
+    assert result[0]["new_version"] == "9.9.9"

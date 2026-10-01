@@ -609,3 +609,46 @@ def test_install_many_batches_into_single_operation(qapp, monkeypatch):
     assert view.refresh_forced is True
 
 
+
+
+def test_discover_grid_card_for_an_installed_result_is_not_selectable(qapp):
+    """A Discover search hit that is already installed has nothing to install,
+    so its card offers no checkbox: ticking it would only inflate the count
+    that Install Selected acts on."""
+    from neoarch.frontend.components.packages_grid_view import PackageCard
+
+    installed = PackageCard(
+        {"name": "bash", "source": "pacman", "_installed": True}, 0, None)
+    available = PackageCard(
+        {"name": "ripgrep", "source": "pacman"}, 0, None)
+
+    assert installed.selectable is False
+    assert installed.checkbox.isEnabled() is False
+    assert available.selectable is True
+
+    installed.set_checked(True)
+    assert installed.is_checked() is False
+    available.set_checked(True)
+    assert available.is_checked() is True
+
+
+def test_discover_grid_clicking_an_installed_card_does_not_tick_it(qapp):
+    from PyQt6.QtCore import QPointF, Qt
+    from PyQt6.QtGui import QMouseEvent
+    from PyQt6.QtWidgets import QApplication
+
+    card = PackageCard({"name": "bash", "source": "pacman", "_installed": True}, 0, None)
+    card.resize(card.CARD_W, card.CARD_H)
+    QApplication.instance().processEvents()
+    clicks = []
+    card.clicked.connect(lambda row, pkg: clicks.append(pkg["name"]))
+
+    ev = QMouseEvent(QMouseEvent.Type.MouseButtonRelease,
+                     QPointF(20, 20), QPointF(20, 20),
+                     Qt.MouseButton.LeftButton, Qt.MouseButton.LeftButton,
+                     Qt.KeyboardModifier.NoModifier)
+    card.mouseReleaseEvent(ev)
+
+    # The click still opens the detail card; only the tick is refused.
+    assert clicks == ["bash"]
+    assert card.checkbox.isChecked() is False

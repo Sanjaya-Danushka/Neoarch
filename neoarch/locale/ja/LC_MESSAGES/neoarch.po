@@ -2025,8 +2025,6 @@ msgstr "すべて更新"
 
 msgid "Update All, refresh databases, clean cache"
 msgstr "すべて更新、データベースを更新、キャッシュをクリーンアップ"
-
-msgid "Update Package"
 msgstr "パッケージを更新"
 
 msgid "Update Review"

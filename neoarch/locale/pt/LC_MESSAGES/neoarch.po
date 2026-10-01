@@ -2025,8 +2025,6 @@ msgstr "Atualizar tudo"
 
 msgid "Update All, refresh databases, clean cache"
 msgstr "Atualizar tudo, atualizar bancos de dados, limpar cache"
-
-msgid "Update Package"
 msgstr "Atualizar pacote"
 
 msgid "Update Review"

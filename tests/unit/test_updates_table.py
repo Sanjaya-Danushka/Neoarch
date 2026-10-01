@@ -3,7 +3,7 @@
 import time
 
 import pytest
-from PyQt6.QtCore import QPointF, Qt
+from PyQt6.QtCore import QItemSelectionModel, QPointF, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QApplication
 
@@ -319,3 +319,153 @@ def test_discover_mapping_keeps_repo():
     assert out["repo"] == "extra"
     assert out["name"] == "7zip"
 
+
+def _select_rows(table, *rows):
+    flags = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+    for row in rows:
+        table.selectionModel().select(table.model.index(row, 0), flags)
+        QApplication.instance().processEvents()
+
+
+def _record_events(table):
+    events = []
+    table.row_selected.connect(lambda p: events.append(("one", p["id"])))
+    table.rows_multi_selected.connect(
+        lambda ps: events.append(("many", [p["id"] for p in ps])))
+    table.row_cleared.connect(lambda: events.append(("none",)))
+    return events
+
+
+def test_multi_row_highlight_reports_state_not_clear(qapp):
+    # A left click toggles the checkbox instead of extending the highlight, so
+    # this covers the keyboard path; either way the panel must not be told the
+    # selection was emptied.
+    table = _make_table()
+    events = _record_events(table)
+
+    _select_rows(table, 0)
+    assert events[-1] == ("one", "pkg-0")
+
+    _select_rows(table, 2)
+    assert events[-1] == ("many", ["pkg-0", "pkg-2"])
+    assert ("none",) not in events
+
+
+def test_shrinking_to_one_row_returns_to_detail_card(qapp):
+    table = _make_table()
+    events = _record_events(table)
+
+    _select_rows(table, 1, 3)
+    assert events[-1] == ("many", ["pkg-1", "pkg-3"])
+
+    table.selectionModel().select(
+        table.model.index(3, 0),
+        QItemSelectionModel.SelectionFlag.Deselect | QItemSelectionModel.SelectionFlag.Rows)
+    qapp.processEvents()
+    assert events[-1] == ("one", "pkg-1")
+
+
+def test_empty_highlight_emits_clear(qapp):
+    table = _make_table()
+    events = _record_events(table)
+
+    _select_rows(table, 0, 1)
+    table.clearSelection()
+    qapp.processEvents()
+
+    assert events[-1] == ("none",)
+    assert table.selected_packages() == []
+
+
+def test_highlight_and_checkbox_are_independent(qapp):
+    # A click checks the row and leaves the highlight on that same row, so the
+    # checkbox set is the only selection a user can build up by mouse.
+    table = _make_table()
+    events = _record_events(table)
+    model = table.model
+    idx0, idx1 = model.index(0, 0), model.index(1, 0)
+
+    model.setData(idx0, Qt.CheckState.Checked, Qt.ItemDataRole.CheckStateRole)
+    _select_rows(table, 0)
+    model.setData(idx1, Qt.CheckState.Checked, Qt.ItemDataRole.CheckStateRole)
+    qapp.processEvents()
+
+    assert [p["id"] for p in model.checked_packages()] == ["pkg-0", "pkg-1"]
+    assert [p["id"] for p in table.selected_packages()] == ["pkg-0"]
+    assert events[-1] == ("one", "pkg-0")
+
+
+
+def _click_row(table, row):
+    """Click a row the way a left click does: toggles the row's mark."""
+    model = table.model
+    table._toggle_check(row, None)
+
+
+def _discover_table():
+    table = UpdatesTable(_FakeApp())
+    table.set_enrich(False)
+    table.set_discover_mode(True)
+    table.set_packages([
+        {"name": "bash", "id": "bash", "version": "5.2", "source": "pacman",
+         "status": "Installed", "_installed": True},
+        {"name": "ripgrep", "id": "ripgrep", "version": "14.0",
+         "source": "pacman", "status": "Available"},
+        {"name": "fd", "id": "fd", "version": "9.0", "source": "AUR",
+         "status": "Available"},
+    ])
+    return table
+
+
+def test_discover_installed_result_is_not_marked(qapp):
+    # An installed search hit has nothing to install, so clicking it must not
+    # add it to the marks the count and the panel read.
+    table = _discover_table()
+    model = table.model
+
+    _click_row(table, 0)
+
+    assert model.is_installed_selected(model.package_at(0)) is False
+    assert model.panel_packages() == []
+
+
+def test_discover_marks_only_the_installable_results(qapp):
+    table = _discover_table()
+    model = table.model
+
+    _click_row(table, 0)
+    _click_row(table, 1)
+    _click_row(table, 2)
+
+    assert [p["name"] for p in model.panel_packages()] == ["ripgrep", "fd"]
+    assert [p["name"] for p in model.checked_packages()] == ["ripgrep", "fd"]
+
+
+def test_installed_page_still_marks_installed_rows(qapp):
+    # Installed rows have no batch checkbox but are the thing being acted on,
+    # so the mark is what makes multi-select possible there at all.
+    table = UpdatesTable(_FakeApp())
+    table.set_enrich(False)
+    table.set_installed_mode(True)
+    table.set_packages([
+        {"name": "bash", "id": "bash", "version": "5.2", "source": "pacman",
+         "_installed": True},
+        {"name": "curl", "id": "curl", "version": "8.0", "source": "pacman",
+         "_installed": True},
+    ])
+    model = table.model
+
+    _click_row(table, 0)
+    _click_row(table, 1)
+
+    assert [p["name"] for p in model.panel_packages()] == ["bash", "curl"]
+    assert model.checked_packages() == []
+
+
+def test_discover_select_all_skips_installed_results(qapp):
+    table = _discover_table()
+    model = table.model
+
+    table.set_all_checked(True)
+
+    assert [p["name"] for p in model.checked_packages()] == ["ripgrep", "fd"]

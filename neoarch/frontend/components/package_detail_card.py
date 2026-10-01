@@ -138,11 +138,15 @@ class PackageDetailCard(QFrame):
     update_requested = pyqtSignal()
     uninstall_requested = pyqtSignal()
     launch_requested = pyqtSignal()
+    selection_update_requested = pyqtSignal()
+    selection_uninstall_requested = pyqtSignal()
+    selection_clear_requested = pyqtSignal()
     updates_check_completed = pyqtSignal(str, str, bool, bool)  # name, new_version, has_updates, check_ok
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._pkg_data = None
+        self._multi_mode = False
         self.setObjectName("packageDetailCard")
         self.setFixedWidth(320)
         self.setVisible(False)
@@ -235,28 +239,59 @@ class PackageDetailCard(QFrame):
         content.addWidget(_make_sep())
         content.addSpacing(10)
 
-        # ── Details ──
-        content.addWidget(_section_title(_("Details")))
-        content.addSpacing(6)
+        def _section_block(title: str):
+            """Separator + title + rows, grouped so a block hides as one."""
+            w = QWidget()
+            w.setStyleSheet("background: transparent;")
+            v = QVBoxLayout(w)
+            v.setContentsMargins(0, 0, 0, 0)
+            v.setSpacing(0)
+            v.addSpacing(12)
+            v.addWidget(_make_sep())
+            v.addSpacing(10)
+            v.addWidget(_section_title(title))
+            v.addSpacing(6)
+            return w, v
 
+        # ── Multi-selection summary (shown instead of the sections below) ──
+        self.selection_section, sel = _section_block(_("Selection"))
+        self.selection_sources_label = QLabel()
+        self.selection_sources_label.setTextFormat(Qt.TextFormat.RichText)
+        self.selection_sources_label.setWordWrap(True)
+        self.selection_sources_label.setStyleSheet(
+            f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; background: transparent;"
+        )
+        sel.addWidget(self.selection_sources_label)
+        sel.addSpacing(6)
+        self.selection_size_label = QLabel()
+        self.selection_size_label.setStyleSheet(
+            f"color: {Colors.TEXT_3}; font-size: {Fonts.SM}; background: transparent;"
+        )
+        sel.addWidget(self.selection_size_label)
+        content.addWidget(self.selection_section)
+        self.selection_section.setVisible(False)
+
+        # ── Details ──
+        self.details_section, dl = _section_block(_("Details"))
         self.version_row = QLabel()
         self.version_row.setStyleSheet(
             f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; background: transparent;"
         )
-        content.addWidget(self.version_row)
+        dl.addWidget(self.version_row)
 
         self.source_row = _detail_row(_("Source"), "")
-        content.addWidget(self.source_row)
+        dl.addWidget(self.source_row)
         self.id_row = _detail_row(_("ID"), "")
-        content.addWidget(self.id_row)
+        dl.addWidget(self.id_row)
 
         self.reason_row = _detail_row(_("Reason"), "")
         self.reason_row.setVisible(False)
-        content.addWidget(self.reason_row)
+        dl.addWidget(self.reason_row)
 
         self.size_row = _detail_row(_("Size"), "")
         self.size_row.setVisible(False)
-        content.addWidget(self.size_row)
+        dl.addWidget(self.size_row)
+        content.addWidget(self.details_section)
 
         # ── Reverse dependencies ──
         self.revdeps_widget = QWidget()
@@ -265,11 +300,6 @@ class PackageDetailCard(QFrame):
         self.revdeps_layout.setContentsMargins(0, 0, 0, 0)
         self.revdeps_layout.setSpacing(0)
 
-        content.addSpacing(12)
-        content.addWidget(_make_sep())
-        content.addSpacing(10)
-        content.addWidget(_section_title(_("Required By")))
-        content.addSpacing(6)
         self.revdeps_label = QLabel()
         self.revdeps_label.setStyleSheet(
             f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; background: transparent;"
@@ -277,22 +307,22 @@ class PackageDetailCard(QFrame):
         self.revdeps_label.setWordWrap(True)
         self.revdeps_label.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.revdeps_layout.addWidget(self.revdeps_label)
-        content.addWidget(self.revdeps_widget)
+
+        self.revdeps_section, rl = _section_block(_("Required By"))
+        rl.addWidget(self.revdeps_widget)
+        content.addWidget(self.revdeps_section)
 
         # ── Description ──
-        content.addSpacing(12)
-        content.addWidget(_make_sep())
-        content.addSpacing(10)
-        content.addWidget(_section_title(_("Description")))
-        content.addSpacing(6)
-
         self.desc_label = QLabel()
         self.desc_label.setStyleSheet(
             f"color: {Colors.TEXT_2}; font-size: {Fonts.MD}; background: transparent;"
         )
         self.desc_label.setWordWrap(True)
         self.desc_label.setAlignment(Qt.AlignmentFlag.AlignTop)
-        content.addWidget(self.desc_label)
+
+        self.desc_section, sl = _section_block(_("Description"))
+        sl.addWidget(self.desc_label)
+        content.addWidget(self.desc_section)
 
         content.addStretch(1)
 
@@ -316,7 +346,7 @@ class PackageDetailCard(QFrame):
         self.install_btn.clicked.connect(self.install_requested.emit)
         self.action_layout.addWidget(self.install_btn)
 
-        self.update_btn = QPushButton(_("Update Package"))
+        self.update_btn = QPushButton(_("Update"))
         self.update_btn.setMinimumHeight(40)
         self.update_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.update_btn.setStyleSheet(
@@ -395,6 +425,38 @@ class PackageDetailCard(QFrame):
 
         self.action_layout.addWidget(self.aur_actions)
 
+        # ── Multi-selection actions ──
+        self.selection_update_btn = QPushButton(_("Update Selected"))
+        self.selection_update_btn.setMinimumHeight(40)
+        self.selection_update_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.selection_update_btn.setStyleSheet(
+            _nav_btn_stylesheet("#FF8A65")
+        )
+        self.selection_update_btn.clicked.connect(self.selection_update_requested.emit)
+        self.action_layout.addWidget(self.selection_update_btn)
+
+        self.selection_uninstall_btn = QPushButton(_("Uninstall Selected"))
+        self.selection_uninstall_btn.setMinimumHeight(40)
+        self.selection_uninstall_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.selection_uninstall_btn.setStyleSheet(
+            _nav_btn_stylesheet(Colors.RED)
+        )
+        self.selection_uninstall_btn.clicked.connect(self.selection_uninstall_requested.emit)
+        self.action_layout.addWidget(self.selection_uninstall_btn)
+
+        self.selection_clear_btn = QPushButton(_("Clear Selection"))
+        self.selection_clear_btn.setMinimumHeight(36)
+        self.selection_clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.selection_clear_btn.setStyleSheet(
+            _nav_btn_stylesheet(Colors.TEXT_2)
+        )
+        self.selection_clear_btn.clicked.connect(self.selection_clear_requested.emit)
+        self.action_layout.addWidget(self.selection_clear_btn)
+
+        self.selection_update_btn.setVisible(False)
+        self.selection_uninstall_btn.setVisible(False)
+        self.selection_clear_btn.setVisible(False)
+
         content.addWidget(self.action_container)
         layout.addWidget(scroll)
 
@@ -402,6 +464,7 @@ class PackageDetailCard(QFrame):
         return SOURCE_COLORS.get(source.lower(), Colors.ACCENT)
 
     def show_package(self, pkg_data: dict):
+        self._set_single_mode()
         self._pkg_data = pkg_data
         name = pkg_data.get("name", "")
         version = pkg_data.get("version", "")
@@ -412,6 +475,7 @@ class PackageDetailCard(QFrame):
         description = pkg_data.get("description", "")
         pkg_id = pkg_data.get("id", name)
         view = pkg_data.get("_view", "")
+        is_aur = source.upper() == "AUR"
 
         sc = self._source_color(source)
 
@@ -524,9 +588,129 @@ class PackageDetailCard(QFrame):
             self.check_updates_btn.setVisible(False)
             self.up_to_date_label.setVisible(False)
 
-        is_aur = source.upper() == "AUR"
         self.aur_sep.setVisible(is_aur)
         self.aur_actions.setVisible(is_aur)
+
+        # An AUR "update" rebuilds from the PKGBUILD, so it stays worth
+        # offering when no newer version was detected - the recipe, the base or
+        # a dependency may have changed. Every installed AUR package therefore
+        # keeps the rebuild next to its three AUR actions. The plugins page is
+        # the exception: plugins are updated by reinstalling them there.
+        if is_aur and installed and view != "plugins" \
+                and not self.update_btn.isVisible():
+            self.install_btn.setVisible(False)
+            self.update_btn.setVisible(True)
+
+        # One label for every source: an AUR "update" rebuilds from the
+        # PKGBUILD, but the button reads the same everywhere and the AUR
+        # actions above it already show what the rebuild reads.
+        self.update_btn.setText(_("Update"))
+
+        self.setVisible(True)
+
+    def _set_single_mode(self):
+        """Leave the multi-selection summary and restore the per-package layout."""
+        self._multi_mode = False
+        self.selection_section.setVisible(False)
+        self.selection_update_btn.setVisible(False)
+        self.selection_uninstall_btn.setVisible(False)
+        self.selection_clear_btn.setVisible(False)
+        self.details_section.setVisible(True)
+        self.revdeps_section.setVisible(True)
+        self.desc_section.setVisible(True)
+
+    def show_selection(self, pkgs, download_size=0, action="update",
+                       updatable=True, allow_uninstall=False):
+        """Show the aggregate panel for a multi-row selection.
+
+        Per-package rows and the AUR-only actions describe exactly one
+        package, so they are replaced by a count, a per-source breakdown and
+        the actions that apply to the whole selection.
+
+        ``updatable`` says whether any marked package actually has a pending
+        update. On Installed most packages are up to date, and offering
+        "Update Selected" for a selection that cannot change anything would
+        push the user towards a no-op; there, the summary offers uninstall
+        instead. ``allow_uninstall`` adds removal to a selection that also
+        has something to update.
+        """
+        pkgs = [p for p in (pkgs or []) if isinstance(p, dict)]
+        count = len(pkgs)
+        if not count:
+            self.clear()
+            return
+
+        self._pkg_data = None
+        self._multi_mode = True
+
+        counts = {}
+        for pkg in pkgs:
+            src = pkg.get("source") or "pacman"
+            counts[src] = counts.get(src, 0) + 1
+        # Busiest source first, then alphabetical, so the list stays stable.
+        order = sorted(counts, key=lambda s: (-counts[s], s.lower()))
+
+        self.avatar._letter = "N"
+        self.avatar._color = Colors.ACCENT
+        self.avatar.update()
+        self.name_label.setText(
+            _("{count} package{s} selected").format(
+                count=count, s="" if count == 1 else "s"))
+        labels = {
+            "update": (_("Update Selected ({count})"),
+                       _("Checked for update — actions apply to all of them")),
+            "install": (_("Install Selected ({count})"),
+                        _("Checked to install — actions apply to all of them")),
+            "uninstall": (_("Uninstall Selected ({count})"),
+                          _("Marked — actions apply to all of them")),
+        }
+        # An update page whose selection holds nothing to update would offer
+        # a button that cannot change anything, so the primary action becomes
+        # the removal. That also means the separate Uninstall button would be
+        # a second, identical control - one removal action is enough.
+        if action == "update" and not updatable:
+            action = "uninstall"
+            allow_uninstall = False
+        primary_text, sub_text = labels.get(action, labels["uninstall"])
+        self.version_label.setText(sub_text)
+
+        self.status_badge.setVisible(False)
+        chips = " &nbsp;·&nbsp; ".join(
+            '<span style="color:{c}; font-weight:600;">{n} {s}</span>'.format(
+                c=self._source_color(src), n=counts[src], s=src)
+            for src in order)
+        self.selection_sources_label.setText(chips)
+        if download_size:
+            self.selection_size_label.setText(
+                _("{size} to download").format(size=_fmt_size(download_size)))
+        else:
+            self.selection_size_label.setText("")
+
+        self.details_section.setVisible(False)
+        self.revdeps_section.setVisible(False)
+        self.desc_section.setVisible(False)
+        self.selection_section.setVisible(True)
+
+        self.install_btn.setVisible(False)
+        self.update_btn.setVisible(False)
+        self.uninstall_btn.setVisible(False)
+        self.launch_btn.setVisible(False)
+        self.check_updates_btn.setVisible(False)
+        self.up_to_date_label.setVisible(False)
+        self.aur_sep.setVisible(False)
+        self.aur_actions.setVisible(False)
+        self.selection_update_btn.setText(primary_text.format(count=count))
+        self.selection_update_btn.setVisible(True)
+        # Every marked package on Updates and Installed is removable, so
+        # removal rides alongside the primary action - unless the primary
+        # already is the removal, which would show it twice.
+        if allow_uninstall:
+            self.selection_uninstall_btn.setText(
+                _("Uninstall Selected ({count})").format(count=count))
+            self.selection_uninstall_btn.setVisible(True)
+        else:
+            self.selection_uninstall_btn.setVisible(False)
+        self.selection_clear_btn.setVisible(True)
 
         self.setVisible(True)
 
@@ -579,11 +763,14 @@ class PackageDetailCard(QFrame):
             self.revdeps_label.setText(", ".join(required_by))
 
     def clear(self):
+        self._set_single_mode()
         self._pkg_data = None
         self.name_label.clear()
         self.version_label.clear()
         self.version_row.clear()
         self.desc_label.clear()
+        self.selection_sources_label.clear()
+        self.selection_size_label.clear()
         self.status_badge.setVisible(False)
         self.aur_sep.setVisible(False)
         self.aur_actions.setVisible(False)

@@ -815,10 +815,27 @@ class _OperationsMixin:
         except Exception:
             pass
     
-    def uninstall_selected(self):
+    def uninstall_selected(self, packages=None):
+        """Remove packages, defaulting to whatever the active surface has marked.
+
+        ``packages`` lets a caller pass an explicit set - the detail panel
+        summarises the marked rows, which on Installed and Plugins are held in
+        a selection-only check that the checkbox accessor cannot see.
+        """
         if not self._db_lock_preflight(operation="Uninstall packages"):
             return
-        if self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
+        if packages is not None:
+            packages_by_source = {}
+            for pkg in packages:
+                name = (pkg.get('name') or '').strip()
+                source = (pkg.get('source') or 'pacman').strip()
+                if not name:
+                    continue
+                packages_by_source.setdefault(source, []).append(name)
+            if not packages_by_source:
+                self.log("No packages selected for uninstallation")
+                return
+        elif self.current_view in ("updates", "installed") and hasattr(self, 'updates_table'):
             checked = self.get_checked_packages_for_view()
             if not checked:
                 self.log("No packages selected for uninstallation")
