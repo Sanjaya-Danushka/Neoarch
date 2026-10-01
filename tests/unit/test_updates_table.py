@@ -394,3 +394,78 @@ def test_highlight_and_checkbox_are_independent(qapp):
     assert [p["id"] for p in table.selected_packages()] == ["pkg-0"]
     assert events[-1] == ("one", "pkg-0")
 
+
+
+def _click_row(table, row):
+    """Click a row the way a left click does: toggles the row's mark."""
+    model = table.model
+    table._toggle_check(row, None)
+
+
+def _discover_table():
+    table = UpdatesTable(_FakeApp())
+    table.set_enrich(False)
+    table.set_discover_mode(True)
+    table.set_packages([
+        {"name": "bash", "id": "bash", "version": "5.2", "source": "pacman",
+         "status": "Installed", "_installed": True},
+        {"name": "ripgrep", "id": "ripgrep", "version": "14.0",
+         "source": "pacman", "status": "Available"},
+        {"name": "fd", "id": "fd", "version": "9.0", "source": "AUR",
+         "status": "Available"},
+    ])
+    return table
+
+
+def test_discover_installed_result_is_not_marked(qapp):
+    # An installed search hit has nothing to install, so clicking it must not
+    # add it to the marks the count and the panel read.
+    table = _discover_table()
+    model = table.model
+
+    _click_row(table, 0)
+
+    assert model.is_installed_selected(model.package_at(0)) is False
+    assert model.panel_packages() == []
+
+
+def test_discover_marks_only_the_installable_results(qapp):
+    table = _discover_table()
+    model = table.model
+
+    _click_row(table, 0)
+    _click_row(table, 1)
+    _click_row(table, 2)
+
+    assert [p["name"] for p in model.panel_packages()] == ["ripgrep", "fd"]
+    assert [p["name"] for p in model.checked_packages()] == ["ripgrep", "fd"]
+
+
+def test_installed_page_still_marks_installed_rows(qapp):
+    # Installed rows have no batch checkbox but are the thing being acted on,
+    # so the mark is what makes multi-select possible there at all.
+    table = UpdatesTable(_FakeApp())
+    table.set_enrich(False)
+    table.set_installed_mode(True)
+    table.set_packages([
+        {"name": "bash", "id": "bash", "version": "5.2", "source": "pacman",
+         "_installed": True},
+        {"name": "curl", "id": "curl", "version": "8.0", "source": "pacman",
+         "_installed": True},
+    ])
+    model = table.model
+
+    _click_row(table, 0)
+    _click_row(table, 1)
+
+    assert [p["name"] for p in model.panel_packages()] == ["bash", "curl"]
+    assert model.checked_packages() == []
+
+
+def test_discover_select_all_skips_installed_results(qapp):
+    table = _discover_table()
+    model = table.model
+
+    table.set_all_checked(True)
+
+    assert [p["name"] for p in model.checked_packages()] == ["ripgrep", "fd"]

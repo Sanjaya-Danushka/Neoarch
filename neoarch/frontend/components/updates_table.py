@@ -1224,6 +1224,18 @@ class UpdatesTable(QTableView):
             return
         idx = self.model.index(row, 0)
         if pkg.get("_installed"):
+            if self._discover_mode:
+                # A search hit that is already installed has nothing to
+                # install, so it is not selectable at all. Installed and
+                # Plugins mark these rows because there the row *is* the
+                # package you act on; here it would only inflate the count.
+                # The click still opens the detail card.
+                sel_model = self.selectionModel()
+                sel_model.select(idx,
+                                 sel_model.SelectionFlag.ClearAndSelect
+                                 | sel_model.SelectionFlag.Rows)
+                self.setCurrentIndex(idx)
+                return
             # Installed rows have no batch-install checkbox, but the Plugins
             # list mirrors the grid cards: toggling one still marks it as
             # selected so the toolbar's Clear reacts, while Install Selected

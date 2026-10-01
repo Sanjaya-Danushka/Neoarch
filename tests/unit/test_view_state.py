@@ -1021,8 +1021,8 @@ def test_clicking_a_checked_row_shows_summary_not_that_row(qapp):
     assert mixin.package_detail_card.name_label.text() == "2 packages selected"
 
 
-def _installed_panel_mixin(view="installed"):
-    return _panel_mixin(view=view, packages=[
+def _installed_panel_mixin(view="installed", packages=None):
+    return _panel_mixin(view=view, packages=packages if packages is not None else [
         {"name": "bash", "id": "bash", "version": "1.0", "source": "pacman",
          "_installed": True, "description": "Shell"},
         {"name": "curl", "id": "curl", "version": "1.0", "source": "pacman",
@@ -1042,8 +1042,79 @@ def test_installed_page_summary_follows_selection_only_marks(qapp):
     card = mixin.package_detail_card
     assert card._multi_mode is True
     assert card.name_label.text() == "2 packages selected"
-    assert card.selection_update_btn.text() == "Update Selected (2)"
+    # Neither row has a pending update, so the summary offers the removal it
+    # can actually perform instead of a no-op update.
+    assert card.selection_update_btn.text() == "Uninstall Selected (2)"
     assert "1 AUR" in card.selection_sources_label.text()
+
+
+def test_installed_summary_offers_both_when_an_update_is_pending(qapp):
+    # A marked Installed row with a newer version is updatable, so the summary
+    # keeps Update and adds Uninstall alongside it.
+    mixin = _panel_mixin(view="installed", packages=[
+        {"name": "bash", "id": "bash", "version": "1.0", "new_version": "2.0",
+         "source": "pacman", "_installed": True},
+        {"name": "curl", "id": "curl", "version": "1.0", "source": "pacman",
+         "_installed": True},
+    ])
+    _mark_row(mixin, 0)
+    _mark_row(mixin, 1)
+
+    card = mixin.package_detail_card
+    assert card.selection_update_btn.text() == "Update Selected (2)"
+    assert card.selection_uninstall_btn.text() == "Uninstall Selected (2)"
+    assert card.selection_uninstall_btn.isVisible() is True
+
+
+def test_updates_summary_offers_uninstall_alongside_the_update(qapp):
+    mixin = _panel_mixin(view="updates")
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+
+    card = mixin.package_detail_card
+    assert card.selection_update_btn.text() == "Update Selected (2)"
+    assert card.selection_uninstall_btn.isVisible() is True
+
+
+def test_discover_summary_has_no_uninstall(qapp):
+    # Discover rows may not be installed, so nothing there can be removed.
+    mixin = _panel_mixin(view="discover")
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+
+    assert mixin.package_detail_card.selection_uninstall_btn.isVisible() is False
+
+
+def test_panel_uninstall_button_passes_the_marked_packages(qapp):
+    # Installed marks live in a selection-only check, so the panel has to hand
+    # uninstall_selected its own list instead of letting it re-read checkboxes.
+    mixin = _installed_panel_mixin()
+    _mark_row(mixin, 0)
+    _mark_row(mixin, 2)
+    seen = {}
+    mixin.uninstall_selected = lambda pkgs=None: seen.update(pkgs=pkgs)
+
+    mixin._run_panel_uninstall_action()
+
+    assert sorted(p["name"] for p in seen["pkgs"]) == ["bash", "yay"]
+
+
+def test_panel_update_button_updates_when_something_is_updatable(qapp):
+    mixin = _installed_panel_mixin(packages=[
+        {"name": "bash", "id": "bash", "version": "1.0", "new_version": "2.0",
+         "source": "pacman", "_installed": True},
+        {"name": "curl", "id": "curl", "version": "1.0", "source": "pacman",
+         "_installed": True},
+    ])
+    _mark_row(mixin, 0)
+    _mark_row(mixin, 1)
+    called = []
+    mixin.update_selected = lambda: called.append("update")
+    mixin.uninstall_selected = lambda pkgs=None: called.append("uninstall")
+
+    mixin._run_panel_primary_action()
+
+    assert called == ["update"]
 
 
 def test_installed_single_mark_shows_that_package(qapp):

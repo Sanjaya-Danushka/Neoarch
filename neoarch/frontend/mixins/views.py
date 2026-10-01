@@ -1400,6 +1400,8 @@ class _ViewsMixin:
         self.package_detail_card.updates_check_completed.connect(self._on_update_check_result)
         self.package_detail_card.selection_update_requested.connect(
             self._run_panel_primary_action)
+        self.package_detail_card.selection_uninstall_requested.connect(
+            self._run_panel_uninstall_action)
         self.package_detail_card.selection_clear_requested.connect(
             self._clear_panel_selection)
         packages_content_layout.addWidget(self.package_detail_card, 0, Qt.AlignmentFlag.AlignRight)
@@ -3470,6 +3472,29 @@ class _ViewsMixin:
             return "install"
         return "update"
 
+    @staticmethod
+    def _pkg_has_update(pkg):
+        """True when a table row carries a real pending update.
+
+        Installed rows are marked Installed even when a newer version exists,
+        so the version pair is what decides. Mirrors the single-row card so
+        the panel and one row never disagree.
+        """
+        if not isinstance(pkg, dict):
+            return False
+        new_version = pkg.get('new_version') or ''
+        version = pkg.get('version') or ''
+        return bool(new_version) and new_version != version
+
+    def _panel_allows_uninstall(self):
+        """Whether the summary may offer removing the marked packages.
+
+        Only the pages whose rows are all installed can remove them. Plugins
+        uninstall through their own manager, and Discover rows may not be
+        installed at all.
+        """
+        return self.current_view in ("updates", "installed")
+
     def _show_panel_detail(self, pkg):
         """Render the one marked package the way its own page does."""
         view = self.current_view
@@ -3493,9 +3518,26 @@ class _ViewsMixin:
                 if callable(handler):
                     return handler()
                 return self.install_selected()
+            pkgs = self._panel_packages()
+            # The summary only offers removal when there is something marked
+            # and none of it can be updated, so the update button must not run
+            # for a selection that cannot change anything. An empty selection
+            # keeps the page's own action and reports nothing to remove.
+            if pkgs and not any(self._pkg_has_update(p) for p in pkgs):
+                return self._run_panel_uninstall_action()
             return self.update_selected()
         except Exception as e:
             self.log(f"Error running panel action: {e}")
+
+    def _run_panel_uninstall_action(self):
+        """Remove exactly the packages the summary card is describing."""
+        try:
+            pkgs = self._panel_packages()
+        except Exception:
+            pkgs = []
+        if not pkgs:
+            return
+        return self.uninstall_selected(pkgs)
 
     def _sync_panel_for_checks(self):
         """Point the right-hand panel at whatever the user has checked.
@@ -3520,7 +3562,9 @@ class _ViewsMixin:
             return
         card.show_selection(
             pkgs, download_size=self._sum_download_size(pkgs),
-            action=self._panel_action_kind())
+            action=self._panel_action_kind(),
+            updatable=any(self._pkg_has_update(p) for p in pkgs),
+            allow_uninstall=self._panel_allows_uninstall())
 
     def _on_updates_table_row_cleared(self):
         """Row highlight cleared.

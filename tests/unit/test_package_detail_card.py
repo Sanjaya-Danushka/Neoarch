@@ -129,7 +129,78 @@ def test_show_selection_replaces_single_package_fields(qapp):
     assert card.selection_update_btn.isVisible() is True
     assert card.selection_clear_btn.isVisible() is True
     assert card.selection_update_btn.text() == "Update Selected (3)"
+    # Removal is opt-in per page; nothing here says these can be removed.
+    assert card.selection_uninstall_btn.isVisible() is False
     assert card._pkg_data is None
+
+
+def test_show_selection_drops_the_update_when_nothing_is_updatable(qapp):
+    # An Installed selection with no pending update would offer an update
+    # button that cannot change anything, so the summary reads as a removal.
+    card = PackageDetailCard()
+    card.show()
+    card.show_selection(
+        [{"name": "a", "source": "pacman"}, {"name": "b", "source": "pacman"}],
+        action="update", updatable=False)
+
+    assert card.selection_update_btn.text() == "Uninstall Selected (2)"
+
+
+def test_show_selection_never_offers_the_removal_twice(qapp):
+    # The page allows removal and the primary action fell back to it, so a
+    # second identical button would be a duplicate control.
+    card = PackageDetailCard()
+    card.show()
+    card.show_selection(
+        [{"name": "a", "source": "pacman"}, {"name": "b", "source": "pacman"}],
+        action="update", updatable=False, allow_uninstall=True)
+
+    assert card.selection_update_btn.text() == "Uninstall Selected (2)"
+    assert card.selection_uninstall_btn.isVisible() is False
+
+
+def test_show_selection_keeps_the_update_when_something_is_updatable(qapp):
+    card = PackageDetailCard()
+    card.show()
+    card.show_selection(
+        [{"name": "a", "source": "pacman"}, {"name": "b", "source": "pacman"}],
+        action="update", updatable=True, allow_uninstall=True)
+
+    assert card.selection_update_btn.text() == "Update Selected (2)"
+    assert card.selection_uninstall_btn.text() == "Uninstall Selected (2)"
+    assert card.selection_uninstall_btn.isVisible() is True
+
+
+def test_show_selection_uninstall_signal_is_separate(qapp):
+    card = PackageDetailCard()
+    card.show()
+    card.show_selection(
+        [{"name": "a", "source": "pacman"}, {"name": "b", "source": "pacman"}],
+        action="update", updatable=True, allow_uninstall=True)
+    seen = []
+    card.selection_update_requested.connect(lambda: seen.append("update"))
+    card.selection_uninstall_requested.connect(lambda: seen.append("uninstall"))
+    card.selection_clear_requested.connect(lambda: seen.append("clear"))
+
+    card.selection_uninstall_btn.click()
+
+    assert seen == ["uninstall"]
+
+
+def test_show_package_hides_the_multi_selection_actions(qapp):
+    card = PackageDetailCard()
+    card.show()
+    card.show_selection(
+        [{"name": "a", "source": "pacman"}, {"name": "b", "source": "pacman"}],
+        action="update", updatable=True, allow_uninstall=True)
+    assert card.selection_uninstall_btn.isVisible() is True
+
+    card.show_package({"name": "bash", "version": "5.2", "source": "pacman",
+                       "installed": True, "has_update": False,
+                       "description": "GNU shell", "_view": "installed"})
+
+    assert card.selection_uninstall_btn.isVisible() is False
+    assert card.uninstall_btn.isVisible() is True
 
 
 def test_show_selection_breaks_down_sources_and_size(qapp):

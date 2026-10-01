@@ -139,6 +139,7 @@ class PackageDetailCard(QFrame):
     uninstall_requested = pyqtSignal()
     launch_requested = pyqtSignal()
     selection_update_requested = pyqtSignal()
+    selection_uninstall_requested = pyqtSignal()
     selection_clear_requested = pyqtSignal()
     updates_check_completed = pyqtSignal(str, str, bool, bool)  # name, new_version, has_updates, check_ok
 
@@ -434,6 +435,15 @@ class PackageDetailCard(QFrame):
         self.selection_update_btn.clicked.connect(self.selection_update_requested.emit)
         self.action_layout.addWidget(self.selection_update_btn)
 
+        self.selection_uninstall_btn = QPushButton(_("Uninstall Selected"))
+        self.selection_uninstall_btn.setMinimumHeight(40)
+        self.selection_uninstall_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.selection_uninstall_btn.setStyleSheet(
+            _nav_btn_stylesheet(Colors.RED)
+        )
+        self.selection_uninstall_btn.clicked.connect(self.selection_uninstall_requested.emit)
+        self.action_layout.addWidget(self.selection_uninstall_btn)
+
         self.selection_clear_btn = QPushButton(_("Clear Selection"))
         self.selection_clear_btn.setMinimumHeight(36)
         self.selection_clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -444,6 +454,7 @@ class PackageDetailCard(QFrame):
         self.action_layout.addWidget(self.selection_clear_btn)
 
         self.selection_update_btn.setVisible(False)
+        self.selection_uninstall_btn.setVisible(False)
         self.selection_clear_btn.setVisible(False)
 
         content.addWidget(self.action_container)
@@ -602,17 +613,26 @@ class PackageDetailCard(QFrame):
         self._multi_mode = False
         self.selection_section.setVisible(False)
         self.selection_update_btn.setVisible(False)
+        self.selection_uninstall_btn.setVisible(False)
         self.selection_clear_btn.setVisible(False)
         self.details_section.setVisible(True)
         self.revdeps_section.setVisible(True)
         self.desc_section.setVisible(True)
 
-    def show_selection(self, pkgs, download_size=0, action="update"):
+    def show_selection(self, pkgs, download_size=0, action="update",
+                       updatable=True, allow_uninstall=False):
         """Show the aggregate panel for a multi-row selection.
 
         Per-package rows and the AUR-only actions describe exactly one
         package, so they are replaced by a count, a per-source breakdown and
-        one action that applies to the whole selection.
+        the actions that apply to the whole selection.
+
+        ``updatable`` says whether any marked package actually has a pending
+        update. On Installed most packages are up to date, and offering
+        "Update Selected" for a selection that cannot change anything would
+        push the user towards a no-op; there, the summary offers uninstall
+        instead. ``allow_uninstall`` adds removal to a selection that also
+        has something to update.
         """
         pkgs = [p for p in (pkgs or []) if isinstance(p, dict)]
         count = len(pkgs)
@@ -641,8 +661,17 @@ class PackageDetailCard(QFrame):
                        _("Checked for update — actions apply to all of them")),
             "install": (_("Install Selected ({count})"),
                         _("Checked to install — actions apply to all of them")),
+            "uninstall": (_("Uninstall Selected ({count})"),
+                          _("Marked — actions apply to all of them")),
         }
-        primary_text, sub_text = labels.get(action, labels["update"])
+        # An update page whose selection holds nothing to update would offer
+        # a button that cannot change anything, so the primary action becomes
+        # the removal. That also means the separate Uninstall button would be
+        # a second, identical control - one removal action is enough.
+        if action == "update" and not updatable:
+            action = "uninstall"
+            allow_uninstall = False
+        primary_text, sub_text = labels.get(action, labels["uninstall"])
         self.version_label.setText(sub_text)
 
         self.status_badge.setVisible(False)
@@ -672,6 +701,15 @@ class PackageDetailCard(QFrame):
         self.aur_actions.setVisible(False)
         self.selection_update_btn.setText(primary_text.format(count=count))
         self.selection_update_btn.setVisible(True)
+        # Every marked package on Updates and Installed is removable, so
+        # removal rides alongside the primary action - unless the primary
+        # already is the removal, which would show it twice.
+        if allow_uninstall:
+            self.selection_uninstall_btn.setText(
+                _("Uninstall Selected ({count})").format(count=count))
+            self.selection_uninstall_btn.setVisible(True)
+        else:
+            self.selection_uninstall_btn.setVisible(False)
         self.selection_clear_btn.setVisible(True)
 
         self.setVisible(True)

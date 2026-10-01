@@ -3255,6 +3255,12 @@ msgstr "Instalar seleccionadas ({count})"
 msgid "Checked to install — actions apply to all of them"
 msgstr "Marcados para instalar: las acciones se aplican a todos"
 
+msgid "Uninstall Selected ({count})"
+msgstr "Desinstalar seleccionadas ({count})"
+
+msgid "Marked — actions apply to all of them"
+msgstr "Marcados: las acciones se aplican a todos"
+
 msgid "{size} to download"
 msgstr "{size} para descargar"
 
