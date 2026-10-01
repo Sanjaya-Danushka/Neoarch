@@ -607,7 +607,7 @@ class PackageDetailCard(QFrame):
         self.revdeps_section.setVisible(True)
         self.desc_section.setVisible(True)
 
-    def show_selection(self, pkgs, download_size=0):
+    def show_selection(self, pkgs, download_size=0, action="update"):
         """Show the aggregate panel for a multi-row selection.
 
         Per-package rows and the AUR-only actions describe exactly one
@@ -636,8 +636,14 @@ class PackageDetailCard(QFrame):
         self.name_label.setText(
             _("{count} package{s} selected").format(
                 count=count, s="" if count == 1 else "s"))
-        self.version_label.setText(
-            _("Checked for update — actions apply to all of them"))
+        labels = {
+            "update": (_("Update Selected ({count})"),
+                       _("Checked for update — actions apply to all of them")),
+            "install": (_("Install Selected ({count})"),
+                        _("Checked to install — actions apply to all of them")),
+        }
+        primary_text, sub_text = labels.get(action, labels["update"])
+        self.version_label.setText(sub_text)
 
         self.status_badge.setVisible(False)
         chips = " &nbsp;·&nbsp; ".join(
@@ -664,8 +670,7 @@ class PackageDetailCard(QFrame):
         self.up_to_date_label.setVisible(False)
         self.aur_sep.setVisible(False)
         self.aur_actions.setVisible(False)
-        self.selection_update_btn.setText(
-            _("Update Selected ({count})").format(count=count))
+        self.selection_update_btn.setText(primary_text.format(count=count))
         self.selection_update_btn.setVisible(True)
         self.selection_clear_btn.setVisible(True)
 

@@ -357,6 +357,16 @@ class UpdatesModel(QAbstractTableModel):
     def checked_packages(self):
         return [p for p in self._pkgs if self._pkg_key(p) in self._checked]
 
+    def panel_packages(self):
+        """Packages the user has marked, in row order.
+
+        Includes the selection-only check the Installed and Plugins rows use
+        (they have no batch column), so the detail panel can follow marks on
+        every page instead of only where a real checkbox exists.
+        """
+        return [p for p in self._pkgs
+                if self._pkg_key(p) in self._checked or self._pkg_key(p) in self._selection]
+
     def is_all_checked(self):
         return bool(self._pkgs) and len(self._checked) >= len(self._pkgs)
 
@@ -895,6 +905,9 @@ class UpdatesTable(QTableView):
 
     def checked_packages(self):
         return self.model.checked_packages()
+
+    def panel_packages(self):
+        return self.model.panel_packages()
 
     def set_all_checked(self, state):
         self.model.set_all_checked(state)

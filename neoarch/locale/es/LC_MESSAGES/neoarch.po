@@ -3249,6 +3249,12 @@ msgstr "{count} paquete{s} seleccionado{s}"
 msgid "Checked for update — actions apply to all of them"
 msgstr "Marcados para actualizar: las acciones se aplican a todos"
 
+msgid "Install Selected ({count})"
+msgstr "Instalar seleccionadas ({count})"
+
+msgid "Checked to install — actions apply to all of them"
+msgstr "Marcados para instalar: las acciones se aplican a todos"
+
 msgid "{size} to download"
 msgstr "{size} para descargar"
 

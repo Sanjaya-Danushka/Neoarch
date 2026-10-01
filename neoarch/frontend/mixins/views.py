@@ -1367,7 +1367,7 @@ class _ViewsMixin:
         self.updates_table.setVisible(False)
         self.updates_table.row_selected.connect(self._on_updates_table_row_selected)
         self.updates_table.row_cleared.connect(self._on_updates_table_row_cleared)
-        self.updates_table.rows_multi_selected.connect(self._show_multi_selection_for_updates)
+        self.updates_table.rows_multi_selected.connect(self._on_rows_multi_selected)
         self.updates_table.menu_action.connect(self._on_updates_table_menu)
         self.updates_table.checks_changed.connect(self._on_table_checks_changed)
         table_area_layout.addWidget(self.updates_table, 1)
@@ -1399,9 +1399,9 @@ class _ViewsMixin:
         self.package_detail_card.check_updates_btn.clicked.connect(self._check_updates_for_detail)
         self.package_detail_card.updates_check_completed.connect(self._on_update_check_result)
         self.package_detail_card.selection_update_requested.connect(
-            self._update_selected_updates_table)
+            self._run_panel_primary_action)
         self.package_detail_card.selection_clear_requested.connect(
-            self._clear_updates_checked)
+            self._clear_panel_selection)
         packages_content_layout.addWidget(self.package_detail_card, 0, Qt.AlignmentFlag.AlignRight)
 
         self.packages_panel_layout.addWidget(self.packages_content_area, 1)
@@ -3356,17 +3356,10 @@ class _ViewsMixin:
             self.updates_table.set_loading(False)
 
     def _on_updates_table_row_selected(self, pkg):
-        if self.current_view == "discover":
-            self._show_detail_for_discover(pkg)
-        elif self.current_view == "plugins":
-            self._show_detail_for_plugins(pkg)
-        elif self.current_view == "updates":
-            # The same click toggled this row's checkbox, so the check-driven
-            # panel is already correct; re-rendering the single row here would
-            # throw away the summary for a multi-package selection.
-            self._sync_updates_panel_for_checks()
-        else:
-            self._show_detail_for_updates(pkg)
+        # A left click toggled this row's check, so the check-driven panel is
+        # already correct on every page; re-rendering the single row here would
+        # throw away the summary for a multi-package selection.
+        self._sync_panel_for_checks()
 
     def _show_detail_for_discover(self, pkg):
         """Open the detail card for a Discover result row."""
@@ -3457,40 +3450,86 @@ class _ViewsMixin:
         except Exception:
             self.package_detail_card.clear()
 
-    def _sync_updates_panel_for_checks(self):
+    def _panel_packages(self):
+        """Packages the user has marked on the surface currently on screen."""
+        try:
+            if getattr(self, '_view_mode', 'table') == "grid":
+                grid = getattr(self, 'packages_grid', None)
+                if grid is not None and hasattr(grid, 'get_checked_packages'):
+                    return list(grid.get_checked_packages())
+            table = getattr(self, 'updates_table', None)
+            if table is not None and hasattr(table, 'panel_packages'):
+                return list(table.panel_packages())
+            return list(self.get_checked_packages_for_view())
+        except Exception:
+            return []
+
+    def _panel_action_kind(self):
+        """What the summary card's action does on the page being viewed."""
+        if self.current_view in ("discover", "plugins"):
+            return "install"
+        return "update"
+
+    def _show_panel_detail(self, pkg):
+        """Render the one marked package the way its own page does."""
+        view = self.current_view
+        if view == "discover":
+            self._show_detail_for_discover(pkg)
+        elif view == "plugins":
+            self._show_detail_for_plugins(pkg)
+        elif view == "updates" or getattr(self, '_view_mode', 'table') != "grid":
+            self._show_detail_for_updates(pkg)
+        else:
+            self._show_detail_for_grid(pkg)
+
+    def _run_panel_primary_action(self):
+        """Apply the summary card's action to every marked package."""
+        view = self.current_view
+        try:
+            if view == "discover":
+                return self.install_selected()
+            if view == "plugins":
+                handler = getattr(self, '_on_plugins_install_selected', None)
+                if callable(handler):
+                    return handler()
+                return self.install_selected()
+            return self.update_selected()
+        except Exception as e:
+            self.log(f"Error running panel action: {e}")
+
+    def _sync_panel_for_checks(self):
         """Point the right-hand panel at whatever the user has checked.
 
-        A left click in the updates table toggles the row's checkbox, so the
-        checkboxes - not the row highlight - are the selection a user can
-        actually build up. One checked package gets its detail card; two or
-        more get the aggregate summary; none closes the panel.
+        A left click in a package list toggles the row's check, so the checks -
+        not the row highlight - are the selection a user can actually build up.
+        One marked package gets its detail card; two or more get the aggregate
+        summary; none closes the panel.
         """
-        if self.current_view != "updates":
+        card = getattr(self, 'package_detail_card', None)
+        if card is None:
             return
         try:
-            pkgs = self.get_checked_packages_for_view()
+            pkgs = self._panel_packages()
         except Exception:
             pkgs = []
         if not pkgs:
-            self.package_detail_card.clear()
+            card.clear()
             return
         if len(pkgs) == 1:
-            self._show_detail_for_updates(pkgs[0])
+            self._show_panel_detail(pkgs[0])
             return
-        self.package_detail_card.show_selection(
-            pkgs, download_size=self._sum_download_size(pkgs))
+        card.show_selection(
+            pkgs, download_size=self._sum_download_size(pkgs),
+            action=self._panel_action_kind())
 
     def _on_updates_table_row_cleared(self):
         """Row highlight cleared.
 
-        On Updates the checkboxes own the panel, so an empty row highlight is
+        The checks own the panel on every page, so an empty row highlight is
         not an empty selection: clicking past the last row must not close the
-        card while packages are still checked.
+        card while packages are still marked.
         """
-        if self.current_view == "updates":
-            self._sync_updates_panel_for_checks()
-            return
-        self.package_detail_card.clear()
+        self._sync_panel_for_checks()
 
     def _sum_download_size(self, pkgs):
         """Total download size of a package list; 0 when sizes are unknown."""
@@ -3502,28 +3541,31 @@ class _ViewsMixin:
             return 0
         return total
 
-    def _show_multi_selection_for_updates(self, pkgs):
+    def _on_rows_multi_selected(self, pkgs):
         """Row highlight covers several packages (keyboard selection).
 
-        A left click toggles the row's checkbox instead, so the checked set
-        drives the panel; this path only serves a multi-row highlight that
-        the keyboard can still produce.
+        A left click toggles the row's check instead, so the marked set drives
+        the panel; this path only serves a multi-row highlight that the
+        keyboard can still produce.
         """
-        try:
-            if self.current_view != "updates":
-                self.package_detail_card.clear()
-                return
-            self._sync_updates_panel_for_checks()
-        except Exception:
-            self.package_detail_card.clear()
+        self._sync_panel_for_checks()
 
-    def _clear_updates_checked(self):
-        """Clear the checkbox selection the panel summarises."""
+    def _clear_panel_selection(self):
+        """Clear the marked selection the panel summarises."""
+        card = getattr(self, 'package_detail_card', None)
+        if card is None:
+            return
         try:
+            if getattr(self, '_view_mode', 'table') == "grid":
+                grid = getattr(self, 'packages_grid', None)
+                if grid is not None and hasattr(grid, 'set_all_checked'):
+                    grid.set_all_checked(False)
+                    card.clear()
+                    return
             self.updates_table.set_all_checked(False)
         except Exception:
             pass
-        self.package_detail_card.clear()
+        card.clear()
 
     def _show_detail_for_grid(self, pkg):
         """Open the right-side detail card for a grid card, like the table."""
@@ -4103,13 +4145,15 @@ class _ViewsMixin:
     # ── live selection summary (Updates / Installed toolbars) ──────────
 
     def _on_table_checks_changed(self, checked, total):
+        # The panel follows the marks on every page, so sync it before the
+        # per-page toolbar state below.
+        self._sync_panel_for_checks()
         if self.current_view == "plugins":
             self._on_plugins_selection_changed(checked)
             return
         if self.current_view == "discover":
             self._update_discover_install_btn_state()
             return
-        self._sync_updates_panel_for_checks()
         label = getattr(self, '_selection_summary_label', None)
         if label is not None:
             if checked:
