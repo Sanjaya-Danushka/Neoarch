@@ -1088,7 +1088,7 @@ class UpdatesTable(QTableView):
         self.checks_changed.emit(checked, total)
 
     def selected_packages(self):
-        """Package dicts for the selected rows, in visible row order."""
+        """Package dicts for the highlighted rows, in visible row order."""
         rows = sorted({i.row() for i in self.selectionModel().selectedRows()})
         pkgs = []
         for row in rows:
@@ -1097,10 +1097,6 @@ class UpdatesTable(QTableView):
                 pkgs.append(pkg)
         return pkgs
 
-    def clear_row_selection(self):
-        """Drop the row selection (fires row_cleared through the model)."""
-        self.clearSelection()
-
     def _on_selection_changed(self, selected, deselected):
         rows = sorted({i.row() for i in self.selectionModel().selectedRows()})
         if len(rows) == 1:
@@ -1108,8 +1104,8 @@ class UpdatesTable(QTableView):
             if pkg:
                 self.row_selected.emit(pkg)
         elif rows:
-            # A multi-row selection is a real selection, not "no selection":
-            # the side panel summarises it instead of closing.
+            # A multi-row highlight is a real state: the side panel follows the
+            # checked selection, which a left click builds up instead.
             self.rows_multi_selected.emit(self.selected_packages())
         else:
             self.row_cleared.emit()

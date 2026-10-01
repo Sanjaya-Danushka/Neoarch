@@ -859,20 +859,11 @@ def test_plugins_list_installed_row_selects_enables_clear_only(qapp):
     assert table.model.is_installed_selected(rows[bb_row]) is False
     assert stub._plugins_clear_btn.enabled is False
 
-
-def _card_mixin(table, view="updates"):
+def _panel_mixin(view="updates"):
+    """Mixin host whose panel state is driven by the table's checkboxes."""
     from neoarch.frontend.components.package_detail_card import PackageDetailCard
 
     obj = _ViewsMixin.__new__(_ViewsMixin)
-    obj.updates_table = table
-    obj.package_detail_card = PackageDetailCard()
-    obj.package_detail_card.show()
-    obj.current_view = view
-    obj.log = lambda *a, **k: None
-    return obj
-
-
-def _size_table():
     table = UpdatesTable(_FakeApp())
     table.set_enrich(False)
     table.set_packages([
@@ -883,65 +874,117 @@ def _size_table():
         {"name": "yay", "id": "yay", "version": "1.0", "new_version": "2.0",
          "source": "AUR", "download_size": "nonsense"},
     ])
-    return table
+    obj.updates_table = table
+    obj.package_detail_card = PackageDetailCard()
+    obj.package_detail_card.show()
+    obj.current_view = view
+    obj.log = lambda *a, **k: None
+    obj.get_checked_packages_for_view = lambda: table.checked_packages()
+    obj._sum_download_size = lambda pkgs: _ViewsMixin._sum_download_size(obj, pkgs)
+    obj._show_detail_for_updates = lambda pkg: _ViewsMixin._show_detail_for_updates(obj, pkg)
+    return obj
 
 
-def test_multi_row_selection_shows_summary_card_on_updates(qapp):
-    table = _size_table()
-    mixin = _card_mixin(table)
+def _check_row(mixin, row, checked=True):
+    mixin.updates_table.model.setData(
+        mixin.updates_table.model.index(row, 0),
+        Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked,
+        Qt.ItemDataRole.CheckStateRole)
+    mixin._on_table_checks_changed(
+        len(mixin.updates_table.model.checked_packages()),
+        mixin.updates_table.row_count())
 
-    mixin._show_multi_selection_for_updates([
-        {"name": "bash", "source": "pacman", "download_size": "1.00 MiB"},
-        {"name": "yay", "source": "AUR", "download_size": "512.00 KiB"},
-    ], )
 
+def test_one_checked_row_shows_that_detail_card(qapp):
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
     card = mixin.package_detail_card
+    assert card._multi_mode is False
+    assert card.name_label.text() == "bash"
+    assert card.update_btn.isVisible() is True
+
+
+def test_two_checked_rows_show_the_summary_card(qapp):
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    _check_row(mixin, 2)
+    card = mixin.package_detail_card
+
     assert card._multi_mode is True
     assert card.name_label.text() == "2 packages selected"
     assert card.selection_update_btn.text() == "Update Selected (2)"
+    assert "1 AUR" in card.selection_sources_label.text()
+    assert "1 pacman" in card.selection_sources_label.text()
+    # Only the parseable size counts; a nonsense size is skipped, not fatal.
+    assert card.selection_size_label.text() == "1.0 MiB to download"
 
 
-def test_multi_row_selection_ignored_off_updates_page(qapp):
-    table = _size_table()
-    mixin = _card_mixin(table, view="installed")
+def test_unchecking_back_to_one_row_restores_the_detail_card(qapp):
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+    assert mixin.package_detail_card._multi_mode is True
 
-    mixin._show_multi_selection_for_updates([{"name": "bash", "source": "pacman"}])
+    _check_row(mixin, 1, checked=False)
+    card = mixin.package_detail_card
+    assert card._multi_mode is False
+    assert card.name_label.text() == "bash"
+    assert card.selection_section.isVisible() is False
+    assert card.details_section.isVisible() is True
 
+
+def test_unchecking_everything_closes_the_panel(qapp):
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+    _check_row(mixin, 0, checked=False)
+    _check_row(mixin, 1, checked=False)
+    assert mixin.updates_table.model.checked_packages() == []
+    assert mixin.package_detail_card.isVisible() is False
+
+
+def test_row_highlight_alone_does_not_close_a_multi_check_panel(qapp):
+    # Clicking past the last row clears the row highlight; the checked
+    # selection - which the panel summarises - must survive it.
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+    assert mixin.package_detail_card._multi_mode is True
+
+    mixin.updates_table.clearSelection()
+    QApplication.instance().processEvents()
+
+    assert mixin.updates_table.selected_packages() == []
+    assert mixin.package_detail_card._multi_mode is True
+    assert mixin.package_detail_card.name_label.text() == "2 packages selected"
+
+
+def test_clicking_a_checked_row_shows_summary_not_that_row(qapp):
+    # The second click emits both checks_changed and row_selected; the row must
+    # not overwrite the summary with its own single-package card.
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+    mixin._on_updates_table_row_selected(
+        mixin.updates_table.model.package_at(1))
+    assert mixin.package_detail_card._multi_mode is True
+    assert mixin.package_detail_card.name_label.text() == "2 packages selected"
+
+
+def test_panel_untouched_on_other_views(qapp):
+    mixin = _panel_mixin(view="installed")
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
     assert mixin.package_detail_card._multi_mode is False
     assert mixin.package_detail_card.name_label.text() == ""
+
+
+def test_clear_selection_button_unchecks_everything(qapp):
+    mixin = _panel_mixin()
+    _check_row(mixin, 0)
+    _check_row(mixin, 1)
+
+    mixin._clear_updates_checked()
+
+    assert mixin.updates_table.model.checked_packages() == []
     assert mixin.package_detail_card.isVisible() is False
-
-
-def test_clear_selection_handler_drops_table_rows(qapp):
-    table = _size_table()
-    mixin = _card_mixin(table)
-    _select_rows(table, 0, 1)
-    assert [p["id"] for p in table.selected_packages()] == ["bash", "curl"]
-
-    mixin._clear_updates_row_selection()
-
-    assert table.selected_packages() == []
-    assert mixin.package_detail_card.isVisible() is False
-
-
-def test_sum_download_size_sums_and_tolerates_garbage(qapp):
-    mixin = _card_mixin(_size_table())
-
-    total = mixin._sum_download_size([
-        {"download_size": "1.00 MiB"},
-        {"download_size": "512.00 KiB"},
-        {"download_size": "not a size"},
-        {},
-    ])
-
-    assert total == 1024 * 1024 + 512 * 1024
-    assert mixin._sum_download_size(None) == 0
-
-
-def _select_rows(table, *rows):
-    from PyQt6.QtCore import QItemSelectionModel
-
-    flags = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
-    for row in rows:
-        table.selectionModel().select(table.model.index(row, 0), flags)
-        QApplication.instance().processEvents()

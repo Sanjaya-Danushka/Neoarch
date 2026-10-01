@@ -405,41 +405,6 @@ class _OperationsMixin:
         self.installation_progress.emit("start", True)
         update_service.update_packages(self, packages_by_source)
 
-    def update_selected_from_selection(self):
-        """Update exactly the packages selected as rows in the updates table.
-
-        Row selection is independent of the checkbox selection the toolbar
-        counts, so this reads the rows themselves and applies one partial
-        update across them, grouped by source.
-        """
-        try:
-            pkgs = self.updates_table.selected_packages()
-        except Exception:
-            pkgs = []
-        if not pkgs:
-            self.log("No packages selected for update")
-            return
-        packages_by_source = {}
-        for pkg in pkgs:
-            source = pkg.get('source') or 'pacman'
-            name = (pkg.get('name') or '').strip()
-            if not name:
-                continue
-            packages_by_source.setdefault(source, []).append(name)
-        if not packages_by_source:
-            self.log("No packages selected for update")
-            return
-        if not self._confirm_partial_update(packages_by_source):
-            return
-        if any(s in ('pacman', 'AUR') for s in packages_by_source) \
-                and not self._db_lock_preflight(operation="Update packages"):
-            return
-        if not self.ensure_session_auth():
-            self.log("Update cancelled: authentication required.")
-            return
-        self.installation_progress.emit("start", True)
-        update_service.update_packages(self, packages_by_source)
-
     def _update_selected_updates_table(self):
         """Update the packages checked in the redesigned updates table."""
         packages_by_source = {}

@@ -1366,7 +1366,7 @@ class _ViewsMixin:
         self.updates_table = UpdatesTable(self)
         self.updates_table.setVisible(False)
         self.updates_table.row_selected.connect(self._on_updates_table_row_selected)
-        self.updates_table.row_cleared.connect(lambda: self.package_detail_card.clear())
+        self.updates_table.row_cleared.connect(self._on_updates_table_row_cleared)
         self.updates_table.rows_multi_selected.connect(self._show_multi_selection_for_updates)
         self.updates_table.menu_action.connect(self._on_updates_table_menu)
         self.updates_table.checks_changed.connect(self._on_table_checks_changed)
@@ -1399,9 +1399,9 @@ class _ViewsMixin:
         self.package_detail_card.check_updates_btn.clicked.connect(self._check_updates_for_detail)
         self.package_detail_card.updates_check_completed.connect(self._on_update_check_result)
         self.package_detail_card.selection_update_requested.connect(
-            self.update_selected_from_selection)
+            self._update_selected_updates_table)
         self.package_detail_card.selection_clear_requested.connect(
-            self._clear_updates_row_selection)
+            self._clear_updates_checked)
         packages_content_layout.addWidget(self.package_detail_card, 0, Qt.AlignmentFlag.AlignRight)
 
         self.packages_panel_layout.addWidget(self.packages_content_area, 1)
@@ -3360,6 +3360,11 @@ class _ViewsMixin:
             self._show_detail_for_discover(pkg)
         elif self.current_view == "plugins":
             self._show_detail_for_plugins(pkg)
+        elif self.current_view == "updates":
+            # The same click toggled this row's checkbox, so the check-driven
+            # panel is already correct; re-rendering the single row here would
+            # throw away the summary for a multi-package selection.
+            self._sync_updates_panel_for_checks()
         else:
             self._show_detail_for_updates(pkg)
 
@@ -3452,6 +3457,41 @@ class _ViewsMixin:
         except Exception:
             self.package_detail_card.clear()
 
+    def _sync_updates_panel_for_checks(self):
+        """Point the right-hand panel at whatever the user has checked.
+
+        A left click in the updates table toggles the row's checkbox, so the
+        checkboxes - not the row highlight - are the selection a user can
+        actually build up. One checked package gets its detail card; two or
+        more get the aggregate summary; none closes the panel.
+        """
+        if self.current_view != "updates":
+            return
+        try:
+            pkgs = self.get_checked_packages_for_view()
+        except Exception:
+            pkgs = []
+        if not pkgs:
+            self.package_detail_card.clear()
+            return
+        if len(pkgs) == 1:
+            self._show_detail_for_updates(pkgs[0])
+            return
+        self.package_detail_card.show_selection(
+            pkgs, download_size=self._sum_download_size(pkgs))
+
+    def _on_updates_table_row_cleared(self):
+        """Row highlight cleared.
+
+        On Updates the checkboxes own the panel, so an empty row highlight is
+        not an empty selection: clicking past the last row must not close the
+        card while packages are still checked.
+        """
+        if self.current_view == "updates":
+            self._sync_updates_panel_for_checks()
+            return
+        self.package_detail_card.clear()
+
     def _sum_download_size(self, pkgs):
         """Total download size of a package list; 0 when sizes are unknown."""
         total = 0
@@ -3463,30 +3503,26 @@ class _ViewsMixin:
         return total
 
     def _show_multi_selection_for_updates(self, pkgs):
-        """Open the right-side panel for a multi-row selection on Updates.
+        """Row highlight covers several packages (keyboard selection).
 
-        A set of packages has no single detail to show, so the card switches
-        to a summary with a per-source breakdown and one action for the whole
-        selection. The table is shared with Installed/Discover/Plugins, which
-        keep their single-row behaviour: a multi-row selection there closes
-        the card instead of summarising it.
+        A left click toggles the row's checkbox instead, so the checked set
+        drives the panel; this path only serves a multi-row highlight that
+        the keyboard can still produce.
         """
         try:
             if self.current_view != "updates":
                 self.package_detail_card.clear()
                 return
-            self.package_detail_card.show_selection(
-                pkgs, download_size=self._sum_download_size(pkgs))
+            self._sync_updates_panel_for_checks()
         except Exception:
             self.package_detail_card.clear()
 
-    def _clear_updates_row_selection(self):
+    def _clear_updates_checked(self):
+        """Clear the checkbox selection the panel summarises."""
         try:
-            self.updates_table.clear_row_selection()
+            self.updates_table.set_all_checked(False)
         except Exception:
             pass
-        # Clear explicitly too: the card is hidden even when the table had no
-        # row selection left to clear (its clear() is idempotent).
         self.package_detail_card.clear()
 
     def _show_detail_for_grid(self, pkg):
@@ -4073,6 +4109,7 @@ class _ViewsMixin:
         if self.current_view == "discover":
             self._update_discover_install_btn_state()
             return
+        self._sync_updates_panel_for_checks()
         label = getattr(self, '_selection_summary_label', None)
         if label is not None:
             if checked:

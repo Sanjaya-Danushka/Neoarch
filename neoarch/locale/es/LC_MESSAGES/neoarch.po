@@ -3248,8 +3248,8 @@ msgstr "Selección"
 msgid "{count} package{s} selected"
 msgstr "{count} paquete{s} seleccionado{s}"
 
-msgid "Rows selected — actions apply to all of them"
-msgstr "Filas seleccionadas: las acciones se aplican a todas"
+msgid "Checked for update — actions apply to all of them"
+msgstr "Marcados para actualizar: las acciones se aplican a todos"
 
 msgid "{size} to download"
 msgstr "{size} para descargar"

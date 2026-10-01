@@ -627,7 +627,7 @@ class PackageDetailCard(QFrame):
             _("{count} package{s} selected").format(
                 count=count, s="" if count == 1 else "s"))
         self.version_label.setText(
-            _("Rows selected — actions apply to all of them"))
+            _("Checked for update — actions apply to all of them"))
 
         self.status_badge.setVisible(False)
         chips = " &nbsp;·&nbsp; ".join(

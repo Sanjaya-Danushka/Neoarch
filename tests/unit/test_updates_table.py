@@ -336,7 +336,10 @@ def _record_events(table):
     return events
 
 
-def test_multi_row_selection_emits_summary_not_clear(qapp):
+def test_multi_row_highlight_reports_state_not_clear(qapp):
+    # A left click toggles the checkbox instead of extending the highlight, so
+    # this covers the keyboard path; either way the panel must not be told the
+    # selection was emptied.
     table = _make_table()
     events = _record_events(table)
 
@@ -362,26 +365,32 @@ def test_shrinking_to_one_row_returns_to_detail_card(qapp):
     assert events[-1] == ("one", "pkg-1")
 
 
-def test_clearing_rows_emits_clear(qapp):
+def test_empty_highlight_emits_clear(qapp):
     table = _make_table()
     events = _record_events(table)
 
     _select_rows(table, 0, 1)
-    table.clear_row_selection()
+    table.clearSelection()
     qapp.processEvents()
 
     assert events[-1] == ("none",)
     assert table.selected_packages() == []
 
 
-def test_selected_packages_follow_rows_not_checkboxes(qapp):
+def test_highlight_and_checkbox_are_independent(qapp):
+    # A click checks the row and leaves the highlight on that same row, so the
+    # checkbox set is the only selection a user can build up by mouse.
     table = _make_table()
-    table.model.setData(table.model.index(0, 0), Qt.CheckState.Checked,
-                        Qt.ItemDataRole.CheckStateRole)
+    events = _record_events(table)
+    model = table.model
+    idx0, idx1 = model.index(0, 0), model.index(1, 0)
 
-    _select_rows(table, 1, 2)
+    model.setData(idx0, Qt.CheckState.Checked, Qt.ItemDataRole.CheckStateRole)
+    _select_rows(table, 0)
+    model.setData(idx1, Qt.CheckState.Checked, Qt.ItemDataRole.CheckStateRole)
+    qapp.processEvents()
 
-    assert [p["id"] for p in table.selected_packages()] == ["pkg-1", "pkg-2"]
-    # The checkbox selection is untouched by row selection and vice versa.
-    assert table.model._checked == {("pkg-0", "pacman")}
+    assert [p["id"] for p in model.checked_packages()] == ["pkg-0", "pkg-1"]
+    assert [p["id"] for p in table.selected_packages()] == ["pkg-0"]
+    assert events[-1] == ("one", "pkg-0")
 

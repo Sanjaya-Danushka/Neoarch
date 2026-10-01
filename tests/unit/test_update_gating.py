@@ -65,14 +65,6 @@ def test_available_none_when_nothing_loaded(qapp):
     fake = _Fake()
     assert _OperationsMixin._available_arch_updates(fake) == []
 
-class _SelectionTable:
-    def __init__(self, pkgs):
-        self._pkgs = pkgs
-
-    def selected_packages(self):
-        return self._pkgs
-
-
 class _Progress:
     def __init__(self):
         self.emitted = []
@@ -81,17 +73,20 @@ class _Progress:
         self.emitted.append(args)
 
 
-class _SelectionApp:
-    """Stub host for the multi-row update action."""
+class _CheckedApp:
+    """Stub host for the checkbox-driven batch update path."""
 
-    def __init__(self, pkgs, confirm=True, locked=True, authed=True):
-        self.updates_table = _SelectionTable(pkgs)
+    def __init__(self, pkgs, confirm=True, authed=True, view="updates"):
         self.installation_progress = _Progress()
+        self.current_view = view
+        self._pkgs = pkgs
         self.confirmed = None
-        self.locked = locked
         self.authed = authed
         self._confirm_result = confirm
         self.logs = []
+
+    def get_checked_packages_for_view(self):
+        return list(self._pkgs)
 
     def log(self, *args, **kwargs):
         self.logs.append(args)
@@ -99,9 +94,6 @@ class _SelectionApp:
     def _confirm_partial_update(self, packages_by_source):
         self.confirmed = packages_by_source
         return self._confirm_result
-
-    def _db_lock_preflight(self, operation=""):
-        return self.locked
 
     def ensure_session_auth(self):
         return self.authed
@@ -115,9 +107,9 @@ def _captured_updates(monkeypatch):
     return calls
 
 
-def test_multi_row_action_groups_selected_rows_by_source(qapp, monkeypatch):
+def test_checkbox_update_groups_by_source(qapp, monkeypatch):
     calls = _captured_updates(monkeypatch)
-    fake = _SelectionApp([
+    fake = _CheckedApp([
         {"name": "bash", "source": "pacman"},
         {"name": "curl", "source": "pacman"},
         {"name": "yay", "source": "AUR"},
@@ -125,7 +117,7 @@ def test_multi_row_action_groups_selected_rows_by_source(qapp, monkeypatch):
         {"name": "", "source": "pacman"},
     ])
 
-    _OperationsMixin.update_selected_from_selection(fake)
+    _OperationsMixin._update_selected_updates_table(fake)
 
     expected = {"pacman": ["bash", "curl"], "AUR": ["yay"], "Flatpak": ["code"]}
     assert fake.confirmed == expected
@@ -133,33 +125,31 @@ def test_multi_row_action_groups_selected_rows_by_source(qapp, monkeypatch):
     assert fake.installation_progress.emitted == [("start", True)]
 
 
-def test_multi_row_action_stops_when_confirmation_declined(qapp, monkeypatch):
+def test_checkbox_update_stops_when_confirmation_declined(qapp, monkeypatch):
     calls = _captured_updates(monkeypatch)
-    fake = _SelectionApp([{"name": "bash", "source": "pacman"}], confirm=False)
+    fake = _CheckedApp([{"name": "bash", "source": "pacman"}], confirm=False)
 
-    _OperationsMixin.update_selected_from_selection(fake)
+    _OperationsMixin._update_selected_updates_table(fake)
 
     assert calls == []
     assert fake.installation_progress.emitted == []
 
 
-def test_multi_row_action_respects_db_lock_and_auth(qapp, monkeypatch):
+def test_checkbox_update_stops_without_auth(qapp, monkeypatch):
     calls = _captured_updates(monkeypatch)
-    locked = _SelectionApp([{"name": "bash", "source": "pacman"}], locked=False)
-    _OperationsMixin.update_selected_from_selection(locked)
+    fake = _CheckedApp([{"name": "bash", "source": "pacman"}], authed=False)
+
+    _OperationsMixin._update_selected_updates_table(fake)
+
     assert calls == []
-
-    unauthed = _SelectionApp([{"name": "bash", "source": "pacman"}], authed=False)
-    _OperationsMixin.update_selected_from_selection(unauthed)
-    assert calls == []
-    assert unauthed.installation_progress.emitted == []
+    assert fake.installation_progress.emitted == []
 
 
-def test_multi_row_action_noop_without_selection(qapp, monkeypatch):
+def test_checkbox_update_noop_without_checked_rows(qapp, monkeypatch):
     calls = _captured_updates(monkeypatch)
-    fake = _SelectionApp([])
+    fake = _CheckedApp([])
 
-    _OperationsMixin.update_selected_from_selection(fake)
+    _OperationsMixin._update_selected_updates_table(fake)
 
     assert calls == []
     assert fake.confirmed is None
