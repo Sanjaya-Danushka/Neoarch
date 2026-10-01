@@ -31,7 +31,8 @@ def qapp():
 
 
 class _FakeApp:
-    def get_source_icon(self, source, size):
+    @staticmethod
+    def get_source_icon(source, size):
         return None
 
 
@@ -892,7 +893,7 @@ def _panel_mixin(view="updates", packages=None, view_mode="table"):
     obj.current_view = view
     obj._view_mode = view_mode
     obj.log = lambda *a, **k: None
-    obj.get_checked_packages_for_view = lambda: table.checked_packages()
+    obj.get_checked_packages_for_view = table.checked_packages
     obj._sum_download_size = lambda pkgs: _ViewsMixin._sum_download_size(obj, pkgs)
     obj._show_detail_for_updates = lambda pkg: _ViewsMixin._show_detail_for_updates(obj, pkg)
     return obj

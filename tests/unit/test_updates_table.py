@@ -398,7 +398,6 @@ def test_highlight_and_checkbox_are_independent(qapp):
 
 def _click_row(table, row):
     """Click a row the way a left click does: toggles the row's mark."""
-    model = table.model
     table._toggle_check(row, None)
 
 

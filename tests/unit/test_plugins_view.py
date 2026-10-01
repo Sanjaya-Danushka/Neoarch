@@ -179,7 +179,7 @@ def test_prewarm_installed_cache_detects_meta_package_via_cmd(qapp, monkeypatch)
     monkeypatch.setattr(pv_mod.shutil, "which",
                         lambda name: "/usr/bin/" + name if name == "qemu-system-x86_64" else None)
 
-    view = PluginsView.__new__(PluginsView)
+    view = _bare_view()
     view._installed_cache = {}
     view._prewarm_installed_cache()
 
@@ -201,7 +201,7 @@ def test_is_installed_strips_aur_prefix_before_pacman_qi(qapp, monkeypatch):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    view = PluginsView.__new__(PluginsView)
+    view = _bare_view()
     view._installed_cache = {}
     assert view.is_installed({"id": "aur-yay", "pkg": "aur/yay", "cmd": None}) is True
     assert "-Qi" in seen[0] and seen[0][-1] == "yay"
@@ -211,7 +211,7 @@ def test_get_plugin_resolves_live_search_specs(qapp):
     """Cards created from pacman/AUR live-search results carry prefixed ids
     ('pacman-pandoc'); get_plugin must resolve them so batch installs no longer
     collapse into the misleading 'Nothing to install' path."""
-    view = PluginsView.__new__(PluginsView)
+    view = _bare_view()
     view.plugins = []
     spec = {"id": "pacman-pandoc", "name": "pandoc", "pkg": "pandoc", "cmd": None}
     view._dynamic_specs = {"pacman-pandoc": spec}
@@ -259,6 +259,23 @@ def test_plugin_card_double_click_launches_when_installed(qapp):
     assert launched == []
 
 
+class _BarePluginsView(PluginsView):
+    """A PluginsView with no Qt setup, for exercising its pure helpers.
+
+    The methods under test only read attributes the test sets, so the
+    widget's ``__init__`` is skipped. ``PluginsView.__new__(PluginsView)``
+    did the same thing, but reads like a classmethod call missing its
+    ``cls``.
+    """
+
+    def __init__(self):
+        pass
+
+
+def _bare_view():
+    return _BarePluginsView()
+
+
 def _card_spec(pid, installed=False, category="", source="pacman"):
     return {"plugin": {"id": pid, "name": pid.capitalize(), "category": category, "pkg": source},
             "installed": installed, "widget": None}
@@ -277,7 +294,7 @@ def test_plugins_view_sort_cards_orders_by_mode(qapp):
         _card_spec("a", installed=True, category="Games"),
         _card_spec("c", installed=False, category="System"),
     ]
-    view = PluginsView.__new__(PluginsView)
+    view = _bare_view()
     view._sort_mode = "name_asc"
     view._get_package_source = PluginsView._get_package_source
     assert [c["plugin"]["id"] for c in PluginsView._sort_cards(view, cards)] == ["a", "b", "c"]
@@ -615,8 +632,6 @@ def test_discover_grid_card_for_an_installed_result_is_not_selectable(qapp):
     """A Discover search hit that is already installed has nothing to install,
     so its card offers no checkbox: ticking it would only inflate the count
     that Install Selected acts on."""
-    from neoarch.frontend.components.packages_grid_view import PackageCard
-
     installed = PackageCard(
         {"name": "bash", "source": "pacman", "_installed": True}, 0, None)
     available = PackageCard(
@@ -633,9 +648,8 @@ def test_discover_grid_card_for_an_installed_result_is_not_selectable(qapp):
 
 
 def test_discover_grid_clicking_an_installed_card_does_not_tick_it(qapp):
-    from PyQt6.QtCore import QPointF, Qt
+    from PyQt6.QtCore import QPointF
     from PyQt6.QtGui import QMouseEvent
-    from PyQt6.QtWidgets import QApplication
 
     card = PackageCard({"name": "bash", "source": "pacman", "_installed": True}, 0, None)
     card.resize(card.CARD_W, card.CARD_H)
