@@ -25,6 +25,19 @@ Changes on the `dev` branch that will land in the next release.
   all sense of what they had picked. The summary's action reuses the same
   confirm/lock/auth path as the toolbar's Update Selected, so the panel and
   the toolbar can never disagree about what is selected.
+- **The multi-selection panel now works on every package page, not just
+  Updates**. Installed, Discover and Plugins were still wired to Qt's row
+  highlight, which a mouse click never sets: a second click silently dropped
+  the first pick, and the user was left looking at one package they had
+  actually un-picked. All pages now follow the rows the user has marked -
+  none closes the panel, one keeps its detail card, two or more get the same
+  count / per-source breakdown / total download size summary. Installed and
+  Plugins rows have no batch column, so their selection-only check now counts
+  as a mark too, which is what makes multi-select possible there at all. The
+  summary action follows the page it is on: Install Selected (N) on Discover
+  and Plugins, Update Selected (N) on Updates and Installed. Grid views are
+  read from the grid, and Clear Selection clears whichever surface is on
+  screen.
 
 ---
 
