@@ -10,6 +10,75 @@ dialog shows after an update.
 
 ---
 
+## Unreleased (dev branch)
+
+Changes on the `dev` branch that will land in the next release.
+
+### New Features
+
+- **Multi-package selections on the Updates page now summarise instead of
+  vanishing**. Checking two or more packages opens a panel that counts them,
+  breaks the total down per source (pacman, AUR, Flatpak, ...) and adds up
+  the download size, with a single Update Selected (N) action that applies to
+  exactly the checked rows. Previously any multi-row selection emitted the
+  same signal as an empty one, so the detail card closed and the user lost
+  all sense of what they had picked. The summary's action reuses the same
+  confirm/lock/auth path as the toolbar's Update Selected, so the panel and
+  the toolbar can never disagree about what is selected.
+
+---
+
+### Bug Fixes
+
+- **The right-hand panel on Updates follows the checkboxes, not the row
+  highlight**. A left click in the updates table toggles the row's checkbox
+  and never reaches Qt's row selection, and the toggle ended with
+  `setCurrentIndex()`, which collapsed the highlight back to a single row. So
+  a multi-selection - the only kind a mouse can build - was invisible to the
+  panel, which showed one arbitrary package and closed entirely when the user
+  clicked past the last row. Nothing checked now closes the panel, one checked
+  package keeps its detail card (a single click is unchanged), two or more
+  show the aggregate summary, and clicking empty space no longer throws the
+  summary away.
+- **Installed AUR packages keep an update button even with no detected version
+  bump**. Such a package previously showed its three AUR actions (View
+  PKGBUILD, View Changes, Download snapshot) plus Uninstall - and no way to
+  act on it, because the button was gated on `has_update`. That gate fits the
+  official repos, where nothing changes without a version bump, but an AUR
+  "update" rebuilds from the PKGBUILD: the recipe, the base or a dependency
+  may have moved while the version string did not. Every installed AUR package
+  now offers the update on the Updates, Installed and Discover views; packages
+  that are not installed keep Install (there is nothing to rebuild), an
+  up-to-date official package still gets no update button, and the plugins page
+  keeps its uninstall/launch flow since plugins are updated by reinstalling
+  them there.
+- **pipx updates are detected again when pipx drops the `--outdated` flag**.
+  Newer pipx no longer prints that header on every run, so the marker the
+  loader looked for was simply absent and pipx packages were reported
+  up-to-date. Detection now keys off the packages themselves rather than the
+  flag.
+- **`/usr/bin/neoarch` now starts the GUI again.** The AUR PKGBUILDs installed
+  two entries in `/usr/bin` - `neoarch-cli` and `neo` - and both pointed at
+  the CLI, so no `neoarch` executable was ever placed on PATH and
+  `neoarch --version` failed with "command not found". The GUI was only
+  reachable by clicking the desktop icon, which is why it looked like it
+  worked. `neoarch` is now a symlink to the GUI launcher, alongside the
+  existing `neoarch-cli` / `neo`. Affects both `neoarch` and `neoarch-git`,
+  and was never specific to the AUR helper used - yay and paru read the same
+  PKGBUILD.
+
+---
+
+### Improvements
+
+- **The update button reads Update for every source.** The AUR variant was
+  labelled "Rebuild & Update" to avoid confusion with a binary upgrade from
+  the official repos; since the label is now simply "Update" everywhere, the
+  source-specific wording is gone from the detail card. The three AUR actions
+  above it still show what the rebuild reads.
+
+---
+
 ## 3.3.3 — 2026-09-28
 
 ### New Features
