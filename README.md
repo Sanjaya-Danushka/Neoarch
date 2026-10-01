@@ -6,7 +6,7 @@
 
 <br/>
 
-[![AUR](https://img.shields.io/badge/AUR-neoarch--git-00BFAE?style=flat-square&labelColor=161B22&logo=archlinux&logoColor=white)](https://aur.archlinux.org/packages/neoarch-git)
+[![AUR](https://img.shields.io/badge/AUR-neoarch-00BFAE?style=flat-square&labelColor=161B22&logo=archlinux&logoColor=white)](https://aur.archlinux.org/packages/neoarch)
 [![Version](https://img.shields.io/github/v/release/Sanjaya-Danushka/Neoarch?style=flat-square&label=Version&color=00BFAE&labelColor=161B22)](https://github.com/Sanjaya-Danushka/Neoarch/releases)
 [![Stars](https://img.shields.io/github/stars/Sanjaya-Danushka/Neoarch?style=flat-square&label=Stars&color=00BFAE&labelColor=161B22)](https://github.com/Sanjaya-Danushka/Neoarch/stargazers)
 [![Last commit](https://img.shields.io/github/last-commit/Sanjaya-Danushka/Neoarch?style=flat-square&label=Last%20commit&color=00BFAE&labelColor=161B22)](https://github.com/Sanjaya-Danushka/Neoarch/commits/dev)
