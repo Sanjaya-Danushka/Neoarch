@@ -464,6 +464,7 @@ class PackageDetailCard(QFrame):
         description = pkg_data.get("description", "")
         pkg_id = pkg_data.get("id", name)
         view = pkg_data.get("_view", "")
+        is_aur = source.upper() == "AUR"
 
         sc = self._source_color(source)
 
@@ -576,9 +577,18 @@ class PackageDetailCard(QFrame):
             self.check_updates_btn.setVisible(False)
             self.up_to_date_label.setVisible(False)
 
-        is_aur = source.upper() == "AUR"
         self.aur_sep.setVisible(is_aur)
         self.aur_actions.setVisible(is_aur)
+
+        # An AUR "update" rebuilds from the PKGBUILD, so it stays worth
+        # offering when no newer version was detected - the recipe, the base or
+        # a dependency may have changed. Every installed AUR package therefore
+        # keeps the rebuild next to its three AUR actions. The plugins page is
+        # the exception: plugins are updated by reinstalling them there.
+        if is_aur and installed and view != "plugins" \
+                and not self.update_btn.isVisible():
+            self.install_btn.setVisible(False)
+            self.update_btn.setVisible(True)
 
         # An AUR "update" rebuilds from the PKGBUILD — say so, so the button
         # does not read like a binary upgrade from the official repos.

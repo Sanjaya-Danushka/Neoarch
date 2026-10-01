@@ -50,6 +50,59 @@ def test_aur_update_button_says_rebuild(qapp):
     assert card.update_btn.text() == "Update Package"
 
 
+@pytest.mark.parametrize("view", ["updates", "installed", "discover"])
+def test_installed_aur_package_always_offers_the_rebuild(qapp, view):
+    # The three AUR actions show next to the rebuild, and a rebuild stays
+    # meaningful with no newer version: the PKGBUILD, base or a dep changed.
+    card = PackageDetailCard()
+    card.show()
+    card.show_package({"name": "yay", "version": "12.4.1", "source": "AUR",
+                       "installed": True, "has_update": False,
+                       "description": "AUR helper", "_view": view})
+
+    assert card.aur_actions.isVisible() is True
+    assert card.update_btn.isVisible() is True
+    assert card.update_btn.text() == "Rebuild & Update"
+    assert card.install_btn.isVisible() is False
+
+
+def test_up_to_date_pacman_package_still_has_no_update_button(qapp):
+    card = PackageDetailCard()
+    card.show()
+    card.show_package({"name": "bash", "version": "5.2", "source": "pacman",
+                       "installed": True, "has_update": False,
+                       "description": "GNU shell", "_view": "installed"})
+
+    assert card.aur_actions.isVisible() is False
+    assert card.update_btn.isVisible() is False
+    assert card.uninstall_btn.isVisible() is True
+
+
+def test_aur_package_that_is_not_installed_offers_install_not_rebuild(qapp):
+    card = PackageDetailCard()
+    card.show()
+    card.show_package({"name": "yay", "version": "12.4.1", "source": "AUR",
+                       "installed": False, "has_update": False,
+                       "description": "AUR helper", "_view": "installed"})
+
+    assert card.install_btn.isVisible() is True
+    assert card.update_btn.isVisible() is False
+
+
+def test_plugins_page_keeps_its_own_actions_for_aur(qapp):
+    # Plugins are updated by reinstalling them there, so the plugins view
+    # keeps uninstall/launch instead of a rebuild button.
+    card = PackageDetailCard()
+    card.show()
+    card.show_package({"name": "some-plugin", "version": "1.0", "source": "AUR",
+                       "installed": True, "has_update": False,
+                       "description": "plugin", "_view": "plugins"})
+
+    assert card.update_btn.isVisible() is False
+    assert card.uninstall_btn.isVisible() is True
+    assert card.launch_btn.isVisible() is True
+
+
 def test_show_selection_replaces_single_package_fields(qapp):
     card = PackageDetailCard()
     card.show()
