@@ -10,9 +10,7 @@ dialog shows after an update.
 
 ---
 
-## Unreleased (dev branch)
-
-Changes on the `dev` branch that will land in the next release.
+## 3.4.0 — 2026-10-01
 
 ### New Features
 
@@ -38,11 +36,38 @@ Changes on the `dev` branch that will land in the next release.
   and Plugins, Update Selected (N) on Updates and Installed. Grid views are
   read from the grid, and Clear Selection clears whichever surface is on
   screen.
+- **A multi-selection can now be removed, not just updated.** The summary
+  panel offered exactly one action, so on Installed - where a multi-selection
+  is usually several up-to-date packages - the only way to remove anything was
+  to drop back to a single row. Updates and Installed now show an
+  Uninstall Selected (N) button beside the update, applying to exactly the
+  marked rows through the same confirmation, database-lock and auth checks as
+  a single-package removal. Discover and Plugins do not offer it: their rows
+  are not all installed, and plugins uninstall through their own manager.
+- **The summary no longer offers an update it cannot perform.** Installed rows
+  are marked `Installed` even when a newer version exists, so a selection of
+  only up-to-date packages showed "Update Selected (N)" - a button that would
+  run and change nothing. When nothing in the selection has a pending update,
+  the summary now reads Uninstall Selected (N) instead, matching what the
+  single-row card already does for the same package. As soon as one marked
+  package does have an update, both buttons appear. When the primary action is
+  the removal, no second Uninstall button is added - one removal control is
+  enough.
 
 ---
 
 ### Bug Fixes
 
+- **An already-installed Discover result can no longer be selected, so it no
+  longer inflates the count.** A search often returns packages you already
+  have. Those rows are drawn dimmed and skipped by Install Selected, but a
+  click still marked them through the selection-only check that the Installed
+  and Plugins pages use - a mark that exists there precisely because the row
+  *is* the thing being acted on. On Discover it only padded the total, so a
+  selection of two real packages could report three. Installed rows on
+  Discover are now inert in both surfaces: clicking the table row still opens
+  the detail card but does not mark it, and the grid card's checkbox is
+  disabled. Select-all skips them too. The Installed page is unchanged.
 - **The right-hand panel on Updates follows the checkboxes, not the row
   highlight**. A left click in the updates table toggles the row's checkbox
   and never reaches Qt's row selection, and the toggle ended with
