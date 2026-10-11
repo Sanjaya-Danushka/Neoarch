@@ -31,6 +31,18 @@ class NotificationsSettingsWidget(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(24)
 
+        self.channel_card: Any = None
+        self.event_card: Any = None
+        self.rate_card: Any = None
+        self.sw_desktop: Any = None
+        self.sw_inapp: Any = None
+        self.sw_sound: Any = None
+        self.sw_install: Any = None
+        self.sw_updates: Any = None
+        self.sw_errors: Any = None
+        self.sw_connection: Any = None
+        self.cooldown_stepper: Any = None
+
         self.setup_ui()
 
     def setup_ui(self):

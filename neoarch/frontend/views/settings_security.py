@@ -71,7 +71,7 @@ def _pulse(widget, pulses=2, duration=1100):
 
     anim.valueChanged.connect(_apply)
     anim.finished.connect(_done)
-    widget._pulse_anim = anim
+    widget.pulse_anim = anim
     anim.start()
 
 

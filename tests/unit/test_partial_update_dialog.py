@@ -112,4 +112,4 @@ def test_blocked_disables_selection_and_links_settings(qapp):
 def test_not_blocked_has_no_settings_link(qapp):
     dlg = PartialUpdateDialog(_total_updates(), {"pacman": ["firefox"]})
     assert dlg.selection_btn.isEnabled() is True
-    assert not hasattr(dlg, "settings_btn")
+    assert dlg.settings_btn is None

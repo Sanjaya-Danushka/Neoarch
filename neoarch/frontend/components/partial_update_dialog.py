@@ -79,6 +79,7 @@ class PartialUpdateDialog(QDialog):
             "QDialog { background-color: rgba(22, 23, 26, 235); }")
         self.choice = None
         self.blocked = blocked
+        self.settings_btn = None
         self._on_open_settings = on_open_settings
         self._build(total_updates, packages_by_source)
 
