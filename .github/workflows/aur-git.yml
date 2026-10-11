@@ -76,6 +76,10 @@ jobs:
           cp packaging/neoarch-git.install aur-repo/
           cp packaging/.SRCINFO aur-repo/
           cd aur-repo
+          # The AUR clone can end up on a detached HEAD (its symbolic HEAD has
+          # come loose before), which makes `git push origin HEAD` fail. Pin to
+          # the real branch so the push is always a fast-forward to master.
+          git checkout master
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
@@ -83,5 +87,5 @@ jobs:
             echo "No changes to push"
           else
             git commit -m "Update neoarch-git from dev branch (${GITHUB_SHA::7})"
-            git push origin HEAD
+            git push origin master
           fi
