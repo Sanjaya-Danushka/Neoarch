@@ -3170,3 +3170,63 @@ msgstr "kararlı"
 
 msgid "Chaotic AUR is built against Arch's newest (unstable) libraries. Manjaro is on the '{branch}' branch, which lags behind Arch and can break on mixed package sets. Switch to 'unstable' first (recommended only for experienced users)."
 msgstr "Chaotic AUR, Arch'ın en yeni (kararsız) kitaplıklarına karşı derlenmiştir. Manjaro '{branch}' dalındadır; bu dal Arch'ın gerisinde kalır ve karışık paket kümelerinde bozulabilir. Önce 'unstable' dalına geçin (yalnızca deneyimli kullanıcılar için önerilir)."
+msgid "Block partial updates"
+msgstr "Kısmi güncellemeleri engelle"
+
+msgid "Locks the “Update Selection” option in the partial-update warning so only full system upgrades can run. Use this if you never want a selection-only upgrade to slip through."
+msgstr "Yalnızca tam sistem güncellemelerinin çalışabilmesi için kısmi güncelleme uyarısındaki «Seçimi Güncelle» seçeneğini kilitler. Yalnızca seçim güncellemesinin asla gözden kaçmasını istemiyorsanız bunu kullanın."
+
+msgid "Warned before anything runs"
+msgstr "Her şey çalışmadan önce uyarı"
+
+msgid "Risky moves get a warning and your explicit confirmation. The one hard stop is “Block partial updates” above — when it is on, a selection-only upgrade is refused outright."
+msgstr "Riskli işlemler bir uyarı ve açık onayınızı gerektirir. Tek sert engel yukarıdaki «Kısmi güncellemeleri engelle» seçeneğidir — açıkken yalnızca seçim güncellemesi doğrudan reddedilir."
+
+msgid "Partial updates are blocked"
+msgstr "Kısmi güncellemeler engellendi"
+
+msgid "A selection-only upgrade can desync libraries and break your system. Turn off “Block partial updates” in Settings → Security to allow it, or use Update All."
+msgstr "Yalnızca seçim güncellemesi kitaplıkları uyumsuz hale getirip sisteminizi bozabilir. İzin vermek için Ayarlar → Güvenlik bölümünde «Kısmi güncellemeleri engelle» seçeneğini kapatın veya Tümünü Güncelle'yi kullanın."
+
+msgid "Open Security settings"
+msgstr "Güvenlik ayarlarını aç"
+
+msgid "Blocked in Settings → Security. Turn off “Block partial updates” to allow selection-only upgrades."
+msgstr "Ayarlar → Güvenlik bölümünde engellendi. Yalnızca seçim güncellemelerine izin vermek için «Kısmi güncellemeleri engelle» seçeneğini kapatın."
+msgid "Selection"
+msgstr "Seçim"
+
+msgid "{count} package{s} selected"
+msgstr "{count} paket{s} seçildi"
+
+msgid "Checked for update — actions apply to all of them"
+msgstr "Güncelleme için işaretlendi — işlemler tümüne uygulanır"
+
+msgid "Install Selected ({count})"
+msgstr "Seçilenleri kur ({count})"
+
+msgid "Checked to install — actions apply to all of them"
+msgstr "Kurulum için işaretlendi — işlemler tümüne uygulanır"
+
+msgid "Uninstall Selected ({count})"
+msgstr "Seçilenleri kaldır ({count})"
+
+msgid "Marked — actions apply to all of them"
+msgstr "İşaretlendi — işlemler tümüne uygulanır"
+
+msgid "{size} to download"
+msgstr "İndirilecek {size}"
+
+msgid "Update Selected ({count})"
+msgstr "Seçilenleri güncelle ({count})"
+
+msgid "Clear Selection"
+msgstr "Seçimi temizle"
+msgid "Internet connection changes"
+msgstr "İnternet bağlantısı değişiklikleri"
+
+msgid "When you go offline or come back online."
+msgstr "Çevrimdışı olduğunuzda veya yeniden çevrimiçi olduğunuzda."
+
+msgid "Free Software"
+msgstr "Özgür Yazılım"

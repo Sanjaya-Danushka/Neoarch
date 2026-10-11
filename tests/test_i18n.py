@@ -109,12 +109,13 @@ def test_bundled_catalogs_load():
 
 
 def test_bundled_catalogs_cover_wrapped_strings():
-    # Every msgid used by the wired UI must have an es translation so the
-    # live language switch actually shows something.
+    # Every msgid used by the wired UI must have a translation in every
+    # bundled catalog so the live language switch actually shows something.
     wrapped = _wrapped_msgids()
     assert len(wrapped) >= 350, len(wrapped)
-    es = i18n.load_catalog("es")
-    missing = wrapped - set(es)
-    assert not missing, f"missing Spanish translations: {sorted(missing)[:20]}"
+    for lang in i18n.available_languages():
+        cat = i18n.load_catalog(lang)
+        missing = wrapped - set(cat)
+        assert not missing, f"missing {lang} translations: {sorted(missing)[:20]}"
     si = i18n.load_catalog("si")
     assert {"General", "SETTINGS", "Maintenance"} <= set(si)

@@ -68,6 +68,7 @@ and dependencies/source builds are in [Install](#install) below.
 - **Snapshots** — pick your engine, Timeshift **or** Snapper (BTRFS): list, create, revert, delete — automatically before risky operations, with optional pacman hooks so every update captures a Snapper snapshot.
 - **System backups** — Btrfs-aware backups (package list + config export) with auto-prune keeping the last 5.
 - **Hygiene tools** — orphan removal, `.pacnew`/`.pacsave` diffs and merging, cache + BleachBit cleaning, and Arch news with offline caching.
+- **Partial-update guard** — warnings on selection-only Arch upgrades, with a **Block partial updates** switch in Settings → Security to enforce full-system upgrades.
 - **PKGBUILD scanner** — static analysis mode flags risky post-install tools, elevation, dynamic shell, local binaries, and Unicode homograph spoofing (rules ported from [ArchCanary](https://github.com/musqz/archcanary)).
 
 ### Workspace &amp; cloud
@@ -251,6 +252,6 @@ On Arch, system `pip` usually triggers `externally-managed-environment` — pref
 
 <a name="license"></a>
 
-<sub>MIT License · [Project](https://github.com/Sanjaya-Danushka/Neoarch) · [Website](https://neoarch.dpdns.org/) · Built by [Sanjaya Danushka](https://github.com/Sanjaya-Danushka)</sub>
+<sub>GPL-3.0-or-later · [Project](https://github.com/Sanjaya-Danushka/Neoarch) · [Website](https://neoarch.dpdns.org/) · Built by [Sanjaya Danushka](https://github.com/Sanjaya-Danushka)</sub>
 
 </div>

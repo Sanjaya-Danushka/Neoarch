@@ -14,7 +14,7 @@ NeoArch v1.0-beta - Initial Release
 - Professional project structure
 - Comprehensive documentation
 - Security-focused design
-- MIT licensed open source
+- Free software under GPL-3.0-or-later
 
 ### 📦 Installation
 - Available on AUR: `yay -S neoarch-git`

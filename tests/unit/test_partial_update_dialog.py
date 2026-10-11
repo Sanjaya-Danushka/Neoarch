@@ -93,3 +93,23 @@ def test_cancel_choice(qapp):
     dlg.reject()
     assert dlg.result() == 0
     assert dlg.result_choice() is None
+
+
+def test_blocked_disables_selection_and_links_settings(qapp):
+    calls = []
+    dlg = PartialUpdateDialog(
+        _total_updates(), {"pacman": ["firefox"]},
+        blocked=True, on_open_settings=lambda: calls.append(True))
+    assert dlg.selection_btn.isEnabled() is False
+    assert dlg.update_all_btn.isEnabled() is True
+    assert dlg.settings_btn is not None
+    dlg.settings_btn.click()
+    assert calls == [True]
+    assert dlg.result() == 0
+    assert dlg.result_choice() is None
+
+
+def test_not_blocked_has_no_settings_link(qapp):
+    dlg = PartialUpdateDialog(_total_updates(), {"pacman": ["firefox"]})
+    assert dlg.selection_btn.isEnabled() is True
+    assert not hasattr(dlg, "settings_btn")

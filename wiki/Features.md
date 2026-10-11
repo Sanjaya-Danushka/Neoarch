@@ -105,7 +105,10 @@ scriptable CLI. It lets you:
   per-package details.
 - **Partial-update warnings** — selecting part of the available Arch updates
   triggers an explicit warning to prevent silent partial upgrades that can
-  break dependencies.
+  break dependencies. A **Block partial updates** toggle in Settings →
+  Security can enforce full upgrades: the warning stays, but the
+  "I understand — Update Selection" action is disabled and links back to the
+  toggle.
 - Update Selected / Update All actions, per-package update, ignore individual
   updates (persisted to `~/.config/neoarch/ignored_updates.json`).
 - Per-package AUR updates, not only a bulk refresh.

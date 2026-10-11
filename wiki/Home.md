@@ -75,7 +75,7 @@ wiki/
 
 ## 📝 License
 
-NeoArch is licensed under the [MIT License](https://github.com/Sanjaya-Danushka/Neoarch/blob/main/LICENSE)
+NeoArch is free software licensed under the [GNU General Public License v3.0 or later](https://github.com/Sanjaya-Danushka/Neoarch/blob/main/LICENSE)
 
 ---
 

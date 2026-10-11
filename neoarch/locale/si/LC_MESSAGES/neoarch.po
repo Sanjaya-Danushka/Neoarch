@@ -3170,3 +3170,63 @@ msgstr "ස්ථායී"
 
 msgid "Chaotic AUR is built against Arch's newest (unstable) libraries. Manjaro is on the '{branch}' branch, which lags behind Arch and can break on mixed package sets. Switch to 'unstable' first (recommended only for experienced users)."
 msgstr "Chaotic AUR නිර්මාණය කර ඇත්තේ Arch හි නවතම (අස්ථායී) පුස්තකාලවලට එරෙහිවය. Manjaro '{branch}' ශාඛාවේ ඇත, එය Arch ට වඩා පසුගාමී වන අතර මිශ්ර පැකේජ සමූහවලදී කැඩී යා හැක. පළමුව 'unstable' වෙත මාරු වන්න (පළපුරුදු පරිශීලකයින්ට පමණක් නිර්දේශ කෙරේ)."
+msgid "Block partial updates"
+msgstr "අර්ධ යාවත්කාලීන කිරීම් අවහිර කරන්න"
+
+msgid "Locks the “Update Selection” option in the partial-update warning so only full system upgrades can run. Use this if you never want a selection-only upgrade to slip through."
+msgstr "සම්පූර්ණ පද්ධති යාවත්කාලීන පමණක් ක්‍රියාත්මක වන පරිදි අර්ධ යාවත්කාලීන අනතුරු ඇඟවීමේ “තේරීම යාවත්කාලීන කරන්න” විකල්පය අගුළු දමයි. තේරීම පමණක් යාවත්කාලීන කිරීම කිසිවිටෙක ඉවතට යාමට ඔබ අකමැති නම් මෙය භාවිතා කරන්න."
+
+msgid "Warned before anything runs"
+msgstr "කිසිවක් ක්‍රියාත්මක වීමට පෙර අනතුරු ඇඟවීම"
+
+msgid "Risky moves get a warning and your explicit confirmation. The one hard stop is “Block partial updates” above — when it is on, a selection-only upgrade is refused outright."
+msgstr "අවදානම් ක්‍රියා සඳහා අනතුරු ඇඟවීමක් සහ ඔබේ පැහැදිලි තහවුරු කිරීමක් ලැබේ. එකම දැඩි අවහිරය ඉහත “අර්ධ යාවත්කාලීන කිරීම් අවහිර කරන්න” වේ — එය ක්‍රියාත්මක විට තේරීම පමණක් යාවත්කාලීන කිරීමක් සම්පූර්ණයෙන් ප්‍රතික්ෂේප වේ."
+
+msgid "Partial updates are blocked"
+msgstr "අර්ධ යාවත්කාලීන කිරීම් අවහිර කර ඇත"
+
+msgid "A selection-only upgrade can desync libraries and break your system. Turn off “Block partial updates” in Settings → Security to allow it, or use Update All."
+msgstr "තේරීම පමණක් යාවත්කාලීන කිරීමක් පුස්තකාල විසමමුහුර්ත කර ඔබේ පද්ධතිය බිඳ දැමිය හැක. එයට ඉඩ දීමට සැකසුම් → ආරක්ෂාව තුළ “අර්ධ යාවත්කාලීන කිරීම් අවහිර කරන්න” ක්‍රියාවිරහිත කරන්න, නැතහොත් සියල්ල යාවත්කාලීන කරන්න භාවිතා කරන්න."
+
+msgid "Open Security settings"
+msgstr "ආරක්ෂක සැකසුම් විවෘත කරන්න"
+
+msgid "Blocked in Settings → Security. Turn off “Block partial updates” to allow selection-only upgrades."
+msgstr "සැකසුම් → ආරක්ෂාව තුළ අවහිර කර ඇත. තේරීම පමණක් යාවත්කාලීන කිරීම්වලට ඉඩ දීමට “අර්ධ යාවත්කාලීන කිරීම් අවහිර කරන්න” ක්‍රියාවිරහිත කරන්න."
+msgid "Selection"
+msgstr "තේරීම"
+
+msgid "{count} package{s} selected"
+msgstr "පැකේජ {count}ක{s} තේරා ඇත"
+
+msgid "Checked for update — actions apply to all of them"
+msgstr "යාවත්කාලීනය සඳහා තේරා ඇත — ක්‍රියා සියල්ලටම අදාළ වේ"
+
+msgid "Install Selected ({count})"
+msgstr "තේරූ ඒවා ස්ථාපනය කරන්න ({count})"
+
+msgid "Checked to install — actions apply to all of them"
+msgstr "ස්ථාපනය සඳහා තේරා ඇත — ක්‍රියා සියල්ලටම අදාළ වේ"
+
+msgid "Uninstall Selected ({count})"
+msgstr "තේරූ ඒවා අස්ථාපනය කරන්න ({count})"
+
+msgid "Marked — actions apply to all of them"
+msgstr "සලකුණු කර ඇත — ක්‍රියා සියල්ලටම අදාළ වේ"
+
+msgid "{size} to download"
+msgstr "බාගැනීමට {size}"
+
+msgid "Update Selected ({count})"
+msgstr "තේරූ ඒවා යාවත්කාලීන කරන්න ({count})"
+
+msgid "Clear Selection"
+msgstr "තේරීම හිස් කරන්න"
+msgid "Internet connection changes"
+msgstr "අන්තර්ජාල සම්බන්ධතාවයේ වෙනස්වීම්"
+
+msgid "When you go offline or come back online."
+msgstr "ඔබ නොබැඳි වන විට හෝ නැවත සම්බන්ධ වන විට."
+
+msgid "Free Software"
+msgstr "නිදහස් මෘදුකාංග"

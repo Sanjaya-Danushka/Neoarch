@@ -136,7 +136,7 @@ def show_help(parent, current_view: str):
         "• Desktop-environment-aware authentication</p>"
         '<p>Website: <a href="https://neoarch.dpdns.org/" style="color: #00BFAE;">neoarch.dpdns.org</a><br>'
         'Repository: <a href="https://github.com/Sanjaya-Danushka/Neoarch" style="color: #00BFAE;">github.com/Sanjaya-Danushka/Neoarch</a><br>'
-        "License: MIT</p>"
+        "License: GPL-3.0-or-later</p>"
     )
     about_v.addWidget(about_browser)
     tabs.addTab(about_widget, "About")

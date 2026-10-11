@@ -6,12 +6,16 @@ oriented app: it flags risky actions but rarely blocks them, so this page
 spells out the "why" behind every guardrail as a set of Do's and Don'ts.
 """
 
+import math
 import webbrowser
 
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PyQt6.QtCore import QEasingCurve, QVariantAnimation
+from PyQt6.QtGui import QColor
+from PyQt6.QtWidgets import QFrame, QWidget, QVBoxLayout, QLabel
 
-from neoarch.frontend.tokens import Colors, Fonts
+from neoarch.frontend.tokens import Colors, Fonts, Radii
 from neoarch.backend.services.i18n import _
+from neoarch.frontend.components.toggle_switch import ToggleSwitch
 from neoarch.frontend.views._settings_kit import (
     make_card, row, sep, btn, actions_row, chip, advice)
 
@@ -41,6 +45,34 @@ def _warned_row(title, desc):
     """Row with an amber WARNED chip — the 'flagged but not blocked' look."""
     return row(title, desc, subtitle_color=_AMBER,
                control=chip(_("WARNED"), _AMBER))
+
+
+def _pulse(widget, pulses=2, duration=1100):
+    """Smoothly blink a widget's background to draw the eye, then restore."""
+    if widget is None:
+        return
+    accent = QColor(Colors.ACCENT)
+    original = widget.styleSheet()
+    anim = QVariantAnimation(widget)
+    anim.setStartValue(0.0)
+    anim.setEndValue(1.0)
+    anim.setDuration(duration)
+    anim.setEasingCurve(QEasingCurve.Type.InOutSine)
+
+    def _apply(v):
+        alpha = int(abs(math.sin(math.pi * pulses * v)) * 80)
+        widget.setStyleSheet(
+            f"{original}\n"
+            f"background-color: rgba({accent.red()}, {accent.green()}, "
+            f"{accent.blue()}, {alpha}); border-radius: 12px;")
+
+    def _done():
+        widget.setStyleSheet(original)
+
+    anim.valueChanged.connect(_apply)
+    anim.finished.connect(_done)
+    widget._pulse_anim = anim
+    anim.start()
 
 
 # ── Cards ───────────────────────────────────────────────────────────
@@ -73,14 +105,18 @@ def _sources_card():
     return card
 
 
-def _updates_card():
+def _updates_card(block_row=None):
     card, lay = make_card(_("Updates & Review"), _ICON_UPDATE)
 
+    if block_row is not None:
+        lay.addWidget(block_row)
+        lay.addWidget(sep())
+
     lay.addWidget(_warned_row(
-        _("Warned, not blocked"),
-        _("NeoArch never quietly blocks an action. Risky moves get a "
-          "warning and your explicit confirmation \u2014 you always hold "
-          "the final say.")))
+        _("Warned before anything runs"),
+        _("Risky moves get a warning and your explicit confirmation. The one "
+          "hard stop is \u201cBlock partial updates\u201d above \u2014 when it "
+          "is on, a selection-only upgrade is refused outright.")))
     lay.addWidget(sep())
     lay.addWidget(row(
         _("Full upgrades are the safe path"),
@@ -225,17 +261,54 @@ def _page_subtitle():
 class SecuritySettingsWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.app = parent
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(24)
 
         self.setup_ui()
 
+    def _block_toggle(self):
+        """Steering switch: enforce full upgrades over partial ones."""
+        settings = getattr(self.app, "settings", {}) or {}
+        toggle = ToggleSwitch(self, _("Block partial updates"))
+        toggle.setChecked(
+            bool(settings.get("block_partial_updates", True)), animate=False)
+        if self.app is not None:
+            toggle.toggled.connect(
+                lambda v: self.app.update_setting("block_partial_updates", v))
+        return toggle
+
+    def highlight_block_toggle(self):
+        """Briefly pulse the block-partial-updates row (used when arriving
+        here from the partial-update warning dialog)."""
+        _pulse(getattr(self, "_block_row", None))
+
     def setup_ui(self):
+        self._block_row = row(
+            _("Block partial updates"),
+            _("Locks the \u201cUpdate Selection\u201d option in the "
+              "partial-update warning so only full system upgrades can run. "
+              "Use this if you never want a selection-only upgrade to slip "
+              "through."),
+            control=self._block_toggle())
+
+        callout = QFrame()
+        callout.setObjectName("blockCallout")
+        callout.setStyleSheet(
+            f"QFrame#blockCallout {{"
+            f" background-color: {Colors.ACCENT_SOFT};"
+            f" border: 1px solid {Colors.ACCENT_BORDER};"
+            f" border-radius: {Radii.LG}px; }}")
+        callout_lay = QVBoxLayout(callout)
+        callout_lay.setContentsMargins(16, 14, 16, 14)
+        callout_lay.addWidget(self._block_row)
+        self._block_callout = callout
+
         self.layout.addWidget(_page_title())
         self.layout.addWidget(_page_subtitle())
         self.layout.addWidget(_sources_card())
-        self.layout.addWidget(_updates_card())
+        self.layout.addWidget(_updates_card(self._block_callout))
         self.layout.addWidget(_advice_card())
         self.layout.addWidget(_protection_card())
         self.layout.addWidget(_link_card())

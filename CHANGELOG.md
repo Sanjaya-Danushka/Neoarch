@@ -10,6 +10,28 @@ dialog shows after an update.
 
 ---
 
+## 3.4.1 — 2026-10-11
+
+### New Features
+
+- **Relicensed to GPL-3.0-or-later.** NeoArch is now free software under the
+  GNU General Public License, version 3 or any later version (previously MIT).
+
+- **Block partial updates from the Security settings page.** A new
+  "Block partial updates" toggle in Settings → Security — **on by default** —
+  enforces full system upgrades. When it is on, the partial-update warning
+  still explains the risk but disables the "I understand — Update Selection"
+  action and points to the toggle, so a selection-only upgrade can no longer
+  slip through. The dialog's "Open Security settings" link jumps to the
+  Security tab and pulses the toggle so it is easy to find.
+
+- **Independent "Internet connection changes" notification toggle.** Settings →
+  Notifications → Events now has a dedicated switch for the "No internet
+  connection" / "Connection restored" notices, so they can be turned on or off
+  without affecting the errors or updates channels.
+
+---
+
 ## 3.4.0 — 2026-10-01
 
 ### New Features

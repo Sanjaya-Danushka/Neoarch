@@ -1059,16 +1059,27 @@ class _ViewsMixin:
             self._show_message("Community Hub", f"Error opening community hub: {e}")
 
     def open_security_settings(self):
-        """Open the Settings page on the Security tab from the header button."""
+        """Open the Settings page on the Security tab from the header button
+        or the partial-update warning, pulsing the guard toggle to point at it.
+        """
         try:
             already = getattr(self, 'current_view', '') == 'settings'
             self.switch_view('settings')
+
+            def _focus():
+                self.switch_settings_category('security')
+                widget = getattr(self, 'settings_widgets', {}).get('security')
+                if widget is not None and hasattr(
+                        widget, 'highlight_block_toggle'):
+                    QTimer.singleShot(
+                        140, widget.highlight_block_toggle)
+
             if not already:
                 # build_settings_ui is queued on a 0ms timer by switch_view;
                 # wait for the sidebar + widgets to exist before selecting.
-                QTimer.singleShot(80, lambda: self.switch_settings_category('security'))
+                QTimer.singleShot(80, _focus)
             else:
-                self.switch_settings_category('security')
+                _focus()
         except Exception as e:
             self._show_message("Settings", f"Error opening security settings: {e}")
 
@@ -2932,14 +2943,14 @@ class _ViewsMixin:
         self._notify(
             _("No internet connection"),
             _("You appear to be offline. Search results may be incomplete and installations may fail."),
-            level="warning", event="errors",
+            level="warning", event="connection",
         )
 
     def _on_connection_restored(self):
         self._notify(
             _("Connection restored"),
             _("Internet connection is available again."),
-            level="success", event="updates",
+            level="success", event="connection",
         )
 
     def update_load_more_visibility(self):
@@ -4133,7 +4144,8 @@ class _ViewsMixin:
             settings = getattr(self, 'settings', None) or {}
             event_keys = {"install": "notify_on_install",
                           "updates": "notify_on_updates",
-                          "errors": "notify_on_errors"}
+                          "errors": "notify_on_errors",
+                          "connection": "notify_on_connection"}
             key = event_keys.get(event, "notify_on_install")
             if not settings.get(key, True):
                 return

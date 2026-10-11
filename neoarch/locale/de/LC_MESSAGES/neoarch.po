@@ -3170,3 +3170,63 @@ msgstr "stabil"
 
 msgid "Chaotic AUR is built against Arch's newest (unstable) libraries. Manjaro is on the '{branch}' branch, which lags behind Arch and can break on mixed package sets. Switch to 'unstable' first (recommended only for experienced users)."
 msgstr "Chaotic AUR wird gegen Archs neueste (instabile) Bibliotheken gebaut. Manjaro befindet sich im Zweig '{branch}', der hinter Arch zurückliegt und bei gemischten Paketsätzen brechen kann. Wechseln Sie zuerst auf 'unstable' (nur für erfahrene Benutzer empfohlen)."
+msgid "Block partial updates"
+msgstr "Teilaktualisierungen blockieren"
+
+msgid "Locks the “Update Selection” option in the partial-update warning so only full system upgrades can run. Use this if you never want a selection-only upgrade to slip through."
+msgstr "Sperrt die Option „Auswahl aktualisieren“ in der Warnung vor Teil-Updates, sodass nur vollständige Systemaktualisierungen ausgeführt werden können. Verwenden Sie dies, wenn eine reine Auswahlaktualisierung niemals durchrutschen soll."
+
+msgid "Warned before anything runs"
+msgstr "Warnung, bevor etwas ausgeführt wird"
+
+msgid "Risky moves get a warning and your explicit confirmation. The one hard stop is “Block partial updates” above — when it is on, a selection-only upgrade is refused outright."
+msgstr "Riskante Aktionen lösen eine Warnung und Ihre ausdrückliche Bestätigung aus. Die einzige harte Sperre ist „Teilaktualisierungen blockieren“ oben – ist sie aktiv, wird eine reine Auswahlaktualisierung rundheraus abgelehnt."
+
+msgid "Partial updates are blocked"
+msgstr "Teilaktualisierungen sind blockiert"
+
+msgid "A selection-only upgrade can desync libraries and break your system. Turn off “Block partial updates” in Settings → Security to allow it, or use Update All."
+msgstr "Eine reine Auswahlaktualisierung kann Bibliotheken aus dem Takt bringen und Ihr System beschädigen. Deaktivieren Sie „Teilaktualisierungen blockieren“ unter Einstellungen → Sicherheit, um sie zuzulassen, oder verwenden Sie „Alle aktualisieren“."
+
+msgid "Open Security settings"
+msgstr "Sicherheitseinstellungen öffnen"
+
+msgid "Blocked in Settings → Security. Turn off “Block partial updates” to allow selection-only upgrades."
+msgstr "Blockiert unter Einstellungen → Sicherheit. Deaktivieren Sie „Teilaktualisierungen blockieren“, um reine Auswahlaktualisierungen zuzulassen."
+msgid "Selection"
+msgstr "Auswahl"
+
+msgid "{count} package{s} selected"
+msgstr "{count} Paket{s} ausgewählt"
+
+msgid "Checked for update — actions apply to all of them"
+msgstr "Für Aktualisierung markiert – Aktionen gelten für alle"
+
+msgid "Install Selected ({count})"
+msgstr "Ausgewählte installieren ({count})"
+
+msgid "Checked to install — actions apply to all of them"
+msgstr "Zum Installieren markiert – Aktionen gelten für alle"
+
+msgid "Uninstall Selected ({count})"
+msgstr "Ausgewählte deinstallieren ({count})"
+
+msgid "Marked — actions apply to all of them"
+msgstr "Markiert – Aktionen gelten für alle"
+
+msgid "{size} to download"
+msgstr "{size} zum Herunterladen"
+
+msgid "Update Selected ({count})"
+msgstr "Ausgewählte aktualisieren ({count})"
+
+msgid "Clear Selection"
+msgstr "Auswahl aufheben"
+msgid "Internet connection changes"
+msgstr "Änderungen der Internetverbindung"
+
+msgid "When you go offline or come back online."
+msgstr "Wenn Sie offline gehen oder wieder online kommen."
+
+msgid "Free Software"
+msgstr "Freie Software"

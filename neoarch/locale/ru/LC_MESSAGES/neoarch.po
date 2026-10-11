@@ -3170,3 +3170,63 @@ msgstr "стабильный"
 
 msgid "Chaotic AUR is built against Arch's newest (unstable) libraries. Manjaro is on the '{branch}' branch, which lags behind Arch and can break on mixed package sets. Switch to 'unstable' first (recommended only for experienced users)."
 msgstr "Chaotic AUR собирается против новейших (нестабильных) библиотек Arch. Manjaro находится на ветке '{branch}', которая отстаёт от Arch и может сломаться при смешанных наборах пакетов. Сначала переключитесь на 'unstable' (рекомендуется только опытным пользователям)."
+msgid "Block partial updates"
+msgstr "Блокировать частичные обновления"
+
+msgid "Locks the “Update Selection” option in the partial-update warning so only full system upgrades can run. Use this if you never want a selection-only upgrade to slip through."
+msgstr "Блокирует параметр «Обновить выбранное» в предупреждении о частичном обновлении, чтобы выполнялись только полные обновления системы. Используйте, если не хотите, чтобы обновление только выбранного проходило незаметно."
+
+msgid "Warned before anything runs"
+msgstr "Предупреждение перед запуском"
+
+msgid "Risky moves get a warning and your explicit confirmation. The one hard stop is “Block partial updates” above — when it is on, a selection-only upgrade is refused outright."
+msgstr "Рискованные действия вызывают предупреждение и ваше явное подтверждение. Единственная жёсткая блокировка — «Блокировать частичные обновления» выше: когда она включена, обновление только выбранного сразу отклоняется."
+
+msgid "Partial updates are blocked"
+msgstr "Частичные обновления заблокированы"
+
+msgid "A selection-only upgrade can desync libraries and break your system. Turn off “Block partial updates” in Settings → Security to allow it, or use Update All."
+msgstr "Обновление только выбранного может рассинхронизировать библиотеки и сломать систему. Отключите «Блокировать частичные обновления» в разделе Настройки → Безопасность, чтобы разрешить, или используйте «Обновить всё»."
+
+msgid "Open Security settings"
+msgstr "Открыть настройки безопасности"
+
+msgid "Blocked in Settings → Security. Turn off “Block partial updates” to allow selection-only upgrades."
+msgstr "Заблокировано в Настройки → Безопасность. Отключите «Блокировать частичные обновления», чтобы разрешить обновления только выбранного."
+msgid "Selection"
+msgstr "Выбрано"
+
+msgid "{count} package{s} selected"
+msgstr "Выбрано пакетов: {count}"
+
+msgid "Checked for update — actions apply to all of them"
+msgstr "Отмечено для обновления — действия применяются ко всем"
+
+msgid "Install Selected ({count})"
+msgstr "Установить выбранное ({count})"
+
+msgid "Checked to install — actions apply to all of them"
+msgstr "Отмечено для установки — действия применяются ко всем"
+
+msgid "Uninstall Selected ({count})"
+msgstr "Удалить выбранное ({count})"
+
+msgid "Marked — actions apply to all of them"
+msgstr "Отмечено — действия применяются ко всем"
+
+msgid "{size} to download"
+msgstr "Скачать {size}"
+
+msgid "Update Selected ({count})"
+msgstr "Обновить выбранное ({count})"
+
+msgid "Clear Selection"
+msgstr "Снять выделение"
+msgid "Internet connection changes"
+msgstr "Изменения интернет-соединения"
+
+msgid "When you go offline or come back online."
+msgstr "Когда вы отключаетесь или снова подключаетесь к сети."
+
+msgid "Free Software"
+msgstr "Свободное ПО"

@@ -116,6 +116,14 @@ class NotificationsSettingsWidget(QWidget):
             _("Errors and warnings"),
             _("When an operation fails or emits warnings."),
             control=self.sw_errors))
+        lay.addWidget(sep())
+
+        self.sw_connection = self._toggle(
+            'notify_on_connection', True, _("Internet connection changes"))
+        lay.addWidget(row(
+            _("Internet connection changes"),
+            _("When you go offline or come back online."),
+            control=self.sw_connection))
 
     def setup_rate_limiting(self):
         self.rate_card, lay = make_card(_("Rate Limiting"), _ICON_TIMER)
