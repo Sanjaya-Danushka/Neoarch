@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>com.sanjayadanushka.NeoArch</id>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>MIT</project_license>
+  <project_license>GPL-3.0-or-later</project_license>
   <name>NeoArch</name>
   <summary>Package Manager for Arch Linux</summary>
   <description>

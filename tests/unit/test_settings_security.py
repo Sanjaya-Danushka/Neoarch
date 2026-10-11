@@ -1,8 +1,9 @@
 """Smoke tests for the Security settings page (educational card layout)."""
 
 import pytest
-from PyQt6.QtWidgets import QApplication, QLabel, QPushButton
+from PyQt6.QtWidgets import QApplication, QLabel, QPushButton, QWidget
 
+from neoarch.frontend.components.toggle_switch import ToggleSwitch
 from neoarch.frontend.views.settings_security import SecuritySettingsWidget
 
 
@@ -65,4 +66,27 @@ def test_aur_link_button_present(qapp):
     buttons = [b for b in w.findChildren(QPushButton)
                if "aur.archlinux.org" in b.text()]
     assert len(buttons) == 1
+    w.deleteLater()
+
+
+def test_block_partial_toggle_reflects_setting(qapp):
+    class _App(QWidget):
+        def __init__(self):
+            super().__init__()
+            self.settings = {"block_partial_updates": True}
+            self.updates = []
+
+        def update_setting(self, key, value):
+            self.settings[key] = value
+            self.updates.append((key, value))
+
+    app = _App()
+    w = SecuritySettingsWidget(app)
+    toggles = w.findChildren(ToggleSwitch)
+    assert len(toggles) == 1
+    toggle = toggles[0]
+    assert toggle.isChecked() is True
+    toggle.setChecked(False)
+    assert app.updates == [("block_partial_updates", False)]
+    w.highlight_block_toggle()
     w.deleteLater()

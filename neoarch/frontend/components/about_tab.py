@@ -366,7 +366,7 @@ class _OverviewTab(QWidget):
         grid.setSpacing(12)
         cards_data = [
             (_("Version"), APP_VERSION, _("{edition} Edition").format(edition=APP_EDITION), Colors.TEXT),
-            (_("License"), "MIT", _("Open Source"), Colors.GREEN),
+            (_("License"), "GPL-3.0-or-later", _("Free Software"), Colors.GREEN),
             (_("Platform"), f"{_platform.system()} {_platform.release()}",
              _platform.machine(), Colors.TEXT),
             (_("Python"), _platform.python_version(), _("Runtime"), Colors.TEXT),

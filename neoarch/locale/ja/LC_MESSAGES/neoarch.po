@@ -3170,3 +3170,63 @@ msgstr "安定版"
 
 msgid "Chaotic AUR is built against Arch's newest (unstable) libraries. Manjaro is on the '{branch}' branch, which lags behind Arch and can break on mixed package sets. Switch to 'unstable' first (recommended only for experienced users)."
 msgstr "Chaotic AUR は Arch の最新（不安定）ライブラリに対してビルドされています。Manjaro は '{branch}' ブランチにあり、Arch より遅れており、パッケージの混在で壊れることがあります。先に 'unstable' へ切り替えてください（経験者のみ推奨）。"
+msgid "Block partial updates"
+msgstr "部分更新をブロック"
+
+msgid "Locks the “Update Selection” option in the partial-update warning so only full system upgrades can run. Use this if you never want a selection-only upgrade to slip through."
+msgstr "部分更新の警告で「選択項目を更新」オプションをロックし、完全なシステム更新のみを実行できるようにします。選択のみの更新を絶対に通したくない場合に使用します。"
+
+msgid "Warned before anything runs"
+msgstr "実行前に警告"
+
+msgid "Risky moves get a warning and your explicit confirmation. The one hard stop is “Block partial updates” above — when it is on, a selection-only upgrade is refused outright."
+msgstr "危険な操作には警告と明示的な確認が表示されます。唯一の強制停止は上記の「部分更新をブロック」です。オンにすると、選択のみの更新は完全に拒否されます。"
+
+msgid "Partial updates are blocked"
+msgstr "部分更新はブロックされています"
+
+msgid "A selection-only upgrade can desync libraries and break your system. Turn off “Block partial updates” in Settings → Security to allow it, or use Update All."
+msgstr "選択のみの更新はライブラリの不整合を招き、システムを壊す可能性があります。許可するには設定 → セキュリティで「部分更新をブロック」をオフにするか、すべて更新を使用してください。"
+
+msgid "Open Security settings"
+msgstr "セキュリティ設定を開く"
+
+msgid "Blocked in Settings → Security. Turn off “Block partial updates” to allow selection-only upgrades."
+msgstr "設定 → セキュリティでブロックされています。選択のみの更新を許可するには「部分更新をブロック」をオフにしてください。"
+msgid "Selection"
+msgstr "選択"
+
+msgid "{count} package{s} selected"
+msgstr "{count} 個のパッケージを選択中"
+
+msgid "Checked for update — actions apply to all of them"
+msgstr "更新用にチェック済み — 操作はすべてに適用されます"
+
+msgid "Install Selected ({count})"
+msgstr "選択項目をインストール ({count})"
+
+msgid "Checked to install — actions apply to all of them"
+msgstr "インストール用にチェック済み — 操作はすべてに適用されます"
+
+msgid "Uninstall Selected ({count})"
+msgstr "選択項目をアンインストール ({count})"
+
+msgid "Marked — actions apply to all of them"
+msgstr "マーク済み — 操作はすべてに適用されます"
+
+msgid "{size} to download"
+msgstr "ダウンロード {size}"
+
+msgid "Update Selected ({count})"
+msgstr "選択項目を更新 ({count})"
+
+msgid "Clear Selection"
+msgstr "選択をクリア"
+msgid "Internet connection changes"
+msgstr "インターネット接続の変化"
+
+msgid "When you go offline or come back online."
+msgstr "オフラインになったとき、または再びオンラインになったとき。"
+
+msgid "Free Software"
+msgstr "フリーソフトウェア"

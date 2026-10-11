@@ -3170,3 +3170,63 @@ msgstr "स्थिर"
 
 msgid "Chaotic AUR is built against Arch's newest (unstable) libraries. Manjaro is on the '{branch}' branch, which lags behind Arch and can break on mixed package sets. Switch to 'unstable' first (recommended only for experienced users)."
 msgstr "Chaotic AUR, आर्क की नवीनतम (अस्थिर) लाइब्रेरी के विरुद्ध बनाया गया है। Manjaro '{branch}' शाखा पर है, जो आर्क से पीछे है और मिश्रित पैकेज सेट पर टूट सकता है। पहले 'unstable' पर जाएँ (केवल अनुभवी उपयोगकर्ताओं के लिए अनुशंसित)।"
+msgid "Block partial updates"
+msgstr "आंशिक अपडेट ब्लॉक करें"
+
+msgid "Locks the “Update Selection” option in the partial-update warning so only full system upgrades can run. Use this if you never want a selection-only upgrade to slip through."
+msgstr "आंशिक अपडेट चेतावनी में “चयन अपडेट करें” विकल्प को लॉक करता है, ताकि केवल पूर्ण सिस्टम अपडेट ही चल सकें। अगर आप कभी नहीं चाहते कि केवल-चयन वाला अपडेट चुपचाप हो जाए तो इसे उपयोग करें।"
+
+msgid "Warned before anything runs"
+msgstr "कुछ भी चलने से पहले चेतावनी"
+
+msgid "Risky moves get a warning and your explicit confirmation. The one hard stop is “Block partial updates” above — when it is on, a selection-only upgrade is refused outright."
+msgstr "जोखिम भरे कार्यों पर चेतावनी और आपकी स्पष्ट पुष्टि मिलती है। एकमात्र सख्त रोक ऊपर “आंशिक अपडेट ब्लॉक करें” है — इसके चालू होने पर केवल-चयन वाला अपडेट सीधे अस्वीकार कर दिया जाता है।"
+
+msgid "Partial updates are blocked"
+msgstr "आंशिक अपडेट ब्लॉक हैं"
+
+msgid "A selection-only upgrade can desync libraries and break your system. Turn off “Block partial updates” in Settings → Security to allow it, or use Update All."
+msgstr "केवल-चयन वाला अपडेट लाइब्रेरी को असंगत कर सकता है और आपका सिस्टम तोड़ सकता है। इसे अनुमति देने के लिए सेटिंग्स → सुरक्षा में “आंशिक अपडेट ब्लॉक करें” बंद करें, या सभी अपडेट करें का उपयोग करें।"
+
+msgid "Open Security settings"
+msgstr "सुरक्षा सेटिंग्स खोलें"
+
+msgid "Blocked in Settings → Security. Turn off “Block partial updates” to allow selection-only upgrades."
+msgstr "सेटिंग्स → सुरक्षा में ब्लॉक है। केवल-चयन अपडेट की अनुमति देने के लिए “आंशिक अपडेट ब्लॉक करें” बंद करें।"
+msgid "Selection"
+msgstr "चयन"
+
+msgid "{count} package{s} selected"
+msgstr "{count} पैकेज{s} चयनित"
+
+msgid "Checked for update — actions apply to all of them"
+msgstr "अपडेट के लिए चिह्नित — क्रियाएँ सभी पर लागू होती हैं"
+
+msgid "Install Selected ({count})"
+msgstr "चयनित इंस्टॉल करें ({count})"
+
+msgid "Checked to install — actions apply to all of them"
+msgstr "इंस्टॉल के लिए चिह्नित — क्रियाएँ सभी पर लागू होती हैं"
+
+msgid "Uninstall Selected ({count})"
+msgstr "चयनित अनइंस्टॉल करें ({count})"
+
+msgid "Marked — actions apply to all of them"
+msgstr "चिह्नित — क्रियाएँ सभी पर लागू होती हैं"
+
+msgid "{size} to download"
+msgstr "डाउनलोड करने के लिए {size}"
+
+msgid "Update Selected ({count})"
+msgstr "चयनित अपडेट करें ({count})"
+
+msgid "Clear Selection"
+msgstr "चयन साफ़ करें"
+msgid "Internet connection changes"
+msgstr "इंटरनेट कनेक्शन में बदलाव"
+
+msgid "When you go offline or come back online."
+msgstr "जब आप ऑफ़लाइन हों या फिर ऑनलाइन आएँ।"
+
+msgid "Free Software"
+msgstr "मुक्त सॉफ़्टवेयर"

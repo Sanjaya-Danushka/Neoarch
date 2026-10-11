@@ -24,6 +24,7 @@ DEFAULT_SETTINGS = {
     'auto_update_enabled': False,
     'auto_update_interval_days': 7,
     'snapshot_before_update': False,
+    'block_partial_updates': True,
     'aur_helper': 'auto',
     # Appearance
     'theme': 'dark',
@@ -40,6 +41,7 @@ DEFAULT_SETTINGS = {
     'notify_on_install': True,
     'notify_on_updates': True,
     'notify_on_errors': True,
+    'notify_on_connection': True,
     'notify_cooldown': 10,
     # Logging
     'log_level': 'INFO',

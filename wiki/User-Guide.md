@@ -181,6 +181,11 @@ Customize NeoArch behavior:
 - Choose update behavior
 - Notification preferences
 
+**Security:**
+- Review source and protection notes
+- **Block partial updates** — enforce full system upgrades by disabling the
+  "Update Selection" option in the partial-update warning
+
 **Advanced:**
 - Cache settings
 - Logging level

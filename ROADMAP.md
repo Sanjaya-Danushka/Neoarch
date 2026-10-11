@@ -144,4 +144,4 @@ Pre-install security review for AUR installs/updates.
 | P2 | Keyring, purify, three-way merge, restart detection |
 | P3 | Tray, parallel downloads, recommended, i18n, URL install, chroot builds, news read-tracking |
 
-License note: all items are clean-room implementations; no GPL code is copied from Shelly-ALPM (NeoArch stays MIT).
+License note: all items are clean-room implementations; no code is copied from Shelly-ALPM. NeoArch is licensed under the GNU General Public License v3.0 or later (GPL-3.0-or-later).

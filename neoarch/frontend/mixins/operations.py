@@ -451,8 +451,12 @@ class _OperationsMixin:
             available = self._available_arch_updates()
             if not is_partial_update(available, packages_by_source):
                 return True
+            block = bool(getattr(self, 'settings', {}).get(
+                'block_partial_updates', True))
+            on_open = getattr(self, 'open_security_settings', None)
             dlg = PartialUpdateDialog(
-                self._all_pending_updates(), packages_by_source, self)
+                self._all_pending_updates(), packages_by_source, self,
+                blocked=block, on_open_settings=on_open)
             if dlg.exec() != QDialog.DialogCode.Accepted:
                 self.log("Partial update cancelled by user.")
                 return False

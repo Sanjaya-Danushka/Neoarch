@@ -146,6 +146,7 @@ Customize NeoArch behavior:
 - Keep your system updated
 - Use official repositories when possible
 - Be cautious with third-party plugins
+- Enable **Block partial updates** in Settings → Security to enforce full-system upgrades
 
 ### Performance
 - Regularly clean package cache (`paccache -r`)

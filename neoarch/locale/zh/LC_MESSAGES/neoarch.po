@@ -3170,3 +3170,63 @@ msgstr "稳定"
 
 msgid "Chaotic AUR is built against Arch's newest (unstable) libraries. Manjaro is on the '{branch}' branch, which lags behind Arch and can break on mixed package sets. Switch to 'unstable' first (recommended only for experienced users)."
 msgstr "Chaotic AUR 是针对 Arch 的最新（不稳定）库构建的。Manjaro 位于 '{branch}' 分支，该分支落后于 Arch，在混合软件包组合下可能出错。请先切换到 'unstable' 分支（仅建议有经验的用户操作）。"
+msgid "Block partial updates"
+msgstr "阻止部分更新"
+
+msgid "Locks the “Update Selection” option in the partial-update warning so only full system upgrades can run. Use this if you never want a selection-only upgrade to slip through."
+msgstr "锁定部分更新警告中的“更新所选”选项，仅允许执行完整的系统更新。如果您绝不希望仅选择部分的更新溜过去，请使用此选项。"
+
+msgid "Warned before anything runs"
+msgstr "运行前先警告"
+
+msgid "Risky moves get a warning and your explicit confirmation. The one hard stop is “Block partial updates” above — when it is on, a selection-only upgrade is refused outright."
+msgstr "风险操作会收到警告并需要您明确确认。唯一的硬性阻止是上方的“阻止部分更新”——开启后，仅选择部分的更新会被直接拒绝。"
+
+msgid "Partial updates are blocked"
+msgstr "部分更新已被阻止"
+
+msgid "A selection-only upgrade can desync libraries and break your system. Turn off “Block partial updates” in Settings → Security to allow it, or use Update All."
+msgstr "仅选择部分的更新可能导致库不同步并损坏系统。要允许它，请在 设置 → 安全 中关闭“阻止部分更新”，或使用全部更新。"
+
+msgid "Open Security settings"
+msgstr "打开安全设置"
+
+msgid "Blocked in Settings → Security. Turn off “Block partial updates” to allow selection-only upgrades."
+msgstr "已在 设置 → 安全 中被阻止。关闭“阻止部分更新”即可允许仅选择部分的更新。"
+msgid "Selection"
+msgstr "所选"
+
+msgid "{count} package{s} selected"
+msgstr "已选择 {count} 个软件包"
+
+msgid "Checked for update — actions apply to all of them"
+msgstr "已勾选更新 — 操作将应用于全部"
+
+msgid "Install Selected ({count})"
+msgstr "安装所选 ({count})"
+
+msgid "Checked to install — actions apply to all of them"
+msgstr "已勾选安装 — 操作将应用于全部"
+
+msgid "Uninstall Selected ({count})"
+msgstr "卸载所选 ({count})"
+
+msgid "Marked — actions apply to all of them"
+msgstr "已标记 — 操作将应用于全部"
+
+msgid "{size} to download"
+msgstr "需下载 {size}"
+
+msgid "Update Selected ({count})"
+msgstr "更新所选 ({count})"
+
+msgid "Clear Selection"
+msgstr "清除选择"
+msgid "Internet connection changes"
+msgstr "互联网连接变化"
+
+msgid "When you go offline or come back online."
+msgstr "当您离线或重新上线时。"
+
+msgid "Free Software"
+msgstr "自由软件"

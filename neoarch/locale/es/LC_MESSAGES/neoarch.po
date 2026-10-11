@@ -3269,3 +3269,40 @@ msgstr "Actualizar seleccionadas ({count})"
 
 msgid "Clear Selection"
 msgstr "Limpiar selección"
+
+msgid "Block partial updates"
+msgstr "Bloquear actualizaciones parciales"
+
+msgid "Blocked in Settings → Security. Turn off “Block partial updates” to allow selection-only upgrades."
+msgstr "Bloqueado en Configuración → Seguridad. Desactiva «Bloquear actualizaciones parciales» para permitir actualizaciones solo de la selección."
+
+msgid "Open Security settings"
+msgstr "Abrir configuración de seguridad"
+
+msgid "Locks the “Update Selection” option in the partial-update warning so only full system upgrades can run. Use this if you never want a selection-only upgrade to slip through."
+msgstr "Bloquea la opción «Actualizar la selección» en el aviso de actualización parcial para que solo se ejecuten actualizaciones completas del sistema. Úsalo si nunca quieres que una actualización solo de la selección se cuele."
+
+msgid "Selection-only updates are currently blocked in Settings → Security. Partial updates can desync libraries from their apps and break your system — turn off “Block partial updates” there to allow them, or use Update All below."
+msgstr "Las actualizaciones solo de la selección están bloqueadas actualmente en Configuración → Seguridad. Las actualizaciones parciales pueden desincronizar las bibliotecas de sus aplicaciones y romper el sistema; desactiva «Bloquear actualizaciones parciales» allí para permitirlas, o usa Actualizar todo abajo."
+
+msgid "Warned before anything runs"
+msgstr "Aviso antes de ejecutar cualquier cosa"
+
+msgid "Partial updates are blocked"
+msgstr "Las actualizaciones parciales están bloqueadas"
+
+msgid "A selection-only upgrade can desync libraries and break your system. Turn off “Block partial updates” in Settings → Security to allow it, or use Update All."
+msgstr "Una actualización solo de la selección puede desincronizar las bibliotecas y romper el sistema. Desactiva «Bloquear actualizaciones parciales» en Configuración → Seguridad para permitirla, o usa Actualizar todo."
+
+msgid "Risky moves get a warning and your explicit confirmation. The one hard stop is “Block partial updates” above — when it is on, a selection-only upgrade is refused outright."
+msgstr "Las acciones arriesgadas reciben un aviso y tu confirmación explícita. La única parada total es «Bloquear actualizaciones parciales» arriba; cuando está activada, una actualización solo de la selección se rechaza directamente."
+
+
+msgid "Internet connection changes"
+msgstr "Cambios en la conexión a Internet"
+
+msgid "When you go offline or come back online."
+msgstr "Cuando te quedas sin conexión o vuelves a conectarte."
+
+msgid "Free Software"
+msgstr "Software libre"
